@@ -1,5 +1,9 @@
-use bevy::render::{camera::ScalingMode, texture::ImageSettings};
+use bevy::render::texture::ImageSettings;
 use bevy::{prelude::*, window::PresentMode};
+
+mod camera;
+
+use camera::{CameraControl, CameraControlPlugin};
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
 pub const ASPECT_RATIO: f32 = 16.0 / 9.0;
@@ -18,82 +22,45 @@ fn main() {
             resizable: false,
             ..default()
         })
-        .add_startup_system_to_stage(StartupStage::PreStartup, load_ascii)
+        .add_startup_system(spawn_scene)
         .add_startup_system(spawn_camera)
-        .add_startup_system(spawn_player)
         .add_plugins(DefaultPlugins)
+        .add_plugin(CameraControlPlugin)
         .run();
 }
 
 fn spawn_camera(mut commands: Commands) {
-    commands.spawn_bundle(Camera2dBundle {
-        projection: OrthographicProjection {
-            top: 1.0,
-            bottom: -1.0,
-            right: 1.0 * ASPECT_RATIO,
-            left: -1.0 * ASPECT_RATIO,
-            scaling_mode: ScalingMode::None,
+    commands
+        .spawn_bundle(Camera3dBundle {
+            transform: Transform::from_xyz(-20.0, 20.0, 2.0).looking_at(Vec3::ZERO, Vec3::Y),
             ..default()
-        },
+        })
+        .insert(CameraControl::default());
+}
+
+fn spawn_scene(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    commands.spawn_bundle(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Plane { size: 5.0 })),
+        material: materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
         ..default()
     });
-}
-
-struct AsciiSheet(Handle<TextureAtlas>);
-
-fn load_ascii(
-    mut commands: Commands,
-    assets: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-) {
-    let image = assets.load("Ascii.png");
-    let atlas = TextureAtlas::from_grid_with_padding(
-        image,
-        Vec2::splat(9.0),
-        16,
-        16,
-        Vec2::splat(2.0),
-        Vec2::splat(0.0),
-    );
-
-    let atlas_handle = texture_atlases.add(atlas);
-    commands.insert_resource(AsciiSheet(atlas_handle));
-}
-
-fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
-    let mut sprite = TextureAtlasSprite::new(1);
-    sprite.color = Color::rgb(0.3, 0.3, 0.9);
-    sprite.custom_size = Some(Vec2::splat(1.0));
-
-    let player = commands
-        .spawn_bundle(SpriteSheetBundle {
-            sprite,
-            texture_atlas: ascii.0.clone(),
-            transform: Transform {
-                translation: Vec3::new(0.0, 0.0, 900.0),
-                ..default()
-            },
+    commands.spawn_bundle(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+        material: materials.add(Color::rgb(0.827, 0.212, 0.51).into()),
+        transform: Transform::from_xyz(0.0, 0.5, 0.0),
+        ..default()
+    });
+    commands.spawn_bundle(PointLightBundle {
+        point_light: PointLight {
+            intensity: 1500.0,
+            shadows_enabled: true,
             ..default()
-        })
-        .insert(Name::new("Player"))
-        .id();
-
-    let mut background_sprite = TextureAtlasSprite::new(1);
-    background_sprite.color = Color::rgb(0.5, 0.5, 0.5);
-    background_sprite.custom_size = Some(Vec2::splat(1.0));
-
-    let background = commands
-        .spawn_bundle(SpriteSheetBundle {
-            sprite: background_sprite,
-            texture_atlas: ascii.0.clone(),
-            transform: Transform {
-                translation: Vec3::new(0.0, 0.0, -1.0),
-                ..default()
-            },
-            ..default()
-        })
-        .insert(Name::new("Player"))
-        .id();
-
-    commands.entity(player).push_children(&[background]);
+        },
+        transform: Transform::from_xyz(4.0, 8.0, 4.0),
+        ..default()
+    });
 }
