@@ -2,8 +2,10 @@ use bevy::render::texture::ImageSettings;
 use bevy::{prelude::*, window::PresentMode};
 
 mod camera;
+mod hex;
 
 use camera::{CameraControl, CameraControlPlugin};
+use hex::Hexagon;
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
 pub const ASPECT_RATIO: f32 = 16.0 / 9.0;
@@ -49,9 +51,15 @@ fn spawn_scene(
         ..default()
     });
     commands.spawn_bundle(PbrBundle {
+        mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
+        material: materials.add(Color::rgb(0.827, 0.212, 0.51).into()),
+        transform: Transform::from_xyz(1.0, 0.5, -1.0),
+        ..default()
+    });
+    commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
         material: materials.add(Color::rgb(0.827, 0.212, 0.51).into()),
-        transform: Transform::from_xyz(0.0, 0.5, 0.0),
+        transform: Transform::from_xyz(0.0, 0.5, 1.0),
         ..default()
     });
     commands.spawn_bundle(PointLightBundle {
