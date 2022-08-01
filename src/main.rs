@@ -1,11 +1,12 @@
 use bevy::render::texture::ImageSettings;
 use bevy::{prelude::*, window::PresentMode};
+use rand::Rng;
 
 mod camera;
 mod hex;
 
 use camera::{CameraControl, CameraControlPlugin};
-use hex::Hexagon;
+use hex::{HexCoord, Hexagon};
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
 pub const ASPECT_RATIO: f32 = 16.0 / 9.0;
@@ -50,18 +51,25 @@ fn spawn_scene(
         material: materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
         ..default()
     });
-    commands.spawn_bundle(PbrBundle {
-        mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
-        material: materials.add(Color::rgb(0.827, 0.212, 0.51).into()),
-        transform: Transform::from_xyz(1.0, 0.5, -1.0),
-        ..default()
-    });
-    commands.spawn_bundle(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-        material: materials.add(Color::rgb(0.827, 0.212, 0.51).into()),
-        transform: Transform::from_xyz(0.0, 0.5, 1.0),
-        ..default()
-    });
+    let offset = Vec3::new(0.0, 0.5, 0.0);
+    let mut rng = rand::thread_rng();
+    for q in 1..10 {
+        for r in 1..8 {
+            commands.spawn_bundle(PbrBundle {
+                mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
+                material: materials.add(
+                    Color::rgb(
+                        0.827 + rng.gen_range(-0.1..0.1),
+                        0.212 + rng.gen_range(-0.1..0.1),
+                        0.51 + rng.gen_range(-0.1..0.1),
+                    )
+                    .into(),
+                ),
+                transform: Transform::from_translation(HexCoord::new(q, r).as_vec3(1.0) + offset),
+                ..default()
+            });
+        }
+    }
     commands.spawn_bundle(PointLightBundle {
         point_light: PointLight {
             intensity: 1500.0,
