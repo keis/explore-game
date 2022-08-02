@@ -11,4 +11,5 @@ opt-level = 3
 
 [dependencies]
 bevy = { version = "0.8", features = ["dynamic"] }
+bevy_mod_picking = "0.8"
 rand = "0.8.5"

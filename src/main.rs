@@ -1,5 +1,6 @@
 use bevy::render::texture::ImageSettings;
 use bevy::{prelude::*, window::PresentMode};
+use bevy_mod_picking::{DefaultPickingPlugins, PickableBundle, PickingCameraBundle};
 use rand::Rng;
 
 mod camera;
@@ -28,6 +29,7 @@ fn main() {
         .add_startup_system(spawn_scene)
         .add_startup_system(spawn_camera)
         .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPickingPlugins)
         .add_plugin(CameraControlPlugin)
         .run();
 }
@@ -38,7 +40,8 @@ fn spawn_camera(mut commands: Commands) {
             transform: Transform::from_xyz(-20.0, 20.0, 2.0).looking_at(Vec3::ZERO, Vec3::Y),
             ..default()
         })
-        .insert(CameraControl::default());
+        .insert(CameraControl::default())
+        .insert_bundle(PickingCameraBundle::default());
 }
 
 fn spawn_scene(
@@ -55,19 +58,23 @@ fn spawn_scene(
     let mut rng = rand::thread_rng();
     for q in 1..10 {
         for r in 1..8 {
-            commands.spawn_bundle(PbrBundle {
-                mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
-                material: materials.add(
-                    Color::rgb(
-                        0.827 + rng.gen_range(-0.1..0.1),
-                        0.212 + rng.gen_range(-0.1..0.1),
-                        0.51 + rng.gen_range(-0.1..0.1),
-                    )
-                    .into(),
-                ),
-                transform: Transform::from_translation(HexCoord::new(q, r).as_vec3(1.0) + offset),
-                ..default()
-            });
+            commands
+                .spawn_bundle(PbrBundle {
+                    mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
+                    material: materials.add(
+                        Color::rgb(
+                            0.827 + rng.gen_range(-0.1..0.1),
+                            0.212 + rng.gen_range(-0.1..0.1),
+                            0.51 + rng.gen_range(-0.1..0.1),
+                        )
+                        .into(),
+                    ),
+                    transform: Transform::from_translation(
+                        HexCoord::new(q, r).as_vec3(1.0) + offset,
+                    ),
+                    ..default()
+                })
+                .insert_bundle(PickableBundle::default());
         }
     }
     commands.spawn_bundle(PointLightBundle {
