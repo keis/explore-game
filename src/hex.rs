@@ -6,6 +6,7 @@ pub struct Hexagon {
     pub radius: f32,
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct HexCoord {
     pub q: isize,
     pub r: isize,
