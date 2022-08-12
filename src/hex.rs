@@ -1,4 +1,5 @@
 use bevy::{prelude::*, render::mesh::Indices, render::mesh::PrimitiveTopology};
+use pathfinding::prelude::astar;
 
 pub const HEX_RADIUS_RATIO: f32 = 0.866025404;
 
@@ -6,7 +7,7 @@ pub struct Hexagon {
     pub radius: f32,
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct HexCoord {
     pub q: isize,
     pub r: isize,
@@ -22,8 +23,27 @@ impl HexCoord {
         Vec3::new(
             self.r as f32 * outer * 1.5,
             0.0,
-            ((self.q as f32) + 0.5 * (self.r % 2) as f32) * inner * 2.0,
+            ((self.q as f32) + 0.5 * self.r as f32) * inner * 2.0,
         )
+    }
+
+    pub fn distance(&self, other: &Self) -> usize {
+        self.q.abs_diff(other.q) + self.r.abs_diff(other.r)
+    }
+
+    pub fn neighbours(&self) -> Vec<Self> {
+        vec![
+            Self::new(self.q + 1, self.r),
+            Self::new(self.q, self.r + 1),
+            Self::new(self.q - 1, self.r + 1),
+            Self::new(self.q - 1, self.r),
+            Self::new(self.q, self.r - 1),
+            Self::new(self.q + 1, self.r - 1),
+        ]
+    }
+
+    pub fn successors(&self) -> Vec<(Self, u32)> {
+        self.neighbours().into_iter().map(|p| (p, 1)).collect()
     }
 }
 
@@ -55,10 +75,18 @@ impl From<Hexagon> for Mesh {
     }
 }
 
+pub fn find_path(start: HexCoord, goal: HexCoord) -> Option<(Vec<HexCoord>, u32)> {
+    astar(
+        &start,
+        |p| p.successors(),
+        |p| p.distance(&goal).try_into().unwrap(),
+        |p| *p == goal,
+    )
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::hex::HexCoord;
-    use crate::hex::HEX_RADIUS_RATIO;
+    use crate::hex::{find_path, HexCoord, HEX_RADIUS_RATIO};
     use bevy::prelude::*;
 
     #[test]
@@ -81,5 +109,26 @@ mod tests {
             HexCoord::new(1, 1).as_vec3(radius),
             Vec3::new(1.5, 0.0, 3.0 * HEX_RADIUS_RATIO)
         );
+    }
+
+    #[test]
+    fn pathfinding_neighbour() {
+        let start = HexCoord::new(2, -1);
+        let goal = HexCoord::new(2, -2);
+
+        let result = find_path(start, goal);
+        println!("neigbours {:?}", start.neighbours());
+        println!("path {:?}", result);
+        assert_eq!(result.expect("no path found").1, 1);
+    }
+
+    #[test]
+    fn pathfinding() {
+        let start = HexCoord::new(0, 0);
+        let goal = HexCoord::new(4, 2);
+
+        let result = find_path(start, goal);
+        println!("path {:?}", result);
+        assert_eq!(result.expect("no path found").1, 6);
     }
 }
