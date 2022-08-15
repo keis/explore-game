@@ -11,8 +11,8 @@ mod hex;
 mod zone;
 
 use camera::{CameraControl, CameraControlPlugin};
-use hex::{find_path, HexCoord, Hexagon};
-use zone::Zone;
+use hex::{find_path, HexCoord, Hexagon, Map, MapLayout};
+use zone::{Terrain, Zone};
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
 pub const ASPECT_RATIO: f32 = 16.0 / 9.0;
@@ -52,6 +52,11 @@ pub struct HexPositioned {
 }
 
 #[derive(Component)]
+pub struct MapComponent {
+    pub map: Map,
+}
+
+#[derive(Component)]
 pub struct ZoneText;
 
 pub fn move_hex_positioned(
@@ -81,16 +86,27 @@ pub fn move_hex_positioned(
 pub fn handle_events(
     mut events: EventReader<PickingEvent>,
     zone_query: Query<&Zone>,
+    map_query: Query<&MapComponent>,
     mut positioned_query: Query<&mut HexPositioned>,
     mut zone_text_query: Query<&mut Text, With<ZoneText>>,
 ) {
+    let map = &map_query.get_single().expect("has exactly one map").map;
     for event in events.iter() {
         match event {
             PickingEvent::Clicked(e) => {
                 if let Ok(zone) = zone_query.get(*e) {
                     info!("Clicked a zone: {:?}", zone);
                     let mut positioned = positioned_query.single_mut();
-                    if let Some((path, _length)) = find_path(positioned.position, zone.position) {
+                    if let Some((path, _length)) =
+                        find_path(positioned.position, zone.position, &|c: &HexCoord| {
+                            if let Some(entity) = map.get(*c) {
+                                if let Ok(zone) = zone_query.get(entity) {
+                                    return zone.terrain != Terrain::Lava;
+                                }
+                            }
+                            false
+                        })
+                    {
                         positioned.path = VecDeque::from(path);
                         positioned.path.pop_front();
                     }
@@ -120,32 +136,45 @@ fn spawn_camera(mut commands: Commands) {
 
 fn spawn_scene(
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    let grass_texture = asset_server.load("textures/grass.png");
+    let grass_material = materials.add(StandardMaterial {
+        base_color_texture: Some(grass_texture.clone()),
+        ..default()
+    });
+    let lava_texture = asset_server.load("textures/lava.png");
+    let lava_material = materials.add(StandardMaterial {
+        base_color_texture: Some(lava_texture.clone()),
+        ..default()
+    });
     let offset = Vec3::new(0.0, 1.0, 0.0);
     let mut rng = rand::thread_rng();
-    for q in -10..10 {
-        for r in -8..8 {
-            let position = HexCoord::new(q - r / 2, r);
-            commands
-                .spawn_bundle(PbrBundle {
-                    mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
-                    material: materials.add(
-                        Color::rgb(
-                            0.827 + rng.gen_range(-0.1..0.1),
-                            0.212 + rng.gen_range(-0.1..0.1),
-                            0.51 + rng.gen_range(-0.1..0.1),
-                        )
-                        .into(),
-                    ),
-                    transform: Transform::from_translation(position.as_vec3(1.0)),
-                    ..default()
-                })
-                .insert(Zone { position })
-                .insert_bundle(PickableBundle::default());
-        }
+    let maplayout = MapLayout {
+        width: 20,
+        height: 16,
+    };
+    let mut map = Map::new(maplayout);
+    for position in maplayout.iter() {
+        let terrain = rng.gen();
+        let entity = commands
+            .spawn_bundle(PbrBundle {
+                mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
+                material: match terrain {
+                    Terrain::Grass => grass_material.clone(),
+                    Terrain::Lava => lava_material.clone(),
+                },
+                transform: Transform::from_translation(position.as_vec3(1.0)),
+                ..default()
+            })
+            .insert(Zone { position, terrain })
+            .insert_bundle(PickableBundle::default())
+            .id();
+        map.set(position, Some(entity));
     }
+    commands.spawn().insert(MapComponent { map });
     commands
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
@@ -167,7 +196,7 @@ fn spawn_scene(
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
+        transform: Transform::from_xyz(10.0, 8.0, 4.0),
         ..default()
     });
 }
