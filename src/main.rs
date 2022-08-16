@@ -1,5 +1,13 @@
-use bevy::render::texture::ImageSettings;
-use bevy::{prelude::*, window::PresentMode};
+use bevy::{
+    pbr::RenderMaterials,
+    prelude::*,
+    reflect::TypeUuid,
+    render::{
+        render_resource::*, renderer::RenderQueue, texture::ImageSettings, Extract, RenderApp,
+        RenderStage,
+    },
+    window::PresentMode,
+};
 use bevy_mod_picking::{
     DefaultPickingPlugins, HoverEvent, PickableBundle, PickingCameraBundle, PickingEvent,
 };
@@ -7,23 +15,27 @@ use rand::Rng;
 use std::collections::VecDeque;
 
 mod camera;
+mod fog;
 mod hex;
 mod map;
 mod zone;
 
 use camera::{CameraControl, CameraControlPlugin};
+use fog::Fog;
 use hex::{HexCoord, Hexagon};
 use map::{find_path, Map, MapComponent, MapLayout};
 use zone::{Terrain, Zone};
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
 pub const ASPECT_RATIO: f32 = 16.0 / 9.0;
+pub const VIEW_RADIUS: usize = 2;
 
 fn main() {
     let height = 900.0;
 
-    App::new()
-        .insert_resource(ClearColor(CLEAR))
+    let mut app = App::new();
+
+    app.insert_resource(ClearColor(CLEAR))
         .insert_resource(ImageSettings::default_nearest())
         .insert_resource(WindowDescriptor {
             width: height * ASPECT_RATIO,
@@ -37,11 +49,20 @@ fn main() {
         .add_startup_system(spawn_interface)
         .add_startup_system(spawn_camera)
         .add_system(move_hex_positioned)
-        .add_system_to_stage(CoreStage::PostUpdate, handle_events)
+        .add_system(log_moves)
+        .add_system_to_stage(CoreStage::PostUpdate, handle_picking_events)
+        .add_system_to_stage(CoreStage::PostUpdate, update_visibility)
         .add_plugins(DefaultPlugins)
         .add_plugins(DefaultPickingPlugins)
         .add_plugin(CameraControlPlugin)
-        .run();
+        .add_plugin(MaterialPlugin::<ZoneMaterial>::default())
+        .add_event::<HexEntered>();
+
+    app.sub_app_mut(RenderApp)
+        .add_system_to_stage(RenderStage::Extract, extract_zone)
+        .add_system_to_stage(RenderStage::Prepare, prepare_zone_material);
+
+    app.run();
 }
 
 #[derive(Component)]
@@ -56,11 +77,98 @@ pub struct HexPositioned {
 #[derive(Component)]
 pub struct ZoneText;
 
+#[derive(AsBindGroup, TypeUuid, Clone)]
+#[uuid = "05f50382-7218-4860-8c4c-06dbd66694db"]
+pub struct ZoneMaterial {
+    #[texture(0)]
+    #[sampler(1)]
+    pub texture: Option<Handle<Image>>,
+    #[uniform(2)]
+    pub visible: u32,
+    #[uniform(2)]
+    pub explored: u32,
+}
+
+impl Material for ZoneMaterial {
+    fn fragment_shader() -> ShaderRef {
+        "zone_material.wgsl".into()
+    }
+}
+
+#[derive(Clone, ShaderType)]
+struct ZoneMaterialUniformData {
+    visible: u32,
+    explored: u32,
+}
+
+fn extract_zone(
+    mut commands: Commands,
+    zone_query: Extract<Query<(Entity, &Fog, &Handle<ZoneMaterial>)>>,
+) {
+    for (entity, fog, handle) in zone_query.iter() {
+        commands
+            .get_or_spawn(entity)
+            .insert(*fog)
+            .insert(handle.clone());
+    }
+}
+
+fn prepare_zone_material(
+    materials: Res<RenderMaterials<ZoneMaterial>>,
+    zone_query: Query<(&Fog, &Handle<ZoneMaterial>)>,
+    render_queue: Res<RenderQueue>,
+) {
+    for (fog, handle) in &zone_query {
+        if let Some(material) = materials.get(handle) {
+            for binding in material.bindings.iter() {
+                if let OwnedBindingResource::Buffer(cur_buffer) = binding {
+                    let mut buffer = encase::UniformBuffer::new(Vec::new());
+                    buffer
+                        .write(&ZoneMaterialUniformData {
+                            visible: fog.visible as u32,
+                            explored: fog.explored as u32,
+                        })
+                        .unwrap();
+                    render_queue.write_buffer(cur_buffer, 0, buffer.as_ref());
+                }
+            }
+        }
+    }
+}
+
+fn log_moves(mut hex_entered_event: EventReader<HexEntered>) {
+    for event in hex_entered_event.iter() {
+        info!("moved to {:?}", event.coordinate);
+    }
+}
+
+fn update_visibility(
+    mut hex_entered_event: EventReader<HexEntered>,
+    positioned_query: Query<&HexPositioned>,
+    mut zone_query: Query<(&Zone, &mut Fog)>,
+) {
+    let mut moved = false;
+    for _event in hex_entered_event.iter() {
+        moved = true;
+    }
+
+    if moved {
+        let positioned = positioned_query
+            .get_single()
+            .expect("has positioned entity");
+        for (zone, mut fog) in zone_query.iter_mut() {
+            fog.visible = zone.position.distance(&positioned.position) <= VIEW_RADIUS;
+            fog.explored = fog.explored || fog.visible;
+        }
+    }
+}
+
 pub fn move_hex_positioned(
     time: Res<Time>,
-    mut positioned_query: Query<(&mut HexPositioned, &mut Transform)>,
+    mut positioned_query: Query<(Entity, &mut HexPositioned, &mut Transform)>,
+    mut hex_entered_event: EventWriter<HexEntered>,
 ) {
-    let (mut positioned, mut transform) = positioned_query.single_mut();
+    let (entity, mut positioned, mut transform) = positioned_query.single_mut();
 
     if positioned.path.len() == 0 {
         return;
@@ -69,7 +177,10 @@ pub fn move_hex_positioned(
     positioned.progress += time.delta_seconds();
     if positioned.progress >= 1.0 {
         positioned.position = positioned.path.pop_front().expect("path has element");
-        info!("moved to {:?}", positioned.position);
+        hex_entered_event.send(HexEntered {
+            entity,
+            coordinate: positioned.position,
+        });
         positioned.progress = 0.0;
     }
 
@@ -80,7 +191,12 @@ pub fn move_hex_positioned(
     }
 }
 
-pub fn handle_events(
+pub struct HexEntered {
+    entity: Entity,
+    coordinate: HexCoord,
+}
+
+pub fn handle_picking_events(
     mut events: EventReader<PickingEvent>,
     zone_query: Query<&Zone>,
     map_query: Query<&MapComponent>,
@@ -135,18 +251,11 @@ fn spawn_scene(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut standard_materials: ResMut<Assets<StandardMaterial>>,
+    mut zone_materials: ResMut<Assets<ZoneMaterial>>,
 ) {
     let grass_texture = asset_server.load("textures/grass.png");
-    let grass_material = materials.add(StandardMaterial {
-        base_color_texture: Some(grass_texture.clone()),
-        ..default()
-    });
     let lava_texture = asset_server.load("textures/lava.png");
-    let lava_material = materials.add(StandardMaterial {
-        base_color_texture: Some(lava_texture.clone()),
-        ..default()
-    });
     let offset = Vec3::new(0.0, 1.0, 0.0);
     let mut rng = rand::thread_rng();
     let maplayout = MapLayout {
@@ -154,19 +263,32 @@ fn spawn_scene(
         height: 16,
     };
     let mut map = Map::new(maplayout);
+    let cubecoord = HexCoord::new(2, 6);
     for position in maplayout.iter() {
         let terrain = rng.gen();
         let entity = commands
-            .spawn_bundle(PbrBundle {
+            .spawn_bundle(MaterialMeshBundle {
                 mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
                 material: match terrain {
-                    Terrain::Grass => grass_material.clone(),
-                    Terrain::Lava => lava_material.clone(),
+                    Terrain::Grass => zone_materials.add(ZoneMaterial {
+                        texture: Some(grass_texture.clone()),
+                        visible: 1,
+                        explored: 1,
+                    }),
+                    Terrain::Lava => zone_materials.add(ZoneMaterial {
+                        texture: Some(lava_texture.clone()),
+                        visible: 1,
+                        explored: 1,
+                    }),
                 },
                 transform: Transform::from_translation(position.as_vec3(1.0)),
                 ..default()
             })
             .insert(Zone { position, terrain })
+            .insert(Fog {
+                visible: position.distance(&cubecoord) <= VIEW_RADIUS,
+                explored: position.distance(&cubecoord) <= VIEW_RADIUS,
+            })
             .insert_bundle(PickableBundle::default())
             .id();
         map.set(position, Some(entity));
@@ -175,12 +297,12 @@ fn spawn_scene(
     commands
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-            material: materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
+            material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
             transform: Transform::from_translation(HexCoord::new(2, 6).as_vec3(1.0) + offset),
             ..default()
         })
         .insert(HexPositioned {
-            position: HexCoord::new(2, 6),
+            position: cubecoord,
             radius: 1.0,
             progress: 0.0,
             offset,
