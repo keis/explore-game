@@ -8,10 +8,12 @@ use std::collections::VecDeque;
 
 mod camera;
 mod hex;
+mod map;
 mod zone;
 
 use camera::{CameraControl, CameraControlPlugin};
-use hex::{find_path, HexCoord, Hexagon, Map, MapLayout};
+use hex::{HexCoord, Hexagon};
+use map::{find_path, Map, MapComponent, MapLayout};
 use zone::{Terrain, Zone};
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
@@ -49,11 +51,6 @@ pub struct HexPositioned {
     pub offset: Vec3,
     pub progress: f32,
     pub path: VecDeque<HexCoord>,
-}
-
-#[derive(Component)]
-pub struct MapComponent {
-    pub map: Map,
 }
 
 #[derive(Component)]
