@@ -26,7 +26,8 @@ impl HexCoord {
     }
 
     pub fn distance(&self, other: &Self) -> usize {
-        self.q.abs_diff(other.q) + self.r.abs_diff(other.r)
+        let diff = HexCoord{ q: self.q - other.q, r: self.r - other.r};
+        return (diff.q.unsigned_abs() + (diff.q + diff.r).unsigned_abs() + diff.r.unsigned_abs()) / 2;
     }
 
     pub fn neighbours(&self) -> Vec<Self> {
@@ -114,5 +115,20 @@ mod tests {
             HexCoord::new(1, 1).as_vec3(radius),
             Vec3::new(1.5, 0.0, 3.0 * HEX_RADIUS_RATIO)
         );
+    }
+
+    #[test]
+    fn distance_to_neighbours() {
+        let origin = HexCoord::new(0, 0);
+        for neighbour in origin.neighbours() {
+            assert_eq!(origin.distance(&neighbour), 1);
+        }
+    }
+
+    #[test]
+    fn long_distance() {
+        let origin = HexCoord::new(0, 0);
+        let dest = HexCoord::new(4, -2);
+        assert_eq!(origin.distance(&dest), 4);
     }
 }
