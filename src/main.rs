@@ -41,7 +41,7 @@ fn main() {
         .add_startup_system(spawn_scene)
         .add_startup_system(spawn_interface)
         .add_startup_system(spawn_camera)
-        .add_system(move_hex_positioned)
+        .add_system(move_map_walker)
         .add_system(log_moves)
         .add_system_to_stage(CoreStage::PostUpdate, handle_picking_events)
         .add_system_to_stage(CoreStage::PostUpdate, update_visibility)
@@ -59,6 +59,10 @@ pub struct HexPositioned {
     pub position: HexCoord,
     pub radius: f32,
     pub offset: Vec3,
+}
+
+#[derive(Component)]
+pub struct MapWalker {
     pub progress: f32,
     pub path: VecDeque<HexCoord>,
 }
@@ -93,31 +97,31 @@ fn update_visibility(
     }
 }
 
-pub fn move_hex_positioned(
+pub fn move_map_walker(
     time: Res<Time>,
-    mut positioned_query: Query<(Entity, &mut HexPositioned, &mut Transform)>,
+    mut positioned_query: Query<(Entity, &mut MapWalker, &mut HexPositioned, &mut Transform)>,
     mut hex_entered_event: EventWriter<HexEntered>,
 ) {
-    let (entity, mut positioned, mut transform) = positioned_query.single_mut();
+    let (entity, mut mapwalker, mut positioned, mut transform) = positioned_query.single_mut();
 
-    if positioned.path.len() == 0 {
+    if mapwalker.path.len() == 0 {
         return;
     }
 
-    positioned.progress += time.delta_seconds();
-    if positioned.progress >= 1.0 {
-        positioned.position = positioned.path.pop_front().expect("path has element");
+    mapwalker.progress += time.delta_seconds();
+    if mapwalker.progress >= 1.0 {
+        positioned.position = mapwalker.path.pop_front().expect("path has element");
         hex_entered_event.send(HexEntered {
             entity,
             coordinate: positioned.position,
         });
-        positioned.progress = 0.0;
+        mapwalker.progress = 0.0;
     }
 
-    if let Some(next) = positioned.path.front() {
+    if let Some(next) = mapwalker.path.front() {
         let orig_translation = positioned.position.as_vec3(positioned.radius) + positioned.offset;
         let new_translation = next.as_vec3(positioned.radius) + positioned.offset;
-        transform.translation = orig_translation.lerp(new_translation, positioned.progress);
+        transform.translation = orig_translation.lerp(new_translation, mapwalker.progress);
     }
 }
 
@@ -130,7 +134,7 @@ pub fn handle_picking_events(
     mut events: EventReader<PickingEvent>,
     zone_query: Query<&Zone>,
     map_query: Query<&MapComponent>,
-    mut positioned_query: Query<&mut HexPositioned>,
+    mut positioned_query: Query<(&mut MapWalker, &HexPositioned)>,
     mut zone_text_query: Query<&mut Text, With<ZoneText>>,
 ) {
     let map = &map_query.get_single().expect("has exactly one map").map;
@@ -139,7 +143,7 @@ pub fn handle_picking_events(
             PickingEvent::Clicked(e) => {
                 if let Ok(zone) = zone_query.get(*e) {
                     info!("Clicked a zone: {:?}", zone);
-                    let mut positioned = positioned_query.single_mut();
+                    let (mut mapwalker, positioned) = positioned_query.single_mut();
                     if let Some((path, _length)) =
                         find_path(positioned.position, zone.position, &|c: &HexCoord| {
                             if let Some(entity) = map.get(*c) {
@@ -150,8 +154,8 @@ pub fn handle_picking_events(
                             false
                         })
                     {
-                        positioned.path = VecDeque::from(path);
-                        positioned.path.pop_front();
+                        mapwalker.path = VecDeque::from(path);
+                        mapwalker.path.pop_front();
                     }
                 }
             }
@@ -247,8 +251,10 @@ fn spawn_scene(
         .insert(HexPositioned {
             position: cubecoord,
             radius: 1.0,
-            progress: 0.0,
             offset,
+        })
+        .insert(MapWalker {
+            progress: 0.0,
             path: VecDeque::new(),
         });
 
