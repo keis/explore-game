@@ -1,4 +1,4 @@
-use crate::hex::HexCoord;
+use crate::map::HexCoord;
 use bevy::prelude::*;
 use rand::{
     distributions::{Distribution, Standard},

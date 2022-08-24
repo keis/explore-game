@@ -14,8 +14,8 @@ mod zone_material;
 
 use camera::{CameraBounds, CameraControl, CameraControlPlugin};
 use fog::Fog;
-use hex::{HexCoord, Hexagon};
-use map::{find_path, Map, MapComponent, MapLayout};
+use hex::{coord_to_vec3, Hexagon};
+use map::{find_path, HexCoord, Map, MapComponent, MapLayout};
 use zone::{Terrain, Zone};
 use zone_material::{ZoneMaterial, ZoneMaterialPlugin};
 
@@ -119,8 +119,9 @@ pub fn move_map_walker(
     }
 
     if let Some(next) = mapwalker.path.front() {
-        let orig_translation = positioned.position.as_vec3(positioned.radius) + positioned.offset;
-        let new_translation = next.as_vec3(positioned.radius) + positioned.offset;
+        let orig_translation =
+            coord_to_vec3(positioned.position, positioned.radius) + positioned.offset;
+        let new_translation = coord_to_vec3(*next, positioned.radius) + positioned.offset;
         transform.translation = orig_translation.lerp(new_translation, mapwalker.progress);
     }
 }
@@ -228,7 +229,7 @@ fn spawn_scene(
                         time: 0.0,
                     }),
                 },
-                transform: Transform::from_translation(position.as_vec3(1.0)),
+                transform: Transform::from_translation(coord_to_vec3(position, 1.0)),
                 ..default()
             })
             .insert(Zone { position, terrain })
@@ -245,7 +246,9 @@ fn spawn_scene(
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
             material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
-            transform: Transform::from_translation(HexCoord::new(2, 6).as_vec3(1.0) + offset),
+            transform: Transform::from_translation(
+                coord_to_vec3(HexCoord::new(2, 6), 1.0) + offset,
+            ),
             ..default()
         })
         .insert(HexPositioned {

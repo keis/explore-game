@@ -1,49 +1,19 @@
 use bevy::{prelude::*, render::mesh::Indices, render::mesh::PrimitiveTopology};
 pub const HEX_RADIUS_RATIO: f32 = 0.866025404;
 
+use crate::map::HexCoord;
+
 pub struct Hexagon {
     pub radius: f32,
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
-pub struct HexCoord {
-    pub q: isize,
-    pub r: isize,
-}
-
-impl HexCoord {
-    pub fn new(q: isize, r: isize) -> Self {
-        HexCoord { q, r }
-    }
-
-    pub fn as_vec3(&self, radius: f32) -> Vec3 {
-        let (outer, inner) = (radius, radius * HEX_RADIUS_RATIO);
-        Vec3::new(
-            self.r as f32 * outer * 1.5,
-            0.0,
-            ((self.q as f32) + 0.5 * self.r as f32) * inner * 2.0,
-        )
-    }
-
-    pub fn distance(&self, other: &Self) -> usize {
-        let diff = HexCoord{ q: self.q - other.q, r: self.r - other.r};
-        return (diff.q.unsigned_abs() + (diff.q + diff.r).unsigned_abs() + diff.r.unsigned_abs()) / 2;
-    }
-
-    pub fn neighbours(&self) -> Vec<Self> {
-        vec![
-            Self::new(self.q + 1, self.r),
-            Self::new(self.q, self.r + 1),
-            Self::new(self.q - 1, self.r + 1),
-            Self::new(self.q - 1, self.r),
-            Self::new(self.q, self.r - 1),
-            Self::new(self.q + 1, self.r - 1),
-        ]
-    }
-
-    pub fn successors(&self) -> Vec<(Self, u32)> {
-        self.neighbours().into_iter().map(|p| (p, 1)).collect()
-    }
+pub fn coord_to_vec3(coord: HexCoord, radius: f32) -> Vec3 {
+    let (outer, inner) = (radius, radius * HEX_RADIUS_RATIO);
+    Vec3::new(
+        coord.r as f32 * outer * 1.5,
+        0.0,
+        ((coord.q as f32) + 0.5 * coord.r as f32) * inner * 2.0,
+    )
 }
 
 impl From<Hexagon> for Mesh {
@@ -89,46 +59,31 @@ impl From<Hexagon> for Mesh {
         mesh
     }
 }
-
 #[cfg(test)]
 mod tests {
-    use crate::hex::{HexCoord, HEX_RADIUS_RATIO};
+    use crate::hex::{coord_to_vec3, HEX_RADIUS_RATIO};
+    use crate::map::HexCoord;
     use bevy::prelude::*;
 
     #[test]
     fn coord_as_vec3() {
         let radius = 1.0;
-        assert_eq!(HexCoord::new(0, 0).as_vec3(radius), Vec3::ZERO);
+        assert_eq!(coord_to_vec3(HexCoord::new(0, 0), radius), Vec3::ZERO);
         assert_eq!(
-            HexCoord::new(1, 0).as_vec3(radius),
+            coord_to_vec3(HexCoord::new(1, 0), radius),
             Vec3::new(0.0, 0.0, 2.0 * HEX_RADIUS_RATIO)
         );
         assert_eq!(
-            HexCoord::new(2, 0).as_vec3(radius),
+            coord_to_vec3(HexCoord::new(2, 0), radius),
             Vec3::new(0.0, 0.0, 4.0 * HEX_RADIUS_RATIO)
         );
         assert_eq!(
-            HexCoord::new(0, 1).as_vec3(radius),
+            coord_to_vec3(HexCoord::new(0, 1), radius),
             Vec3::new(1.5, 0.0, HEX_RADIUS_RATIO)
         );
         assert_eq!(
-            HexCoord::new(1, 1).as_vec3(radius),
+            coord_to_vec3(HexCoord::new(1, 1), radius),
             Vec3::new(1.5, 0.0, 3.0 * HEX_RADIUS_RATIO)
         );
-    }
-
-    #[test]
-    fn distance_to_neighbours() {
-        let origin = HexCoord::new(0, 0);
-        for neighbour in origin.neighbours() {
-            assert_eq!(origin.distance(&neighbour), 1);
-        }
-    }
-
-    #[test]
-    fn long_distance() {
-        let origin = HexCoord::new(0, 0);
-        let dest = HexCoord::new(4, -2);
-        assert_eq!(origin.distance(&dest), 4);
     }
 }
