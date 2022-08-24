@@ -23,7 +23,7 @@ mod hex;
 mod map;
 mod zone;
 
-use camera::{CameraControl, CameraControlPlugin};
+use camera::{CameraBounds, CameraControl, CameraControlPlugin};
 use fog::Fog;
 use hex::{HexCoord, Hexagon};
 use map::{find_path, Map, MapComponent, MapLayout};
@@ -266,10 +266,18 @@ pub fn handle_picking_events(
 fn spawn_camera(mut commands: Commands) {
     commands
         .spawn_bundle(Camera3dBundle {
-            transform: Transform::from_xyz(-20.0, 20.0, 2.0).looking_at(Vec3::ZERO, Vec3::Y),
+            transform: Transform::from_xyz(-10.0, 20.0, 20.0)
+                .with_rotation(Quat::from_axis_angle(Vec3::new(-0.4, -0.8, -0.4), 1.6)),
             ..default()
         })
-        .insert(CameraControl::default())
+        .insert(CameraControl {
+            bounds: CameraBounds {
+                position: Vec3::new(-10.0, 5.0, 0.0),
+                extent: Vec3::new(15.0, 25.0, 40.0),
+                gap: 1.0,
+            },
+            ..default()
+        })
         .insert_bundle(PickingCameraBundle::default());
 }
 
