@@ -1,4 +1,6 @@
-use bevy::{prelude::*, render::texture::ImageSettings, window::PresentMode};
+use bevy::{
+    asset::AssetServerSettings, prelude::*, render::texture::ImageSettings, window::PresentMode,
+};
 use bevy_mod_picking::{
     DefaultPickingPlugins, HoverEvent, PickableBundle, PickingCameraBundle, PickingEvent,
 };
@@ -36,6 +38,10 @@ fn main() {
             title: "Explore Game".to_string(),
             present_mode: PresentMode::Fifo,
             resizable: false,
+            ..default()
+        })
+        .insert_resource(AssetServerSettings {
+            watch_for_changes: true,
             ..default()
         })
         .add_startup_system(spawn_scene)
