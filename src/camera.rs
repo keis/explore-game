@@ -1,13 +1,11 @@
-use bevy::{
-    input::mouse::{MouseMotion, MouseWheel},
-    prelude::*,
-};
+use crate::input::{Action, ActionState};
+use bevy::prelude::*;
 
 pub struct CameraControlPlugin;
 
 impl Plugin for CameraControlPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(camera_control);
+        app.add_system(camera_control).add_system(cursor_grab);
     }
 }
 
@@ -36,61 +34,60 @@ impl Default for CameraControl {
             },
             velocity: Vec3::ZERO,
             acceleration: 80.0,
-            mouse_sensitivity: 0.002,
+            mouse_sensitivity: 0.02,
         }
     }
 }
 
 pub fn camera_control(
     time: Res<Time>,
-    keyboard_input: Res<Input<KeyCode>>,
-    mouse_input: Res<Input<MouseButton>>,
-    mut mouse_motion_events: EventReader<MouseMotion>,
-    mut mouse_wheel_events: EventReader<MouseWheel>,
     mut camera_query: Query<(&mut Transform, &mut CameraControl)>,
+    action_state_query: Query<&ActionState<Action>>,
 ) {
     let (mut transform, mut control) = camera_query.single_mut();
+    let action_state = action_state_query.single();
     let acceleration = control.acceleration;
     let mut delta = Vec3::ZERO;
 
-    if keyboard_input.pressed(KeyCode::Up)
+    if action_state.pressed(Action::PanCameraUp)
         && transform.translation.x
             <= control.bounds.position.x + control.bounds.extent.x - control.bounds.gap
     {
         delta += Vec3::X;
     }
 
-    if keyboard_input.pressed(KeyCode::Down)
+    if action_state.pressed(Action::PanCameraDown)
         && transform.translation.x >= control.bounds.position.x + control.bounds.gap
     {
         delta -= Vec3::X;
     }
 
-    if keyboard_input.pressed(KeyCode::Left)
+    if action_state.pressed(Action::PanCameraLeft)
         && transform.translation.z >= control.bounds.position.z + control.bounds.gap
     {
         delta -= Vec3::Z;
     }
 
-    if keyboard_input.pressed(KeyCode::Right)
+    if action_state.pressed(Action::PanCameraRight)
         && transform.translation.z
             <= control.bounds.position.z + control.bounds.extent.z - control.bounds.gap
     {
         delta += Vec3::Z;
     }
 
-    let mut scroll: f32 = 0.0;
-    for event in mouse_wheel_events.iter() {
-        scroll += event.y;
-    }
+    let zoom = action_state.value(Action::ZoomCamera);
 
-    if (scroll > 0.0
+    if (zoom > 0.0
         && transform.translation.y
             <= control.bounds.position.y + control.bounds.extent.y - control.bounds.gap)
-        || (scroll < 0.0
-            && transform.translation.y >= control.bounds.position.y + control.bounds.gap)
+        || (zoom < 0.0 && transform.translation.y >= control.bounds.position.y + control.bounds.gap)
     {
-        delta += Vec3::Y * scroll;
+        delta += Vec3::Y * zoom;
+    }
+
+    if action_state.pressed(Action::PanCamera) {
+        let camera_pan = action_state.axis_pair(Action::PanCameraMotion).unwrap();
+        delta += Vec3::new(camera_pan.y(), 0.0, -camera_pan.x()) * control.mouse_sensitivity;
     }
 
     if transform.translation.x < control.bounds.position.x {
@@ -120,52 +117,43 @@ pub fn camera_control(
     control.velocity += delta.normalize_or_zero() * time.delta_seconds() * acceleration;
     transform.translation += control.velocity * time.delta_seconds();
     control.velocity *= 1.0 - 4.0 * time.delta_seconds();
+}
 
-    let mut rotation_move = Vec2::ZERO;
-    for event in mouse_motion_events.iter() {
-        if mouse_input.pressed(MouseButton::Right) {
-            rotation_move += event.delta;
+pub fn cursor_grab(mut windows: ResMut<Windows>, action_state_query: Query<&ActionState<Action>>) {
+    let action_state = action_state_query.single();
+    if let Some(window) = windows.get_primary_mut() {
+        if action_state.just_pressed(Action::PanCamera) {
+            window.set_cursor_lock_mode(true);
+            window.set_cursor_visibility(false);
         }
-    }
 
-    if rotation_move.length_squared() > 0.0 {
-        let yaw = Quat::from_rotation_y(-rotation_move.x * control.mouse_sensitivity);
-        let pitch = Quat::from_rotation_x(-rotation_move.y * control.mouse_sensitivity);
-        transform.rotation = yaw * transform.rotation;
-        transform.rotation = transform.rotation * pitch;
+        if action_state.just_released(Action::PanCamera) {
+            window.set_cursor_lock_mode(false);
+            window.set_cursor_visibility(true);
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{CameraControl, CameraControlPlugin};
-    use bevy::{
-        input::mouse::{MouseMotion, MouseWheel},
-        prelude::*,
-        time::Time,
-        utils::Duration,
-    };
+    use crate::camera::{camera_control, CameraControl};
+    use crate::input::Action;
+    use bevy::{prelude::*, time::Time, utils::Duration};
+    use leafwing_input_manager::prelude::ActionState;
 
     fn init_bare_app() -> App {
         let mut app = App::new();
-        app.add_plugin(CameraControlPlugin);
+        app.add_system(camera_control);
 
         let mut time = Time::default();
         time.update();
         app.insert_resource(time);
 
-        let keyboard_input = Input::<KeyCode>::default();
-        app.insert_resource(keyboard_input);
-
-        let mouse_input = Input::<MouseButton>::default();
-        app.insert_resource(mouse_input);
-
-        app.add_event::<MouseMotion>();
-        app.add_event::<MouseWheel>();
-
         let mut time = app.world.resource_mut::<Time>();
         let last_update = time.last_update().unwrap();
         time.update_with_instant(last_update + Duration::from_millis(10));
+
+        app.world.spawn().insert(ActionState::<Action>::default());
 
         app
     }
@@ -211,8 +199,11 @@ mod tests {
             .insert(CameraControl::default())
             .id();
 
-        let mut keyboard_input = app.world.resource_mut::<Input<KeyCode>>();
-        keyboard_input.press(KeyCode::Up);
+        let mut action_state = app
+            .world
+            .query::<&mut ActionState<Action>>()
+            .single_mut(&mut app.world);
+        action_state.press(Action::PanCameraUp);
 
         app.update();
 
@@ -234,8 +225,11 @@ mod tests {
             .insert(CameraControl::default())
             .id();
 
-        let mut keyboard_input = app.world.resource_mut::<Input<KeyCode>>();
-        keyboard_input.press(KeyCode::Up);
+        let mut action_state = app
+            .world
+            .query::<&mut ActionState<Action>>()
+            .single_mut(&mut app.world);
+        action_state.press(Action::PanCameraUp);
 
         app.update();
 

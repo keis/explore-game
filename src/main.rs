@@ -10,6 +10,7 @@ mod camera;
 mod fog;
 mod hex;
 mod indicator;
+mod input;
 mod map;
 mod zone;
 mod zone_material;
@@ -18,6 +19,7 @@ use camera::{CameraBounds, CameraControl, CameraControlPlugin};
 use fog::Fog;
 use hex::{coord_to_vec3, Hexagon};
 use indicator::{update_indicator, Indicator};
+use input::InputPlugin;
 use map::{
     events::Entered, find_path, HexCoord, Map, MapComponent, MapLayout, MapPlugin, MapPresence,
     PathGuided,
@@ -56,6 +58,7 @@ fn main() {
         .add_system_to_stage(CoreStage::PostUpdate, handle_picking_events)
         .add_plugins(DefaultPlugins)
         .add_plugins(DefaultPickingPlugins)
+        .add_plugin(InputPlugin)
         .add_plugin(CameraControlPlugin)
         .add_plugin(ZoneMaterialPlugin)
         .add_plugin(bevy_stl::StlPlugin)
