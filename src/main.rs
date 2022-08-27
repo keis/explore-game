@@ -2,10 +2,9 @@ use bevy::{
     asset::AssetServerSettings, prelude::*, render::texture::ImageSettings, window::PresentMode,
 };
 use bevy_mod_picking::{
-    DefaultPickingPlugins, HoverEvent, PickableBundle, PickingCameraBundle, PickingEvent,
+    DefaultPickingPlugins, HoverEvent, PickableBundle, PickingCameraBundle, PickingEvent, Selection,
 };
 use rand::Rng;
-use std::collections::VecDeque;
 
 mod camera;
 mod fog;
@@ -19,7 +18,10 @@ use camera::{CameraBounds, CameraControl, CameraControlPlugin};
 use fog::Fog;
 use hex::{coord_to_vec3, Hexagon};
 use indicator::{update_indicator, Indicator};
-use map::{find_path, HexCoord, Map, MapComponent, MapLayout};
+use map::{
+    events::Entered, find_path, HexCoord, Map, MapComponent, MapLayout, MapPlugin, MapPresence,
+    PathGuided,
+};
 use zone::{Terrain, Zone};
 use zone_material::{ZoneMaterial, ZoneMaterialPlugin};
 
@@ -49,103 +51,33 @@ fn main() {
         .add_startup_system(spawn_scene)
         .add_startup_system(spawn_interface)
         .add_startup_system(spawn_camera)
-        .add_system(move_map_walker)
         .add_system(log_moves)
         .add_system(update_indicator)
         .add_system_to_stage(CoreStage::PostUpdate, handle_picking_events)
-        .add_system_to_stage(CoreStage::PostUpdate, update_visibility)
         .add_plugins(DefaultPlugins)
         .add_plugins(DefaultPickingPlugins)
         .add_plugin(CameraControlPlugin)
         .add_plugin(ZoneMaterialPlugin)
         .add_plugin(bevy_stl::StlPlugin)
-        .add_event::<HexEntered>();
+        .add_plugin(MapPlugin);
 
     app.run();
 }
 
 #[derive(Component)]
-pub struct HexPositioned {
-    pub position: HexCoord,
-    pub radius: f32,
-    pub offset: Vec3,
-}
-
-#[derive(Component)]
-pub struct MapWalker {
-    pub progress: f32,
-    pub path: VecDeque<HexCoord>,
-}
-
-#[derive(Component)]
 pub struct ZoneText;
 
-fn log_moves(mut hex_entered_event: EventReader<HexEntered>) {
-    for event in hex_entered_event.iter() {
+fn log_moves(mut entered_event: EventReader<Entered>) {
+    for event in entered_event.iter() {
         info!("{:?} moved to {:?}", event.entity, event.coordinate);
     }
-}
-
-fn update_visibility(
-    mut hex_entered_event: EventReader<HexEntered>,
-    positioned_query: Query<&HexPositioned>,
-    mut zone_query: Query<(&Zone, &mut Fog)>,
-) {
-    let mut moved = false;
-    for _event in hex_entered_event.iter() {
-        moved = true;
-    }
-
-    if moved {
-        let positioned = positioned_query
-            .get_single()
-            .expect("has positioned entity");
-        for (zone, mut fog) in zone_query.iter_mut() {
-            fog.visible = zone.position.distance(&positioned.position) <= VIEW_RADIUS;
-            fog.explored = fog.explored || fog.visible;
-        }
-    }
-}
-
-pub fn move_map_walker(
-    time: Res<Time>,
-    mut positioned_query: Query<(Entity, &mut MapWalker, &mut HexPositioned, &mut Transform)>,
-    mut hex_entered_event: EventWriter<HexEntered>,
-) {
-    let (entity, mut mapwalker, mut positioned, mut transform) = positioned_query.single_mut();
-
-    if mapwalker.path.len() == 0 {
-        return;
-    }
-
-    mapwalker.progress += time.delta_seconds();
-    if mapwalker.progress >= 1.0 {
-        positioned.position = mapwalker.path.pop_front().expect("path has element");
-        hex_entered_event.send(HexEntered {
-            entity,
-            coordinate: positioned.position,
-        });
-        mapwalker.progress = 0.0;
-    }
-
-    if let Some(next) = mapwalker.path.front() {
-        let orig_translation =
-            coord_to_vec3(positioned.position, positioned.radius) + positioned.offset;
-        let new_translation = coord_to_vec3(*next, positioned.radius) + positioned.offset;
-        transform.translation = orig_translation.lerp(new_translation, mapwalker.progress);
-    }
-}
-
-pub struct HexEntered {
-    entity: Entity,
-    coordinate: HexCoord,
 }
 
 pub fn handle_picking_events(
     mut events: EventReader<PickingEvent>,
     zone_query: Query<&Zone>,
     map_query: Query<&MapComponent>,
-    mut positioned_query: Query<(&mut MapWalker, &HexPositioned)>,
+    mut positioned_query: Query<(&Selection, &mut PathGuided, &MapPresence)>,
     mut zone_text_query: Query<&mut Text, With<ZoneText>>,
 ) {
     let map = &map_query.get_single().expect("has exactly one map").map;
@@ -154,19 +86,24 @@ pub fn handle_picking_events(
             PickingEvent::Clicked(e) => {
                 if let Ok(zone) = zone_query.get(*e) {
                     info!("Clicked a zone: {:?}", zone);
-                    let (mut mapwalker, positioned) = positioned_query.single_mut();
-                    if let Some((path, _length)) =
-                        find_path(positioned.position, zone.position, &|c: &HexCoord| {
-                            if let Some(entity) = map.get(*c) {
-                                if let Ok(zone) = zone_query.get(entity) {
-                                    return zone.terrain != Terrain::Lava;
+                    for (selection, mut pathguided, positioned) in positioned_query.iter_mut() {
+                        if !selection.selected() {
+                            continue;
+                        }
+
+                        if let Some((path, _length)) =
+                            find_path(positioned.position, zone.position, &|c: &HexCoord| {
+                                if let Some(entity) = map.get(*c) {
+                                    if let Ok(zone) = zone_query.get(entity) {
+                                        return zone.terrain != Terrain::Lava;
+                                    }
                                 }
-                            }
-                            false
-                        })
-                    {
-                        mapwalker.path = VecDeque::from(path);
-                        mapwalker.path.pop_front();
+                                false
+                            })
+                        {
+                            pathguided.path(path);
+                        }
+                        break;
                     }
                 }
             }
@@ -176,6 +113,9 @@ pub fn handle_picking_events(
                         text.sections[0].value = format!("{:?}", zone.position);
                     }
                 }
+            }
+            PickingEvent::Selection(e) => {
+                info!("Selection event {:?}", e);
             }
             _ => {}
         }
@@ -244,14 +184,20 @@ fn spawn_scene(
             })
             .insert(Zone { position, terrain })
             .insert(Fog {
-                visible: position.distance(&cubecoord) <= VIEW_RADIUS,
-                explored: position.distance(&cubecoord) <= VIEW_RADIUS + 2,
+                visible: false,
+                explored: false,
             })
-            .insert_bundle(PickableBundle::default())
+            .insert(bevy_mod_picking::PickableMesh::default())
+            .insert(bevy_mod_picking::Hover::default())
+            .insert(bevy_mod_picking::NoDeselect)
+            .insert(Interaction::default())
             .id();
         map.set(position, Some(entity));
     }
-    commands.spawn().insert(MapComponent { map });
+    let map = commands
+        .spawn()
+        .insert(MapComponent { map, radius: 1.0 })
+        .id();
     commands
         .spawn_bundle(PbrBundle {
             mesh: asset_server.load("models/indicator.stl"),
@@ -259,16 +205,33 @@ fn spawn_scene(
             transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
             ..default()
         })
+        .insert_bundle(PickableBundle::default())
         .insert(Indicator)
-        .insert(HexPositioned {
+        .insert(MapPresence {
+            map,
             position: cubecoord,
-            radius: 1.0,
             offset,
+            view_radius: VIEW_RADIUS,
         })
-        .insert(MapWalker {
-            progress: 0.0,
-            path: VecDeque::new(),
-        });
+        .insert(PathGuided::default());
+
+    let cubecoord = HexCoord::new(4, 5);
+    commands
+        .spawn_bundle(PbrBundle {
+            mesh: asset_server.load("models/indicator.stl"),
+            material: standard_materials.add(Color::rgb(0.596, 0.165, 0.0631).into()),
+            transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
+            ..default()
+        })
+        .insert_bundle(PickableBundle::default())
+        .insert(Indicator)
+        .insert(MapPresence {
+            map,
+            position: cubecoord,
+            offset,
+            view_radius: VIEW_RADIUS,
+        })
+        .insert(PathGuided::default());
 
     commands.spawn_bundle(DirectionalLightBundle {
         directional_light: DirectionalLight {

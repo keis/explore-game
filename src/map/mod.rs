@@ -1,11 +1,16 @@
-use bevy::prelude::*;
+use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use pathfinding::prelude::astar;
 
+pub mod events;
 mod hexcoord;
 mod layout;
+mod pathguided;
+mod presence;
 
 pub use hexcoord::HexCoord;
 pub use layout::{MapLayout, MapLayoutIterator};
+pub use pathguided::PathGuided;
+pub use presence::MapPresence;
 
 pub struct Map {
     tiles: Vec<Option<Entity>>,
@@ -36,6 +41,39 @@ impl Map {
 #[derive(Component)]
 pub struct MapComponent {
     pub map: Map,
+    pub radius: f32,
+}
+
+pub struct Damaged(bool);
+
+fn run_if_damaged(damaged: Res<Damaged>) -> ShouldRun {
+    if damaged.0 {
+        return ShouldRun::Yes;
+    } else {
+        return ShouldRun::No;
+    }
+}
+
+fn damage(mut entered_event: EventReader<events::Entered>, mut damaged: ResMut<Damaged>) {
+    for _event in entered_event.iter() {
+        damaged.0 = true;
+    }
+}
+
+pub struct MapPlugin;
+
+impl Plugin for MapPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(Damaged(true))
+            .add_system(pathguided::progress_path_guided)
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(run_if_damaged)
+                    .with_system(presence::update_visibility),
+            )
+            .add_system_to_stage(CoreStage::PostUpdate, damage)
+            .add_event::<events::Entered>();
+    }
 }
 
 pub fn find_path(

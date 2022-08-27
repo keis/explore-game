@@ -1,0 +1,57 @@
+use super::{events::Entered, HexCoord, MapComponent, MapPresence};
+use crate::hex::coord_to_vec3;
+use bevy::prelude::*;
+use std::collections::VecDeque;
+
+#[derive(Component)]
+pub struct PathGuided {
+    progress: f32,
+    path: VecDeque<HexCoord>,
+}
+
+impl PathGuided {
+    pub fn path(&mut self, path: Vec<HexCoord>) {
+        self.path = VecDeque::from(path);
+        self.path.pop_front();
+    }
+}
+
+impl Default for PathGuided {
+    fn default() -> Self {
+        PathGuided {
+            progress: 0.0,
+            path: VecDeque::new(),
+        }
+    }
+}
+
+pub fn progress_path_guided(
+    time: Res<Time>,
+    map_query: Query<&MapComponent>,
+    mut positioned_query: Query<(Entity, &mut PathGuided, &mut MapPresence, &mut Transform)>,
+    mut hex_entered_event: EventWriter<Entered>,
+) {
+    for (entity, mut pathguided, mut positioned, mut transform) in positioned_query.iter_mut() {
+        if pathguided.path.len() == 0 {
+            continue;
+        }
+
+        pathguided.progress += time.delta_seconds();
+        if pathguided.progress >= 1.0 {
+            positioned.position = pathguided.path.pop_front().expect("path has element");
+            hex_entered_event.send(Entered {
+                entity,
+                coordinate: positioned.position,
+            });
+            pathguided.progress = 0.0;
+        }
+
+        let map = map_query.get(positioned.map).expect("references valid map");
+        if let Some(next) = pathguided.path.front() {
+            let orig_translation =
+                coord_to_vec3(positioned.position, map.radius) + positioned.offset;
+            let new_translation = coord_to_vec3(*next, map.radius) + positioned.offset;
+            transform.translation = orig_translation.lerp(new_translation, pathguided.progress);
+        }
+    }
+}
