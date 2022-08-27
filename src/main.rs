@@ -10,6 +10,7 @@ use std::collections::VecDeque;
 mod camera;
 mod fog;
 mod hex;
+mod indicator;
 mod map;
 mod zone;
 mod zone_material;
@@ -17,6 +18,7 @@ mod zone_material;
 use camera::{CameraBounds, CameraControl, CameraControlPlugin};
 use fog::Fog;
 use hex::{coord_to_vec3, Hexagon};
+use indicator::{update_indicator, Indicator};
 use map::{find_path, HexCoord, Map, MapComponent, MapLayout};
 use zone::{Terrain, Zone};
 use zone_material::{ZoneMaterial, ZoneMaterialPlugin};
@@ -49,12 +51,14 @@ fn main() {
         .add_startup_system(spawn_camera)
         .add_system(move_map_walker)
         .add_system(log_moves)
+        .add_system(update_indicator)
         .add_system_to_stage(CoreStage::PostUpdate, handle_picking_events)
         .add_system_to_stage(CoreStage::PostUpdate, update_visibility)
         .add_plugins(DefaultPlugins)
         .add_plugins(DefaultPickingPlugins)
         .add_plugin(CameraControlPlugin)
         .add_plugin(ZoneMaterialPlugin)
+        .add_plugin(bevy_stl::StlPlugin)
         .add_event::<HexEntered>();
 
     app.run();
@@ -250,13 +254,12 @@ fn spawn_scene(
     commands.spawn().insert(MapComponent { map });
     commands
         .spawn_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+            mesh: asset_server.load("models/indicator.stl"),
             material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
-            transform: Transform::from_translation(
-                coord_to_vec3(HexCoord::new(2, 6), 1.0) + offset,
-            ),
+            transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
             ..default()
         })
+        .insert(Indicator)
         .insert(HexPositioned {
             position: cubecoord,
             radius: 1.0,
@@ -267,13 +270,11 @@ fn spawn_scene(
             path: VecDeque::new(),
         });
 
-    commands.spawn_bundle(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
+    commands.spawn_bundle(DirectionalLightBundle {
+        directional_light: DirectionalLight {
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(10.0, 8.0, 4.0),
         ..default()
     });
 }

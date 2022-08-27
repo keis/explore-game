@@ -12,5 +12,6 @@ opt-level = 3
 [dependencies]
 bevy = { version = "0.8", features = ["dynamic", "wayland"] }
 bevy_mod_picking = "0.8"
+bevy_stl = "0.6.0"
 rand = "0.8.5"
 pathfinding = "3.0.13"
