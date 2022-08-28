@@ -185,7 +185,7 @@ mod tests {
         }
 
         let cameracontrol = app.world.get::<CameraControl>(camera_id).unwrap();
-        assert!(cameracontrol.velocity.length() < 1e-10);
+        assert!(cameracontrol.velocity.abs_diff_eq(Vec3::ZERO, 0.01));
     }
 
     #[test]
@@ -208,10 +208,9 @@ mod tests {
         app.update();
 
         let cameracontrol = app.world.get::<CameraControl>(camera_id).unwrap();
-        assert!(cameracontrol.velocity.length() > 0.0);
-        assert!(cameracontrol.velocity.length() < 1.0);
-        // FIXME: Figure out why double normalize() is required
-        assert_eq!(cameracontrol.velocity.normalize().normalize(), Vec3::X);
+        assert!(cameracontrol
+            .velocity
+            .abs_diff_eq(Vec3::new(0.76, 0.0, 0.0), 0.01));
     }
 
     #[test]
@@ -251,8 +250,8 @@ mod tests {
         app.update();
 
         let cameracontrol = app.world.get::<CameraControl>(camera_id).unwrap();
-        assert!(cameracontrol.velocity.length() > 0.0);
-        assert!(cameracontrol.velocity.length() < 1.0);
-        assert_eq!(cameracontrol.velocity.normalize().normalize(), Vec3::X);
+        assert!(cameracontrol
+            .velocity
+            .abs_diff_eq(Vec3::new(0.76, 0.0, 0.0), 0.01));
     }
 }
