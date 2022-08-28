@@ -14,8 +14,7 @@ impl HexCoord {
             q: self.q - other.q,
             r: self.r - other.r,
         };
-        return (diff.q.unsigned_abs() + (diff.q + diff.r).unsigned_abs() + diff.r.unsigned_abs())
-            / 2;
+        (diff.q.unsigned_abs() + (diff.q + diff.r).unsigned_abs() + diff.r.unsigned_abs()) / 2
     }
 
     pub fn neighbours(&self) -> Vec<Self> {

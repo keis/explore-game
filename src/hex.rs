@@ -1,5 +1,5 @@
 use bevy::{prelude::*, render::mesh::Indices, render::mesh::PrimitiveTopology};
-pub const HEX_RADIUS_RATIO: f32 = 0.866025404;
+pub const HEX_RADIUS_RATIO: f32 = 0.866_025_4;
 
 use crate::map::HexCoord;
 

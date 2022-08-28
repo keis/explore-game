@@ -43,7 +43,7 @@ pub fn progress_path_guided(
     mut hex_entered_event: EventWriter<Entered>,
 ) {
     for (entity, mut pathguided, mut positioned, mut transform) in positioned_query.iter_mut() {
-        if pathguided.path.len() == 0 || pathguided.movement_points == 0 {
+        if pathguided.path.is_empty() || pathguided.movement_points == 0 {
             continue;
         }
 

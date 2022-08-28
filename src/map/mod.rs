@@ -48,9 +48,9 @@ pub struct Damaged(bool);
 
 fn run_if_damaged(damaged: Res<Damaged>) -> ShouldRun {
     if damaged.0 {
-        return ShouldRun::Yes;
+        ShouldRun::Yes
     } else {
-        return ShouldRun::No;
+        ShouldRun::No
     }
 }
 

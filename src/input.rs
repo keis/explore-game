@@ -1,3 +1,5 @@
+#![allow(clippy::type_complexity)]
+
 use crate::interface::ZoneText;
 use crate::map::{MapPresence, PathGuided};
 use crate::GameAction;
