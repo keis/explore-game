@@ -12,6 +12,7 @@ mod indicator;
 mod input;
 mod interface;
 mod map;
+mod party;
 mod zone;
 mod zone_material;
 
@@ -25,6 +26,7 @@ use interface::InterfacePlugin;
 use map::{
     events::Entered, HexCoord, Map, MapComponent, MapLayout, MapPlugin, MapPresence, PathGuided,
 };
+use party::Party;
 use zone::{Terrain, Zone};
 use zone_material::{ZoneMaterial, ZoneMaterialPlugin};
 
@@ -159,6 +161,9 @@ fn spawn_scene(
         })
         .insert_bundle(PickableBundle::default())
         .insert(Indicator)
+        .insert(Party {
+            name: String::from("Alpha Group"),
+        })
         .insert(MapPresence {
             map,
             position: cubecoord,
@@ -177,6 +182,9 @@ fn spawn_scene(
         })
         .insert_bundle(PickableBundle::default())
         .insert(Indicator)
+        .insert(Party {
+            name: String::from("Beta Group"),
+        })
         .insert(MapPresence {
             map,
             position: cubecoord,

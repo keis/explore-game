@@ -1,7 +1,7 @@
+use crate::interface::ZoneText;
 use crate::map::{MapPresence, PathGuided};
 use crate::GameAction;
 use crate::Zone;
-use crate::interface::ZoneText;
 use bevy::prelude::*;
 use bevy_mod_picking::{DefaultPickingPlugins, HoverEvent, PickingEvent, Selection};
 pub use leafwing_input_manager::prelude::*;
@@ -25,6 +25,7 @@ pub enum Action {
     PanCameraLeft,
     PanCameraRight,
     ZoomCamera,
+    MultiSelect,
 }
 
 fn spawn_input_manager(mut commands: Commands) {
@@ -35,6 +36,7 @@ fn spawn_input_manager(mut commands: Commands) {
             .insert(KeyCode::Down, Action::PanCameraDown)
             .insert(KeyCode::Left, Action::PanCameraLeft)
             .insert(KeyCode::Right, Action::PanCameraRight)
+            .insert(KeyCode::LControl, Action::MultiSelect)
             .insert(SingleAxis::mouse_wheel_y(), Action::ZoomCamera)
             .insert(MouseButton::Right, Action::PanCamera)
             .insert(DualAxis::mouse_motion(), Action::PanCameraMotion)
@@ -57,6 +59,8 @@ pub fn handle_picking_events(
                     for (entity, _) in presence_query.iter().filter(|(_, s)| s.selected()) {
                         game_action_event.send(GameAction::MoveTo(entity, zone.position));
                     }
+                } else {
+                    info!("Clicked something: {:?}", e);
                 }
             }
             PickingEvent::Hover(HoverEvent::JustEntered(e)) => {
