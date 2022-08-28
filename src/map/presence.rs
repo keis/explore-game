@@ -3,7 +3,7 @@ use crate::Fog;
 use crate::Zone;
 use bevy::prelude::*;
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct MapPresence {
     pub map: Entity,
     pub position: HexCoord,

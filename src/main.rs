@@ -1,11 +1,10 @@
 use bevy::{
     asset::AssetServerSettings, prelude::*, render::texture::ImageSettings, window::PresentMode,
 };
-use bevy_mod_picking::{
-    DefaultPickingPlugins, HoverEvent, PickableBundle, PickingCameraBundle, PickingEvent, Selection,
-};
+use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
 use rand::Rng;
 
+mod action;
 mod camera;
 mod fog;
 mod hex;
@@ -15,14 +14,14 @@ mod map;
 mod zone;
 mod zone_material;
 
+use action::{handle_move_to, GameAction};
 use camera::{CameraBounds, CameraControl, CameraControlPlugin};
 use fog::Fog;
 use hex::{coord_to_vec3, Hexagon};
 use indicator::{update_indicator, Indicator};
 use input::InputPlugin;
 use map::{
-    events::Entered, find_path, HexCoord, Map, MapComponent, MapLayout, MapPlugin, MapPresence,
-    PathGuided,
+    events::Entered, HexCoord, Map, MapComponent, MapLayout, MapPlugin, MapPresence, PathGuided,
 };
 use zone::{Terrain, Zone};
 use zone_material::{ZoneMaterial, ZoneMaterialPlugin};
@@ -53,11 +52,11 @@ fn main() {
         .add_startup_system(spawn_scene)
         .add_startup_system(spawn_interface)
         .add_startup_system(spawn_camera)
+        .add_event::<GameAction>()
         .add_system(log_moves)
+        .add_system(handle_move_to)
         .add_system(update_indicator)
-        .add_system_to_stage(CoreStage::PostUpdate, handle_picking_events)
         .add_plugins(DefaultPlugins)
-        .add_plugins(DefaultPickingPlugins)
         .add_plugin(InputPlugin)
         .add_plugin(CameraControlPlugin)
         .add_plugin(ZoneMaterialPlugin)
@@ -73,55 +72,6 @@ pub struct ZoneText;
 fn log_moves(mut entered_event: EventReader<Entered>) {
     for event in entered_event.iter() {
         info!("{:?} moved to {:?}", event.entity, event.coordinate);
-    }
-}
-
-pub fn handle_picking_events(
-    mut events: EventReader<PickingEvent>,
-    zone_query: Query<&Zone>,
-    map_query: Query<&MapComponent>,
-    mut positioned_query: Query<(&Selection, &mut PathGuided, &MapPresence)>,
-    mut zone_text_query: Query<&mut Text, With<ZoneText>>,
-) {
-    let map = &map_query.get_single().expect("has exactly one map").map;
-    for event in events.iter() {
-        match event {
-            PickingEvent::Clicked(e) => {
-                if let Ok(zone) = zone_query.get(*e) {
-                    info!("Clicked a zone: {:?}", zone);
-                    for (selection, mut pathguided, positioned) in positioned_query.iter_mut() {
-                        if !selection.selected() {
-                            continue;
-                        }
-
-                        if let Some((path, _length)) =
-                            find_path(positioned.position, zone.position, &|c: &HexCoord| {
-                                if let Some(entity) = map.get(*c) {
-                                    if let Ok(zone) = zone_query.get(entity) {
-                                        return zone.terrain != Terrain::Lava;
-                                    }
-                                }
-                                false
-                            })
-                        {
-                            pathguided.path(path);
-                        }
-                        break;
-                    }
-                }
-            }
-            PickingEvent::Hover(HoverEvent::JustEntered(e)) => {
-                if let Ok(zone) = zone_query.get(*e) {
-                    for mut text in &mut zone_text_query {
-                        text.sections[0].value = format!("{:?}", zone.position);
-                    }
-                }
-            }
-            PickingEvent::Selection(e) => {
-                info!("Selection event {:?}", e);
-            }
-            _ => {}
-        }
     }
 }
 

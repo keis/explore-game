@@ -28,10 +28,6 @@ impl HexCoord {
             Self::new(self.q + 1, self.r - 1),
         ]
     }
-
-    pub fn successors(&self) -> Vec<(Self, u32)> {
-        self.neighbours().into_iter().map(|p| (p, 1)).collect()
-    }
 }
 
 #[cfg(test)]

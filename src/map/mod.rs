@@ -97,7 +97,7 @@ pub fn find_path(
 
 #[cfg(test)]
 mod tests {
-    use crate::{find_path, HexCoord};
+    use super::{find_path, HexCoord};
 
     #[test]
     fn pathfinding_neighbour() {
