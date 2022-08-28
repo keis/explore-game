@@ -34,6 +34,11 @@ pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
 pub const ASPECT_RATIO: f32 = 16.0 / 9.0;
 pub const VIEW_RADIUS: usize = 2;
 
+#[derive(Debug)]
+pub struct Turn {
+    number: u32,
+}
+
 fn main() {
     let height = 900.0;
 
@@ -53,6 +58,7 @@ fn main() {
             watch_for_changes: true,
             ..default()
         })
+        .insert_resource(Turn { number: 0 })
         .add_event::<GameAction>()
         .add_plugins(DefaultPlugins)
         .add_plugin(bevy_stl::StlPlugin)

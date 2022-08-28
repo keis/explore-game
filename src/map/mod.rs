@@ -66,6 +66,7 @@ impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Damaged(true))
             .add_system(pathguided::progress_path_guided)
+            .add_system(pathguided::reset_movement_points)
             .add_system_set(
                 SystemSet::new()
                     .with_run_criteria(run_if_damaged)

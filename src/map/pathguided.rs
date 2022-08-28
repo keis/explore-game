@@ -1,5 +1,6 @@
 use super::{events::Entered, HexCoord, MapComponent, MapPresence};
 use crate::hex::coord_to_vec3;
+use crate::Turn;
 use bevy::prelude::*;
 use std::collections::VecDeque;
 
@@ -7,6 +8,7 @@ use std::collections::VecDeque;
 pub struct PathGuided {
     progress: f32,
     path: VecDeque<HexCoord>,
+    movement_points: u32,
 }
 
 impl PathGuided {
@@ -20,7 +22,16 @@ impl Default for PathGuided {
     fn default() -> Self {
         PathGuided {
             progress: 0.0,
+            movement_points: 2,
             path: VecDeque::new(),
+        }
+    }
+}
+
+pub fn reset_movement_points(turn: Res<Turn>, mut path_guided_query: Query<&mut PathGuided>) {
+    if turn.is_changed() {
+        for mut path_guided in path_guided_query.iter_mut() {
+            path_guided.movement_points = 2;
         }
     }
 }
@@ -32,7 +43,7 @@ pub fn progress_path_guided(
     mut hex_entered_event: EventWriter<Entered>,
 ) {
     for (entity, mut pathguided, mut positioned, mut transform) in positioned_query.iter_mut() {
-        if pathguided.path.len() == 0 {
+        if pathguided.path.len() == 0 || pathguided.movement_points == 0 {
             continue;
         }
 
@@ -43,6 +54,7 @@ pub fn progress_path_guided(
                 entity,
                 coordinate: positioned.position,
             });
+            pathguided.movement_points -= 1;
             pathguided.progress = 0.0;
         }
 

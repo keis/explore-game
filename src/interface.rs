@@ -1,5 +1,6 @@
 use crate::input::{Action, ActionState};
 use crate::party::Party;
+use crate::Turn;
 use bevy::prelude::*;
 use bevy_mod_picking::Selection;
 
@@ -10,12 +11,20 @@ impl Plugin for InterfacePlugin {
         app.add_startup_system(spawn_interface)
             .add_system(update_party_list)
             .add_system(update_party_display)
-            .add_system(handle_party_display_interaction);
+            .add_system(handle_party_display_interaction)
+            .add_system(update_turn_text)
+            .add_system(handle_turn_button_interaction);
     }
 }
 
 #[derive(Component)]
 pub struct ZoneText;
+
+#[derive(Component)]
+pub struct TurnButton;
+
+#[derive(Component)]
+pub struct TurnText;
 
 #[derive(Component)]
 struct PartyList;
@@ -44,7 +53,7 @@ fn spawn_interface(mut commands: Commands, asset_server: Res<AssetServer>) {
                 align_self: AlignSelf::FlexEnd,
                 position_type: PositionType::Absolute,
                 position: UiRect {
-                    bottom: Val::Px(5.0),
+                    top: Val::Px(5.0),
                     right: Val::Px(15.0),
                     ..default()
                 },
@@ -76,6 +85,34 @@ fn spawn_interface(mut commands: Commands, asset_server: Res<AssetServer>) {
                     ..default()
                 })
                 .insert(PartyList);
+            parent
+                .spawn_bundle(ButtonBundle {
+                    style: Style {
+                        size: Size::new(Val::Px(200.0), Val::Px(60.0)),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        ..default()
+                    },
+                    color: Color::rgb(0.4, 0.9, 0.4).into(),
+                    ..default()
+                })
+                .insert(TurnButton)
+                .with_children(|parent| {
+                    parent
+                        .spawn_bundle(
+                            TextBundle::from_section(
+                                "Turn ?",
+                                TextStyle {
+                                    font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                                    font_size: 32.0,
+                                    color: Color::WHITE,
+                                },
+                            )
+                            .with_text_alignment(TextAlignment::CENTER)
+                            .with_style(Style { ..default() }),
+                        )
+                        .insert(TurnText);
+                });
         });
 }
 
@@ -153,5 +190,22 @@ pub fn handle_party_display_interaction(
                 }
             }
         }
+    }
+}
+
+pub fn update_turn_text(mut turn_text_query: Query<&mut Text, With<TurnText>>, turn: Res<Turn>) {
+    if turn.is_changed() {
+        for mut text in turn_text_query.iter_mut() {
+            text.sections[0].value = format!("Turn #{:?}", turn.number);
+        }
+    }
+}
+
+pub fn handle_turn_button_interaction(
+    interaction_query: Query<&Interaction, (With<TurnButton>, Changed<Interaction>)>,
+    mut turn: ResMut<Turn>,
+) {
+    if let Ok(Interaction::Clicked) = interaction_query.get_single() {
+        turn.number += 1;
     }
 }
