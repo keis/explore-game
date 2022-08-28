@@ -6,6 +6,7 @@ use rand::Rng;
 
 mod action;
 mod camera;
+mod camp;
 mod fog;
 mod hex;
 mod indicator;
@@ -16,7 +17,7 @@ mod party;
 mod zone;
 mod zone_material;
 
-use action::{handle_move_to, GameAction};
+use action::ActionPlugin;
 use camera::{CameraBounds, CameraControl, CameraControlPlugin};
 use fog::Fog;
 use hex::{coord_to_vec3, Hexagon};
@@ -59,7 +60,6 @@ fn main() {
             ..default()
         })
         .insert_resource(Turn { number: 0 })
-        .add_event::<GameAction>()
         .add_plugins(DefaultPlugins)
         .add_plugin(bevy_stl::StlPlugin)
         .add_plugin(CameraControlPlugin)
@@ -67,18 +67,33 @@ fn main() {
         .add_plugin(InterfacePlugin)
         .add_plugin(MapPlugin)
         .add_plugin(ZoneMaterialPlugin)
+        .add_plugin(ActionPlugin)
         .add_startup_system(spawn_scene)
         .add_startup_system(spawn_camera)
         .add_system(log_moves)
-        .add_system(handle_move_to)
         .add_system(update_indicator);
 
     app.run();
 }
 
-fn log_moves(mut entered_event: EventReader<Entered>) {
+fn log_moves(
+    mut entered_event: EventReader<Entered>,
+    presence_query: Query<&MapPresence>,
+    map_query: Query<&MapComponent>,
+) {
     for event in entered_event.iter() {
         info!("{:?} moved to {:?}", event.entity, event.coordinate);
+        if let Ok(presence) = presence_query.get(event.entity) {
+            if let Ok(map) = map_query.get(presence.map) {
+                for other in map
+                    .storage
+                    .presence(presence.position)
+                    .filter(|e| **e != event.entity)
+                {
+                    info!("{:?} is here", other);
+                }
+            }
+        }
     }
 }
 
@@ -116,7 +131,7 @@ fn spawn_scene(
         width: 20,
         height: 16,
     };
-    let mut map = Map::new(maplayout);
+    let mut mapstorage = Map::new(maplayout);
     let cubecoord = HexCoord::new(2, 6);
     for position in maplayout.iter() {
         let terrain = rng.gen();
@@ -152,13 +167,10 @@ fn spawn_scene(
             .insert(bevy_mod_picking::NoDeselect)
             .insert(Interaction::default())
             .id();
-        map.set(position, Some(entity));
+        mapstorage.set(position, Some(entity));
     }
-    let map = commands
-        .spawn()
-        .insert(MapComponent { map, radius: 1.0 })
-        .id();
-    commands
+    let map = commands.spawn().id();
+    let alpha_group = commands
         .spawn_bundle(PbrBundle {
             mesh: asset_server.load("models/indicator.stl"),
             material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
@@ -176,13 +188,15 @@ fn spawn_scene(
             offset,
             view_radius: VIEW_RADIUS,
         })
-        .insert(PathGuided::default());
+        .insert(PathGuided::default())
+        .id();
+    mapstorage.add_presence(cubecoord, alpha_group);
 
     let cubecoord = HexCoord::new(4, 5);
-    commands
+    let beta_group = commands
         .spawn_bundle(PbrBundle {
             mesh: asset_server.load("models/indicator.stl"),
-            material: standard_materials.add(Color::rgb(0.596, 0.165, 0.0631).into()),
+            material: standard_materials.add(Color::rgb(0.596, 0.165, 0.631).into()),
             transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
             ..default()
         })
@@ -197,7 +211,9 @@ fn spawn_scene(
             offset,
             view_radius: VIEW_RADIUS,
         })
-        .insert(PathGuided::default());
+        .insert(PathGuided::default())
+        .id();
+    mapstorage.add_presence(cubecoord, beta_group);
 
     commands.spawn_bundle(DirectionalLightBundle {
         directional_light: DirectionalLight {
@@ -211,5 +227,10 @@ fn spawn_scene(
             ..default()
         },
         ..default()
+    });
+
+    commands.entity(map).insert(MapComponent {
+        storage: mapstorage,
+        radius: 1.0,
     });
 }

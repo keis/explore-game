@@ -1,7 +1,8 @@
+use crate::action::GameAction;
 use crate::input::{Action, ActionState};
 use crate::party::Party;
 use crate::Turn;
-use bevy::prelude::*;
+use bevy::{prelude::*, ui::FocusPolicy};
 use bevy_mod_picking::Selection;
 
 pub struct InterfacePlugin;
@@ -13,7 +14,8 @@ impl Plugin for InterfacePlugin {
             .add_system(update_party_display)
             .add_system(handle_party_display_interaction)
             .add_system(update_turn_text)
-            .add_system(handle_turn_button_interaction);
+            .add_system(handle_turn_button_interaction)
+            .add_system(handle_camp_button_interaction);
     }
 }
 
@@ -27,7 +29,10 @@ pub struct TurnButton;
 pub struct TurnText;
 
 #[derive(Component)]
-struct PartyList;
+pub struct PartyList;
+
+#[derive(Component)]
+pub struct CampButton;
 
 #[derive(Component, Debug)]
 pub struct PartyDisplay {
@@ -85,6 +90,36 @@ fn spawn_interface(mut commands: Commands, asset_server: Res<AssetServer>) {
                     ..default()
                 })
                 .insert(PartyList);
+            parent
+                .spawn_bundle(NodeBundle {
+                    style: Style {
+                        align_self: AlignSelf::FlexEnd,
+                        padding: UiRect::all(Val::Px(2.0)),
+                        ..default()
+                    },
+                    color: Color::NONE.into(),
+                    ..default()
+                })
+                .with_children(|parent| {
+                    parent
+                        .spawn_bundle(ButtonBundle {
+                            color: NORMAL.into(),
+                            ..default()
+                        })
+                        .insert(CampButton)
+                        .with_children(|parent| {
+                            parent
+                                .spawn_bundle(ImageBundle {
+                                    style: Style {
+                                        size: Size::new(Val::Px(32.0), Val::Px(32.0)),
+                                        ..default()
+                                    },
+                                    image: asset_server.load("icons/campfire.png").into(),
+                                    ..default()
+                                })
+                                .insert(FocusPolicy::Pass);
+                        });
+                });
             parent
                 .spawn_bundle(ButtonBundle {
                     style: Style {
@@ -207,5 +242,17 @@ pub fn handle_turn_button_interaction(
 ) {
     if let Ok(Interaction::Clicked) = interaction_query.get_single() {
         turn.number += 1;
+    }
+}
+
+pub fn handle_camp_button_interaction(
+    interaction_query: Query<&Interaction, (With<CampButton>, Changed<Interaction>)>,
+    party_query: Query<(Entity, &Selection), With<Party>>,
+    mut game_action_event: EventWriter<GameAction>,
+) {
+    if let Ok(Interaction::Clicked) = interaction_query.get_single() {
+        for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
+            game_action_event.send(GameAction::MakeCamp(entity));
+        }
     }
 }

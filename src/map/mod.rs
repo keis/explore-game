@@ -1,5 +1,6 @@
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use pathfinding::prelude::astar;
+use std::collections::hash_set::HashSet;
 
 pub mod events;
 mod hexcoord;
@@ -14,6 +15,8 @@ pub use presence::MapPresence;
 
 pub struct Map {
     tiles: Vec<Option<Entity>>,
+    presence: Vec<HashSet<Entity>>,
+    void: HashSet<Entity>,
     pub layout: MapLayout,
 }
 
@@ -22,6 +25,8 @@ impl Map {
         Self {
             layout,
             tiles: vec![None; layout.size()],
+            presence: vec![HashSet::new(); layout.size()],
+            void: HashSet::new(),
         }
     }
 
@@ -36,11 +41,42 @@ impl Map {
             .offset(position)
             .and_then(|offset| self.tiles[offset])
     }
+
+    pub fn presence(&self, position: HexCoord) -> impl Iterator<Item = &Entity> {
+        self.layout
+            .offset(position)
+            .map_or_else(|| self.void.iter(), |offset| self.presence[offset].iter())
+    }
+
+    pub fn add_presence(&mut self, position: HexCoord, entity: Entity) {
+        if let Some(offset) = self.layout.offset(position) {
+            self.presence[offset].insert(entity);
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn remove_presence(&mut self, position: HexCoord, entity: Entity) {
+        if let Some(offset) = self.layout.offset(position) {
+            self.presence[offset].remove(&entity);
+        }
+    }
+
+    pub fn move_presence(&mut self, entity: Entity, origin: HexCoord, destination: HexCoord) {
+        // TODO: Consider using let_chains
+        if let Some((o, d)) = self
+            .layout
+            .offset(origin)
+            .zip(self.layout.offset(destination))
+        {
+            self.presence[o].remove(&entity);
+            self.presence[d].insert(entity);
+        }
+    }
 }
 
 #[derive(Component)]
 pub struct MapComponent {
-    pub map: Map,
+    pub storage: Map,
     pub radius: f32,
 }
 

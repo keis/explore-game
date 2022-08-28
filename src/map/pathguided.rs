@@ -38,7 +38,7 @@ pub fn reset_movement_points(turn: Res<Turn>, mut path_guided_query: Query<&mut 
 
 pub fn progress_path_guided(
     time: Res<Time>,
-    map_query: Query<&MapComponent>,
+    mut map_query: Query<&mut MapComponent>,
     mut positioned_query: Query<(Entity, &mut PathGuided, &mut MapPresence, &mut Transform)>,
     mut hex_entered_event: EventWriter<Entered>,
 ) {
@@ -47,9 +47,15 @@ pub fn progress_path_guided(
             continue;
         }
 
+        let mut map = map_query
+            .get_mut(positioned.map)
+            .expect("references valid map");
         pathguided.progress += time.delta_seconds();
         if pathguided.progress >= 1.0 {
-            positioned.position = pathguided.path.pop_front().expect("path has element");
+            let newposition = pathguided.path.pop_front().expect("path has element");
+            map.storage
+                .move_presence(entity, positioned.position, newposition);
+            positioned.position = newposition;
             hex_entered_event.send(Entered {
                 entity,
                 coordinate: positioned.position,
@@ -58,7 +64,6 @@ pub fn progress_path_guided(
             pathguided.progress = 0.0;
         }
 
-        let map = map_query.get(positioned.map).expect("references valid map");
         if let Some(next) = pathguided.path.front() {
             let orig_translation =
                 coord_to_vec3(positioned.position, map.radius) + positioned.offset;
