@@ -1,7 +1,7 @@
 use crate::map::{MapPresence, PathGuided};
 use crate::GameAction;
 use crate::Zone;
-use crate::ZoneText;
+use crate::interface::ZoneText;
 use bevy::prelude::*;
 use bevy_mod_picking::{DefaultPickingPlugins, HoverEvent, PickingEvent, Selection};
 pub use leafwing_input_manager::prelude::*;

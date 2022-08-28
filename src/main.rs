@@ -10,6 +10,7 @@ mod fog;
 mod hex;
 mod indicator;
 mod input;
+mod interface;
 mod map;
 mod zone;
 mod zone_material;
@@ -20,6 +21,7 @@ use fog::Fog;
 use hex::{coord_to_vec3, Hexagon};
 use indicator::{update_indicator, Indicator};
 use input::InputPlugin;
+use interface::InterfacePlugin;
 use map::{
     events::Entered, HexCoord, Map, MapComponent, MapLayout, MapPlugin, MapPresence, PathGuided,
 };
@@ -49,25 +51,22 @@ fn main() {
             watch_for_changes: true,
             ..default()
         })
-        .add_startup_system(spawn_scene)
-        .add_startup_system(spawn_interface)
-        .add_startup_system(spawn_camera)
         .add_event::<GameAction>()
+        .add_plugins(DefaultPlugins)
+        .add_plugin(bevy_stl::StlPlugin)
+        .add_plugin(CameraControlPlugin)
+        .add_plugin(InputPlugin)
+        .add_plugin(InterfacePlugin)
+        .add_plugin(MapPlugin)
+        .add_plugin(ZoneMaterialPlugin)
+        .add_startup_system(spawn_scene)
+        .add_startup_system(spawn_camera)
         .add_system(log_moves)
         .add_system(handle_move_to)
-        .add_system(update_indicator)
-        .add_plugins(DefaultPlugins)
-        .add_plugin(InputPlugin)
-        .add_plugin(CameraControlPlugin)
-        .add_plugin(ZoneMaterialPlugin)
-        .add_plugin(bevy_stl::StlPlugin)
-        .add_plugin(MapPlugin);
+        .add_system(update_indicator);
 
     app.run();
 }
-
-#[derive(Component)]
-pub struct ZoneText;
 
 fn log_moves(mut entered_event: EventReader<Entered>) {
     for event in entered_event.iter() {
@@ -193,30 +192,4 @@ fn spawn_scene(
         },
         ..default()
     });
-}
-
-fn spawn_interface(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands
-        .spawn_bundle(
-            TextBundle::from_section(
-                "Zone: ",
-                TextStyle {
-                    font: asset_server.load("fonts/FiraMono-Medium.ttf"),
-                    font_size: 32.0,
-                    color: Color::WHITE,
-                },
-            )
-            .with_text_alignment(TextAlignment::TOP_CENTER)
-            .with_style(Style {
-                align_self: AlignSelf::FlexEnd,
-                position_type: PositionType::Absolute,
-                position: UiRect {
-                    bottom: Val::Px(5.0),
-                    right: Val::Px(15.0),
-                    ..default()
-                },
-                ..default()
-            }),
-        )
-        .insert(ZoneText);
 }
