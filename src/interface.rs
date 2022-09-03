@@ -11,7 +11,8 @@ impl Plugin for InterfacePlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(spawn_interface)
             .add_system(update_party_list)
-            .add_system(update_party_display)
+            .add_system(update_party_selection)
+            .add_system(update_party_movement_points)
             .add_system(handle_party_display_interaction)
             .add_system(update_turn_text)
             .add_system(handle_turn_button_interaction)
@@ -30,6 +31,9 @@ pub struct TurnText;
 
 #[derive(Component)]
 pub struct PartyList;
+
+#[derive(Component)]
+pub struct PartyMovementPointsText;
 
 #[derive(Component)]
 pub struct CampButton;
@@ -172,6 +176,8 @@ fn update_party_list(
                         style: Style {
                             size: Size::new(Val::Percent(100.0), Val::Px(120.0)),
                             margin: UiRect::all(Val::Px(2.0)),
+                            flex_direction: FlexDirection::ColumnReverse,
+                            justify_content: JustifyContent::SpaceBetween,
                             ..default()
                         },
                         color: NORMAL.into(),
@@ -186,13 +192,33 @@ fn update_party_list(
                                 color: Color::WHITE,
                             },
                         ));
+                        parent
+                            .spawn_bundle(TextBundle::from_sections([
+                                TextSection::new(
+                                    "Movement: ",
+                                    TextStyle {
+                                        font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                                        font_size: 32.0,
+                                        color: Color::WHITE,
+                                    },
+                                ),
+                                TextSection::new(
+                                    format!("{:?}", party.movement_points),
+                                    TextStyle {
+                                        font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                                        font_size: 32.0,
+                                        color: Color::WHITE,
+                                    },
+                                ),
+                            ]))
+                            .insert(PartyMovementPointsText);
                     });
             });
         }
     }
 }
 
-pub fn update_party_display(
+pub fn update_party_selection(
     mut party_display_query: Query<(&PartyDisplay, &mut UiColor)>,
     party_query: Query<&Selection, (With<Party>, Changed<Selection>)>,
 ) {
@@ -202,6 +228,20 @@ pub fn update_party_display(
                 *color = SELECTED.into();
             } else {
                 *color = NORMAL.into();
+            }
+        }
+    }
+}
+
+pub fn update_party_movement_points(
+    mut party_movement_points_query: Query<(&mut Text, &Parent), With<PartyMovementPointsText>>,
+    party_display_query: Query<&PartyDisplay>,
+    party_query: Query<&Party, Changed<Party>>,
+) {
+    for (mut text, parent) in party_movement_points_query.iter_mut() {
+        if let Ok(party_display) = party_display_query.get(parent.get()) {
+            if let Ok(party) = party_query.get(party_display.party) {
+                text.sections[1].value = format!("{:?}", party.movement_points);
             }
         }
     }

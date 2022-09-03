@@ -27,7 +27,7 @@ use interface::InterfacePlugin;
 use map::{
     events::Entered, HexCoord, Map, MapComponent, MapLayout, MapPlugin, MapPresence, PathGuided,
 };
-use party::Party;
+use party::{reset_movement_points, Party};
 use zone::{Terrain, Zone};
 use zone_material::{ZoneMaterial, ZoneMaterialPlugin};
 
@@ -71,7 +71,8 @@ fn main() {
         .add_startup_system(spawn_scene)
         .add_startup_system(spawn_camera)
         .add_system(log_moves)
-        .add_system(update_indicator);
+        .add_system(update_indicator)
+        .add_system(reset_movement_points);
 
     app.run();
 }
@@ -181,6 +182,7 @@ fn spawn_scene(
         .insert(Indicator)
         .insert(Party {
             name: String::from("Alpha Group"),
+            movement_points: 0,
         })
         .insert(MapPresence {
             map,
@@ -204,6 +206,7 @@ fn spawn_scene(
         .insert(Indicator)
         .insert(Party {
             name: String::from("Beta Group"),
+            movement_points: 0,
         })
         .insert(MapPresence {
             map,
