@@ -3,6 +3,7 @@ use crate::hex::coord_to_vec3;
 use crate::map::{find_path, MapComponent, MapPresence, PathGuided};
 use crate::party::Party;
 use crate::HexCoord;
+use crate::MainAssets;
 use crate::Terrain;
 use crate::Zone;
 use crate::VIEW_RADIUS;
@@ -58,7 +59,7 @@ pub fn handle_move_to(
 
 pub fn handle_make_camp(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
+    assets: Res<MainAssets>,
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut events: EventReader<GameAction>,
     mut map_query: Query<&mut MapComponent>,
@@ -90,7 +91,7 @@ pub fn handle_make_camp(
                 party.supplies -= 1;
                 let entity = commands
                     .spawn_bundle(PbrBundle {
-                        mesh: asset_server.load("models/tent.stl"),
+                        mesh: assets.tent_mesh.clone(),
                         material: standard_materials.add(Color::rgb(0.631, 0.596, 0.165).into()),
                         transform: Transform::from_translation(coord_to_vec3(position, 1.0))
                             .with_rotation(Quat::from_rotation_y(1.0)),

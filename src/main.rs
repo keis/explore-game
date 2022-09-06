@@ -1,6 +1,7 @@
 use bevy::{
     asset::AssetServerSettings, prelude::*, render::texture::ImageSettings, window::PresentMode,
 };
+use bevy_asset_loader::prelude::*;
 use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
 use rand::Rng;
 
@@ -61,6 +62,7 @@ fn main() {
         })
         .insert_resource(Turn { number: 0 })
         .add_plugins(DefaultPlugins)
+        .init_collection::<MainAssets>()
         .add_plugin(bevy_stl::StlPlugin)
         .add_plugin(CameraControlPlugin)
         .add_plugin(InputPlugin)
@@ -75,6 +77,20 @@ fn main() {
         .add_system(reset_movement_points);
 
     app.run();
+}
+
+#[derive(AssetCollection)]
+pub struct MainAssets {
+    #[asset(path = "textures/cloud.png")]
+    cloud_texture: Handle<Image>,
+    #[asset(path = "textures/grass.png")]
+    grass_texture: Handle<Image>,
+    #[asset(path = "textures/lava.png")]
+    lava_texture: Handle<Image>,
+    #[asset(path = "models/indicator.stl")]
+    indicator_mesh: Handle<Mesh>,
+    #[asset(path = "models/tent.stl")]
+    tent_mesh: Handle<Mesh>,
 }
 
 fn log_moves(
@@ -118,14 +134,11 @@ fn spawn_camera(mut commands: Commands) {
 
 fn spawn_scene(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
+    assets: Res<MainAssets>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
 ) {
-    let cloud_texture = asset_server.load("textures/cloud.png");
-    let grass_texture = asset_server.load("textures/grass.png");
-    let lava_texture = asset_server.load("textures/lava.png");
     let offset = Vec3::new(0.0, 1.0, 0.0);
     let mut rng = rand::thread_rng();
     let maplayout = MapLayout {
@@ -141,15 +154,15 @@ fn spawn_scene(
                 mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
                 material: match terrain {
                     Terrain::Grass => zone_materials.add(ZoneMaterial {
-                        cloud_texture: Some(cloud_texture.clone()),
-                        terrain_texture: Some(grass_texture.clone()),
+                        cloud_texture: Some(assets.cloud_texture.clone()),
+                        terrain_texture: Some(assets.grass_texture.clone()),
                         visible: 1,
                         explored: 1,
                         time: 0.0,
                     }),
                     Terrain::Lava => zone_materials.add(ZoneMaterial {
-                        cloud_texture: Some(cloud_texture.clone()),
-                        terrain_texture: Some(lava_texture.clone()),
+                        cloud_texture: Some(assets.cloud_texture.clone()),
+                        terrain_texture: Some(assets.lava_texture.clone()),
                         visible: 1,
                         explored: 1,
                         time: 0.0,
@@ -173,7 +186,7 @@ fn spawn_scene(
     let map = commands.spawn().id();
     let alpha_group = commands
         .spawn_bundle(PbrBundle {
-            mesh: asset_server.load("models/indicator.stl"),
+            mesh: assets.indicator_mesh.clone(),
             material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
             transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
             ..default()
@@ -198,7 +211,7 @@ fn spawn_scene(
     let cubecoord = HexCoord::new(4, 5);
     let beta_group = commands
         .spawn_bundle(PbrBundle {
-            mesh: asset_server.load("models/indicator.stl"),
+            mesh: assets.indicator_mesh.clone(),
             material: standard_materials.add(Color::rgb(0.596, 0.165, 0.631).into()),
             transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
             ..default()

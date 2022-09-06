@@ -3,6 +3,7 @@ use crate::input::{Action, ActionState};
 use crate::party::Party;
 use crate::Turn;
 use bevy::{prelude::*, ui::FocusPolicy};
+use bevy_asset_loader::prelude::*;
 use bevy_mod_picking::Selection;
 
 pub struct InterfacePlugin;
@@ -10,6 +11,7 @@ pub struct InterfacePlugin;
 impl Plugin for InterfacePlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(spawn_interface)
+            .init_collection::<InterfaceAssets>()
             .add_system(update_party_list)
             .add_system(update_party_selection)
             .add_system(update_party_movement_points)
@@ -50,13 +52,23 @@ pub struct PartyDisplay {
 const NORMAL: Color = Color::rgb(0.20, 0.20, 0.20);
 const SELECTED: Color = Color::rgb(0.75, 0.50, 0.50);
 
-fn spawn_interface(mut commands: Commands, asset_server: Res<AssetServer>) {
+#[derive(AssetCollection)]
+struct InterfaceAssets {
+    #[asset(path = "fonts/FiraMono-Medium.ttf")]
+    font: Handle<Font>,
+    #[asset(path = "icons/campfire.png")]
+    campfire_icon: Handle<Image>,
+    #[asset(path = "icons/knapsack.png")]
+    knapsack_icon: Handle<Image>,
+}
+
+fn spawn_interface(mut commands: Commands, assets: Res<InterfaceAssets>) {
     commands
         .spawn_bundle(
             TextBundle::from_section(
                 "Zone: ",
                 TextStyle {
-                    font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                    font: assets.font.clone(),
                     font_size: 32.0,
                     color: Color::WHITE,
                 },
@@ -122,7 +134,7 @@ fn spawn_interface(mut commands: Commands, asset_server: Res<AssetServer>) {
                                         size: Size::new(Val::Px(32.0), Val::Px(32.0)),
                                         ..default()
                                     },
-                                    image: asset_server.load("icons/campfire.png").into(),
+                                    image: assets.campfire_icon.clone().into(),
                                     ..default()
                                 })
                                 .insert(FocusPolicy::Pass);
@@ -140,7 +152,7 @@ fn spawn_interface(mut commands: Commands, asset_server: Res<AssetServer>) {
                                         size: Size::new(Val::Px(32.0), Val::Px(32.0)),
                                         ..default()
                                     },
-                                    image: asset_server.load("icons/knapsack.png").into(),
+                                    image: assets.knapsack_icon.clone().into(),
                                     ..default()
                                 })
                                 .insert(FocusPolicy::Pass);
@@ -164,7 +176,7 @@ fn spawn_interface(mut commands: Commands, asset_server: Res<AssetServer>) {
                             TextBundle::from_section(
                                 "Turn ?",
                                 TextStyle {
-                                    font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                                    font: assets.font.clone(),
                                     font_size: 32.0,
                                     color: Color::WHITE,
                                 },
@@ -179,7 +191,7 @@ fn spawn_interface(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 fn update_party_list(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
+    assets: Res<InterfaceAssets>,
     party_list_query: Query<Entity, With<PartyList>>,
     party_query: Query<(Entity, &Party)>,
     party_display_query: Query<&PartyDisplay>,
@@ -209,7 +221,7 @@ fn update_party_list(
                         parent.spawn_bundle(TextBundle::from_section(
                             party.name.clone(),
                             TextStyle {
-                                font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                                font: assets.font.clone(),
                                 font_size: 32.0,
                                 color: Color::WHITE,
                             },
@@ -219,7 +231,7 @@ fn update_party_list(
                                 TextSection::new(
                                     "Movement: ",
                                     TextStyle {
-                                        font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                                        font: assets.font.clone(),
                                         font_size: 32.0,
                                         color: Color::WHITE,
                                     },
@@ -227,7 +239,7 @@ fn update_party_list(
                                 TextSection::new(
                                     format!("{:?}", party.movement_points),
                                     TextStyle {
-                                        font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                                        font: assets.font.clone(),
                                         font_size: 32.0,
                                         color: Color::WHITE,
                                     },
