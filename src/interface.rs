@@ -16,7 +16,8 @@ impl Plugin for InterfacePlugin {
             .add_system(handle_party_display_interaction)
             .add_system(update_turn_text)
             .add_system(handle_turn_button_interaction)
-            .add_system(handle_camp_button_interaction);
+            .add_system(handle_camp_button_interaction)
+            .add_system(handle_break_camp_button_interaction);
     }
 }
 
@@ -37,6 +38,9 @@ pub struct PartyMovementPointsText;
 
 #[derive(Component)]
 pub struct CampButton;
+
+#[derive(Component)]
+pub struct BreakCampButton;
 
 #[derive(Component, Debug)]
 pub struct PartyDisplay {
@@ -119,6 +123,24 @@ fn spawn_interface(mut commands: Commands, asset_server: Res<AssetServer>) {
                                         ..default()
                                     },
                                     image: asset_server.load("icons/campfire.png").into(),
+                                    ..default()
+                                })
+                                .insert(FocusPolicy::Pass);
+                        });
+                    parent
+                        .spawn_bundle(ButtonBundle {
+                            color: NORMAL.into(),
+                            ..default()
+                        })
+                        .insert(BreakCampButton)
+                        .with_children(|parent| {
+                            parent
+                                .spawn_bundle(ImageBundle {
+                                    style: Style {
+                                        size: Size::new(Val::Px(32.0), Val::Px(32.0)),
+                                        ..default()
+                                    },
+                                    image: asset_server.load("icons/knapsack.png").into(),
                                     ..default()
                                 })
                                 .insert(FocusPolicy::Pass);
@@ -293,6 +315,18 @@ pub fn handle_camp_button_interaction(
     if let Ok(Interaction::Clicked) = interaction_query.get_single() {
         for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
             game_action_event.send(GameAction::MakeCamp(entity));
+        }
+    }
+}
+
+pub fn handle_break_camp_button_interaction(
+    interaction_query: Query<&Interaction, (With<BreakCampButton>, Changed<Interaction>)>,
+    party_query: Query<(Entity, &Selection), With<Party>>,
+    mut game_action_event: EventWriter<GameAction>,
+) {
+    if let Ok(Interaction::Clicked) = interaction_query.get_single() {
+        for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
+            game_action_event.send(GameAction::BreakCamp(entity));
         }
     }
 }

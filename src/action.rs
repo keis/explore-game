@@ -1,6 +1,7 @@
 use crate::camp::Camp;
 use crate::hex::coord_to_vec3;
 use crate::map::{find_path, MapComponent, MapPresence, PathGuided};
+use crate::party::Party;
 use crate::HexCoord;
 use crate::Terrain;
 use crate::Zone;
@@ -12,6 +13,7 @@ use bevy_mod_picking::PickableBundle;
 pub enum GameAction {
     MoveTo(Entity, HexCoord),
     MakeCamp(Entity),
+    BreakCamp(Entity),
 }
 
 pub struct ActionPlugin;
@@ -20,7 +22,8 @@ impl Plugin for ActionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<GameAction>()
             .add_system(handle_move_to)
-            .add_system(handle_make_camp);
+            .add_system(handle_make_camp)
+            .add_system(handle_break_camp);
     }
 }
 
@@ -59,15 +62,16 @@ pub fn handle_make_camp(
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut events: EventReader<GameAction>,
     mut map_query: Query<&mut MapComponent>,
-    presence_query: Query<&MapPresence>,
+    mut party_query: Query<(&mut Party, &MapPresence)>,
     camp_query: Query<&Camp>,
 ) {
     for event in events.iter() {
         if let GameAction::MakeCamp(e) = event {
-            if let Ok(presence) = presence_query.get(*e) {
+            if let Ok((mut party, presence)) = party_query.get_mut(*e) {
                 let mut map = map_query
                     .get_mut(presence.map)
                     .expect("references valid map");
+
                 let position = presence.position;
                 if camp_query
                     .iter_many(map.storage.presence(position))
@@ -78,6 +82,12 @@ pub fn handle_make_camp(
                     return;
                 }
 
+                if party.supplies == 0 {
+                    info!("Party does not have enough supplies to make camp");
+                    return;
+                }
+
+                party.supplies -= 1;
                 let entity = commands
                     .spawn_bundle(PbrBundle {
                         mesh: asset_server.load("models/tent.stl"),
@@ -98,6 +108,32 @@ pub fn handle_make_camp(
                     })
                     .id();
                 map.storage.add_presence(position, entity);
+            }
+        }
+    }
+}
+
+pub fn handle_break_camp(
+    mut commands: Commands,
+    mut events: EventReader<GameAction>,
+    mut party_query: Query<(&mut Party, &MapPresence)>,
+    mut map_query: Query<&mut MapComponent>,
+    camp_query: Query<Entity, With<Camp>>,
+) {
+    for event in events.iter() {
+        if let GameAction::BreakCamp(e) = event {
+            if let Ok((mut party, presence)) = party_query.get_mut(*e) {
+                let mut map = map_query
+                    .get_mut(presence.map)
+                    .expect("references valid map");
+
+                let position = presence.position;
+                let maybe_camp = camp_query.iter_many(map.storage.presence(position)).next();
+                if let Some(camp) = maybe_camp {
+                    party.supplies += 1;
+                    commands.entity(camp).despawn();
+                    map.storage.remove_presence(position, camp);
+                }
             }
         }
     }

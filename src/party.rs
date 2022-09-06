@@ -5,6 +5,7 @@ use bevy::prelude::*;
 pub struct Party {
     pub name: String,
     pub movement_points: u32,
+    pub supplies: u32,
 }
 
 pub fn reset_movement_points(turn: Res<Turn>, mut party_query: Query<&mut Party>) {

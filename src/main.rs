@@ -183,6 +183,7 @@ fn spawn_scene(
         .insert(Party {
             name: String::from("Alpha Group"),
             movement_points: 0,
+            supplies: 1,
         })
         .insert(MapPresence {
             map,
@@ -207,6 +208,7 @@ fn spawn_scene(
         .insert(Party {
             name: String::from("Beta Group"),
             movement_points: 0,
+            supplies: 1,
         })
         .insert(MapPresence {
             map,
