@@ -88,6 +88,7 @@ pub fn handle_make_camp(
                     return;
                 }
 
+                info!("Spawning camp at {:?}", position);
                 party.supplies -= 1;
                 let entity = commands
                     .spawn_bundle(PbrBundle {
@@ -131,6 +132,7 @@ pub fn handle_break_camp(
                 let position = presence.position;
                 let maybe_camp = camp_query.iter_many(map.storage.presence(position)).next();
                 if let Some(camp) = maybe_camp {
+                    info!("Depawning camp at {:?}", position);
                     party.supplies += 1;
                     commands.entity(camp).despawn();
                     map.storage.remove_presence(position, camp);

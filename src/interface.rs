@@ -62,6 +62,27 @@ struct InterfaceAssets {
     knapsack_icon: Handle<Image>,
 }
 
+fn spawn_toolbar_icon(parent: &mut ChildBuilder, tag: impl Component, image: Handle<Image>) {
+    parent
+        .spawn_bundle(ButtonBundle {
+            color: NORMAL.into(),
+            ..default()
+        })
+        .insert(tag)
+        .with_children(|parent| {
+            parent
+                .spawn_bundle(ImageBundle {
+                    style: Style {
+                        size: Size::new(Val::Px(32.0), Val::Px(32.0)),
+                        ..default()
+                    },
+                    image: image.into(),
+                    ..default()
+                })
+                .insert(FocusPolicy::Pass);
+        });
+}
+
 fn spawn_interface(mut commands: Commands, assets: Res<InterfaceAssets>) {
     commands
         .spawn_bundle(
@@ -121,42 +142,8 @@ fn spawn_interface(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     ..default()
                 })
                 .with_children(|parent| {
-                    parent
-                        .spawn_bundle(ButtonBundle {
-                            color: NORMAL.into(),
-                            ..default()
-                        })
-                        .insert(CampButton)
-                        .with_children(|parent| {
-                            parent
-                                .spawn_bundle(ImageBundle {
-                                    style: Style {
-                                        size: Size::new(Val::Px(32.0), Val::Px(32.0)),
-                                        ..default()
-                                    },
-                                    image: assets.campfire_icon.clone().into(),
-                                    ..default()
-                                })
-                                .insert(FocusPolicy::Pass);
-                        });
-                    parent
-                        .spawn_bundle(ButtonBundle {
-                            color: NORMAL.into(),
-                            ..default()
-                        })
-                        .insert(BreakCampButton)
-                        .with_children(|parent| {
-                            parent
-                                .spawn_bundle(ImageBundle {
-                                    style: Style {
-                                        size: Size::new(Val::Px(32.0), Val::Px(32.0)),
-                                        ..default()
-                                    },
-                                    image: assets.knapsack_icon.clone().into(),
-                                    ..default()
-                                })
-                                .insert(FocusPolicy::Pass);
-                        });
+                    spawn_toolbar_icon(parent, CampButton, assets.campfire_icon.clone());
+                    spawn_toolbar_icon(parent, BreakCampButton, assets.knapsack_icon.clone());
                 });
             parent
                 .spawn_bundle(ButtonBundle {
