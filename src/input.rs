@@ -1,12 +1,14 @@
 #![allow(clippy::type_complexity)]
 
 use crate::action::GameAction;
-use crate::interface::ZoneText;
+use crate::interface::MenuLayer;
 use crate::map::{MapPresence, PathGuided};
 use crate::Zone;
 use bevy::prelude::*;
-use bevy_mod_picking::{DefaultPickingPlugins, HoverEvent, PickingEvent, Selection};
+use bevy_mod_picking::{DefaultPickingPlugins, PickingEvent, Selection};
+use leafwing_input_manager::plugin::InputManagerSystem;
 pub use leafwing_input_manager::prelude::*;
+
 pub struct InputPlugin;
 
 impl Plugin for InputPlugin {
@@ -14,6 +16,11 @@ impl Plugin for InputPlugin {
         app.add_plugins(DefaultPickingPlugins)
             .add_plugin(InputManagerPlugin::<Action>::default())
             .add_startup_system(spawn_input_manager)
+            .add_system(handle_deselect)
+            .add_system_to_stage(
+                CoreStage::PreUpdate,
+                magic_cancel.after(InputManagerSystem::ManualControl),
+            )
             .add_system_to_stage(CoreStage::PostUpdate, handle_picking_events);
     }
 }
@@ -28,6 +35,9 @@ pub enum Action {
     PanCameraRight,
     ZoomCamera,
     MultiSelect,
+    Cancel,
+    ToggleMainMenu,
+    Deselect,
 }
 
 fn spawn_input_manager(mut commands: Commands) {
@@ -39,6 +49,7 @@ fn spawn_input_manager(mut commands: Commands) {
             .insert(KeyCode::Left, Action::PanCameraLeft)
             .insert(KeyCode::Right, Action::PanCameraRight)
             .insert(KeyCode::LControl, Action::MultiSelect)
+            .insert(KeyCode::Escape, Action::Cancel)
             .insert(SingleAxis::mouse_wheel_y(), Action::ZoomCamera)
             .insert(MouseButton::Right, Action::PanCamera)
             .insert(DualAxis::mouse_motion(), Action::PanCameraMotion)
@@ -46,11 +57,52 @@ fn spawn_input_manager(mut commands: Commands) {
     });
 }
 
+pub fn magic_cancel(
+    mut action_state_query: Query<&mut ActionState<Action>>,
+    menu_layer_query: Query<&Visibility, With<MenuLayer>>,
+    selection_query: Query<&Selection>,
+) {
+    let mut action_state = action_state_query.single_mut();
+    let actiondata = action_state.action_data(Action::Cancel);
+
+    // Close menu
+    if action_state.just_pressed(Action::Cancel) {
+        if let Ok(menu_layer_visibility) = menu_layer_query.get_single() {
+            if menu_layer_visibility.is_visible {
+                action_state.set_action_data(Action::ToggleMainMenu, actiondata);
+                return;
+            }
+        }
+    }
+
+    // Deselect
+    if selection_query.iter().any(|s| s.selected()) {
+        action_state.set_action_data(Action::Deselect, actiondata);
+        return;
+    }
+
+    // Open menu
+    action_state.set_action_data(Action::ToggleMainMenu, actiondata);
+}
+
+pub fn handle_deselect(
+    action_state_query: Query<&ActionState<Action>>,
+    mut selection_query: Query<&mut Selection>,
+) {
+    let action_state = action_state_query.single();
+    if action_state.just_pressed(Action::Deselect) {
+        for mut selection in selection_query.iter_mut() {
+            if selection.selected() {
+                selection.set_selected(false);
+            }
+        }
+    }
+}
+
 pub fn handle_picking_events(
     mut events: EventReader<PickingEvent>,
     zone_query: Query<&Zone>,
     presence_query: Query<(Entity, &Selection), (With<PathGuided>, With<MapPresence>)>,
-    mut zone_text_query: Query<&mut Text, With<ZoneText>>,
     mut game_action_event: EventWriter<GameAction>,
 ) {
     for event in events.iter() {
@@ -63,13 +115,6 @@ pub fn handle_picking_events(
                     }
                 } else {
                     info!("Clicked something: {:?}", e);
-                }
-            }
-            PickingEvent::Hover(HoverEvent::JustEntered(e)) => {
-                if let Ok(zone) = zone_query.get(*e) {
-                    for mut text in &mut zone_text_query {
-                        text.sections[0].value = format!("{:?}", zone.position);
-                    }
                 }
             }
             PickingEvent::Selection(e) => {

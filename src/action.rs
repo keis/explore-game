@@ -7,6 +7,7 @@ use crate::MainAssets;
 use crate::Terrain;
 use crate::Zone;
 use crate::VIEW_RADIUS;
+use bevy::ecs::schedule::ShouldRun;
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
 
@@ -15,6 +16,7 @@ pub enum GameAction {
     MoveTo(Entity, HexCoord),
     MakeCamp(Entity),
     BreakCamp(Entity),
+    Save(),
 }
 
 pub struct ActionPlugin;
@@ -24,7 +26,12 @@ impl Plugin for ActionPlugin {
         app.add_event::<GameAction>()
             .add_system(handle_move_to)
             .add_system(handle_make_camp)
-            .add_system(handle_break_camp);
+            .add_system(handle_break_camp)
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(run_on_save)
+                    .with_system(handle_save.exclusive_system()),
+            );
     }
 }
 
@@ -140,4 +147,17 @@ pub fn handle_break_camp(
             }
         }
     }
+}
+
+fn run_on_save(mut events: EventReader<GameAction>) -> ShouldRun {
+    for event in events.iter() {
+        if let GameAction::Save() = event {
+            return ShouldRun::Yes;
+        }
+    }
+    ShouldRun::No
+}
+
+pub fn handle_save(_world: &mut World) {
+    info!("Save!");
 }

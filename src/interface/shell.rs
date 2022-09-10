@@ -1,27 +1,15 @@
+use super::color::{NORMAL, SELECTED};
+use super::InterfaceAssets;
 use crate::action::GameAction;
 use crate::input::{Action, ActionState};
 use crate::party::Party;
 use crate::Turn;
+use crate::Zone;
 use bevy::{prelude::*, ui::FocusPolicy};
-use bevy_asset_loader::prelude::*;
-use bevy_mod_picking::Selection;
+use bevy_mod_picking::{HoverEvent, PickingEvent, Selection};
 
-pub struct InterfacePlugin;
-
-impl Plugin for InterfacePlugin {
-    fn build(&self, app: &mut App) {
-        app.add_startup_system(spawn_interface)
-            .init_collection::<InterfaceAssets>()
-            .add_system(update_party_list)
-            .add_system(update_party_selection)
-            .add_system(update_party_movement_points)
-            .add_system(handle_party_display_interaction)
-            .add_system(update_turn_text)
-            .add_system(handle_turn_button_interaction)
-            .add_system(handle_camp_button_interaction)
-            .add_system(handle_break_camp_button_interaction);
-    }
-}
+#[derive(Component)]
+pub struct Shell;
 
 #[derive(Component)]
 pub struct ZoneText;
@@ -49,19 +37,6 @@ pub struct PartyDisplay {
     party: Entity,
 }
 
-const NORMAL: Color = Color::rgb(0.20, 0.20, 0.20);
-const SELECTED: Color = Color::rgb(0.75, 0.50, 0.50);
-
-#[derive(AssetCollection)]
-struct InterfaceAssets {
-    #[asset(path = "fonts/FiraMono-Medium.ttf")]
-    font: Handle<Font>,
-    #[asset(path = "icons/campfire.png")]
-    campfire_icon: Handle<Image>,
-    #[asset(path = "icons/knapsack.png")]
-    knapsack_icon: Handle<Image>,
-}
-
 fn spawn_toolbar_icon(parent: &mut ChildBuilder, tag: impl Component, image: Handle<Image>) {
     parent
         .spawn_bundle(ButtonBundle {
@@ -83,31 +58,7 @@ fn spawn_toolbar_icon(parent: &mut ChildBuilder, tag: impl Component, image: Han
         });
 }
 
-fn spawn_interface(mut commands: Commands, assets: Res<InterfaceAssets>) {
-    commands
-        .spawn_bundle(
-            TextBundle::from_section(
-                "Zone: ",
-                TextStyle {
-                    font: assets.font.clone(),
-                    font_size: 32.0,
-                    color: Color::WHITE,
-                },
-            )
-            .with_text_alignment(TextAlignment::TOP_CENTER)
-            .with_style(Style {
-                align_self: AlignSelf::FlexEnd,
-                position_type: PositionType::Absolute,
-                position: UiRect {
-                    top: Val::Px(5.0),
-                    right: Val::Px(15.0),
-                    ..default()
-                },
-                ..default()
-            }),
-        )
-        .insert(ZoneText);
-
+pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
@@ -118,7 +69,31 @@ fn spawn_interface(mut commands: Commands, assets: Res<InterfaceAssets>) {
             color: Color::NONE.into(),
             ..default()
         })
+        .insert(Shell)
         .with_children(|parent| {
+            parent
+                .spawn_bundle(
+                    TextBundle::from_section(
+                        "Zone: ",
+                        TextStyle {
+                            font: assets.font.clone(),
+                            font_size: 32.0,
+                            color: Color::WHITE,
+                        },
+                    )
+                    .with_text_alignment(TextAlignment::TOP_CENTER)
+                    .with_style(Style {
+                        align_self: AlignSelf::FlexEnd,
+                        position_type: PositionType::Absolute,
+                        position: UiRect {
+                            top: Val::Px(5.0),
+                            right: Val::Px(15.0),
+                            ..default()
+                        },
+                        ..default()
+                    }),
+                )
+                .insert(ZoneText);
             parent
                 .spawn_bundle(NodeBundle {
                     style: Style {
@@ -176,7 +151,7 @@ fn spawn_interface(mut commands: Commands, assets: Res<InterfaceAssets>) {
         });
 }
 
-fn update_party_list(
+pub fn update_party_list(
     mut commands: Commands,
     assets: Res<InterfaceAssets>,
     party_list_query: Query<Entity, With<PartyList>>,
@@ -268,31 +243,26 @@ pub fn update_party_movement_points(
     }
 }
 
-pub fn handle_party_display_interaction(
-    action_state_query: Query<&ActionState<Action>>,
-    interaction_query: Query<(&Interaction, &PartyDisplay), Changed<Interaction>>,
-    mut party_query: Query<(Entity, &Party, &mut Selection)>,
-) {
-    let action_state = action_state_query.single();
-    if let Ok((Interaction::Clicked, partydisplay)) = interaction_query.get_single() {
-        if let Ok((entity, party, mut selection)) = party_query.get_mut(partydisplay.party) {
-            info!("Clicked party {:?}", party);
-            if action_state.pressed(Action::MultiSelect) {
-                let selected = selection.selected();
-                selection.set_selected(!selected);
-            } else {
-                for (e, _, mut selection) in party_query.iter_mut() {
-                    selection.set_selected(e == entity)
-                }
-            }
-        }
-    }
-}
-
 pub fn update_turn_text(mut turn_text_query: Query<&mut Text, With<TurnText>>, turn: Res<Turn>) {
     if turn.is_changed() {
         for mut text in turn_text_query.iter_mut() {
             text.sections[0].value = format!("Turn #{:?}", turn.number);
+        }
+    }
+}
+
+pub fn update_zone_text(
+    mut zone_text_query: Query<&mut Text, With<ZoneText>>,
+    zone_query: Query<&Zone>,
+    mut events: EventReader<PickingEvent>,
+) {
+    for event in events.iter() {
+        if let PickingEvent::Hover(HoverEvent::JustEntered(e)) = event {
+            if let Ok(zone) = zone_query.get(*e) {
+                for mut text in &mut zone_text_query {
+                    text.sections[0].value = format!("{:?}", zone.position);
+                }
+            }
         }
     }
 }
@@ -326,6 +296,26 @@ pub fn handle_break_camp_button_interaction(
     if let Ok(Interaction::Clicked) = interaction_query.get_single() {
         for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
             game_action_event.send(GameAction::BreakCamp(entity));
+        }
+    }
+}
+pub fn handle_party_display_interaction(
+    action_state_query: Query<&ActionState<Action>>,
+    interaction_query: Query<(&Interaction, &PartyDisplay), Changed<Interaction>>,
+    mut party_query: Query<(Entity, &Party, &mut Selection)>,
+) {
+    let action_state = action_state_query.single();
+    if let Ok((Interaction::Clicked, partydisplay)) = interaction_query.get_single() {
+        if let Ok((entity, party, mut selection)) = party_query.get_mut(partydisplay.party) {
+            info!("Clicked party {:?}", party);
+            if action_state.pressed(Action::MultiSelect) {
+                let selected = selection.selected();
+                selection.set_selected(!selected);
+            } else {
+                for (e, _, mut selection) in party_query.iter_mut() {
+                    selection.set_selected(e == entity)
+                }
+            }
         }
     }
 }
