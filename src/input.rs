@@ -2,7 +2,7 @@
 
 use crate::action::GameAction;
 use crate::interface::MenuLayer;
-use crate::map::{MapPresence, PathGuided};
+use crate::map::{MapPosition, MapPresence, PathGuided};
 use crate::Zone;
 use bevy::prelude::*;
 use bevy_mod_picking::{DefaultPickingPlugins, PickingEvent, Selection};
@@ -101,17 +101,17 @@ pub fn handle_deselect(
 
 pub fn handle_picking_events(
     mut events: EventReader<PickingEvent>,
-    zone_query: Query<&Zone>,
+    zone_query: Query<&MapPosition, With<Zone>>,
     presence_query: Query<(Entity, &Selection), (With<PathGuided>, With<MapPresence>)>,
     mut game_action_event: EventWriter<GameAction>,
 ) {
     for event in events.iter() {
         match event {
             PickingEvent::Clicked(e) => {
-                if let Ok(zone) = zone_query.get(*e) {
-                    info!("Clicked a zone: {:?}", zone);
+                if let Ok(zone_position) = zone_query.get(*e) {
+                    info!("Clicked a zone: {:?}", zone_position);
                     for (entity, _) in presence_query.iter().filter(|(_, s)| s.selected()) {
-                        game_action_event.send(GameAction::MoveTo(entity, zone.position));
+                        game_action_event.send(GameAction::MoveTo(entity, zone_position.0));
                     }
                 } else {
                     info!("Clicked something: {:?}", e);

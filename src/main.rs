@@ -3,7 +3,6 @@ use bevy::{
 };
 use bevy_asset_loader::prelude::*;
 use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
-use rand::Rng;
 
 mod action;
 mod camera;
@@ -26,7 +25,8 @@ use indicator::{update_indicator, Indicator};
 use input::InputPlugin;
 use interface::InterfacePlugin;
 use map::{
-    events::Entered, HexCoord, Map, MapComponent, MapLayout, MapPlugin, MapPresence, PathGuided,
+    events::Entered, HexCoord, MapComponent, MapLayout, MapPlugin, MapPosition, MapPresence,
+    MapPrototype, MapStorage, PathGuided,
 };
 use party::{reset_movement_points, Party};
 use zone::{Terrain, Zone};
@@ -140,19 +140,19 @@ fn spawn_scene(
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
 ) {
     let offset = Vec3::new(0.0, 1.0, 0.0);
-    let mut rng = rand::thread_rng();
     let maplayout = MapLayout {
         width: 20,
         height: 16,
     };
-    let mut mapstorage = Map::new(maplayout);
+    let mapprototype = MapPrototype::generate(maplayout);
+    let mut mapstorage = MapStorage::new(maplayout);
     let cubecoord = HexCoord::new(2, 6);
     for position in maplayout.iter() {
-        let terrain = rng.gen();
+        let zone = mapprototype.get(position);
         let entity = commands
             .spawn_bundle(MaterialMeshBundle {
                 mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
-                material: match terrain {
+                material: match zone.terrain {
                     Terrain::Grass => zone_materials.add(ZoneMaterial {
                         cloud_texture: Some(assets.cloud_texture.clone()),
                         terrain_texture: Some(assets.grass_texture.clone()),
@@ -171,7 +171,8 @@ fn spawn_scene(
                 transform: Transform::from_translation(coord_to_vec3(position, 1.0)),
                 ..default()
             })
-            .insert(Zone { position, terrain })
+            .insert(MapPosition(position))
+            .insert(zone)
             .insert(Fog {
                 visible: false,
                 explored: false,

@@ -1,4 +1,4 @@
-use super::{Damaged, HexCoord};
+use super::{Damaged, HexCoord, MapPosition};
 use crate::Fog;
 use crate::Zone;
 use bevy::prelude::*;
@@ -13,13 +13,13 @@ pub struct MapPresence {
 
 pub fn update_visibility(
     presence_query: Query<&MapPresence>,
-    mut zone_query: Query<(&Zone, &mut Fog)>,
+    mut zone_query: Query<(&MapPosition, &mut Fog), With<Zone>>,
     mut damaged: ResMut<Damaged>,
 ) {
-    for (zone, mut fog) in zone_query.iter_mut() {
+    for (position, mut fog) in zone_query.iter_mut() {
         fog.visible = presence_query
             .iter()
-            .any(|presence| zone.position.distance(&presence.position) <= presence.view_radius);
+            .any(|presence| position.0.distance(&presence.position) <= presence.view_radius);
         fog.explored = fog.explored || fog.visible;
     }
     damaged.0 = false;

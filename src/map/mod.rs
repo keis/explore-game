@@ -1,82 +1,26 @@
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use pathfinding::prelude::astar;
-use std::collections::hash_set::HashSet;
 
 pub mod events;
 mod hexcoord;
 mod layout;
 mod pathguided;
+mod position;
 mod presence;
+mod prototype;
+mod storage;
 
 pub use hexcoord::HexCoord;
 pub use layout::{MapLayout, MapLayoutIterator};
 pub use pathguided::PathGuided;
+pub use position::MapPosition;
 pub use presence::MapPresence;
-
-pub struct Map {
-    tiles: Vec<Option<Entity>>,
-    presence: Vec<HashSet<Entity>>,
-    void: HashSet<Entity>,
-    pub layout: MapLayout,
-}
-
-impl Map {
-    pub fn new(layout: MapLayout) -> Self {
-        Self {
-            layout,
-            tiles: vec![None; layout.size()],
-            presence: vec![HashSet::new(); layout.size()],
-            void: HashSet::new(),
-        }
-    }
-
-    pub fn set(&mut self, position: HexCoord, entity: Option<Entity>) {
-        if let Some(offset) = self.layout.offset(position) {
-            self.tiles[offset] = entity;
-        }
-    }
-
-    pub fn get(&self, position: HexCoord) -> Option<Entity> {
-        self.layout
-            .offset(position)
-            .and_then(|offset| self.tiles[offset])
-    }
-
-    pub fn presence(&self, position: HexCoord) -> impl Iterator<Item = &Entity> {
-        self.layout
-            .offset(position)
-            .map_or_else(|| self.void.iter(), |offset| self.presence[offset].iter())
-    }
-
-    pub fn add_presence(&mut self, position: HexCoord, entity: Entity) {
-        if let Some(offset) = self.layout.offset(position) {
-            self.presence[offset].insert(entity);
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn remove_presence(&mut self, position: HexCoord, entity: Entity) {
-        if let Some(offset) = self.layout.offset(position) {
-            self.presence[offset].remove(&entity);
-        }
-    }
-
-    pub fn move_presence(&mut self, entity: Entity, origin: HexCoord, destination: HexCoord) {
-        // TODO: Consider using let_chains
-        if let Some((o, d)) = self
-            .layout
-            .offset(origin)
-            .zip(self.layout.offset(destination))
-        {
-            self.presence[o].remove(&entity);
-            self.presence[d].insert(entity);
-        }
-    }
-}
+pub use prototype::MapPrototype;
+pub use storage::MapStorage;
 
 #[derive(Component)]
 pub struct MapComponent {
-    pub storage: Map,
+    pub storage: MapStorage,
     pub radius: f32,
 }
 

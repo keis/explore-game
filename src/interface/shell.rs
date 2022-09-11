@@ -2,6 +2,7 @@ use super::color::{NORMAL, SELECTED};
 use super::InterfaceAssets;
 use crate::action::GameAction;
 use crate::input::{Action, ActionState};
+use crate::map::MapPosition;
 use crate::party::Party;
 use crate::Turn;
 use crate::Zone;
@@ -253,14 +254,14 @@ pub fn update_turn_text(mut turn_text_query: Query<&mut Text, With<TurnText>>, t
 
 pub fn update_zone_text(
     mut zone_text_query: Query<&mut Text, With<ZoneText>>,
-    zone_query: Query<&Zone>,
+    zone_query: Query<&MapPosition, With<Zone>>,
     mut events: EventReader<PickingEvent>,
 ) {
     for event in events.iter() {
         if let PickingEvent::Hover(HoverEvent::JustEntered(e)) = event {
-            if let Ok(zone) = zone_query.get(*e) {
+            if let Ok(zone_position) = zone_query.get(*e) {
                 for mut text in &mut zone_text_query {
-                    text.sections[0].value = format!("{:?}", zone.position);
+                    text.sections[0].value = format!("{:?}", zone_position.0);
                 }
             }
         }

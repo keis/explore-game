@@ -1,4 +1,3 @@
-use crate::map::HexCoord;
 use bevy::prelude::*;
 use rand::{
     distributions::{Distribution, Standard},
@@ -23,6 +22,5 @@ impl Distribution<Terrain> for Standard {
 
 #[derive(Component, Copy, Clone, Debug)]
 pub struct Zone {
-    pub position: HexCoord,
     pub terrain: Terrain,
 }
