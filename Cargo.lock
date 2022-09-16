@@ -1454,6 +1454,7 @@ dependencies = [
  "leafwing-input-manager",
  "pathfinding",
  "rand",
+ "smallvec",
 ]
 
 [[package]]

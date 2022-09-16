@@ -7,6 +7,7 @@ use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
 mod action;
 mod camera;
 mod camp;
+mod character;
 mod fog;
 mod hex;
 mod indicator;
@@ -19,6 +20,7 @@ mod zone_material;
 
 use action::ActionPlugin;
 use camera::{CameraBounds, CameraControl, CameraControlPlugin};
+use character::Character;
 use fog::Fog;
 use hex::{coord_to_vec3, Hexagon};
 use indicator::{update_indicator, Indicator};
@@ -28,7 +30,8 @@ use map::{
     events::Entered, HexCoord, MapComponent, MapLayout, MapPlugin, MapPosition, MapPresence,
     MapPrototype, MapStorage, PathGuided,
 };
-use party::{reset_movement_points, Party};
+use party::{reset_movement_points, JoinParty, Party, PartyMember};
+use smallvec::SmallVec;
 use zone::{Terrain, Zone};
 use zone_material::{ZoneMaterial, ZoneMaterialPlugin};
 
@@ -198,6 +201,7 @@ fn spawn_scene(
             name: String::from("Alpha Group"),
             movement_points: 0,
             supplies: 1,
+            members: SmallVec::new(),
         })
         .insert(MapPresence {
             map,
@@ -208,6 +212,24 @@ fn spawn_scene(
         .insert(PathGuided::default())
         .id();
     mapstorage.add_presence(cubecoord, alpha_group);
+    let character1 = commands
+        .spawn()
+        .insert(Character {
+            name: String::from("Alice"),
+        })
+        .insert(PartyMember { party: alpha_group })
+        .id();
+    let character2 = commands
+        .spawn()
+        .insert(Character {
+            name: String::from("Bob"),
+        })
+        .insert(PartyMember { party: alpha_group })
+        .id();
+    commands.add(JoinParty {
+        party: alpha_group,
+        members: SmallVec::from_slice(&[character1, character2]),
+    });
 
     let cubecoord = HexCoord::new(4, 5);
     let beta_group = commands
@@ -223,6 +245,7 @@ fn spawn_scene(
             name: String::from("Beta Group"),
             movement_points: 0,
             supplies: 1,
+            members: SmallVec::new(),
         })
         .insert(MapPresence {
             map,
@@ -233,6 +256,17 @@ fn spawn_scene(
         .insert(PathGuided::default())
         .id();
     mapstorage.add_presence(cubecoord, beta_group);
+    let character3 = commands
+        .spawn()
+        .insert(Character {
+            name: String::from("Carol"),
+        })
+        .insert(PartyMember { party: beta_group })
+        .id();
+    commands.add(JoinParty {
+        party: beta_group,
+        members: SmallVec::from_slice(&[character3]),
+    });
 
     commands.spawn_bundle(DirectionalLightBundle {
         directional_light: DirectionalLight {

@@ -1,6 +1,7 @@
 use super::color::{NORMAL, SELECTED};
 use super::InterfaceAssets;
 use crate::action::GameAction;
+use crate::character::Character;
 use crate::input::{Action, ActionState};
 use crate::map::MapPosition;
 use crate::party::Party;
@@ -38,6 +39,14 @@ pub struct PartyDisplay {
     party: Entity,
 }
 
+#[derive(Component)]
+pub struct CharacterList;
+
+#[derive(Component)]
+pub struct CharacterDisplay {
+    character: Entity,
+}
+
 fn spawn_toolbar_icon(parent: &mut ChildBuilder, tag: impl Component, image: Handle<Image>) {
     parent
         .spawn_bundle(ButtonBundle {
@@ -56,6 +65,36 @@ fn spawn_toolbar_icon(parent: &mut ChildBuilder, tag: impl Component, image: Han
                     ..default()
                 })
                 .insert(FocusPolicy::Pass);
+        });
+}
+
+fn spawn_character_display(
+    parent: &mut ChildBuilder,
+    entity: Entity,
+    character: &Character,
+    assets: &Res<InterfaceAssets>,
+) {
+    parent
+        .spawn()
+        .insert(CharacterDisplay { character: entity })
+        .insert_bundle(NodeBundle {
+            style: Style {
+                size: Size::new(Val::Percent(100.0), Val::Px(40.0)),
+                margin: UiRect::all(Val::Px(2.0)),
+                ..default()
+            },
+            color: NORMAL.into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn_bundle(TextBundle::from_section(
+                character.name.clone(),
+                TextStyle {
+                    font: assets.font.clone(),
+                    font_size: 28.0,
+                    color: Color::WHITE,
+                },
+            ));
         });
 }
 
@@ -97,16 +136,37 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                 .insert(ZoneText);
             parent
                 .spawn_bundle(NodeBundle {
-                    style: Style {
-                        size: Size::new(Val::Px(200.0), Val::Percent(100.0)),
-                        flex_direction: FlexDirection::Column,
-                        justify_content: JustifyContent::FlexEnd,
-                        ..default()
-                    },
                     color: Color::NONE.into(),
                     ..default()
                 })
-                .insert(PartyList);
+                .with_children(|parent| {
+                    parent
+                        .spawn_bundle(NodeBundle {
+                            style: Style {
+                                size: Size::new(Val::Px(200.0), Val::Percent(100.0)),
+                                flex_direction: FlexDirection::ColumnReverse,
+                                margin: UiRect {
+                                    right: Val::Px(8.0),
+                                    ..default()
+                                },
+                                ..default()
+                            },
+                            color: Color::NONE.into(),
+                            ..default()
+                        })
+                        .insert(PartyList);
+                    parent
+                        .spawn_bundle(NodeBundle {
+                            style: Style {
+                                size: Size::new(Val::Px(200.0), Val::Percent(100.0)),
+                                flex_direction: FlexDirection::ColumnReverse,
+                                ..default()
+                            },
+                            color: Color::NONE.into(),
+                            ..default()
+                        })
+                        .insert(CharacterList);
+                });
             parent
                 .spawn_bundle(NodeBundle {
                     style: Style {
@@ -161,56 +221,99 @@ pub fn update_party_list(
 ) {
     let party_list = party_list_query.single();
     for (entity, party) in party_query.iter() {
-        if !party_display_query
+        if party_display_query
             .iter()
             .any(|display| display.party == entity)
         {
-            commands.get_or_spawn(party_list).add_children(|parent| {
-                parent
-                    .spawn()
-                    .insert(PartyDisplay { party: entity })
-                    .insert_bundle(ButtonBundle {
-                        style: Style {
-                            size: Size::new(Val::Percent(100.0), Val::Px(120.0)),
-                            margin: UiRect::all(Val::Px(2.0)),
-                            flex_direction: FlexDirection::ColumnReverse,
-                            justify_content: JustifyContent::SpaceBetween,
-                            ..default()
-                        },
-                        color: NORMAL.into(),
+            continue;
+        }
+        commands.get_or_spawn(party_list).add_children(|parent| {
+            parent
+                .spawn()
+                .insert(PartyDisplay { party: entity })
+                .insert_bundle(ButtonBundle {
+                    style: Style {
+                        size: Size::new(Val::Percent(100.0), Val::Px(120.0)),
+                        margin: UiRect::all(Val::Px(2.0)),
+                        flex_direction: FlexDirection::ColumnReverse,
+                        justify_content: JustifyContent::SpaceBetween,
                         ..default()
-                    })
-                    .with_children(|parent| {
-                        parent.spawn_bundle(TextBundle::from_section(
-                            party.name.clone(),
-                            TextStyle {
-                                font: assets.font.clone(),
-                                font_size: 32.0,
-                                color: Color::WHITE,
-                            },
-                        ));
-                        parent
-                            .spawn_bundle(TextBundle::from_sections([
-                                TextSection::new(
-                                    "Movement: ",
-                                    TextStyle {
-                                        font: assets.font.clone(),
-                                        font_size: 32.0,
-                                        color: Color::WHITE,
-                                    },
-                                ),
-                                TextSection::new(
-                                    format!("{:?}", party.movement_points),
-                                    TextStyle {
-                                        font: assets.font.clone(),
-                                        font_size: 32.0,
-                                        color: Color::WHITE,
-                                    },
-                                ),
-                            ]))
-                            .insert(PartyMovementPointsText);
-                    });
-            });
+                    },
+                    color: NORMAL.into(),
+                    ..default()
+                })
+                .with_children(|parent| {
+                    parent.spawn_bundle(TextBundle::from_section(
+                        party.name.clone(),
+                        TextStyle {
+                            font: assets.font.clone(),
+                            font_size: 32.0,
+                            color: Color::WHITE,
+                        },
+                    ));
+                    parent
+                        .spawn_bundle(TextBundle::from_sections([
+                            TextSection::new(
+                                "Movement: ",
+                                TextStyle {
+                                    font: assets.font.clone(),
+                                    font_size: 32.0,
+                                    color: Color::WHITE,
+                                },
+                            ),
+                            TextSection::new(
+                                format!("{:?}", party.movement_points),
+                                TextStyle {
+                                    font: assets.font.clone(),
+                                    font_size: 32.0,
+                                    color: Color::WHITE,
+                                },
+                            ),
+                        ]))
+                        .insert(PartyMovementPointsText);
+                });
+        });
+    }
+}
+
+pub fn update_character_list(
+    mut commands: Commands,
+    assets: Res<InterfaceAssets>,
+    character_list_query: Query<Entity, With<CharacterList>>,
+    character_query: Query<(Entity, &Character)>,
+    party_query: Query<(&Party, &Selection)>,
+    character_display_query: Query<(Entity, &CharacterDisplay)>,
+) {
+    let character_list = character_list_query.single();
+
+    let characters = party_query
+        .iter()
+        .filter(|(_, selection)| selection.selected())
+        .flat_map(|(party, _)| party.members.iter());
+    for (entity, character) in character_query.iter_many(characters) {
+        if !character_display_query
+            .iter()
+            .any(|(_, display)| display.character == entity)
+        {
+            commands
+                .get_or_spawn(character_list)
+                .add_children(|parent| {
+                    spawn_character_display(parent, entity, character, &assets);
+                });
+        }
+    }
+
+    let characters: Vec<&Entity> = party_query
+        .iter()
+        .filter(|(_, selection)| selection.selected())
+        .flat_map(|(party, _)| party.members.iter())
+        .collect();
+    for (display_entity, display) in character_display_query.iter() {
+        if !characters
+            .iter()
+            .any(|entity| display.character == **entity)
+        {
+            commands.entity(display_entity).despawn_recursive();
         }
     }
 }

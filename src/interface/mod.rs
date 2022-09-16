@@ -17,6 +17,7 @@ impl Plugin for InterfacePlugin {
             .add_system(shell::update_party_list)
             .add_system(shell::update_party_selection)
             .add_system(shell::update_party_movement_points)
+            .add_system(shell::update_character_list)
             .add_system(shell::update_turn_text)
             .add_system(shell::update_zone_text)
             .add_system(shell::handle_party_display_interaction)
