@@ -1,6 +1,6 @@
 use crate::camp::Camp;
 use crate::hex::coord_to_vec3;
-use crate::map::{find_path, MapComponent, MapPresence, PathGuided};
+use crate::map::{find_path, MapComponent, MapPresence, Offset, PathGuided, ViewRadius};
 use crate::party::Party;
 use crate::HexCoord;
 use crate::MainAssets;
@@ -112,9 +112,9 @@ pub fn handle_make_camp(
                     .insert(MapPresence {
                         map: presence.map,
                         position,
-                        offset: Vec3::ZERO,
-                        view_radius: VIEW_RADIUS,
                     })
+                    .insert(Offset(Vec3::ZERO))
+                    .insert(ViewRadius(VIEW_RADIUS))
                     .id();
                 map.storage.add_presence(position, entity);
             }

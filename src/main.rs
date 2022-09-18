@@ -28,7 +28,7 @@ use input::InputPlugin;
 use interface::InterfacePlugin;
 use map::{
     events::Entered, HexCoord, MapComponent, MapLayout, MapPlugin, MapPosition, MapPresence,
-    MapPrototype, MapStorage, PathGuided,
+    MapPrototype, MapStorage, Offset, PathGuided, ViewRadius,
 };
 use party::{reset_movement_points, JoinParty, Party, PartyMember};
 use smallvec::SmallVec;
@@ -206,9 +206,9 @@ fn spawn_scene(
         .insert(MapPresence {
             map,
             position: cubecoord,
-            offset,
-            view_radius: VIEW_RADIUS,
         })
+        .insert(Offset(offset))
+        .insert(ViewRadius(VIEW_RADIUS))
         .insert(PathGuided::default())
         .id();
     mapstorage.add_presence(cubecoord, alpha_group);
@@ -250,9 +250,9 @@ fn spawn_scene(
         .insert(MapPresence {
             map,
             position: cubecoord,
-            offset,
-            view_radius: VIEW_RADIUS,
         })
+        .insert(Offset(offset))
+        .insert(ViewRadius(VIEW_RADIUS))
         .insert(PathGuided::default())
         .id();
     mapstorage.add_presence(cubecoord, beta_group);

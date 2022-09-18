@@ -1,4 +1,4 @@
-use super::{events::Entered, HexCoord, MapComponent, MapPresence};
+use super::{events::Entered, HexCoord, MapComponent, MapPresence, Offset};
 use crate::hex::coord_to_vec3;
 use crate::party::Party;
 use bevy::prelude::*;
@@ -35,11 +35,12 @@ pub fn progress_path_guided(
         &mut Party,
         &mut MapPresence,
         &mut Transform,
+        &Offset,
     )>,
     mut hex_entered_event: EventWriter<Entered>,
 ) {
     // TODO: Decouple this from party
-    for (entity, mut pathguided, mut party, mut positioned, mut transform) in
+    for (entity, mut pathguided, mut party, mut positioned, mut transform, offset) in
         positioned_query.iter_mut()
     {
         if pathguided.path.is_empty() || party.movement_points == 0 {
@@ -64,9 +65,8 @@ pub fn progress_path_guided(
         }
 
         if let Some(next) = pathguided.path.front() {
-            let orig_translation =
-                coord_to_vec3(positioned.position, map.radius) + positioned.offset;
-            let new_translation = coord_to_vec3(*next, map.radius) + positioned.offset;
+            let orig_translation = coord_to_vec3(positioned.position, map.radius) + offset.0;
+            let new_translation = coord_to_vec3(*next, map.radius) + offset.0;
             transform.translation = orig_translation.lerp(new_translation, pathguided.progress);
         }
     }

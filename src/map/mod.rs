@@ -14,7 +14,7 @@ pub use hexcoord::HexCoord;
 pub use layout::{MapLayout, MapLayoutIterator};
 pub use pathguided::PathGuided;
 pub use position::MapPosition;
-pub use presence::MapPresence;
+pub use presence::{MapPresence, Offset, ViewRadius};
 pub use prototype::MapPrototype;
 pub use storage::MapStorage;
 
