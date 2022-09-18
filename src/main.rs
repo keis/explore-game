@@ -27,8 +27,8 @@ use indicator::{update_indicator, Indicator};
 use input::InputPlugin;
 use interface::InterfacePlugin;
 use map::{
-    events::Entered, HexCoord, MapComponent, MapLayout, MapPlugin, MapPosition, MapPresence,
-    MapPrototype, MapStorage, Offset, PathGuided, ViewRadius,
+    AddMapPresence, HexCoord, MapComponent, MapEvent, MapLayout, MapPlugin, MapPosition,
+    MapPresence, MapPrototype, MapStorage, Offset, PathGuided, ViewRadius,
 };
 use party::{reset_movement_points, JoinParty, Party, PartyMember};
 use smallvec::SmallVec;
@@ -97,20 +97,27 @@ pub struct MainAssets {
 }
 
 fn log_moves(
-    mut entered_event: EventReader<Entered>,
+    mut map_events: EventReader<MapEvent>,
     presence_query: Query<&MapPresence>,
     map_query: Query<&MapComponent>,
 ) {
-    for event in entered_event.iter() {
-        info!("{:?} moved to {:?}", event.entity, event.coordinate);
-        if let Ok(presence) = presence_query.get(event.entity) {
-            if let Ok(map) = map_query.get(presence.map) {
-                for other in map
-                    .storage
-                    .presence(presence.position)
-                    .filter(|e| **e != event.entity)
-                {
-                    info!("{:?} is here", other);
+    for event in map_events.iter() {
+        if let MapEvent::PresenceMoved {
+            presence: entity,
+            position,
+            ..
+        } = event
+        {
+            info!("{:?} moved to {:?}", entity, position);
+            if let Ok(presence) = presence_query.get(*entity) {
+                if let Ok(map) = map_query.get(presence.map) {
+                    for other in map
+                        .storage
+                        .presence(presence.position)
+                        .filter(|e| *e != entity)
+                    {
+                        info!("{:?} is here", other);
+                    }
                 }
             }
         }
@@ -187,7 +194,13 @@ fn spawn_scene(
             .id();
         mapstorage.set(position, Some(entity));
     }
-    let map = commands.spawn().id();
+    let map = commands
+        .spawn()
+        .insert(MapComponent {
+            storage: mapstorage,
+            radius: 1.0,
+        })
+        .id();
     let alpha_group = commands
         .spawn_bundle(PbrBundle {
             mesh: assets.indicator_mesh.clone(),
@@ -203,15 +216,15 @@ fn spawn_scene(
             supplies: 1,
             members: SmallVec::new(),
         })
-        .insert(MapPresence {
-            map,
-            position: cubecoord,
-        })
         .insert(Offset(offset))
         .insert(ViewRadius(VIEW_RADIUS))
         .insert(PathGuided::default())
         .id();
-    mapstorage.add_presence(cubecoord, alpha_group);
+    commands.add(AddMapPresence {
+        map,
+        presence: alpha_group,
+        position: cubecoord,
+    });
     let character1 = commands
         .spawn()
         .insert(Character {
@@ -247,15 +260,15 @@ fn spawn_scene(
             supplies: 1,
             members: SmallVec::new(),
         })
-        .insert(MapPresence {
-            map,
-            position: cubecoord,
-        })
         .insert(Offset(offset))
         .insert(ViewRadius(VIEW_RADIUS))
         .insert(PathGuided::default())
         .id();
-    mapstorage.add_presence(cubecoord, beta_group);
+    commands.add(AddMapPresence {
+        map,
+        presence: beta_group,
+        position: cubecoord,
+    });
     let character3 = commands
         .spawn()
         .insert(Character {
@@ -280,10 +293,5 @@ fn spawn_scene(
             ..default()
         },
         ..default()
-    });
-
-    commands.entity(map).insert(MapComponent {
-        storage: mapstorage,
-        radius: 1.0,
     });
 }

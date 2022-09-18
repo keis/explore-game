@@ -1,6 +1,9 @@
 use crate::camp::Camp;
 use crate::hex::coord_to_vec3;
-use crate::map::{find_path, MapComponent, MapPresence, Offset, PathGuided, ViewRadius};
+use crate::map::{
+    find_path, AddMapPresence, DespawnPresence, MapComponent, MapPresence, Offset, PathGuided,
+    ViewRadius,
+};
 use crate::party::Party;
 use crate::HexCoord;
 use crate::MainAssets;
@@ -69,14 +72,14 @@ pub fn handle_make_camp(
     assets: Res<MainAssets>,
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut events: EventReader<GameAction>,
-    mut map_query: Query<&mut MapComponent>,
+    mut map_query: Query<(Entity, &MapComponent)>,
     mut party_query: Query<(&mut Party, &MapPresence)>,
     camp_query: Query<&Camp>,
 ) {
     for event in events.iter() {
         if let GameAction::MakeCamp(e) = event {
             if let Ok((mut party, presence)) = party_query.get_mut(*e) {
-                let mut map = map_query
+                let (map_entity, map) = map_query
                     .get_mut(presence.map)
                     .expect("references valid map");
 
@@ -109,14 +112,14 @@ pub fn handle_make_camp(
                     .insert(Camp {
                         name: String::from("New Camp"),
                     })
-                    .insert(MapPresence {
-                        map: presence.map,
-                        position,
-                    })
                     .insert(Offset(Vec3::ZERO))
                     .insert(ViewRadius(VIEW_RADIUS))
                     .id();
-                map.storage.add_presence(position, entity);
+                commands.add(AddMapPresence {
+                    map: map_entity,
+                    presence: entity,
+                    position,
+                })
             }
         }
     }
@@ -126,13 +129,13 @@ pub fn handle_break_camp(
     mut commands: Commands,
     mut events: EventReader<GameAction>,
     mut party_query: Query<(&mut Party, &MapPresence)>,
-    mut map_query: Query<&mut MapComponent>,
+    mut map_query: Query<(Entity, &MapComponent)>,
     camp_query: Query<Entity, With<Camp>>,
 ) {
     for event in events.iter() {
         if let GameAction::BreakCamp(e) = event {
             if let Ok((mut party, presence)) = party_query.get_mut(*e) {
-                let mut map = map_query
+                let (map_entity, map) = map_query
                     .get_mut(presence.map)
                     .expect("references valid map");
 
@@ -141,8 +144,10 @@ pub fn handle_break_camp(
                 if let Some(camp) = maybe_camp {
                     info!("Depawning camp at {:?}", position);
                     party.supplies += 1;
-                    commands.entity(camp).despawn();
-                    map.storage.remove_presence(position, camp);
+                    commands.add(DespawnPresence {
+                        map: map_entity,
+                        presence: camp,
+                    });
                 }
             }
         }

@@ -1,7 +1,15 @@
 use super::HexCoord;
 use bevy::prelude::*;
 
-pub struct Entered {
-    pub entity: Entity,
-    pub coordinate: HexCoord,
+pub enum MapEvent {
+    PresenceAdded {
+        map: Entity,
+        presence: Entity,
+        position: HexCoord,
+    },
+    PresenceMoved {
+        map: Entity,
+        presence: Entity,
+        position: HexCoord,
+    },
 }

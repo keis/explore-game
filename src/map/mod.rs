@@ -1,7 +1,8 @@
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use pathfinding::prelude::astar;
 
-pub mod events;
+mod commands;
+mod events;
 mod hexcoord;
 mod layout;
 mod pathguided;
@@ -10,6 +11,8 @@ mod presence;
 mod prototype;
 mod storage;
 
+pub use commands::{AddMapPresence, DespawnPresence, MoveMapPresence};
+pub use events::MapEvent;
 pub use hexcoord::HexCoord;
 pub use layout::{MapLayout, MapLayoutIterator};
 pub use pathguided::PathGuided;
@@ -34,7 +37,7 @@ fn run_if_damaged(damaged: Res<Damaged>) -> ShouldRun {
     }
 }
 
-fn damage(mut entered_event: EventReader<events::Entered>, mut damaged: ResMut<Damaged>) {
+fn damage(mut entered_event: EventReader<MapEvent>, mut damaged: ResMut<Damaged>) {
     for _event in entered_event.iter() {
         damaged.0 = true;
     }
@@ -52,7 +55,7 @@ impl Plugin for MapPlugin {
                     .with_system(presence::update_visibility),
             )
             .add_system_to_stage(CoreStage::PostUpdate, damage)
-            .add_event::<events::Entered>();
+            .add_event::<MapEvent>();
     }
 }
 
