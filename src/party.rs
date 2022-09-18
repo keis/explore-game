@@ -24,9 +24,18 @@ pub struct JoinParty {
 
 impl Command for JoinParty {
     fn write(mut self, world: &mut World) {
-        let mut entity = world.entity_mut(self.party);
-        if let Some(mut party) = entity.get_mut::<Party>() {
+        let mut party_entity = world.entity_mut(self.party);
+        if let Some(mut party) = party_entity.get_mut::<Party>() {
             party.members.append(&mut self.members);
+        }
+
+        for member in self.members {
+            let mut member_entity = world.entity_mut(member);
+            if let Some(mut party_member) = member_entity.get_mut::<PartyMember>() {
+                party_member.party = self.party;
+            } else {
+                member_entity.insert(PartyMember { party: self.party });
+            }
         }
     }
 }

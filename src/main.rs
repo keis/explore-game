@@ -237,7 +237,6 @@ fn spawn_scene(
         .insert(Character {
             name: String::from("Bob"),
         })
-        .insert(PartyMember { party: alpha_group })
         .id();
     commands.add(JoinParty {
         party: alpha_group,
@@ -274,7 +273,6 @@ fn spawn_scene(
         .insert(Character {
             name: String::from("Carol"),
         })
-        .insert(PartyMember { party: beta_group })
         .id();
     commands.add(JoinParty {
         party: beta_group,
