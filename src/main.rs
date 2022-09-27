@@ -15,6 +15,7 @@ mod input;
 mod interface;
 mod map;
 mod party;
+mod slide;
 mod zone;
 mod zone_material;
 
@@ -31,6 +32,7 @@ use map::{
     MapPresence, MapPrototype, MapStorage, Offset, PathGuided, ViewRadius,
 };
 use party::{reset_movement_points, JoinParty, Party, PartyMember};
+use slide::{slide, Slide, SlideEvent};
 use smallvec::SmallVec;
 use zone::{Terrain, Zone};
 use zone_material::{ZoneMaterial, ZoneMaterialPlugin};
@@ -77,7 +79,9 @@ fn main() {
         .add_startup_system(spawn_camera)
         .add_system(log_moves)
         .add_system(update_indicator)
-        .add_system(reset_movement_points);
+        .add_system(reset_movement_points)
+        .add_system(slide)
+        .add_event::<SlideEvent>();
 
     app.run();
 }
@@ -219,6 +223,7 @@ fn spawn_scene(
         .insert(Offset(offset))
         .insert(ViewRadius(VIEW_RADIUS))
         .insert(PathGuided::default())
+        .insert(Slide::default())
         .id();
     commands.add(AddMapPresence {
         map,
@@ -262,6 +267,7 @@ fn spawn_scene(
         .insert(Offset(offset))
         .insert(ViewRadius(VIEW_RADIUS))
         .insert(PathGuided::default())
+        .insert(Slide::default())
         .id();
     commands.add(AddMapPresence {
         map,

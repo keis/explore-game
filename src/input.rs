@@ -1,6 +1,6 @@
 #![allow(clippy::type_complexity)]
 
-use crate::action::GameAction;
+use crate::action::{GameActionQueue, GameAction};
 use crate::interface::MenuLayer;
 use crate::map::{MapPosition, MapPresence, PathGuided};
 use crate::Zone;
@@ -103,7 +103,7 @@ pub fn handle_picking_events(
     mut events: EventReader<PickingEvent>,
     zone_query: Query<&MapPosition, With<Zone>>,
     presence_query: Query<(Entity, &Selection), (With<PathGuided>, With<MapPresence>)>,
-    mut game_action_event: EventWriter<GameAction>,
+    mut game_action_queue: ResMut<GameActionQueue>,
 ) {
     for event in events.iter() {
         match event {
@@ -111,7 +111,7 @@ pub fn handle_picking_events(
                 if let Ok(zone_position) = zone_query.get(*e) {
                     info!("Clicked a zone: {:?}", zone_position);
                     for (entity, _) in presence_query.iter().filter(|(_, s)| s.selected()) {
-                        game_action_event.send(GameAction::MoveTo(entity, zone_position.0));
+                        game_action_queue.add(GameAction::MoveTo(entity, zone_position.0));
                     }
                 } else {
                     info!("Clicked something: {:?}", e);

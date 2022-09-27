@@ -1,21 +1,25 @@
 use crate::camp::Camp;
 use crate::hex::coord_to_vec3;
 use crate::map::{
-    find_path, AddMapPresence, DespawnPresence, MapComponent, MapPresence, Offset, PathGuided,
-    ViewRadius,
+    find_path, AddMapPresence, DespawnPresence, MapComponent, MapPresence, MoveMapPresence, Offset,
+    PathGuided, ViewRadius,
 };
 use crate::party::Party;
+use crate::slide::{Slide, SlideEvent};
 use crate::HexCoord;
 use crate::MainAssets;
 use crate::Terrain;
+use crate::Turn;
 use crate::Zone;
 use crate::VIEW_RADIUS;
 use bevy::ecs::schedule::ShouldRun;
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
+use std::collections::VecDeque;
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum GameAction {
+    Move(Entity, HexCoord),
     MoveTo(Entity, HexCoord),
     MakeCamp(Entity),
     BreakCamp(Entity),
@@ -27,6 +31,10 @@ pub struct ActionPlugin;
 impl Plugin for ActionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<GameAction>()
+            .insert_resource(GameActionQueue::default())
+            .add_system(trigger_action)
+            .add_system(handle_move)
+            .add_system(handle_slide_stopped)
             .add_system(handle_move_to)
             .add_system(handle_make_camp)
             .add_system(handle_break_camp)
@@ -38,16 +46,107 @@ impl Plugin for ActionPlugin {
     }
 }
 
+#[derive(Default)]
+pub struct GameActionQueue {
+    deque: VecDeque<GameAction>,
+    current: Option<GameAction>,
+}
+
+impl GameActionQueue {
+    pub fn add(&mut self, action: GameAction) {
+        self.deque.push_back(action);
+    }
+
+    pub fn is_waiting(&self) -> bool {
+        self.current.is_some()
+    }
+}
+
+pub fn trigger_action(
+    mut events: EventWriter<GameAction>,
+    mut queue: ResMut<GameActionQueue>,
+    turn: Res<Turn>,
+) {
+    if turn.is_changed() {
+        if let Some(action) = queue.deque.pop_front() {
+            events.send(action);
+            queue.current = Some(action);
+        }
+    }
+
+    if queue.is_changed() && !queue.is_waiting() {
+        if let Some(action) = queue.deque.pop_front() {
+            events.send(action);
+            queue.current = Some(action);
+        }
+    }
+}
+
+pub fn handle_move(
+    mut events: EventReader<GameAction>,
+    map_query: Query<&MapComponent>,
+    mut party_query: Query<(&mut Party, &mut Slide, &Transform, &Offset, &MapPresence)>,
+) {
+    for event in events.iter() {
+        if let GameAction::Move(e, next) = event {
+            if let Ok((mut party, mut slide, transform, offset, presence)) = party_query.get_mut(*e)
+            {
+                if party.movement_points == 0 {
+                    warn!("tried to move without movement points");
+                    continue;
+                }
+                let map = map_query.get(presence.map).expect("references valid map");
+                party.movement_points -= 1;
+                slide.start = transform.translation;
+                slide.end = coord_to_vec3(*next, map.radius) + offset.0;
+                slide.progress = 0.0;
+            }
+        }
+    }
+}
+
+pub fn handle_slide_stopped(
+    mut commands: Commands,
+    mut events: EventReader<SlideEvent>,
+    mut queue: ResMut<GameActionQueue>,
+    mut presence_query: Query<(&MapPresence, &Party, &mut PathGuided)>,
+) {
+    for _ in events.iter() {
+        if let Some(last_action) = queue.current.take() {
+            if let GameAction::Move(e, next) = last_action {
+                let (presence, party, mut pathguided) =
+                    presence_query.get_mut(e).expect("only presence moves");
+                info!("done with move action {:?}", last_action);
+                commands.add(MoveMapPresence {
+                    map: presence.map,
+                    presence: e,
+                    position: next,
+                });
+                // Keep moving if a path is set
+                if party.movement_points > 0 {
+                    if let Some(next) = pathguided.take_next() {
+                        queue.add(GameAction::Move(e, next));
+                    }
+                }
+            } else {
+                warn!("Slide finished for some unknown action");
+            }
+        }
+    }
+}
+
 pub fn handle_move_to(
     mut events: EventReader<GameAction>,
-    mut presence_query: Query<(&mut PathGuided, &MapPresence)>,
+    mut queue: ResMut<GameActionQueue>,
+    mut presence_query: Query<(&MapPresence, &Party, &mut PathGuided)>,
     zone_query: Query<&Zone>,
     map_query: Query<&MapComponent>,
 ) {
     // Use let_chains after rust 1.64
     for event in events.iter() {
         if let GameAction::MoveTo(e, goal) = event {
-            if let Ok((mut pathguided, presence)) = presence_query.get_mut(*e) {
+            queue.current.take();
+            if let Ok((presence, party, mut pathguided)) = presence_query.get_mut(*e) {
                 if let Ok(map) = map_query.get(presence.map) {
                     if let Some((path, _length)) =
                         find_path(presence.position, *goal, &|c: &HexCoord| {
@@ -60,6 +159,11 @@ pub fn handle_move_to(
                         })
                     {
                         pathguided.path(path);
+                        if party.movement_points > 0 {
+                            if let Some(next) = pathguided.take_next() {
+                                queue.add(GameAction::Move(*e, next));
+                            }
+                        }
                     }
                 }
             }
