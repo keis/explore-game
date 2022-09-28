@@ -10,6 +10,7 @@ pub mod input;
 pub mod interface;
 pub mod map;
 pub mod party;
+pub mod path;
 pub mod slide;
 pub mod turn;
 pub mod zone;
