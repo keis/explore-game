@@ -1,16 +1,14 @@
+use crate::assets::MainAssets;
 use crate::camp::Camp;
 use crate::hex::coord_to_vec3;
 use crate::map::{
-    find_path, AddMapPresence, DespawnPresence, MapComponent, MapPresence, MoveMapPresence, Offset,
-    PathGuided, ViewRadius,
+    find_path, AddMapPresence, DespawnPresence, HexCoord, MapComponent, MapPresence,
+    MoveMapPresence, Offset, PathGuided, ViewRadius,
 };
 use crate::party::Party;
 use crate::slide::{Slide, SlideEvent};
-use crate::HexCoord;
-use crate::MainAssets;
-use crate::Terrain;
-use crate::Turn;
-use crate::Zone;
+use crate::turn::Turn;
+use crate::zone::{Terrain, Zone};
 use crate::VIEW_RADIUS;
 use bevy::ecs::schedule::ShouldRun;
 use bevy::prelude::*;

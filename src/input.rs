@@ -1,9 +1,9 @@
 #![allow(clippy::type_complexity)]
 
-use crate::action::{GameActionQueue, GameAction};
+use crate::action::{GameAction, GameActionQueue};
 use crate::interface::MenuLayer;
 use crate::map::{MapPosition, MapPresence, PathGuided};
-use crate::Zone;
+use crate::zone::Zone;
 use bevy::prelude::*;
 use bevy_mod_picking::{DefaultPickingPlugins, PickingEvent, Selection};
 use leafwing_input_manager::plugin::InputManagerSystem;

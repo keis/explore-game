@@ -45,7 +45,7 @@ impl<'a> Iterator for MapLayoutIterator<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{HexCoord, MapLayout};
+    use crate::map::{HexCoord, MapLayout};
 
     #[test]
     fn map_iter() {

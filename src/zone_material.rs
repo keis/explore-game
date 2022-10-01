@@ -1,4 +1,4 @@
-use crate::Fog;
+use crate::fog::Fog;
 use bevy::{
     pbr::RenderMaterials,
     prelude::*,

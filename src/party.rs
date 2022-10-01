@@ -1,4 +1,4 @@
-use crate::Turn;
+use crate::turn::Turn;
 
 use bevy::ecs::system::Command;
 use bevy::prelude::*;

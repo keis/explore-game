@@ -5,8 +5,8 @@ use crate::character::Character;
 use crate::input::{Action, ActionState};
 use crate::map::MapPosition;
 use crate::party::Party;
-use crate::Turn;
-use crate::Zone;
+use crate::turn::Turn;
+use crate::zone::Zone;
 use bevy::{prelude::*, ui::FocusPolicy};
 use bevy_mod_picking::{HoverEvent, PickingEvent, Selection};
 

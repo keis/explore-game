@@ -3,48 +3,31 @@ use bevy::{
 };
 use bevy_asset_loader::prelude::*;
 use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
-
-mod action;
-mod camera;
-mod camp;
-mod character;
-mod fog;
-mod hex;
-mod indicator;
-mod input;
-mod interface;
-mod map;
-mod party;
-mod slide;
-mod zone;
-mod zone_material;
-
-use action::ActionPlugin;
-use camera::{CameraBounds, CameraControl, CameraControlPlugin};
-use character::Character;
-use fog::Fog;
-use hex::{coord_to_vec3, Hexagon};
-use indicator::{update_indicator, Indicator};
-use input::InputPlugin;
-use interface::InterfacePlugin;
-use map::{
-    AddMapPresence, HexCoord, MapComponent, MapEvent, MapLayout, MapPlugin, MapPosition,
-    MapPresence, MapPrototype, MapStorage, Offset, PathGuided, ViewRadius,
+use explore_game::{
+    action::ActionPlugin,
+    assets::MainAssets,
+    camera::{CameraBounds, CameraControl, CameraControlPlugin},
+    character::Character,
+    fog::Fog,
+    hex::{coord_to_vec3, Hexagon},
+    indicator::{update_indicator, Indicator},
+    input::InputPlugin,
+    interface::InterfacePlugin,
+    map::{
+        AddMapPresence, HexCoord, MapComponent, MapEvent, MapLayout, MapPlugin, MapPosition,
+        MapPresence, MapPrototype, MapStorage, Offset, PathGuided, ViewRadius,
+    },
+    party::{reset_movement_points, JoinParty, Party, PartyMember},
+    slide::{slide, Slide, SlideEvent},
+    turn::Turn,
+    zone::Terrain,
+    zone_material::{ZoneMaterial, ZoneMaterialPlugin},
+    VIEW_RADIUS,
 };
-use party::{reset_movement_points, JoinParty, Party, PartyMember};
-use slide::{slide, Slide, SlideEvent};
 use smallvec::SmallVec;
-use zone::{Terrain, Zone};
-use zone_material::{ZoneMaterial, ZoneMaterialPlugin};
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
 pub const ASPECT_RATIO: f32 = 16.0 / 9.0;
-pub const VIEW_RADIUS: usize = 2;
-
-#[derive(Debug)]
-pub struct Turn {
-    number: u32,
-}
 
 fn main() {
     let height = 900.0;
@@ -84,20 +67,6 @@ fn main() {
         .add_event::<SlideEvent>();
 
     app.run();
-}
-
-#[derive(AssetCollection)]
-pub struct MainAssets {
-    #[asset(path = "textures/cloud.png")]
-    cloud_texture: Handle<Image>,
-    #[asset(path = "textures/grass.png")]
-    grass_texture: Handle<Image>,
-    #[asset(path = "textures/lava.png")]
-    lava_texture: Handle<Image>,
-    #[asset(path = "models/indicator.stl")]
-    indicator_mesh: Handle<Mesh>,
-    #[asset(path = "models/tent.stl")]
-    tent_mesh: Handle<Mesh>,
 }
 
 fn log_moves(

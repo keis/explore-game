@@ -1,6 +1,6 @@
 use super::{Damaged, HexCoord, MapPosition};
-use crate::Fog;
-use crate::Zone;
+use crate::fog::Fog;
+use crate::zone::Zone;
 use bevy::prelude::*;
 
 #[derive(Component, Debug)]
