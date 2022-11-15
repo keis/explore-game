@@ -39,12 +39,12 @@ impl Plugin for ActionPlugin {
             .add_system_set(
                 SystemSet::new()
                     .with_run_criteria(run_on_save)
-                    .with_system(handle_save.exclusive_system()),
+                    .with_system(handle_save),
             );
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct GameActionQueue {
     deque: VecDeque<GameAction>,
     current: Option<GameAction>,
@@ -203,19 +203,22 @@ pub fn handle_make_camp(
                 info!("Spawning camp at {:?}", position);
                 party.supplies -= 1;
                 let entity = commands
-                    .spawn_bundle(PbrBundle {
-                        mesh: assets.tent_mesh.clone(),
-                        material: standard_materials.add(Color::rgb(0.631, 0.596, 0.165).into()),
-                        transform: Transform::from_translation(coord_to_vec3(position, 1.0))
-                            .with_rotation(Quat::from_rotation_y(1.0)),
-                        ..default()
-                    })
-                    .insert_bundle(PickableBundle::default())
-                    .insert(Camp {
-                        name: String::from("New Camp"),
-                    })
-                    .insert(Offset(Vec3::ZERO))
-                    .insert(ViewRadius(VIEW_RADIUS))
+                    .spawn((
+                        PbrBundle {
+                            mesh: assets.tent_mesh.clone(),
+                            material: standard_materials
+                                .add(Color::rgb(0.631, 0.596, 0.165).into()),
+                            transform: Transform::from_translation(coord_to_vec3(position, 1.0))
+                                .with_rotation(Quat::from_rotation_y(1.0)),
+                            ..default()
+                        },
+                        PickableBundle::default(),
+                        Camp {
+                            name: String::from("New Camp"),
+                        },
+                        Offset(Vec3::ZERO),
+                        ViewRadius(VIEW_RADIUS),
+                    ))
                     .id();
                 commands.add(AddMapPresence {
                     map: map_entity,

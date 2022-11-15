@@ -20,23 +20,25 @@ fn spawn_menu_item(
     text: &str,
 ) {
     parent
-        .spawn_bundle(ButtonBundle {
-            style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Px(50.0)),
-                margin: UiRect {
-                    bottom: Val::Px(10.0),
+        .spawn((
+            ButtonBundle {
+                style: Style {
+                    size: Size::new(Val::Percent(100.0), Val::Px(50.0)),
+                    margin: UiRect {
+                        bottom: Val::Px(10.0),
+                        ..default()
+                    },
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::SpaceAround,
                     ..default()
                 },
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::SpaceAround,
+                background_color: NORMAL.into(),
                 ..default()
             },
-            color: NORMAL.into(),
-            ..default()
-        })
-        .insert(tag)
+            tag,
+        ))
         .with_children(|parent| {
-            parent.spawn_bundle(TextBundle::from_section(
+            parent.spawn(TextBundle::from_section(
                 text,
                 TextStyle {
                     font: assets.font.clone(),
@@ -49,30 +51,32 @@ fn spawn_menu_item(
 
 pub fn spawn_menu(mut commands: Commands, assets: Res<InterfaceAssets>) {
     commands
-        .spawn_bundle(NodeBundle {
-            style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                position_type: PositionType::Absolute,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::SpaceAround,
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                    position_type: PositionType::Absolute,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::SpaceAround,
+                    ..default()
+                },
+                background_color: BACKGROUND.into(),
+                visibility: Visibility { is_visible: false },
                 ..default()
             },
-            color: BACKGROUND.into(),
-            visibility: Visibility { is_visible: false },
-            ..default()
-        })
-        .insert(MenuLayer)
+            MenuLayer,
+        ))
         .with_children(|parent| {
             parent
-                .spawn_bundle(NodeBundle {
+                .spawn(NodeBundle {
                     style: Style {
                         size: Size::new(Val::Px(300.0), Val::Px(400.0)),
-                        flex_direction: FlexDirection::ColumnReverse,
+                        flex_direction: FlexDirection::Column,
                         justify_content: JustifyContent::FlexStart,
                         padding: UiRect::all(Val::Px(5.0)),
                         ..default()
                     },
-                    color: MENU.into(),
+                    background_color: MENU.into(),
                     ..default()
                 })
                 .with_children(|parent| {

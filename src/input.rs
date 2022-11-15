@@ -41,7 +41,7 @@ pub enum Action {
 }
 
 fn spawn_input_manager(mut commands: Commands) {
-    commands.spawn_bundle(InputManagerBundle {
+    commands.spawn(InputManagerBundle {
         action_state: ActionState::default(),
         input_map: InputMap::default()
             .insert(KeyCode::Up, Action::PanCameraUp)
@@ -63,7 +63,7 @@ pub fn magic_cancel(
     selection_query: Query<&Selection>,
 ) {
     let mut action_state = action_state_query.single_mut();
-    let actiondata = action_state.action_data(Action::Cancel);
+    let actiondata = action_state.action_data(Action::Cancel).clone();
 
     // Close menu
     if action_state.just_pressed(Action::Cancel) {

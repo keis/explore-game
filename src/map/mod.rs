@@ -27,6 +27,7 @@ pub struct MapComponent {
     pub radius: f32,
 }
 
+#[derive(Resource)]
 pub struct Damaged(bool);
 
 fn run_if_damaged(damaged: Res<Damaged>) -> ShouldRun {

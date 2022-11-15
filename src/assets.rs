@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 pub struct MainAssets {
     #[asset(path = "textures/cloud.png")]
     pub cloud_texture: Handle<Image>,

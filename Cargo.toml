@@ -10,11 +10,11 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-bevy = { version = "0.8", features = ["dynamic", "wayland"] }
-bevy_mod_picking = "0.8"
-bevy_stl = "0.6.0"
-rand = "0.8.5"
+bevy_asset_loader = "0.14.1"
+bevy_mod_picking = "0.10"
+bevy_stl = { git = "https://github.com/keis/bevy_stl.git", rev = "7cddf114a30b72ca2f466dbc7189641d7f784baa" }
+bevy = { version = "0.9", features = ["dynamic", "wayland"] }
+leafwing-input-manager = "0.7.0"
 pathfinding = "3.0.13"
-leafwing-input-manager = "0.5.2"
-bevy_asset_loader = "0.12.1"
+rand = "0.8.5"
 smallvec = "1.6"

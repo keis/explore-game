@@ -49,22 +49,23 @@ pub struct CharacterDisplay {
 
 fn spawn_toolbar_icon(parent: &mut ChildBuilder, tag: impl Component, image: Handle<Image>) {
     parent
-        .spawn_bundle(ButtonBundle {
-            color: NORMAL.into(),
-            ..default()
-        })
-        .insert(tag)
+        .spawn((
+            ButtonBundle {
+                background_color: NORMAL.into(),
+                ..default()
+            },
+            tag,
+        ))
         .with_children(|parent| {
-            parent
-                .spawn_bundle(ImageBundle {
-                    style: Style {
-                        size: Size::new(Val::Px(32.0), Val::Px(32.0)),
-                        ..default()
-                    },
-                    image: image.into(),
+            parent.spawn(ImageBundle {
+                style: Style {
+                    size: Size::new(Val::Px(32.0), Val::Px(32.0)),
                     ..default()
-                })
-                .insert(FocusPolicy::Pass);
+                },
+                image: image.into(),
+                focus_policy: FocusPolicy::Pass,
+                ..default()
+            });
         });
 }
 
@@ -75,19 +76,20 @@ fn spawn_character_display(
     assets: &Res<InterfaceAssets>,
 ) {
     parent
-        .spawn()
-        .insert(CharacterDisplay { character: entity })
-        .insert_bundle(NodeBundle {
-            style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Px(40.0)),
-                margin: UiRect::all(Val::Px(2.0)),
+        .spawn((
+            CharacterDisplay { character: entity },
+            NodeBundle {
+                style: Style {
+                    size: Size::new(Val::Percent(100.0), Val::Px(40.0)),
+                    margin: UiRect::all(Val::Px(2.0)),
+                    ..default()
+                },
+                background_color: NORMAL.into(),
                 ..default()
             },
-            color: NORMAL.into(),
-            ..default()
-        })
+        ))
         .with_children(|parent| {
-            parent.spawn_bundle(TextBundle::from_section(
+            parent.spawn(TextBundle::from_section(
                 character.name.clone(),
                 TextStyle {
                     font: assets.font.clone(),
@@ -100,81 +102,81 @@ fn spawn_character_display(
 
 pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
     commands
-        .spawn_bundle(NodeBundle {
-            style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                justify_content: JustifyContent::SpaceBetween,
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                    justify_content: JustifyContent::SpaceBetween,
+                    ..default()
+                },
                 ..default()
             },
-            color: Color::NONE.into(),
-            ..default()
-        })
-        .insert(Shell)
+            Shell,
+        ))
         .with_children(|parent| {
-            parent
-                .spawn_bundle(
-                    TextBundle::from_section(
-                        "Zone: ",
-                        TextStyle {
-                            font: assets.font.clone(),
-                            font_size: 32.0,
-                            color: Color::WHITE,
-                        },
-                    )
-                    .with_text_alignment(TextAlignment::TOP_CENTER)
-                    .with_style(Style {
-                        align_self: AlignSelf::FlexEnd,
-                        position_type: PositionType::Absolute,
-                        position: UiRect {
-                            top: Val::Px(5.0),
-                            right: Val::Px(15.0),
-                            ..default()
-                        },
-                        ..default()
-                    }),
+            parent.spawn((
+                ZoneText,
+                TextBundle::from_section(
+                    "Zone: ",
+                    TextStyle {
+                        font: assets.font.clone(),
+                        font_size: 32.0,
+                        color: Color::WHITE,
+                    },
                 )
-                .insert(ZoneText);
+                .with_text_alignment(TextAlignment::TOP_CENTER)
+                .with_style(Style {
+                    align_self: AlignSelf::FlexEnd,
+                    position_type: PositionType::Absolute,
+                    position: UiRect {
+                        top: Val::Px(5.0),
+                        right: Val::Px(15.0),
+                        ..default()
+                    },
+                    ..default()
+                }),
+            ));
             parent
-                .spawn_bundle(NodeBundle {
-                    color: Color::NONE.into(),
+                .spawn(NodeBundle {
+                    background_color: Color::NONE.into(),
                     ..default()
                 })
                 .with_children(|parent| {
-                    parent
-                        .spawn_bundle(NodeBundle {
+                    parent.spawn((
+                        NodeBundle {
                             style: Style {
                                 size: Size::new(Val::Px(200.0), Val::Percent(100.0)),
-                                flex_direction: FlexDirection::ColumnReverse,
+                                flex_direction: FlexDirection::Column,
                                 margin: UiRect {
                                     right: Val::Px(8.0),
                                     ..default()
                                 },
                                 ..default()
                             },
-                            color: Color::NONE.into(),
+                            background_color: Color::NONE.into(),
                             ..default()
-                        })
-                        .insert(PartyList);
-                    parent
-                        .spawn_bundle(NodeBundle {
+                        },
+                        PartyList,
+                    ));
+                    parent.spawn((
+                        NodeBundle {
                             style: Style {
                                 size: Size::new(Val::Px(200.0), Val::Percent(100.0)),
-                                flex_direction: FlexDirection::ColumnReverse,
+                                flex_direction: FlexDirection::Column,
                                 ..default()
                             },
-                            color: Color::NONE.into(),
                             ..default()
-                        })
-                        .insert(CharacterList);
+                        },
+                        CharacterList,
+                    ));
                 });
             parent
-                .spawn_bundle(NodeBundle {
+                .spawn(NodeBundle {
                     style: Style {
-                        align_self: AlignSelf::FlexEnd,
+                        align_self: AlignSelf::FlexStart,
                         padding: UiRect::all(Val::Px(2.0)),
                         ..default()
                     },
-                    color: Color::NONE.into(),
                     ..default()
                 })
                 .with_children(|parent| {
@@ -182,32 +184,34 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     spawn_toolbar_icon(parent, BreakCampButton, assets.knapsack_icon.clone());
                 });
             parent
-                .spawn_bundle(ButtonBundle {
-                    style: Style {
-                        size: Size::new(Val::Px(200.0), Val::Px(60.0)),
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center,
+                .spawn((
+                    ButtonBundle {
+                        style: Style {
+                            size: Size::new(Val::Px(200.0), Val::Px(60.0)),
+                            align_self: AlignSelf::FlexEnd,
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            ..default()
+                        },
+                        background_color: Color::rgb(0.4, 0.9, 0.4).into(),
                         ..default()
                     },
-                    color: Color::rgb(0.4, 0.9, 0.4).into(),
-                    ..default()
-                })
-                .insert(TurnButton)
+                    TurnButton,
+                ))
                 .with_children(|parent| {
-                    parent
-                        .spawn_bundle(
-                            TextBundle::from_section(
-                                "Turn ?",
-                                TextStyle {
-                                    font: assets.font.clone(),
-                                    font_size: 32.0,
-                                    color: Color::WHITE,
-                                },
-                            )
-                            .with_text_alignment(TextAlignment::CENTER)
-                            .with_style(Style { ..default() }),
+                    parent.spawn((
+                        TurnText,
+                        TextBundle::from_section(
+                            "Turn ?",
+                            TextStyle {
+                                font: assets.font.clone(),
+                                font_size: 32.0,
+                                color: Color::WHITE,
+                            },
                         )
-                        .insert(TurnText);
+                        .with_text_alignment(TextAlignment::CENTER)
+                        .with_style(Style { ..default() }),
+                    ));
                 });
         });
 }
@@ -229,21 +233,22 @@ pub fn update_party_list(
         }
         commands.get_or_spawn(party_list).add_children(|parent| {
             parent
-                .spawn()
-                .insert(PartyDisplay { party: entity })
-                .insert_bundle(ButtonBundle {
-                    style: Style {
-                        size: Size::new(Val::Percent(100.0), Val::Px(120.0)),
-                        margin: UiRect::all(Val::Px(2.0)),
-                        flex_direction: FlexDirection::ColumnReverse,
-                        justify_content: JustifyContent::SpaceBetween,
+                .spawn((
+                    PartyDisplay { party: entity },
+                    ButtonBundle {
+                        style: Style {
+                            size: Size::new(Val::Percent(100.0), Val::Px(120.0)),
+                            margin: UiRect::all(Val::Px(2.0)),
+                            flex_direction: FlexDirection::Column,
+                            justify_content: JustifyContent::SpaceBetween,
+                            ..default()
+                        },
+                        background_color: NORMAL.into(),
                         ..default()
                     },
-                    color: NORMAL.into(),
-                    ..default()
-                })
+                ))
                 .with_children(|parent| {
-                    parent.spawn_bundle(TextBundle::from_section(
+                    parent.spawn(TextBundle::from_section(
                         party.name.clone(),
                         TextStyle {
                             font: assets.font.clone(),
@@ -251,8 +256,9 @@ pub fn update_party_list(
                             color: Color::WHITE,
                         },
                     ));
-                    parent
-                        .spawn_bundle(TextBundle::from_sections([
+                    parent.spawn((
+                        PartyMovementPointsText,
+                        TextBundle::from_sections([
                             TextSection::new(
                                 "Movement: ",
                                 TextStyle {
@@ -269,8 +275,8 @@ pub fn update_party_list(
                                     color: Color::WHITE,
                                 },
                             ),
-                        ]))
-                        .insert(PartyMovementPointsText);
+                        ]),
+                    ));
                 });
         });
     }
@@ -319,7 +325,7 @@ pub fn update_character_list(
 }
 
 pub fn update_party_selection(
-    mut party_display_query: Query<(&PartyDisplay, &mut UiColor)>,
+    mut party_display_query: Query<(&PartyDisplay, &mut BackgroundColor)>,
     party_query: Query<&Selection, (With<Party>, Changed<Selection>)>,
 ) {
     for (party_display, mut color) in party_display_query.iter_mut() {

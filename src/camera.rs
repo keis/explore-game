@@ -1,5 +1,5 @@
 use crate::input::{Action, ActionState};
-use bevy::prelude::*;
+use bevy::{prelude::*, window::CursorGrabMode};
 
 pub struct CameraControlPlugin;
 
@@ -123,12 +123,12 @@ pub fn cursor_grab(mut windows: ResMut<Windows>, action_state_query: Query<&Acti
     let action_state = action_state_query.single();
     if let Some(window) = windows.get_primary_mut() {
         if action_state.just_pressed(Action::PanCamera) {
-            window.set_cursor_lock_mode(true);
+            window.set_cursor_grab_mode(CursorGrabMode::Locked);
             window.set_cursor_visibility(false);
         }
 
         if action_state.just_released(Action::PanCamera) {
-            window.set_cursor_lock_mode(false);
+            window.set_cursor_grab_mode(CursorGrabMode::None);
             window.set_cursor_visibility(true);
         }
     }
@@ -153,7 +153,7 @@ mod tests {
         let last_update = time.last_update().unwrap();
         time.update_with_instant(last_update + Duration::from_millis(10));
 
-        app.world.spawn().insert(ActionState::<Action>::default());
+        app.world.spawn(ActionState::<Action>::default());
 
         app
     }
@@ -164,8 +164,7 @@ mod tests {
 
         let camera_id = app
             .world
-            .spawn()
-            .insert(Transform::from_xyz(0.0, 10.0, 0.0))
+            .spawn(Transform::from_xyz(0.0, 10.0, 0.0))
             .insert(CameraControl {
                 velocity: Vec3::X,
                 ..default()
@@ -194,8 +193,7 @@ mod tests {
 
         let camera_id = app
             .world
-            .spawn()
-            .insert(Transform::from_xyz(0.0, 10.0, 0.0))
+            .spawn(Transform::from_xyz(0.0, 10.0, 0.0))
             .insert(CameraControl::default())
             .id();
 
@@ -219,8 +217,7 @@ mod tests {
 
         let camera_id = app
             .world
-            .spawn()
-            .insert(Transform::from_xyz(9.8, 10.0, 0.0))
+            .spawn(Transform::from_xyz(9.8, 10.0, 0.0))
             .insert(CameraControl::default())
             .id();
 
@@ -242,8 +239,7 @@ mod tests {
 
         let camera_id = app
             .world
-            .spawn()
-            .insert(Transform::from_xyz(-10.2, 10.0, 0.0))
+            .spawn(Transform::from_xyz(-10.2, 10.0, 0.0))
             .insert(CameraControl::default())
             .id();
 

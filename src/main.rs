@@ -1,6 +1,4 @@
-use bevy::{
-    asset::AssetServerSettings, prelude::*, render::texture::ImageSettings, window::PresentMode,
-};
+use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
 use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
 use explore_game::{
@@ -35,21 +33,31 @@ fn main() {
     let mut app = App::new();
 
     app.insert_resource(ClearColor(CLEAR))
-        .insert_resource(ImageSettings::default_nearest())
-        .insert_resource(WindowDescriptor {
-            width: height * ASPECT_RATIO,
-            height,
-            title: "Explore Game".to_string(),
-            present_mode: PresentMode::Fifo,
-            resizable: false,
-            ..default()
-        })
-        .insert_resource(AssetServerSettings {
-            watch_for_changes: true,
-            ..default()
-        })
         .insert_resource(Turn { number: 0 })
-        .add_plugins(DefaultPlugins)
+        .add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    window: WindowDescriptor {
+                        width: height * ASPECT_RATIO,
+                        height,
+                        title: "Explore Game".to_string(),
+                        present_mode: PresentMode::Fifo,
+                        resizable: false,
+                        ..default()
+                    },
+                    ..default()
+                })
+                // See https://github.com/Leafwing-Studios/leafwing-input-manager/issues/285
+                .set(LogPlugin {
+                    filter: "wgpu=error,bevy_ecs::event=error".to_string(),
+                    ..default()
+                })
+                .set(ImagePlugin::default_nearest())
+                .set(AssetPlugin {
+                    watch_for_changes: true,
+                    ..default()
+                }),
+        )
         .init_collection::<MainAssets>()
         .add_plugin(bevy_stl::StlPlugin)
         .add_plugin(CameraControlPlugin)
@@ -98,21 +106,22 @@ fn log_moves(
 }
 
 fn spawn_camera(mut commands: Commands) {
-    commands
-        .spawn_bundle(Camera3dBundle {
+    commands.spawn((
+        Camera3dBundle {
             transform: Transform::from_xyz(-10.0, 20.0, 20.0)
                 .with_rotation(Quat::from_axis_angle(Vec3::new(-0.4, -0.8, -0.4), 1.6)),
             ..default()
-        })
-        .insert(CameraControl {
+        },
+        CameraControl {
             bounds: CameraBounds {
                 position: Vec3::new(-10.0, 5.0, 0.0),
                 extent: Vec3::new(15.0, 25.0, 40.0),
                 gap: 1.0,
             },
             ..default()
-        })
-        .insert_bundle(PickingCameraBundle::default());
+        },
+        PickingCameraBundle::default(),
+    ));
 }
 
 fn spawn_scene(
@@ -133,66 +142,69 @@ fn spawn_scene(
     for position in maplayout.iter() {
         let zone = mapprototype.get(position);
         let entity = commands
-            .spawn_bundle(MaterialMeshBundle {
-                mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
-                material: match zone.terrain {
-                    Terrain::Grass => zone_materials.add(ZoneMaterial {
-                        cloud_texture: Some(assets.cloud_texture.clone()),
-                        terrain_texture: Some(assets.grass_texture.clone()),
-                        visible: 1,
-                        explored: 1,
-                        time: 0.0,
-                    }),
-                    Terrain::Lava => zone_materials.add(ZoneMaterial {
-                        cloud_texture: Some(assets.cloud_texture.clone()),
-                        terrain_texture: Some(assets.lava_texture.clone()),
-                        visible: 1,
-                        explored: 1,
-                        time: 0.0,
-                    }),
+            .spawn((
+                MaterialMeshBundle {
+                    mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
+                    material: match zone.terrain {
+                        Terrain::Grass => zone_materials.add(ZoneMaterial {
+                            cloud_texture: Some(assets.cloud_texture.clone()),
+                            terrain_texture: Some(assets.grass_texture.clone()),
+                            visible: 1,
+                            explored: 1,
+                            time: 0.0,
+                        }),
+                        Terrain::Lava => zone_materials.add(ZoneMaterial {
+                            cloud_texture: Some(assets.cloud_texture.clone()),
+                            terrain_texture: Some(assets.lava_texture.clone()),
+                            visible: 1,
+                            explored: 1,
+                            time: 0.0,
+                        }),
+                    },
+                    transform: Transform::from_translation(coord_to_vec3(position, 1.0)),
+                    ..default()
                 },
-                transform: Transform::from_translation(coord_to_vec3(position, 1.0)),
-                ..default()
-            })
-            .insert(MapPosition(position))
-            .insert(zone)
-            .insert(Fog {
-                visible: false,
-                explored: false,
-            })
-            .insert(bevy_mod_picking::PickableMesh::default())
-            .insert(bevy_mod_picking::Hover::default())
-            .insert(bevy_mod_picking::NoDeselect)
-            .insert(Interaction::default())
+                MapPosition(position),
+                zone,
+                Fog {
+                    visible: false,
+                    explored: false,
+                },
+                bevy_mod_picking::PickableMesh::default(),
+                bevy_mod_picking::Hover::default(),
+                bevy_mod_picking::NoDeselect,
+                Interaction::default(),
+            ))
             .id();
         mapstorage.set(position, Some(entity));
     }
     let map = commands
-        .spawn()
-        .insert(MapComponent {
+        .spawn(MapComponent {
             storage: mapstorage,
             radius: 1.0,
         })
         .id();
     let alpha_group = commands
-        .spawn_bundle(PbrBundle {
-            mesh: assets.indicator_mesh.clone(),
-            material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
-            transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
-            ..default()
-        })
-        .insert_bundle(PickableBundle::default())
-        .insert(Indicator)
-        .insert(Party {
-            name: String::from("Alpha Group"),
-            movement_points: 0,
-            supplies: 1,
-            members: SmallVec::new(),
-        })
-        .insert(Offset(offset))
-        .insert(ViewRadius(VIEW_RADIUS))
-        .insert(PathGuided::default())
-        .insert(Slide::default())
+        .spawn((
+            PbrBundle {
+                mesh: assets.indicator_mesh.clone(),
+                material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
+                transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
+                ..default()
+            },
+            PickableBundle::default(),
+            Indicator,
+            Party {
+                name: String::from("Alpha Group"),
+                movement_points: 0,
+                supplies: 1,
+                members: SmallVec::new(),
+            },
+            Offset(offset),
+            ViewRadius(VIEW_RADIUS),
+            PathGuided::default(),
+            Slide::default(),
+        ))
         .id();
     commands.add(AddMapPresence {
         map,
@@ -200,15 +212,13 @@ fn spawn_scene(
         position: cubecoord,
     });
     let character1 = commands
-        .spawn()
-        .insert(Character {
+        .spawn(Character {
             name: String::from("Alice"),
         })
         .insert(PartyMember { party: alpha_group })
         .id();
     let character2 = commands
-        .spawn()
-        .insert(Character {
+        .spawn(Character {
             name: String::from("Bob"),
         })
         .id();
@@ -219,24 +229,26 @@ fn spawn_scene(
 
     let cubecoord = HexCoord::new(4, 5);
     let beta_group = commands
-        .spawn_bundle(PbrBundle {
-            mesh: assets.indicator_mesh.clone(),
-            material: standard_materials.add(Color::rgb(0.596, 0.165, 0.631).into()),
-            transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
-            ..default()
-        })
-        .insert_bundle(PickableBundle::default())
-        .insert(Indicator)
-        .insert(Party {
-            name: String::from("Beta Group"),
-            movement_points: 0,
-            supplies: 1,
-            members: SmallVec::new(),
-        })
-        .insert(Offset(offset))
-        .insert(ViewRadius(VIEW_RADIUS))
-        .insert(PathGuided::default())
-        .insert(Slide::default())
+        .spawn((
+            PbrBundle {
+                mesh: assets.indicator_mesh.clone(),
+                material: standard_materials.add(Color::rgb(0.596, 0.165, 0.631).into()),
+                transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
+                ..default()
+            },
+            PickableBundle::default(),
+            Indicator,
+            Party {
+                name: String::from("Beta Group"),
+                movement_points: 0,
+                supplies: 1,
+                members: SmallVec::new(),
+            },
+            Offset(offset),
+            ViewRadius(VIEW_RADIUS),
+            PathGuided::default(),
+            Slide::default(),
+        ))
         .id();
     commands.add(AddMapPresence {
         map,
@@ -244,8 +256,7 @@ fn spawn_scene(
         position: cubecoord,
     });
     let character3 = commands
-        .spawn()
-        .insert(Character {
+        .spawn(Character {
             name: String::from("Carol"),
         })
         .id();
@@ -254,7 +265,7 @@ fn spawn_scene(
         members: SmallVec::from_slice(&[character3]),
     });
 
-    commands.spawn_bundle(DirectionalLightBundle {
+    commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
             illuminance: 20000.0,
             shadows_enabled: true,

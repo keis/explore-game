@@ -63,11 +63,20 @@ fn fragment(
     pbr_input.world_position = world_position;
     pbr_input.world_normal = world_normal;
     pbr_input.is_orthographic = view.projection[3].w == 1.0;
-    pbr_input.N = prepare_normal(
-        pbr_input.material.flags,
+    pbr_input.world_normal = prepare_world_normal(
         world_normal,
-        uv,
+        (pbr_input.material.flags & STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0u,
         is_front
+    );
+    pbr_input.N = apply_normal_mapping(
+        pbr_input.material.flags,
+        pbr_input.world_normal,
+        #ifdef VERTEX_TANGENTS
+        #ifdef STANDARDMATERIAL_NORMAL_MAP
+        in.world_tangent,
+        #endif
+        #endif
+        uv,
     );
     pbr_input.V = calculate_view(world_position, pbr_input.is_orthographic);
 

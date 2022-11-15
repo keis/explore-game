@@ -30,7 +30,7 @@ impl Plugin for InterfacePlugin {
     }
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 pub struct InterfaceAssets {
     #[asset(path = "fonts/FiraMono-Medium.ttf")]
     font: Handle<Font>,

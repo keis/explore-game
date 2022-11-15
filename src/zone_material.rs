@@ -25,6 +25,8 @@ impl Plugin for ZoneMaterialPlugin {
     }
 }
 
+// TODO: time is available in globals now
+#[derive(Resource)]
 struct ExtractedTime {
     seconds_since_startup: f32,
 }
@@ -34,7 +36,7 @@ impl ExtractResource for ExtractedTime {
 
     fn extract_resource(time: &Self::Source) -> Self {
         ExtractedTime {
-            seconds_since_startup: time.seconds_since_startup() as f32,
+            seconds_since_startup: time.elapsed_seconds(),
         }
     }
 }
