@@ -10,7 +10,6 @@
 struct UniformData {
     visible: u32,
     explored: u32,
-    time: f32,
 }
 
 @group(1) @binding(0)
@@ -40,8 +39,8 @@ fn fragment(
     );
     var base_color = textureSample(terrain_texture, terrain_texture_sampler, uv);
     var cloud_uv = vec2<f32>(
-        modulo(uv.x + cos(uniform_data.time * 0.01), 1.0),
-        modulo(uv.y + sin(uniform_data.time * 0.01), 1.0)
+        modulo(uv.x + cos(globals.time * 0.01), 1.0),
+        modulo(uv.y + sin(globals.time * 0.01), 1.0)
     );
     var cloud_color = textureSample(cloud_texture, cloud_texture_sampler, cloud_uv);
     if uniform_data.visible == 0u {

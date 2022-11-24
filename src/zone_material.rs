@@ -3,12 +3,7 @@ use bevy::{
     pbr::RenderMaterials,
     prelude::*,
     reflect::TypeUuid,
-    render::{
-        extract_resource::{ExtractResource, ExtractResourcePlugin},
-        render_resource::*,
-        renderer::RenderQueue,
-        Extract, RenderApp, RenderStage,
-    },
+    render::{render_resource::*, renderer::RenderQueue, Extract, RenderApp, RenderStage},
 };
 
 #[derive(Default)]
@@ -16,28 +11,11 @@ pub struct ZoneMaterialPlugin;
 
 impl Plugin for ZoneMaterialPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(MaterialPlugin::<ZoneMaterial>::default())
-            .add_plugin(ExtractResourcePlugin::<ExtractedTime>::default());
+        app.add_plugin(MaterialPlugin::<ZoneMaterial>::default());
 
         app.sub_app_mut(RenderApp)
             .add_system_to_stage(RenderStage::Extract, extract_zone)
             .add_system_to_stage(RenderStage::Prepare, prepare_zone_material);
-    }
-}
-
-// TODO: time is available in globals now
-#[derive(Resource)]
-struct ExtractedTime {
-    seconds_since_startup: f32,
-}
-
-impl ExtractResource for ExtractedTime {
-    type Source = Time;
-
-    fn extract_resource(time: &Self::Source) -> Self {
-        ExtractedTime {
-            seconds_since_startup: time.elapsed_seconds(),
-        }
     }
 }
 
@@ -54,8 +32,6 @@ pub struct ZoneMaterial {
     pub visible: u32,
     #[uniform(4)]
     pub explored: u32,
-    #[uniform(4)]
-    pub time: f32,
 }
 
 impl Material for ZoneMaterial {
@@ -68,7 +44,6 @@ impl Material for ZoneMaterial {
 struct ZoneMaterialUniformData {
     visible: u32,
     explored: u32,
-    time: f32,
 }
 
 fn extract_zone(
@@ -86,7 +61,6 @@ fn extract_zone(
 fn prepare_zone_material(
     materials: Res<RenderMaterials<ZoneMaterial>>,
     zone_query: Query<(&Fog, &Handle<ZoneMaterial>)>,
-    time: Res<ExtractedTime>,
     render_queue: Res<RenderQueue>,
 ) {
     for (fog, handle) in &zone_query {
@@ -98,7 +72,6 @@ fn prepare_zone_material(
                         .write(&ZoneMaterialUniformData {
                             visible: fog.visible as u32,
                             explored: fog.explored as u32,
-                            time: time.seconds_since_startup,
                         })
                         .unwrap();
                     render_queue.write_buffer(cur_buffer, 0, buffer.as_ref());
