@@ -743,8 +743,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_stl"
-version = "0.6.0"
-source = "git+https://github.com/keis/bevy_stl.git?rev=7cddf114a30b72ca2f466dbc7189641d7f784baa#7cddf114a30b72ca2f466dbc7189641d7f784baa"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41bbe52df44e4cc63c5f68cf5a462eb50b28ee3db00667409801f0296ae6dacb"
 dependencies = [
  "anyhow",
  "bevy",
@@ -2976,9 +2977,9 @@ checksum = "213701ba3370744dcd1a12960caa4843b3d68b4d1c0a5d575e0d65b2ee9d16c0"
 
 [[package]]
 name = "stl_io"
-version = "0.5.2"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9aa78767a21a3f57ea37a9b643c80dcb67ff6b130ccdedc43eaafa9e9cdd7d1"
+checksum = "5c68e41108b3ec269d885cc56af66cd15f1392f68d2ae461df86d7d3285f065d"
 dependencies = [
  "byteorder",
  "float-cmp",

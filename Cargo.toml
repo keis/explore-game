@@ -12,7 +12,7 @@ opt-level = 3
 [dependencies]
 bevy_asset_loader = "0.14.1"
 bevy_mod_picking = "0.10"
-bevy_stl = { git = "https://github.com/keis/bevy_stl.git", rev = "7cddf114a30b72ca2f466dbc7189641d7f784baa" }
+bevy_stl = { version = "0.7.0" }
 bevy = { version = "0.9", features = ["dynamic", "wayland"] }
 itertools = "0.10.5"
 leafwing-input-manager = "0.7.0"
