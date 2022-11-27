@@ -11,7 +11,7 @@ pub struct Path {
     pub stroke: f32,
 }
 
-pub fn path_mesh(path: Path) -> Mesh {
+pub fn update_path_mesh(path: Path, mesh: &mut Mesh) {
     let step = 1.0 / path.steps as f32;
     let mut points =
         (0..path.steps + 1).map(|i| path.spline.clamped_sample(i as f32 * step).unwrap());
@@ -62,12 +62,19 @@ pub fn path_mesh(path: Path) -> Mesh {
     let normals: Vec<_> = vertices.iter().map(|(_, n, _)| *n).collect();
     let uvs: Vec<_> = vertices.iter().map(|(_, _, uv)| *uv).collect();
 
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
     mesh.set_indices(Some(indices));
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+}
 
+pub fn empty_path_mesh() -> Mesh {
+    Mesh::new(PrimitiveTopology::TriangleList)
+}
+
+pub fn path_mesh(path: Path) -> Mesh {
+    let mut mesh = empty_path_mesh();
+    update_path_mesh(path, &mut mesh);
     mesh
 }
 

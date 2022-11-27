@@ -2,9 +2,9 @@ use super::HexCoord;
 use bevy::prelude::*;
 use std::collections::VecDeque;
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Debug)]
 pub struct PathGuided {
-    path: VecDeque<HexCoord>,
+    pub path: VecDeque<HexCoord>,
 }
 
 impl PathGuided {
@@ -13,7 +13,11 @@ impl PathGuided {
         self.path.pop_front();
     }
 
-    pub fn take_next(&mut self) -> Option<HexCoord> {
-        self.path.pop_front()
+    pub fn advance(&mut self) {
+        self.path.pop_front();
+    }
+
+    pub fn next(&self) -> Option<&HexCoord> {
+        self.path.front()
     }
 }

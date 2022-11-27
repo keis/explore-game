@@ -112,18 +112,18 @@ pub fn handle_slide_stopped(
     for _ in events.iter() {
         if let Some(last_action) = queue.current.take() {
             if let GameAction::Move(e, next) = last_action {
-                let (presence, party, mut pathguided) =
-                    presence_query.get_mut(e).expect("only presence moves");
+                let (presence, party, mut pathguided) = presence_query.get_mut(e).unwrap();
                 info!("done with move action {:?}", last_action);
                 commands.add(MoveMapPresence {
                     map: presence.map,
                     presence: e,
                     position: next,
                 });
+                pathguided.advance();
                 // Keep moving if a path is set
                 if party.movement_points > 0 {
-                    if let Some(next) = pathguided.take_next() {
-                        queue.add(GameAction::Move(e, next));
+                    if let Some(next) = pathguided.next() {
+                        queue.add(GameAction::Move(e, *next));
                     }
                 }
             } else {
@@ -158,8 +158,8 @@ pub fn handle_move_to(
                     {
                         pathguided.path(path);
                         if party.movement_points > 0 {
-                            if let Some(next) = pathguided.take_next() {
-                                queue.add(GameAction::Move(*e, next));
+                            if let Some(next) = pathguided.next() {
+                                queue.add(GameAction::Move(*e, *next));
                             }
                         }
                     }

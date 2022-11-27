@@ -5,6 +5,7 @@ mod commands;
 mod events;
 mod hexcoord;
 mod layout;
+mod pathdisplay;
 mod pathguided;
 mod position;
 mod presence;
@@ -15,6 +16,7 @@ pub use commands::{AddMapPresence, DespawnPresence, MoveMapPresence};
 pub use events::MapEvent;
 pub use hexcoord::HexCoord;
 pub use layout::{MapLayout, MapLayoutIterator};
+pub use pathdisplay::PathDisplay;
 pub use pathguided::PathGuided;
 pub use position::MapPosition;
 pub use presence::{MapPresence, Offset, ViewRadius};
@@ -54,6 +56,7 @@ impl Plugin for MapPlugin {
                     .with_run_criteria(run_if_damaged)
                     .with_system(presence::update_visibility),
             )
+            .add_system(pathdisplay::update_path_display)
             .add_system_to_stage(CoreStage::PostUpdate, damage)
             .add_event::<MapEvent>();
     }
