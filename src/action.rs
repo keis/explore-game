@@ -19,6 +19,7 @@ use std::collections::VecDeque;
 pub enum GameAction {
     Move(Entity, HexCoord),
     MoveTo(Entity, HexCoord),
+    ResumeMove(Entity),
     MakeCamp(Entity),
     BreakCamp(Entity),
     Save(),
@@ -34,6 +35,7 @@ impl Plugin for ActionPlugin {
             .add_system(handle_move)
             .add_system(handle_slide_stopped)
             .add_system(handle_move_to)
+            .add_system(handle_resume_move)
             .add_system(handle_make_camp)
             .add_system(handle_break_camp)
             .add_system_set(
@@ -84,6 +86,7 @@ pub fn handle_move(
     mut events: EventReader<GameAction>,
     map_query: Query<&MapComponent>,
     mut party_query: Query<(&mut Party, &mut Slide, &Transform, &Offset, &MapPresence)>,
+    mut queue: ResMut<GameActionQueue>,
 ) {
     for event in events.iter() {
         if let GameAction::Move(e, next) = event {
@@ -91,6 +94,7 @@ pub fn handle_move(
             {
                 if party.movement_points == 0 {
                     warn!("tried to move without movement points");
+                    queue.current.take();
                     continue;
                 }
                 let map = map_query.get(presence.map).expect("references valid map");
@@ -163,6 +167,23 @@ pub fn handle_move_to(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+pub fn handle_resume_move(
+    mut events: EventReader<GameAction>,
+    mut queue: ResMut<GameActionQueue>,
+    path_guided_query: Query<&PathGuided>,
+) {
+    for event in events.iter() {
+        if let GameAction::ResumeMove(e) = event {
+            if let Ok(pathguided) = path_guided_query.get(*e) {
+                if let Some(next) = pathguided.next() {
+                    info!("Resuming move!");
+                    queue.add(GameAction::Move(*e, *next));
                 }
             }
         }

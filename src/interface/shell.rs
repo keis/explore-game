@@ -29,6 +29,9 @@ pub struct PartyList;
 pub struct PartyMovementPointsText;
 
 #[derive(Component)]
+pub struct MoveButton;
+
+#[derive(Component)]
 pub struct CampButton;
 
 #[derive(Component)]
@@ -180,6 +183,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     ..default()
                 })
                 .with_children(|parent| {
+                    spawn_toolbar_icon(parent, MoveButton, assets.arrow_icon.clone());
                     spawn_toolbar_icon(parent, CampButton, assets.campfire_icon.clone());
                     spawn_toolbar_icon(parent, BreakCampButton, assets.knapsack_icon.clone());
                 });
@@ -373,6 +377,18 @@ pub fn update_zone_text(
                     text.sections[0].value = format!("{:?}", zone_position.0);
                 }
             }
+        }
+    }
+}
+
+pub fn handle_move_button_interaction(
+    interaction_query: Query<&Interaction, (With<MoveButton>, Changed<Interaction>)>,
+    party_query: Query<(Entity, &Selection), With<Party>>,
+    mut game_action_event: EventWriter<GameAction>,
+) {
+    if let Ok(Interaction::Clicked) = interaction_query.get_single() {
+        for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
+            game_action_event.send(GameAction::ResumeMove(entity));
         }
     }
 }

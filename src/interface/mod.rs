@@ -21,6 +21,7 @@ impl Plugin for InterfacePlugin {
             .add_system(shell::update_turn_text)
             .add_system(shell::update_zone_text)
             .add_system(shell::handle_party_display_interaction)
+            .add_system(shell::handle_move_button_interaction)
             .add_system(shell::handle_turn_button_interaction)
             .add_system(shell::handle_camp_button_interaction)
             .add_system(shell::handle_break_camp_button_interaction)
@@ -38,4 +39,6 @@ pub struct InterfaceAssets {
     campfire_icon: Handle<Image>,
     #[asset(path = "icons/knapsack.png")]
     knapsack_icon: Handle<Image>,
+    #[asset(path = "icons/bottom-right-3d-arrow.png")]
+    arrow_icon: Handle<Image>,
 }
