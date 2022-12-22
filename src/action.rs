@@ -154,7 +154,7 @@ pub fn handle_move_to(
                         find_path(presence.position, *goal, &|c: &HexCoord| {
                             if let Some(entity) = map.storage.get(*c) {
                                 if let Ok(zone) = zone_query.get(entity) {
-                                    return zone.terrain != Terrain::Lava;
+                                    return zone.terrain != Terrain::Ocean;
                                 }
                             }
                             false

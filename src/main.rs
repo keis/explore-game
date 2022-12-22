@@ -146,15 +146,21 @@ fn spawn_scene(
                 MaterialMeshBundle {
                     mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
                     material: match zone.terrain {
-                        Terrain::Grass => zone_materials.add(ZoneMaterial {
+                        Terrain::Ocean => zone_materials.add(ZoneMaterial {
                             cloud_texture: Some(assets.cloud_texture.clone()),
-                            terrain_texture: Some(assets.grass_texture.clone()),
+                            terrain_texture: Some(assets.ocean_texture.clone()),
                             visible: 1,
                             explored: 1,
                         }),
-                        Terrain::Lava => zone_materials.add(ZoneMaterial {
+                        Terrain::Mountain => zone_materials.add(ZoneMaterial {
                             cloud_texture: Some(assets.cloud_texture.clone()),
-                            terrain_texture: Some(assets.lava_texture.clone()),
+                            terrain_texture: Some(assets.mountain_texture.clone()),
+                            visible: 1,
+                            explored: 1,
+                        }),
+                        Terrain::Forest => zone_materials.add(ZoneMaterial {
+                            cloud_texture: Some(assets.cloud_texture.clone()),
+                            terrain_texture: Some(assets.forest_texture.clone()),
                             visible: 1,
                             explored: 1,
                         }),

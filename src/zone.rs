@@ -6,16 +6,18 @@ use rand::{
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Terrain {
-    Grass,
-    Lava,
+    Ocean,
+    Mountain,
+    Forest,
 }
 
 impl Distribution<Terrain> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Terrain {
-        match rng.gen_range(0..=1) {
-            0 => Terrain::Grass,
-            1 => Terrain::Lava,
-            _ => Terrain::Lava,
+        match rng.gen_range(0..=2) {
+            0 => Terrain::Ocean,
+            1 => Terrain::Mountain,
+            2 => Terrain::Forest,
+            _ => Terrain::Ocean,
         }
     }
 }
