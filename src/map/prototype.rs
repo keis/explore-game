@@ -1,23 +1,15 @@
-use super::{HexCoord, MapLayout};
+use super::{MapLayout, MapStorage};
 use crate::zone::Zone;
 use rand::Rng;
 
-pub struct MapPrototype {
-    pub layout: MapLayout,
-    zones: Vec<Zone>,
-}
+pub struct MapPrototype;
 
 impl MapPrototype {
-    pub fn generate(layout: MapLayout) -> Self {
+    pub fn generate(layout: MapLayout) -> MapStorage<Zone> {
         let mut rng = rand::thread_rng();
-        Self {
+        MapStorage {
             layout,
-            zones: layout.iter().map(|_| Zone { terrain: rng.gen() }).collect(),
+            data: layout.iter().map(|_| Zone { terrain: rng.gen() }).collect(),
         }
-    }
-
-    pub fn get(&self, position: HexCoord) -> Zone {
-        let offset = self.layout.offset(position).unwrap();
-        self.zones[offset]
     }
 }

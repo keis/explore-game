@@ -1,64 +1,27 @@
 use super::hexcoord::HexCoord;
 use super::layout::MapLayout;
-use bevy::prelude::*;
-use std::collections::hash_set::HashSet;
 
-pub struct MapStorage {
+pub struct MapStorage<T> {
     pub layout: MapLayout,
-    tiles: Vec<Option<Entity>>,
-    presence: Vec<HashSet<Entity>>,
-    void: HashSet<Entity>,
+    pub data: Vec<T>,
 }
 
-impl MapStorage {
-    pub fn new(layout: MapLayout) -> Self {
-        Self {
-            layout,
-            tiles: vec![None; layout.size()],
-            presence: vec![HashSet::new(); layout.size()],
-            void: HashSet::new(),
-        }
-    }
-
-    pub fn set(&mut self, position: HexCoord, entity: Option<Entity>) {
+impl<T> MapStorage<T> {
+    pub fn set(&mut self, position: HexCoord, value: T) {
         if let Some(offset) = self.layout.offset(position) {
-            self.tiles[offset] = entity;
+            self.data[offset] = value;
         }
     }
 
-    pub fn get(&self, position: HexCoord) -> Option<Entity> {
+    pub fn get(&self, position: HexCoord) -> Option<&T> {
         self.layout
             .offset(position)
-            .and_then(|offset| self.tiles[offset])
+            .and_then(|offset| self.data.get(offset))
     }
 
-    pub fn presence(&self, position: HexCoord) -> impl Iterator<Item = &Entity> {
+    pub fn get_mut(&mut self, position: HexCoord) -> Option<&mut T> {
         self.layout
             .offset(position)
-            .map_or_else(|| self.void.iter(), |offset| self.presence[offset].iter())
-    }
-
-    pub fn add_presence(&mut self, position: HexCoord, entity: Entity) {
-        if let Some(offset) = self.layout.offset(position) {
-            self.presence[offset].insert(entity);
-        }
-    }
-
-    pub fn remove_presence(&mut self, position: HexCoord, entity: Entity) {
-        if let Some(offset) = self.layout.offset(position) {
-            self.presence[offset].remove(&entity);
-        }
-    }
-
-    pub fn move_presence(&mut self, entity: Entity, origin: HexCoord, destination: HexCoord) {
-        // TODO: Consider using let_chains
-        if let Some((o, d)) = self
-            .layout
-            .offset(origin)
-            .zip(self.layout.offset(destination))
-        {
-            self.presence[o].remove(&entity);
-            self.presence[d].insert(entity);
-        }
+            .and_then(|offset| self.data.get_mut(offset))
     }
 }

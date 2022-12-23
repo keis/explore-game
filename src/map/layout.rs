@@ -70,4 +70,17 @@ mod tests {
         assert_eq!(coords[8], HexCoord::new(1, 2));
         assert_eq!(layout.offset(HexCoord::new(1, 2)).expect("in bounds"), 8);
     }
+
+    #[test]
+    fn offset_matches_iter() {
+        let layout = MapLayout {
+            width: 8,
+            height: 8,
+        };
+        let offsets: Vec<_> = layout
+            .iter()
+            .map(|coord| layout.offset(coord).unwrap())
+            .collect();
+        assert_eq!(offsets, (0..64usize).collect::<Vec<_>>());
+    }
 }

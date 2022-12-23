@@ -2,8 +2,8 @@ use crate::assets::MainAssets;
 use crate::camp::Camp;
 use crate::hex::coord_to_vec3;
 use crate::map::{
-    find_path, AddMapPresence, DespawnPresence, HexCoord, MapComponent, MapPresence,
-    MoveMapPresence, Offset, PathGuided, ViewRadius,
+    find_path, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence, MoveMapPresence,
+    Offset, PathGuided, ViewRadius,
 };
 use crate::party::Party;
 use crate::slide::{Slide, SlideEvent};
@@ -84,7 +84,7 @@ pub fn trigger_action(
 
 pub fn handle_move(
     mut events: EventReader<GameAction>,
-    map_query: Query<&MapComponent>,
+    map_query: Query<&GameMap>,
     mut party_query: Query<(&mut Party, &mut Slide, &Transform, &Offset, &MapPresence)>,
     mut queue: ResMut<GameActionQueue>,
 ) {
@@ -142,7 +142,7 @@ pub fn handle_move_to(
     mut queue: ResMut<GameActionQueue>,
     mut presence_query: Query<(&MapPresence, &Party, &mut PathGuided)>,
     zone_query: Query<&Zone>,
-    map_query: Query<&MapComponent>,
+    map_query: Query<&GameMap>,
 ) {
     // Use let_chains after rust 1.64
     for event in events.iter() {
@@ -152,8 +152,8 @@ pub fn handle_move_to(
                 if let Ok(map) = map_query.get(presence.map) {
                     if let Some((path, _length)) =
                         find_path(presence.position, *goal, &|c: &HexCoord| {
-                            if let Some(entity) = map.storage.get(*c) {
-                                if let Ok(zone) = zone_query.get(entity) {
+                            if let Some(entity) = map.get(*c) {
+                                if let Ok(zone) = zone_query.get(*entity) {
                                     return zone.terrain != Terrain::Ocean;
                                 }
                             }
@@ -195,7 +195,7 @@ pub fn handle_make_camp(
     assets: Res<MainAssets>,
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut events: EventReader<GameAction>,
-    mut map_query: Query<(Entity, &MapComponent)>,
+    mut map_query: Query<(Entity, &GameMap)>,
     mut party_query: Query<(&mut Party, &MapPresence)>,
     camp_query: Query<&Camp>,
 ) {
@@ -208,7 +208,7 @@ pub fn handle_make_camp(
 
                 let position = presence.position;
                 if camp_query
-                    .iter_many(map.storage.presence(position))
+                    .iter_many(map.presence(position))
                     .next()
                     .is_some()
                 {
@@ -255,7 +255,7 @@ pub fn handle_break_camp(
     mut commands: Commands,
     mut events: EventReader<GameAction>,
     mut party_query: Query<(&mut Party, &MapPresence)>,
-    mut map_query: Query<(Entity, &MapComponent)>,
+    mut map_query: Query<(Entity, &GameMap)>,
     camp_query: Query<Entity, With<Camp>>,
 ) {
     for event in events.iter() {
@@ -266,7 +266,7 @@ pub fn handle_break_camp(
                     .expect("references valid map");
 
                 let position = presence.position;
-                let maybe_camp = camp_query.iter_many(map.storage.presence(position)).next();
+                let maybe_camp = camp_query.iter_many(map.presence(position)).next();
                 if let Some(camp) = maybe_camp {
                     info!("Depawning camp at {:?}", position);
                     party.supplies += 1;

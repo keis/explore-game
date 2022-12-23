@@ -1,5 +1,6 @@
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use pathfinding::prelude::astar;
+use std::collections::hash_set::HashSet;
 
 mod commands;
 mod events;
@@ -24,9 +25,63 @@ pub use prototype::MapPrototype;
 pub use storage::MapStorage;
 
 #[derive(Component)]
-pub struct MapComponent {
-    pub storage: MapStorage,
+pub struct GameMap {
+    tiles: MapStorage<Entity>,
+    presence: MapStorage<HashSet<Entity>>,
+    void: HashSet<Entity>,
     pub radius: f32,
+}
+
+impl GameMap {
+    pub fn new(layout: MapLayout, tiles: Vec<Entity>, radius: f32) -> Self {
+        GameMap {
+            tiles: MapStorage {
+                layout,
+                data: tiles,
+            },
+            presence: MapStorage {
+                layout,
+                data: vec![HashSet::new(); layout.size()],
+            },
+            void: HashSet::new(),
+            radius,
+        }
+    }
+
+    pub fn set(&mut self, position: HexCoord, entity: Entity) {
+        self.tiles.set(position, entity)
+    }
+
+    pub fn get(&self, position: HexCoord) -> Option<&Entity> {
+        self.tiles.get(position)
+    }
+
+    pub fn presence(&self, position: HexCoord) -> impl Iterator<Item = &Entity> {
+        self.presence
+            .get(position)
+            .map_or_else(|| self.void.iter(), |presence| presence.iter())
+    }
+
+    pub fn add_presence(&mut self, position: HexCoord, entity: Entity) {
+        if let Some(presence) = self.presence.get_mut(position) {
+            presence.insert(entity);
+        }
+    }
+
+    pub fn remove_presence(&mut self, position: HexCoord, entity: Entity) {
+        if let Some(presence) = self.presence.get_mut(position) {
+            presence.remove(&entity);
+        }
+    }
+
+    pub fn move_presence(&mut self, entity: Entity, origin: HexCoord, destination: HexCoord) {
+        if let Some(o) = self.presence.get_mut(origin) {
+            o.remove(&entity);
+        }
+        if let Some(d) = self.presence.get_mut(destination) {
+            d.insert(entity);
+        }
+    }
 }
 
 #[derive(Resource)]

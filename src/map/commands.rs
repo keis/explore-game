@@ -1,4 +1,4 @@
-use super::{HexCoord, MapComponent, MapEvent, MapPresence};
+use super::{GameMap, HexCoord, MapEvent, MapPresence};
 use bevy::{ecs::system::Command, prelude::*};
 
 pub struct MoveMapPresence {
@@ -14,9 +14,8 @@ impl Command for MoveMapPresence {
             .get::<MapPresence>()
             .map(|presence| presence.position)
         {
-            if let Some(mut map) = world.entity_mut(self.map).get_mut::<MapComponent>() {
-                map.storage
-                    .move_presence(self.presence, current_position, self.position);
+            if let Some(mut map) = world.entity_mut(self.map).get_mut::<GameMap>() {
+                map.move_presence(self.presence, current_position, self.position);
             }
         }
 
@@ -43,8 +42,8 @@ pub struct AddMapPresence {
 impl Command for AddMapPresence {
     fn write(self, world: &mut World) {
         // TODO: How to handle the case where presence is already on map? Convert into move?
-        if let Some(mut map) = world.entity_mut(self.map).get_mut::<MapComponent>() {
-            map.storage.add_presence(self.position, self.presence);
+        if let Some(mut map) = world.entity_mut(self.map).get_mut::<GameMap>() {
+            map.add_presence(self.position, self.presence);
         }
 
         let mut presence_entity = world.entity_mut(self.presence);
@@ -79,8 +78,8 @@ impl Command for DespawnPresence {
             .get::<MapPresence>()
             .map(|presence| presence.position)
         {
-            if let Some(mut map) = world.entity_mut(self.map).get_mut::<MapComponent>() {
-                map.storage.remove_presence(position, self.presence);
+            if let Some(mut map) = world.entity_mut(self.map).get_mut::<GameMap>() {
+                map.remove_presence(position, self.presence);
             }
         }
 

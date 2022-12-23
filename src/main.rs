@@ -12,8 +12,8 @@ use explore_game::{
     input::InputPlugin,
     interface::InterfacePlugin,
     map::{
-        AddMapPresence, HexCoord, MapComponent, MapEvent, MapLayout, MapPlugin, MapPosition,
-        MapPresence, MapPrototype, MapStorage, Offset, PathGuided, ViewRadius,
+        AddMapPresence, GameMap, HexCoord, MapEvent, MapLayout, MapPlugin, MapPosition,
+        MapPresence, MapPrototype, Offset, PathGuided, ViewRadius,
     },
     party::{reset_movement_points, JoinParty, Party, PartyMember},
     slide::{slide, Slide, SlideEvent},
@@ -80,7 +80,7 @@ fn main() {
 fn log_moves(
     mut map_events: EventReader<MapEvent>,
     presence_query: Query<&MapPresence>,
-    map_query: Query<&MapComponent>,
+    map_query: Query<&GameMap>,
 ) {
     for event in map_events.iter() {
         if let MapEvent::PresenceMoved {
@@ -92,11 +92,7 @@ fn log_moves(
             info!("{:?} moved to {:?}", entity, position);
             if let Ok(presence) = presence_query.get(*entity) {
                 if let Ok(map) = map_query.get(presence.map) {
-                    for other in map
-                        .storage
-                        .presence(presence.position)
-                        .filter(|e| *e != entity)
-                    {
+                    for other in map.presence(presence.position).filter(|e| *e != entity) {
                         info!("{:?} is here", other);
                     }
                 }
@@ -137,57 +133,53 @@ fn spawn_scene(
         height: 16,
     };
     let mapprototype = MapPrototype::generate(maplayout);
-    let mut mapstorage = MapStorage::new(maplayout);
     let cubecoord = HexCoord::new(2, 6);
-    for position in maplayout.iter() {
-        let zone = mapprototype.get(position);
-        let entity = commands
-            .spawn((
-                MaterialMeshBundle {
-                    mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
-                    material: match zone.terrain {
-                        Terrain::Ocean => zone_materials.add(ZoneMaterial {
-                            cloud_texture: Some(assets.cloud_texture.clone()),
-                            terrain_texture: Some(assets.ocean_texture.clone()),
-                            visible: 1,
-                            explored: 1,
-                        }),
-                        Terrain::Mountain => zone_materials.add(ZoneMaterial {
-                            cloud_texture: Some(assets.cloud_texture.clone()),
-                            terrain_texture: Some(assets.mountain_texture.clone()),
-                            visible: 1,
-                            explored: 1,
-                        }),
-                        Terrain::Forest => zone_materials.add(ZoneMaterial {
-                            cloud_texture: Some(assets.cloud_texture.clone()),
-                            terrain_texture: Some(assets.forest_texture.clone()),
-                            visible: 1,
-                            explored: 1,
-                        }),
+    let tiles = maplayout
+        .iter()
+        .map(|position| {
+            let zone = mapprototype.get(position).unwrap();
+            commands
+                .spawn((
+                    MaterialMeshBundle {
+                        mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
+                        material: match zone.terrain {
+                            Terrain::Ocean => zone_materials.add(ZoneMaterial {
+                                cloud_texture: Some(assets.cloud_texture.clone()),
+                                terrain_texture: Some(assets.ocean_texture.clone()),
+                                visible: 1,
+                                explored: 1,
+                            }),
+                            Terrain::Mountain => zone_materials.add(ZoneMaterial {
+                                cloud_texture: Some(assets.cloud_texture.clone()),
+                                terrain_texture: Some(assets.mountain_texture.clone()),
+                                visible: 1,
+                                explored: 1,
+                            }),
+                            Terrain::Forest => zone_materials.add(ZoneMaterial {
+                                cloud_texture: Some(assets.cloud_texture.clone()),
+                                terrain_texture: Some(assets.forest_texture.clone()),
+                                visible: 1,
+                                explored: 1,
+                            }),
+                        },
+                        transform: Transform::from_translation(coord_to_vec3(position, 1.0)),
+                        ..default()
                     },
-                    transform: Transform::from_translation(coord_to_vec3(position, 1.0)),
-                    ..default()
-                },
-                MapPosition(position),
-                zone,
-                Fog {
-                    visible: false,
-                    explored: false,
-                },
-                bevy_mod_picking::PickableMesh::default(),
-                bevy_mod_picking::Hover::default(),
-                bevy_mod_picking::NoDeselect,
-                Interaction::default(),
-            ))
-            .id();
-        mapstorage.set(position, Some(entity));
-    }
-    let map = commands
-        .spawn(MapComponent {
-            storage: mapstorage,
-            radius: 1.0,
+                    MapPosition(position),
+                    *zone,
+                    Fog {
+                        visible: false,
+                        explored: false,
+                    },
+                    bevy_mod_picking::PickableMesh::default(),
+                    bevy_mod_picking::Hover::default(),
+                    bevy_mod_picking::NoDeselect,
+                    Interaction::default(),
+                ))
+                .id()
         })
-        .id();
+        .collect();
+    let map = commands.spawn(GameMap::new(maplayout, tiles, 1.0)).id();
     let alpha_group = commands
         .spawn((
             PbrBundle {
