@@ -137,7 +137,7 @@ fn spawn_scene(
     let tiles = maplayout
         .iter()
         .map(|position| {
-            let zone = mapprototype.get(position).unwrap();
+            let zone = mapprototype[position];
             commands
                 .spawn((
                     MaterialMeshBundle {
@@ -166,7 +166,7 @@ fn spawn_scene(
                         ..default()
                     },
                     MapPosition(position),
-                    *zone,
+                    zone,
                     Fog {
                         visible: false,
                         explored: false,
