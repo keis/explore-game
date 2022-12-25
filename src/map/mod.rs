@@ -16,7 +16,7 @@ mod storage;
 pub use commands::{AddMapPresence, DespawnPresence, MoveMapPresence};
 pub use events::MapEvent;
 pub use hexcoord::HexCoord;
-pub use layout::{MapLayout, MapLayoutIterator};
+pub use layout::{HexagonalMapLayout, MapLayout, SquareMapLayout};
 pub use pathdisplay::PathDisplay;
 pub use pathguided::PathGuided;
 pub use position::MapPosition;
@@ -26,14 +26,14 @@ pub use storage::MapStorage;
 
 #[derive(Component)]
 pub struct GameMap {
-    tiles: MapStorage<Entity>,
-    presence: MapStorage<HashSet<Entity>>,
+    tiles: MapStorage<SquareMapLayout, Entity>,
+    presence: MapStorage<SquareMapLayout, HashSet<Entity>>,
     void: HashSet<Entity>,
     pub radius: f32,
 }
 
 impl GameMap {
-    pub fn new(layout: MapLayout, tiles: Vec<Entity>, radius: f32) -> Self {
+    pub fn new(layout: SquareMapLayout, tiles: Vec<Entity>, radius: f32) -> Self {
         GameMap {
             tiles: MapStorage {
                 layout,

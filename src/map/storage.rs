@@ -2,12 +2,12 @@ use super::hexcoord::HexCoord;
 use super::layout::MapLayout;
 use std::ops::{Index, IndexMut};
 
-pub struct MapStorage<T> {
-    pub layout: MapLayout,
+pub struct MapStorage<L: MapLayout, T> {
+    pub layout: L,
     pub data: Vec<T>,
 }
 
-impl<T> MapStorage<T> {
+impl<L: MapLayout, T> MapStorage<L, T> {
     pub fn set(&mut self, position: HexCoord, value: T) {
         if let Some(offset) = self.layout.offset(position) {
             self.data[offset] = value;
@@ -27,7 +27,7 @@ impl<T> MapStorage<T> {
     }
 }
 
-impl<T> Index<HexCoord> for MapStorage<T> {
+impl<L: MapLayout, T> Index<HexCoord> for MapStorage<L, T> {
     type Output = T;
 
     fn index(&self, position: HexCoord) -> &T {
@@ -35,7 +35,7 @@ impl<T> Index<HexCoord> for MapStorage<T> {
     }
 }
 
-impl<T> IndexMut<HexCoord> for MapStorage<T> {
+impl<L: MapLayout, T> IndexMut<HexCoord> for MapStorage<L, T> {
     fn index_mut(&mut self, position: HexCoord) -> &mut T {
         &mut self.data[self.layout.offset(position).unwrap()]
     }
@@ -43,11 +43,11 @@ impl<T> IndexMut<HexCoord> for MapStorage<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::map::{HexCoord, MapLayout, MapStorage};
+    use crate::map::{HexCoord, MapLayout, MapStorage, SquareMapLayout};
 
     #[test]
     fn mutate_and_read_back() {
-        let layout = MapLayout {
+        let layout = SquareMapLayout {
             width: 3,
             height: 3,
         };

@@ -5,7 +5,7 @@ use rand::Rng;
 pub struct MapPrototype;
 
 impl MapPrototype {
-    pub fn generate(layout: MapLayout) -> MapStorage<Zone> {
+    pub fn generate<L: MapLayout>(layout: L) -> MapStorage<L, Zone> {
         let mut rng = rand::thread_rng();
         MapStorage {
             layout,

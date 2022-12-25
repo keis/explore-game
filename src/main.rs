@@ -13,7 +13,7 @@ use explore_game::{
     interface::InterfacePlugin,
     map::{
         AddMapPresence, GameMap, HexCoord, MapEvent, MapLayout, MapPlugin, MapPosition,
-        MapPresence, MapPrototype, Offset, PathGuided, ViewRadius,
+        MapPresence, MapPrototype, Offset, PathGuided, SquareMapLayout, ViewRadius,
     },
     party::{reset_movement_points, JoinParty, Party, PartyMember},
     slide::{slide, Slide, SlideEvent},
@@ -128,7 +128,7 @@ fn spawn_scene(
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
 ) {
     let offset = Vec3::new(0.0, 1.0, 0.0);
-    let maplayout = MapLayout {
+    let maplayout = SquareMapLayout {
         width: 20,
         height: 16,
     };
