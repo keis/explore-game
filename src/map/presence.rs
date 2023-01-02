@@ -13,7 +13,7 @@ pub struct MapPresence {
 pub struct Offset(pub Vec3);
 
 #[derive(Component)]
-pub struct ViewRadius(pub usize);
+pub struct ViewRadius(pub u32);
 
 pub fn update_visibility(
     presence_query: Query<(&MapPresence, &ViewRadius)>,

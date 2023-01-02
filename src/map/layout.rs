@@ -12,8 +12,8 @@ pub trait MapLayout: Copy + Clone {
 
 #[derive(Copy, Clone)]
 pub struct SquareMapLayout {
-    pub width: isize,
-    pub height: isize,
+    pub width: i32,
+    pub height: i32,
 }
 
 impl MapLayout for SquareMapLayout {
@@ -36,7 +36,7 @@ impl MapLayout for SquareMapLayout {
 
 pub struct SquareMapLayoutIterator<'a> {
     layout: &'a SquareMapLayout,
-    i: isize,
+    i: i32,
 }
 
 impl<'a> Iterator for SquareMapLayoutIterator<'a> {
@@ -57,34 +57,36 @@ impl<'a> Iterator for SquareMapLayoutIterator<'a> {
 
 #[derive(Copy, Clone)]
 pub struct HexagonalMapLayout {
-    pub radius: usize,
+    pub radius: i32,
 }
 
 impl MapLayout for HexagonalMapLayout {
     type LayoutIter<'a> = HexagonalMapLayoutIterator<'a>;
 
     fn size(self) -> usize {
-        ((self.radius - 1) * self.radius) * 3 + 1
+        (((self.radius - 1) * self.radius) * 3 + 1)
+            .try_into()
+            .unwrap()
     }
 
     fn iter(&'_ self) -> Self::LayoutIter<'_> {
         HexagonalMapLayoutIterator {
             layout: self,
             q: 0,
-            r: 1 - self.radius as isize,
+            r: 1 - self.radius,
         }
     }
 
     fn offset(&self, position: HexCoord) -> Option<usize> {
-        let radius = self.radius as isize;
-        let row = position.r + radius - 1;
+        let row = position.r + self.radius - 1;
         let qadjust = if position.r >= 0 {
-            (radius - 1) * radius - (radius - position.r - 1) * (radius - position.r) / 2
+            (self.radius - 1) * self.radius
+                - (self.radius - position.r - 1) * (self.radius - position.r) / 2
         } else {
             row * (row + 1) / 2
         };
         // adjust for lowest q and increasing width (in neg these are related)
-        usize::try_from(row * radius + qadjust + position.q)
+        usize::try_from(row * self.radius + qadjust + position.q)
             .ok()
             .filter(|o| o < &self.size())
     }
@@ -92,8 +94,8 @@ impl MapLayout for HexagonalMapLayout {
 
 pub struct HexagonalMapLayoutIterator<'a> {
     layout: &'a HexagonalMapLayout,
-    q: isize,
-    r: isize,
+    q: i32,
+    r: i32,
 }
 
 impl<'a> Iterator for HexagonalMapLayoutIterator<'a> {
@@ -102,21 +104,21 @@ impl<'a> Iterator for HexagonalMapLayoutIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         let r = self.r;
         let q = self.q;
-        if self.r > self.layout.radius as isize - 1 {
+        if self.r > self.layout.radius - 1 {
             return None;
         }
         let qend = if r <= 0 {
-            self.layout.radius as isize - 1
+            self.layout.radius - 1
         } else {
-            self.layout.radius as isize - r - 1
+            self.layout.radius - r - 1
         };
         self.q += 1;
         if self.q > qend {
             self.r += 1;
             self.q = if self.r >= 0 {
-                1 - self.layout.radius as isize
+                1 - self.layout.radius
             } else {
-                1 - self.r - self.layout.radius as isize
+                1 - self.r - self.layout.radius
             }
         }
         Some(HexCoord::new(q, r))

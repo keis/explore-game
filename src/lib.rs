@@ -16,4 +16,4 @@ pub mod turn;
 pub mod zone;
 pub mod zone_material;
 
-pub const VIEW_RADIUS: usize = 2;
+pub const VIEW_RADIUS: u32 = 2;
