@@ -8,6 +8,7 @@ pub trait MapLayout: Copy + Clone {
     fn size(self) -> usize;
     fn iter(&'_ self) -> Self::LayoutIter<'_>;
     fn offset(&self, position: HexCoord) -> Option<usize>;
+    fn contains(&self, position: HexCoord) -> bool;
 }
 
 #[derive(Copy, Clone)]
@@ -32,6 +33,11 @@ impl MapLayout for SquareMapLayout {
             .ok()
             .filter(|o| o < &self.size())
     }
+
+    fn contains(&self, position: HexCoord) -> bool {
+        let qoffset = position.q + position.r / 2;
+        position.r >= 0 && position.r < self.height && qoffset >= 0 && qoffset < self.width
+    }
 }
 
 pub struct SquareMapLayoutIterator<'a> {
@@ -55,7 +61,7 @@ impl<'a> Iterator for SquareMapLayoutIterator<'a> {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct HexagonalMapLayout {
     pub radius: i32,
 }
@@ -89,6 +95,10 @@ impl MapLayout for HexagonalMapLayout {
         usize::try_from(row * self.radius + qadjust + position.q)
             .ok()
             .filter(|o| o < &self.size())
+    }
+
+    fn contains(&self, position: HexCoord) -> bool {
+        position.distance(&HexCoord::new(0, 0)) <= (self.radius - 1) as u32
     }
 }
 
@@ -151,6 +161,10 @@ mod tests {
         assert_eq!(coords[7], HexCoord::new(0, 2));
         assert_eq!(coords[8], HexCoord::new(1, 2));
         assert_eq!(layout.offset(HexCoord::new(1, 2)), Some(8));
+
+        assert!(layout.contains(HexCoord::new(0, 0)));
+        assert!(layout.contains(HexCoord::new(-1, 2)));
+        assert!(!layout.contains(HexCoord::new(-2, 2)));
     }
 
     #[test]
@@ -174,6 +188,10 @@ mod tests {
         assert_eq!(coords[3], HexCoord::new(0, 0));
         assert_eq!(layout.offset(HexCoord::new(0, 0)), Some(3));
         assert_eq!(layout.offset(HexCoord::new(0, 1)), Some(6));
+
+        assert!(layout.contains(HexCoord::new(0, 0)));
+        assert!(layout.contains(HexCoord::new(-1, 1)));
+        assert!(!layout.contains(HexCoord::new(-2, 1)));
     }
 
     #[test]
