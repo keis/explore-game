@@ -11,6 +11,14 @@ pub struct HexCoord {
 
 impl HexCoord {
     pub const ZERO: HexCoord = HexCoord::new(0, 0);
+    pub const NEIGHBOUR_OFFSETS: [HexCoord; 6] = [
+        HexCoord::new(1, 0),
+        HexCoord::new(0, 1),
+        HexCoord::new(-1, 1),
+        HexCoord::new(-1, 0),
+        HexCoord::new(0, -1),
+        HexCoord::new(1, -1),
+    ];
 
     pub const fn new(q: i32, r: i32) -> Self {
         HexCoord { q, r }
@@ -34,15 +42,10 @@ impl HexCoord {
         (diff.q.unsigned_abs() + (diff.q + diff.r).unsigned_abs() + diff.r.unsigned_abs()) / 2
     }
 
-    pub fn neighbours(&self) -> Vec<Self> {
-        vec![
-            Self::new(self.q + 1, self.r),
-            Self::new(self.q, self.r + 1),
-            Self::new(self.q - 1, self.r + 1),
-            Self::new(self.q - 1, self.r),
-            Self::new(self.q, self.r - 1),
-            Self::new(self.q + 1, self.r - 1),
-        ]
+    pub fn neighbours(&self) -> impl '_ + Iterator<Item = HexCoord> {
+        HexCoord::NEIGHBOUR_OFFSETS
+            .iter()
+            .map(|offset| *self + *offset)
     }
 }
 

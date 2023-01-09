@@ -126,7 +126,6 @@ pub fn find_path(
         &start,
         |p| {
             p.neighbours()
-                .into_iter()
                 .filter(is_walkable)
                 .map(|p| (p, 1))
                 .collect::<Vec<(HexCoord, u32)>>()
@@ -146,7 +145,7 @@ mod tests {
         let goal = HexCoord::new(2, 3);
 
         let result = find_path(start, goal, &|_| true);
-        println!("neigbours {:?}", start.neighbours());
+        println!("neigbours {:?}", start.neighbours().collect::<Vec<_>>());
         println!("path {:?}", result);
         assert_eq!(result.expect("no path found").1, 1);
     }
