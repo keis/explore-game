@@ -10,7 +10,9 @@ pub struct HexCoord {
 }
 
 impl HexCoord {
-    pub fn new(q: i32, r: i32) -> Self {
+    pub const ZERO: HexCoord = HexCoord::new(0, 0);
+
+    pub const fn new(q: i32, r: i32) -> Self {
         HexCoord { q, r }
     }
 
@@ -85,7 +87,7 @@ mod tests {
 
     #[test]
     fn distance_to_neighbours() {
-        let origin = HexCoord::new(0, 0);
+        let origin = HexCoord::ZERO;
         for neighbour in origin.neighbours() {
             assert_eq!(origin.distance(&neighbour), 1);
         }
@@ -93,7 +95,7 @@ mod tests {
 
     #[test]
     fn long_distance() {
-        let origin = HexCoord::new(0, 0);
+        let origin = HexCoord::ZERO;
         let dest = HexCoord::new(4, -2);
         assert_eq!(origin.distance(&dest), 4);
     }

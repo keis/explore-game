@@ -98,7 +98,7 @@ impl MapLayout for HexagonalMapLayout {
     }
 
     fn contains(&self, position: HexCoord) -> bool {
-        position.distance(&HexCoord::new(0, 0)) <= (self.radius - 1) as u32
+        position.distance(&HexCoord::ZERO) <= (self.radius - 1) as u32
     }
 }
 
@@ -149,8 +149,8 @@ mod tests {
 
         println!("coords {:?}", coords);
         assert_eq!(coords.len(), 9);
-        assert_eq!(coords[0], HexCoord::new(0, 0));
-        assert_eq!(layout.offset(HexCoord::new(0, 0)), Some(0));
+        assert_eq!(coords[0], HexCoord::ZERO);
+        assert_eq!(layout.offset(HexCoord::ZERO), Some(0));
         assert_eq!(coords[1], HexCoord::new(1, 0));
         assert_eq!(coords[2], HexCoord::new(2, 0));
         assert_eq!(coords[3], HexCoord::new(0, 1));
@@ -162,7 +162,7 @@ mod tests {
         assert_eq!(coords[8], HexCoord::new(1, 2));
         assert_eq!(layout.offset(HexCoord::new(1, 2)), Some(8));
 
-        assert!(layout.contains(HexCoord::new(0, 0)));
+        assert!(layout.contains(HexCoord::ZERO));
         assert!(layout.contains(HexCoord::new(-1, 2)));
         assert!(!layout.contains(HexCoord::new(-2, 2)));
     }
@@ -185,11 +185,11 @@ mod tests {
         println!("coords {:?}", coords);
         assert_eq!(layout.size(), 7);
         assert_eq!(coords.len(), 7);
-        assert_eq!(coords[3], HexCoord::new(0, 0));
-        assert_eq!(layout.offset(HexCoord::new(0, 0)), Some(3));
+        assert_eq!(coords[3], HexCoord::ZERO);
+        assert_eq!(layout.offset(HexCoord::ZERO), Some(3));
         assert_eq!(layout.offset(HexCoord::new(0, 1)), Some(6));
 
-        assert!(layout.contains(HexCoord::new(0, 0)));
+        assert!(layout.contains(HexCoord::ZERO));
         assert!(layout.contains(HexCoord::new(-1, 1)));
         assert!(!layout.contains(HexCoord::new(-2, 1)));
     }

@@ -131,7 +131,7 @@ pub fn find_path(
                 .map(|p| (p, 1))
                 .collect::<Vec<(HexCoord, u32)>>()
         },
-        |p| p.distance(&goal).try_into().unwrap(),
+        |p| p.distance(&goal),
         |p| *p == goal,
     )
 }
@@ -153,7 +153,7 @@ mod tests {
 
     #[test]
     fn pathfinding() {
-        let start = HexCoord::new(0, 0);
+        let start = HexCoord::ZERO;
         let goal = HexCoord::new(4, 2);
 
         let result = find_path(start, goal, &|_| true);

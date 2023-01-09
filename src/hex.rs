@@ -68,7 +68,7 @@ mod tests {
     #[test]
     fn coord_as_vec3() {
         let radius = 1.0;
-        assert_eq!(coord_to_vec3(HexCoord::new(0, 0), radius), Vec3::ZERO);
+        assert_eq!(coord_to_vec3(HexCoord::ZERO, radius), Vec3::ZERO);
         assert_eq!(
             coord_to_vec3(HexCoord::new(1, 0), radius),
             Vec3::new(0.0, 0.0, 2.0 * HEX_RADIUS_RATIO)
