@@ -1,13 +1,13 @@
-use super::hexcoord::HexCoord;
-use super::layout::MapLayout;
+use super::GridLayout;
+use super::HexCoord;
 use std::ops::{Index, IndexMut};
 
-pub struct MapStorage<L: MapLayout, T> {
+pub struct Grid<L: GridLayout, T> {
     pub layout: L,
     pub data: Vec<T>,
 }
 
-impl<L: MapLayout, T> MapStorage<L, T> {
+impl<L: GridLayout, T> Grid<L, T> {
     pub fn set(&mut self, position: HexCoord, value: T) {
         if let Some(offset) = self.layout.offset(position) {
             self.data[offset] = value;
@@ -27,7 +27,7 @@ impl<L: MapLayout, T> MapStorage<L, T> {
     }
 }
 
-impl<L: MapLayout, T> Index<HexCoord> for MapStorage<L, T> {
+impl<L: GridLayout, T> Index<HexCoord> for Grid<L, T> {
     type Output = T;
 
     fn index(&self, position: HexCoord) -> &T {
@@ -35,7 +35,7 @@ impl<L: MapLayout, T> Index<HexCoord> for MapStorage<L, T> {
     }
 }
 
-impl<L: MapLayout, T> IndexMut<HexCoord> for MapStorage<L, T> {
+impl<L: GridLayout, T> IndexMut<HexCoord> for Grid<L, T> {
     fn index_mut(&mut self, position: HexCoord) -> &mut T {
         &mut self.data[self.layout.offset(position).unwrap()]
     }
@@ -43,25 +43,26 @@ impl<L: MapLayout, T> IndexMut<HexCoord> for MapStorage<L, T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::map::{HexCoord, MapLayout, MapStorage, SquareMapLayout};
+    use super::{Grid, GridLayout, HexCoord};
+    use crate::hexgrid::layout::SquareGridLayout;
 
     #[test]
     fn mutate_and_read_back() {
-        let layout = SquareMapLayout {
+        let layout = SquareGridLayout {
             width: 3,
             height: 3,
         };
-        let mut storage = MapStorage {
+        let mut grid = Grid {
             layout,
             data: vec![0; layout.size()],
         };
 
-        storage.set(HexCoord::new(1, 2), 17);
-        assert_eq!(storage.get(HexCoord::new(1, 2)), Some(&17));
-        assert_eq!(storage[HexCoord::new(1, 2)], 17);
+        grid.set(HexCoord::new(1, 2), 17);
+        assert_eq!(grid.get(HexCoord::new(1, 2)), Some(&17));
+        assert_eq!(grid[HexCoord::new(1, 2)], 17);
 
-        storage[HexCoord::new(2, 1)] = 13;
-        assert_eq!(storage.get(HexCoord::new(2, 1)), Some(&13));
-        assert_eq!(storage[HexCoord::new(2, 1)], 13);
+        grid[HexCoord::new(2, 1)] = 13;
+        assert_eq!(grid.get(HexCoord::new(2, 1)), Some(&13));
+        assert_eq!(grid[HexCoord::new(2, 1)], 13);
     }
 }
