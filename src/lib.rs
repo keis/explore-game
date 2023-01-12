@@ -5,6 +5,7 @@ pub mod camp;
 pub mod character;
 pub mod fog;
 pub mod hex;
+pub mod hexgrid;
 pub mod indicator;
 pub mod input;
 pub mod interface;

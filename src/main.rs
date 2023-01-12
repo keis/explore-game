@@ -8,12 +8,14 @@ use explore_game::{
     character::Character,
     fog::Fog,
     hex::{coord_to_vec3, Hexagon},
+    hexgrid::layout::SquareGridLayout,
+    hexgrid::GridLayout,
     indicator::{update_indicator, Indicator},
     input::InputPlugin,
     interface::InterfacePlugin,
     map::{
-        AddMapPresence, GameMap, HexCoord, MapEvent, MapLayout, MapPlugin, MapPosition,
-        MapPresence, MapPrototype, Offset, PathGuided, SquareMapLayout, ViewRadius,
+        AddMapPresence, GameMap, HexCoord, MapEvent, MapPlugin, MapPosition, MapPresence,
+        MapPrototype, Offset, PathGuided, ViewRadius,
     },
     party::{reset_movement_points, JoinParty, Party, PartyMember},
     slide::{slide, Slide, SlideEvent},
@@ -128,7 +130,7 @@ fn spawn_scene(
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
 ) {
     let offset = Vec3::new(0.0, 1.0, 0.0);
-    let maplayout = SquareMapLayout {
+    let maplayout = SquareGridLayout {
         width: 20,
         height: 16,
     };

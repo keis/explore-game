@@ -1,13 +1,13 @@
-use super::{MapLayout, MapStorage};
+use crate::hexgrid::{Grid, GridLayout};
 use crate::zone::Zone;
 use rand::Rng;
 
 pub struct MapPrototype;
 
 impl MapPrototype {
-    pub fn generate<L: MapLayout>(layout: L) -> MapStorage<L, Zone> {
+    pub fn generate<L: GridLayout>(layout: L) -> Grid<L, Zone> {
         let mut rng = rand::thread_rng();
-        MapStorage {
+        Grid {
             layout,
             data: layout.iter().map(|_| Zone { terrain: rng.gen() }).collect(),
         }

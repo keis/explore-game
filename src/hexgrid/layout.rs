@@ -1,6 +1,6 @@
 use crate::map::HexCoord;
 
-pub trait MapLayout: Copy + Clone {
+pub trait GridLayout: Copy + Clone {
     type LayoutIter<'a>: Iterator<Item = HexCoord>
     where
         Self: 'a;
@@ -12,20 +12,20 @@ pub trait MapLayout: Copy + Clone {
 }
 
 #[derive(Copy, Clone)]
-pub struct SquareMapLayout {
+pub struct SquareGridLayout {
     pub width: i32,
     pub height: i32,
 }
 
-impl MapLayout for SquareMapLayout {
-    type LayoutIter<'a> = SquareMapLayoutIterator<'a>;
+impl GridLayout for SquareGridLayout {
+    type LayoutIter<'a> = SquareGridLayoutIterator<'a>;
 
     fn size(self) -> usize {
         (self.width * self.height).try_into().unwrap()
     }
 
     fn iter(&'_ self) -> Self::LayoutIter<'_> {
-        SquareMapLayoutIterator { layout: self, i: 0 }
+        SquareGridLayoutIterator { layout: self, i: 0 }
     }
 
     fn offset(&self, position: HexCoord) -> Option<usize> {
@@ -40,12 +40,12 @@ impl MapLayout for SquareMapLayout {
     }
 }
 
-pub struct SquareMapLayoutIterator<'a> {
-    layout: &'a SquareMapLayout,
+pub struct SquareGridLayoutIterator<'a> {
+    layout: &'a SquareGridLayout,
     i: i32,
 }
 
-impl<'a> Iterator for SquareMapLayoutIterator<'a> {
+impl<'a> Iterator for SquareGridLayoutIterator<'a> {
     type Item = HexCoord;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -62,12 +62,12 @@ impl<'a> Iterator for SquareMapLayoutIterator<'a> {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct HexagonalMapLayout {
+pub struct HexagonalGridLayout {
     pub radius: i32,
 }
 
-impl MapLayout for HexagonalMapLayout {
-    type LayoutIter<'a> = HexagonalMapLayoutIterator<'a>;
+impl GridLayout for HexagonalGridLayout {
+    type LayoutIter<'a> = HexagonalGridLayoutIterator<'a>;
 
     fn size(self) -> usize {
         (((self.radius - 1) * self.radius) * 3 + 1)
@@ -76,7 +76,7 @@ impl MapLayout for HexagonalMapLayout {
     }
 
     fn iter(&'_ self) -> Self::LayoutIter<'_> {
-        HexagonalMapLayoutIterator {
+        HexagonalGridLayoutIterator {
             layout: self,
             q: 0,
             r: 1 - self.radius,
@@ -102,13 +102,13 @@ impl MapLayout for HexagonalMapLayout {
     }
 }
 
-pub struct HexagonalMapLayoutIterator<'a> {
-    layout: &'a HexagonalMapLayout,
+pub struct HexagonalGridLayoutIterator<'a> {
+    layout: &'a HexagonalGridLayout,
     q: i32,
     r: i32,
 }
 
-impl<'a> Iterator for HexagonalMapLayoutIterator<'a> {
+impl<'a> Iterator for HexagonalGridLayoutIterator<'a> {
     type Item = HexCoord;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -137,11 +137,11 @@ impl<'a> Iterator for HexagonalMapLayoutIterator<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::map::{HexCoord, HexagonalMapLayout, MapLayout, SquareMapLayout};
+    use super::{GridLayout, HexCoord, HexagonalGridLayout, SquareGridLayout};
 
     #[test]
     fn square_map_3x3() {
-        let layout = SquareMapLayout {
+        let layout = SquareGridLayout {
             width: 3,
             height: 3,
         };
@@ -169,7 +169,7 @@ mod tests {
 
     #[test]
     fn square_offset_matches_iter() {
-        let layout = SquareMapLayout {
+        let layout = SquareGridLayout {
             width: 8,
             height: 8,
         };
@@ -179,7 +179,7 @@ mod tests {
 
     #[test]
     fn hexagonal_map_r2() {
-        let layout = HexagonalMapLayout { radius: 2 };
+        let layout = HexagonalGridLayout { radius: 2 };
         let coords: Vec<HexCoord> = layout.iter().collect();
 
         println!("coords {:?}", coords);
@@ -196,7 +196,7 @@ mod tests {
 
     #[test]
     fn hexagonal_map_iter_r3() {
-        let layout = HexagonalMapLayout { radius: 3 };
+        let layout = HexagonalGridLayout { radius: 3 };
         let coords: Vec<HexCoord> = layout.iter().collect();
 
         println!("coords {:?}", coords);
@@ -208,7 +208,7 @@ mod tests {
 
     #[test]
     fn hexagonal_offset_matches_iter() {
-        let layout = HexagonalMapLayout { radius: 5 };
+        let layout = HexagonalGridLayout { radius: 5 };
         let coords: Vec<HexCoord> = layout.iter().collect();
         println!("coords {:?}", coords);
         let offsets: Vec<_> = layout.iter().map(|coord| layout.offset(coord)).collect();

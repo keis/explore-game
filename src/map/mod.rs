@@ -1,45 +1,42 @@
+use crate::hexgrid::layout::SquareGridLayout;
+use crate::hexgrid::{Grid, GridLayout};
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use pathfinding::prelude::astar;
 use std::collections::hash_set::HashSet;
 
 mod commands;
 mod events;
-mod hexcoord;
-mod layout;
 mod pathdisplay;
 mod pathguided;
 mod position;
 mod presence;
 mod prototype;
-mod storage;
 
+pub use crate::hexgrid::HexCoord;
 pub use commands::{AddMapPresence, DespawnPresence, MoveMapPresence};
 pub use events::MapEvent;
-pub use hexcoord::HexCoord;
-pub use layout::{HexagonalMapLayout, MapLayout, SquareMapLayout};
 pub use pathdisplay::PathDisplay;
 pub use pathguided::PathGuided;
 pub use position::MapPosition;
 pub use presence::{MapPresence, Offset, ViewRadius};
 pub use prototype::MapPrototype;
-pub use storage::MapStorage;
 
 #[derive(Component)]
 pub struct GameMap {
-    tiles: MapStorage<SquareMapLayout, Entity>,
-    presence: MapStorage<SquareMapLayout, HashSet<Entity>>,
+    tiles: Grid<SquareGridLayout, Entity>,
+    presence: Grid<SquareGridLayout, HashSet<Entity>>,
     void: HashSet<Entity>,
     pub radius: f32,
 }
 
 impl GameMap {
-    pub fn new(layout: SquareMapLayout, tiles: Vec<Entity>, radius: f32) -> Self {
+    pub fn new(layout: SquareGridLayout, tiles: Vec<Entity>, radius: f32) -> Self {
         GameMap {
-            tiles: MapStorage {
+            tiles: Grid {
                 layout,
                 data: tiles,
             },
-            presence: MapStorage {
+            presence: Grid {
                 layout,
                 data: vec![HashSet::new(); layout.size()],
             },
