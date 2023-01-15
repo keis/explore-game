@@ -25,7 +25,7 @@ impl HexCoord {
     }
 
     /// Compute the S component of the equivalent cube coordinate
-    pub fn s(&self) -> i32 {
+    pub const fn s(&self) -> i32 {
         -self.q - self.r
     }
 
