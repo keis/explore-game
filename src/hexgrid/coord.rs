@@ -1,5 +1,5 @@
 use bevy::math::IVec3;
-use std::ops::{Add, Sub};
+use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
 
 /// Represents a position on a hexagonal grid with axial coordinates
 /// https://www.redblobgames.com/grids/hexagons/#coordinates
@@ -60,6 +60,13 @@ impl Add for HexCoord {
     }
 }
 
+impl AddAssign for HexCoord {
+    fn add_assign(&mut self, other: Self) {
+        self.q += other.q;
+        self.r += other.r;
+    }
+}
+
 impl Sub for HexCoord {
     type Output = Self;
 
@@ -68,6 +75,31 @@ impl Sub for HexCoord {
             q: self.q - other.q,
             r: self.r - other.r,
         }
+    }
+}
+
+impl SubAssign for HexCoord {
+    fn sub_assign(&mut self, other: Self) {
+        self.q -= other.q;
+        self.r -= other.r;
+    }
+}
+
+impl Mul<i32> for HexCoord {
+    type Output = Self;
+
+    fn mul(self, scale: i32) -> Self {
+        Self {
+            q: self.q * scale,
+            r: self.r * scale,
+        }
+    }
+}
+
+impl MulAssign<i32> for HexCoord {
+    fn mul_assign(&mut self, scale: i32) {
+        self.q *= scale;
+        self.r *= scale;
     }
 }
 
