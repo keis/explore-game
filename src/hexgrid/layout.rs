@@ -1,4 +1,4 @@
-use crate::map::HexCoord;
+use crate::hexgrid::{HexCoord, Transform};
 
 pub trait GridLayout: Copy + Clone {
     type LayoutIter<'a>: Iterator<Item = HexCoord>
@@ -9,6 +9,7 @@ pub trait GridLayout: Copy + Clone {
     fn iter(&'_ self) -> Self::LayoutIter<'_>;
     fn offset(&self, position: HexCoord) -> Option<usize>;
     fn contains(&self, position: HexCoord) -> bool;
+    fn wrap(&self, position: HexCoord) -> HexCoord;
 }
 
 #[derive(Copy, Clone)]
@@ -29,6 +30,9 @@ impl GridLayout for SquareGridLayout {
     }
 
     fn offset(&self, position: HexCoord) -> Option<usize> {
+        if !self.contains(position) {
+            return None;
+        }
         usize::try_from(position.r * self.width + position.q + position.r / 2)
             .ok()
             .filter(|o| o < &self.size())
@@ -37,6 +41,10 @@ impl GridLayout for SquareGridLayout {
     fn contains(&self, position: HexCoord) -> bool {
         let qoffset = position.q + position.r / 2;
         position.r >= 0 && position.r < self.height && qoffset >= 0 && qoffset < self.width
+    }
+
+    fn wrap(&self, _position: HexCoord) -> HexCoord {
+        panic!("Not implemented");
     }
 }
 
@@ -84,6 +92,9 @@ impl GridLayout for HexagonalGridLayout {
     }
 
     fn offset(&self, position: HexCoord) -> Option<usize> {
+        if !self.contains(position) {
+            return None;
+        }
         let row = position.r + self.radius - 1;
         let qadjust = if position.r >= 0 {
             (self.radius - 1) * self.radius
@@ -99,6 +110,27 @@ impl GridLayout for HexagonalGridLayout {
 
     fn contains(&self, position: HexCoord) -> bool {
         position.distance(&HexCoord::ZERO) <= (self.radius - 1) as u32
+    }
+
+    fn wrap(&self, position: HexCoord) -> HexCoord {
+        let base = HexCoord::new(2 * self.radius - 1, 1 - self.radius);
+        let mirror_center = [
+            Transform::Identity,
+            Transform::RotateClockwise60,
+            Transform::RotateClockwise120,
+            Transform::RotateClockwise180,
+            Transform::RotateClockwise240,
+            Transform::RotateClockwise300,
+        ]
+        .iter()
+        .map(|transform| transform.apply(base))
+        .min_by_key(|mc| position.distance(mc))
+        .unwrap();
+        let mut result = position - mirror_center;
+        while !self.contains(result) {
+            result -= mirror_center;
+        }
+        result
     }
 }
 
@@ -213,5 +245,11 @@ mod tests {
         println!("coords {:?}", coords);
         let offsets: Vec<_> = layout.iter().map(|coord| layout.offset(coord)).collect();
         assert_eq!(offsets, (0..layout.size()).map(Some).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn test_wrap_coord() {
+        let layout = HexagonalGridLayout { radius: 3 };
+        assert_eq!(layout.wrap(HexCoord::new(3, 0)), HexCoord::new(-2, 2));
     }
 }
