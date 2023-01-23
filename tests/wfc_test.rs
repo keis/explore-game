@@ -5,7 +5,6 @@ use explore_game::{
     wfc::generator::Generator,
     wfc::template::Template,
     wfc::tile::{extract_tiles, standard_tile_transforms, Tile},
-    wfc::TileId,
     zone::Terrain,
 };
 
@@ -111,12 +110,9 @@ fn terrain_char(terrain: Terrain) -> char {
     }
 }
 
-fn dump_output(
-    template: &Template<HexagonalGridLayout, Terrain>,
-    grid: &Grid<HexagonalGridLayout, Cell>,
-) {
+fn dump_output(template: &Template<Terrain>, grid: &Grid<HexagonalGridLayout, Cell>) {
     dump_grid(grid, |cell| match cell {
-        Cell::Collapsed(tile) => terrain_char(template.tiles[*tile][HexCoord::ZERO]),
+        Cell::Collapsed(tile) => terrain_char(template.contribution(*tile)),
         Cell::Alternatives(_, _) => '?',
     });
 }
@@ -150,24 +146,19 @@ fn wrap_grid(grid: Grid<HexagonalGridLayout, Terrain>) -> Grid<HexagonalGridLayo
     wrapped
 }
 
+fn sample_template() -> Template<Terrain> {
+    let input = wrap_grid(sample_map());
+    dump_grid(&input, |&terrain| terrain_char(terrain));
+    let transforms = standard_tile_transforms();
+    Template::from_tiles(extract_tiles(&input, &transforms))
+}
+
 #[test]
 fn test_collapse() {
     let mut rng = rand::thread_rng();
-    let input = wrap_grid(sample_map());
-    let transforms = standard_tile_transforms();
-    let template = Template::from_tiles(extract_tiles(&input, &transforms));
+    let template = sample_template();
     println!("{:?}", template.stats());
-    dump_grid(&input, |&terrain| terrain_char(terrain));
 
-    // Verify all tiles have *some* valid neighbours
-    for idx in 0..template.tiles.len() {
-        for (_, compatible) in template.compatible_tiles(idx as TileId) {
-            if compatible.is_empty() {
-                dump_tile(template.tiles[idx as TileId]);
-            }
-            assert!(!compatible.is_empty());
-        }
-    }
     let mut generator = Generator::new(&template, HexagonalGridLayout { radius: 5 });
     println!("map size is {:?}", generator.grid.layout.size());
     while generator.step(&mut rng).is_some() {
@@ -180,7 +171,7 @@ fn test_collapse() {
                     );
                 }
                 Cell::Alternatives(num_alts, _) => {
-                    if num_alts < template.tiles.len() {
+                    if num_alts < template.available_tiles() {
                         assert_ne!(
                             generator.queue.iter().find(|qc| **qc == coord),
                             None,

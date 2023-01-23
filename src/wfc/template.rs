@@ -3,14 +3,14 @@ use crate::wfc::tile::Tile;
 use crate::wfc::TileId;
 use std::collections::HashSet;
 
-pub struct TileDetails {
+pub struct TileDetails<Item> {
+    contribution: Item,
     compatible: [HashSet<TileId>; 6],
 }
 
 /// A Template holds the rules for how tiles can be combined
-pub struct Template<'a, Layout: GridLayout, Item> {
-    pub tiles: Vec<Tile<'a, Layout, Item>>,
-    details: Vec<TileDetails>,
+pub struct Template<Item> {
+    details: Vec<TileDetails<Item>>,
 }
 
 #[derive(Debug)]
@@ -22,18 +22,20 @@ pub struct TemplateStats {
     pub max: u32,
 }
 
-impl<'a, Layout: GridLayout, Item> Template<'a, Layout, Item>
+impl<'a, Item> Template<Item>
 where
-    Item: Copy + PartialEq,
+    Item: Copy + PartialEq + 'a,
 {
-    pub fn from_tiles<Iter>(iter: Iter) -> Self
+    pub fn from_tiles<Layout, Iter>(iter: Iter) -> Self
     where
+        Layout: GridLayout + 'a,
         Iter: IntoIterator<Item = Tile<'a, Layout, Item>>,
     {
         let tiles: Vec<_> = iter.into_iter().collect();
         let details = tiles
             .iter()
             .map(|tile| TileDetails {
+                contribution: tile[HexCoord::ZERO],
                 compatible: HexCoord::NEIGHBOUR_OFFSETS.map(|offset| {
                     tiles
                         .iter()
@@ -44,7 +46,7 @@ where
                 }),
             })
             .collect();
-        Self { tiles, details }
+        Self { details }
     }
 
     pub fn compatible_tiles(
@@ -54,6 +56,14 @@ where
         HexCoord::NEIGHBOUR_OFFSETS
             .iter()
             .zip(self.details[tile_id].compatible.iter())
+    }
+
+    pub fn available_tiles(&self) -> usize {
+        self.details.len()
+    }
+
+    pub fn contribution(&self, tile_id: TileId) -> Item {
+        self.details[tile_id].contribution
     }
 
     pub fn stats(&self) -> TemplateStats {
@@ -69,7 +79,7 @@ where
             .sum::<f32>()
             / connections.len() as f32;
         TemplateStats {
-            size: self.tiles.len() as u32,
+            size: self.details.len() as u32,
             mean,
             stddev,
             max: *connections.iter().max().unwrap(),

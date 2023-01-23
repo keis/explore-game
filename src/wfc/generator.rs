@@ -5,21 +5,23 @@ use std::cmp::Reverse;
 use std::collections::HashSet;
 
 /// Generator is the state of the iterative process for generating a map using WFC
-pub struct Generator<'a, Layout: GridLayout, TileLayout: GridLayout, Item> {
-    pub template: &'a Template<'a, TileLayout, Item>,
+pub struct Generator<'a, Layout: GridLayout, Item> {
+    pub template: &'a Template<Item>,
     pub grid: Grid<Layout, Cell>,
     pub collapsed: Vec<(HexCoord, TileId, Vec<TileId>)>, // Coordinate, selected tile, rejected tiles
     pub queue: Vec<HexCoord>,
     pub rejected: Option<Vec<TileId>>,
 }
 
-impl<'a, Layout: GridLayout, TileLayout: GridLayout, Item> Generator<'a, Layout, TileLayout, Item>
+impl<'a, Layout: GridLayout, Item> Generator<'a, Layout, Item>
 where
     Item: Copy + PartialEq,
 {
-    pub fn new(template: &'a Template<'a, TileLayout, Item>, layout: Layout) -> Self {
-        let default_cell =
-            Cell::Alternatives(template.tiles.len(), vec![true; template.tiles.len()]);
+    pub fn new(template: &'a Template<Item>, layout: Layout) -> Self {
+        let default_cell = Cell::Alternatives(
+            template.available_tiles(),
+            vec![true; template.available_tiles()],
+        );
         let grid = Grid {
             layout,
             data: vec![default_cell; layout.size()],
@@ -36,7 +38,7 @@ where
     }
 
     pub fn alternatives(&self, coord: HexCoord) -> HashSet<TileId> {
-        let mut alts: HashSet<TileId> = (0..self.template.tiles.len())
+        let mut alts: HashSet<TileId> = (0..self.template.available_tiles())
             .map(|id| id as TileId)
             .collect();
         for neighbour in coord.neighbours() {
@@ -73,7 +75,7 @@ where
         }
         self.grid[last_coord] = Cell::Alternatives(
             alternatives.len(),
-            (0..self.template.tiles.len())
+            (0..self.template.available_tiles())
                 .map(|id| alternatives.contains(&(id as TileId)))
                 .collect(),
         );
@@ -91,7 +93,7 @@ where
         let coord = self.queue.pop()?;
         self.grid[coord].collapse(rng);
         if let Cell::Collapsed(tile) = self.grid[coord] {
-            assert!(tile <= self.template.tiles.len());
+            assert!(tile <= self.template.available_tiles());
             self.collapsed
                 .push((coord, tile, self.rejected.replace(Vec::new()).unwrap()));
             self.propagate(coord, tile);
@@ -115,7 +117,7 @@ where
             .data
             .iter()
             .map(|cell| match cell {
-                Cell::Collapsed(tile) => Ok(self.template.tiles[*tile][HexCoord::ZERO]),
+                Cell::Collapsed(tile) => Ok(self.template.contribution(*tile)),
                 Cell::Alternatives(_, _) => Err("Cell not collapsed"),
             })
             .collect::<Result<_, _>>()?;
