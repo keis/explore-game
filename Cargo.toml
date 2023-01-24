@@ -15,7 +15,7 @@ bevy_mod_picking = "0.10"
 bevy_stl = { version = "0.7.0" }
 bevy = { version = "0.9", features = ["dynamic", "wayland"] }
 itertools = "0.10.5"
-leafwing-input-manager = "0.7.0"
+leafwing-input-manager = "0.8.0"
 pathfinding = "3.0.13"
 rand = "0.8.5"
 smallvec = "1.6"
