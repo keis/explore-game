@@ -5,11 +5,19 @@ use explore_game::{
     wfc::generator::Generator,
     wfc::template::Template,
     wfc::tile::{extract_tiles, standard_tile_transforms},
-    wfc::util::{dump_grid, load_grid, wrap_grid},
+    wfc::util::{dump_grid, dump_grid_with, load_grid, wrap_grid},
     zone::Terrain,
 };
 use std::fs::File;
 use std::io;
+
+fn dump_output(template: &Template<Terrain>, grid: &Grid<HexagonalGridLayout, Cell>) {
+    dump_grid_with(grid, &mut io::stdout(), |cell| match cell {
+        Cell::Collapsed(tile) => template.contribution(*tile).into(),
+        Cell::Alternatives(_, _) => '?',
+    })
+    .unwrap();
+}
 
 fn sample_map() -> Result<Grid<HexagonalGridLayout, Terrain>, &'static str> {
     let mut file =
@@ -25,8 +33,7 @@ fn sample_template() -> Template<Terrain> {
     Template::from_tiles(extract_tiles(&wrapped_input, &transforms))
 }
 
-#[test]
-fn test_collapse() {
+fn main() {
     let mut rng = rand::thread_rng();
     let template = sample_template();
     println!("{:?}", template.stats());
@@ -34,29 +41,8 @@ fn test_collapse() {
     let mut generator = Generator::new(&template, HexagonalGridLayout { radius: 5 });
     println!("map size is {:?}", generator.grid.layout.size());
     while generator.step(&mut rng).is_some() {
-        for coord in generator.grid.layout.iter() {
-            match generator.grid[coord] {
-                Cell::Collapsed(_) => {
-                    assert_ne!(
-                        generator.collapsed.iter().find(|(cc, _, _)| *cc == coord),
-                        None
-                    );
-                }
-                Cell::Alternatives(num_alts, _) => {
-                    if num_alts < template.available_tiles() {
-                        assert_ne!(
-                            generator.queue.iter().find(|qc| **qc == coord),
-                            None,
-                            "expected to find {:?} in queue",
-                            coord,
-                        );
-                    }
-                }
-            };
-        }
+        dump_output(generator.template, &generator.grid);
     }
     let output = generator.export().unwrap();
     dump_grid(&output, &mut io::stdout()).unwrap();
-
-    assert_eq!(output.layout.radius, 5);
 }

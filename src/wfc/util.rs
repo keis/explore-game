@@ -1,4 +1,4 @@
-use crate::hexgrid::{layout::HexagonalGridLayout, Grid, GridLayout};
+use crate::hexgrid::{layout::HexagonalGridLayout, ring, Grid, GridLayout, HexCoord};
 use std::io;
 use std::io::BufRead;
 
@@ -52,6 +52,25 @@ pub fn load_grid<Item: TryFrom<char> + Clone, R: BufRead>(
         .collect::<Result<_, _>>()?;
 
     Ok(Grid { layout, data })
+}
+
+pub fn wrap_grid<Item: Default + Clone + Copy>(
+    grid: Grid<HexagonalGridLayout, Item>,
+) -> Grid<HexagonalGridLayout, Item> {
+    let layout = HexagonalGridLayout {
+        radius: grid.layout.radius + 1,
+    };
+    let mut wrapped = Grid {
+        layout,
+        data: vec![Item::default(); layout.size()],
+    };
+    for coord in grid.layout.iter() {
+        wrapped[coord] = grid[coord];
+    }
+    for coord in ring(HexCoord::ZERO, grid.layout.radius + 1) {
+        wrapped[coord] = grid[grid.layout.wrap(coord)];
+    }
+    wrapped
 }
 
 #[cfg(test)]

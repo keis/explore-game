@@ -4,8 +4,9 @@ use rand::{
     Rng,
 };
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default)]
 pub enum Terrain {
+    #[default]
     Ocean,
     Mountain,
     Forest,
