@@ -22,7 +22,7 @@ use explore_game::{
     turn::Turn,
     zone::Terrain,
     zone_material::{ZoneMaterial, ZoneMaterialPlugin},
-    VIEW_RADIUS,
+    State, VIEW_RADIUS,
 };
 use smallvec::SmallVec;
 
@@ -32,9 +32,8 @@ pub const ASPECT_RATIO: f32 = 16.0 / 9.0;
 fn main() {
     let height = 900.0;
 
-    let mut app = App::new();
-
-    app.insert_resource(ClearColor(CLEAR))
+    App::new()
+        .insert_resource(ClearColor(CLEAR))
         .insert_resource(Turn { number: 0 })
         .add_plugins(
             DefaultPlugins
@@ -60,7 +59,6 @@ fn main() {
                     ..default()
                 }),
         )
-        .init_collection::<MainAssets>()
         .add_plugin(bevy_stl::StlPlugin)
         .add_plugin(CameraControlPlugin)
         .add_plugin(InputPlugin)
@@ -68,15 +66,23 @@ fn main() {
         .add_plugin(MapPlugin)
         .add_plugin(ZoneMaterialPlugin)
         .add_plugin(ActionPlugin)
-        .add_startup_system(spawn_scene)
         .add_startup_system(spawn_camera)
-        .add_system(log_moves)
-        .add_system(update_indicator)
-        .add_system(reset_movement_points)
-        .add_system(slide)
-        .add_event::<SlideEvent>();
-
-    app.run();
+        .add_event::<SlideEvent>()
+        .add_state(State::AssetLoading)
+        .add_loading_state(
+            LoadingState::new(State::AssetLoading)
+                .continue_to_state(State::Running)
+                .with_collection::<MainAssets>(),
+        )
+        .add_system_set(SystemSet::on_enter(State::Running).with_system(spawn_scene))
+        .add_system_set(
+            SystemSet::on_update(State::Running)
+                .with_system(log_moves)
+                .with_system(update_indicator)
+                .with_system(reset_movement_points)
+                .with_system(slide),
+        )
+        .run();
 }
 
 fn log_moves(
@@ -194,7 +200,7 @@ fn spawn_scene(
             Indicator,
             Party {
                 name: String::from("Alpha Group"),
-                movement_points: 0,
+                movement_points: 2,
                 supplies: 1,
                 members: SmallVec::new(),
             },
@@ -238,7 +244,7 @@ fn spawn_scene(
             Indicator,
             Party {
                 name: String::from("Beta Group"),
-                movement_points: 0,
+                movement_points: 2,
                 supplies: 1,
                 members: SmallVec::new(),
             },
