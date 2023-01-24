@@ -1,6 +1,6 @@
 use crate::hexgrid::{HexCoord, Transform};
 
-pub trait GridLayout: Copy + Clone {
+pub trait GridLayout: Copy + Clone + PartialEq {
     type LayoutIter<'a>: Iterator<Item = HexCoord>
     where
         Self: 'a;
@@ -12,7 +12,7 @@ pub trait GridLayout: Copy + Clone {
     fn wrap(&self, position: HexCoord) -> HexCoord;
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct SquareGridLayout {
     pub width: i32,
     pub height: i32,

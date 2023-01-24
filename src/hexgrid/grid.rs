@@ -1,5 +1,6 @@
 use super::GridLayout;
 use super::HexCoord;
+use std::fmt;
 use std::ops::{Index, IndexMut};
 
 pub struct Grid<L: GridLayout, T> {
@@ -24,6 +25,14 @@ impl<L: GridLayout, T> Grid<L, T> {
         self.layout
             .offset(position)
             .and_then(|offset| self.data.get_mut(offset))
+    }
+}
+
+impl<L: GridLayout + fmt::Debug, T> fmt::Debug for Grid<L, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MapStorage")
+            .field("layout", &self.layout)
+            .finish()
     }
 }
 

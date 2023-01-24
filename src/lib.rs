@@ -14,6 +14,7 @@ pub mod party;
 pub mod path;
 pub mod slide;
 pub mod turn;
+pub mod wfc;
 pub mod zone;
 pub mod zone_material;
 
