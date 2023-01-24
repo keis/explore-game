@@ -11,7 +11,7 @@ opt-level = 3
 
 [dependencies]
 bevy_asset_loader = "0.14.1"
-bevy_mod_picking = "0.10"
+bevy_mod_picking = "0.11"
 bevy_stl = { version = "0.7.0" }
 bevy = { version = "0.9", features = ["dynamic", "wayland"] }
 itertools = "0.10.5"
