@@ -1,11 +1,16 @@
 use crate::input::{Action, ActionState};
+use crate::State;
 use bevy::{prelude::*, window::CursorGrabMode};
 
 pub struct CameraControlPlugin;
 
 impl Plugin for CameraControlPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(camera_control).add_system(cursor_grab);
+        app.add_system_set(
+            SystemSet::on_update(State::Running)
+                .with_system(camera_control)
+                .with_system(cursor_grab),
+        );
     }
 }
 

@@ -9,7 +9,7 @@ use crate::party::Party;
 use crate::slide::{Slide, SlideEvent};
 use crate::turn::Turn;
 use crate::zone::{Terrain, Zone};
-use crate::VIEW_RADIUS;
+use crate::{State, VIEW_RADIUS};
 use bevy::ecs::schedule::ShouldRun;
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
@@ -31,13 +31,16 @@ impl Plugin for ActionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<GameAction>()
             .insert_resource(GameActionQueue::default())
-            .add_system(trigger_action)
-            .add_system(handle_move)
-            .add_system(handle_slide_stopped)
-            .add_system(handle_move_to)
-            .add_system(handle_resume_move)
-            .add_system(handle_make_camp)
-            .add_system(handle_break_camp)
+            .add_system_set(
+                SystemSet::on_update(State::Running)
+                    .with_system(trigger_action)
+                    .with_system(handle_move)
+                    .with_system(handle_slide_stopped)
+                    .with_system(handle_move_to)
+                    .with_system(handle_resume_move)
+                    .with_system(handle_make_camp)
+                    .with_system(handle_break_camp),
+            )
             .add_system_set(
                 SystemSet::new()
                     .with_run_criteria(run_on_save)

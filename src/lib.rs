@@ -19,3 +19,9 @@ pub mod zone;
 pub mod zone_material;
 
 pub const VIEW_RADIUS: u32 = 2;
+
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+pub enum State {
+    AssetLoading,
+    Running,
+}

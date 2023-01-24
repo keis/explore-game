@@ -1,5 +1,6 @@
 use crate::hexgrid::layout::SquareGridLayout;
 use crate::hexgrid::{Grid, GridLayout};
+use crate::State;
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use pathfinding::prelude::astar;
 use std::collections::hash_set::HashSet;
@@ -108,7 +109,9 @@ impl Plugin for MapPlugin {
                     .with_run_criteria(run_if_damaged)
                     .with_system(presence::update_visibility),
             )
-            .add_system(pathdisplay::update_path_display)
+            .add_system_set(
+                SystemSet::on_update(State::Running).with_system(pathdisplay::update_path_display),
+            )
             .add_system_to_stage(CoreStage::PostUpdate, damage)
             .add_event::<MapEvent>();
     }

@@ -1,3 +1,4 @@
+use crate::State;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
@@ -11,23 +12,33 @@ pub struct InterfacePlugin;
 
 impl Plugin for InterfacePlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(shell::spawn_shell)
-            .add_startup_system(menu::spawn_menu)
-            .init_collection::<InterfaceAssets>()
-            .add_system(shell::update_party_list)
-            .add_system(shell::update_party_selection)
-            .add_system(shell::update_party_movement_points)
-            .add_system(shell::update_character_list)
-            .add_system(shell::update_turn_text)
-            .add_system(shell::update_zone_text)
-            .add_system(shell::handle_party_display_interaction)
-            .add_system(shell::handle_move_button_interaction)
-            .add_system(shell::handle_turn_button_interaction)
-            .add_system(shell::handle_camp_button_interaction)
-            .add_system(shell::handle_break_camp_button_interaction)
-            .add_system(menu::handle_toggle_main_menu)
-            .add_system(menu::handle_save)
-            .add_system(menu::handle_quit);
+        app.add_loading_state(
+            LoadingState::new(State::AssetLoading)
+                .continue_to_state(State::Running)
+                .with_collection::<InterfaceAssets>(),
+        )
+        .add_system_set(
+            SystemSet::on_enter(State::Running)
+                .with_system(shell::spawn_shell)
+                .with_system(menu::spawn_menu),
+        )
+        .add_system_set(
+            SystemSet::on_update(State::Running)
+                .with_system(shell::update_party_list)
+                .with_system(shell::update_party_selection)
+                .with_system(shell::update_party_movement_points)
+                .with_system(shell::update_character_list)
+                .with_system(shell::update_turn_text)
+                .with_system(shell::update_zone_text)
+                .with_system(shell::handle_party_display_interaction)
+                .with_system(shell::handle_move_button_interaction)
+                .with_system(shell::handle_turn_button_interaction)
+                .with_system(shell::handle_camp_button_interaction)
+                .with_system(shell::handle_break_camp_button_interaction)
+                .with_system(menu::handle_toggle_main_menu)
+                .with_system(menu::handle_save)
+                .with_system(menu::handle_quit),
+        );
     }
 }
 
