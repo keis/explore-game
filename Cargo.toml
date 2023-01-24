@@ -16,7 +16,7 @@ bevy_stl = { version = "0.7.0" }
 bevy = { version = "0.9", features = ["dynamic", "wayland"] }
 itertools = "0.10.5"
 leafwing-input-manager = "0.8.0"
-pathfinding = "3.0.13"
+pathfinding = "4.2.1"
 rand = "0.8.5"
 smallvec = "1.6"
 splines = { git = "https://github.com/phaazon/splines", rev = "9deb82c4dace9765bb34d69bbefc2f0da0178e5b", features = ["glam"] }
