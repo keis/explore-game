@@ -5,114 +5,21 @@ use explore_game::{
     wfc::generator::Generator,
     wfc::template::Template,
     wfc::tile::{extract_tiles, standard_tile_transforms, Tile},
+    wfc::util::{dump_grid, dump_grid_with, load_grid},
     zone::Terrain,
 };
+use std::fs::File;
+use std::io;
 
-fn sample_map() -> Grid<HexagonalGridLayout, Terrain> {
-    let layout = HexagonalGridLayout { radius: 5 };
-    Grid {
-        layout,
-        data: vec![
-            // Row 1
-            Terrain::Mountain,
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Ocean,
-            Terrain::Ocean,
-            // Row 2
-            Terrain::Mountain,
-            Terrain::Mountain,
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Ocean,
-            Terrain::Forest,
-            // Row 3
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Forest,
-            // Row 4
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Mountain,
-            Terrain::Mountain,
-            Terrain::Forest,
-            Terrain::Forest,
-            // Row 5
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Mountain,
-            Terrain::Mountain,
-            Terrain::Mountain,
-            Terrain::Mountain,
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Forest,
-            // Row 6
-            Terrain::Forest,
-            Terrain::Mountain,
-            Terrain::Forest,
-            Terrain::Mountain,
-            Terrain::Ocean,
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Forest,
-            // Row 7
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Ocean,
-            Terrain::Ocean,
-            Terrain::Forest,
-            Terrain::Forest,
-            // Row 8
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Ocean,
-            Terrain::Ocean,
-            Terrain::Forest,
-            Terrain::Forest,
-            // Row 9
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Ocean,
-            Terrain::Ocean,
-            Terrain::Forest,
-        ],
-    }
-}
-
-fn dump_grid<Item, F>(grid: &Grid<HexagonalGridLayout, Item>, display_item: F)
-where
-    F: Fn(&Item) -> char,
-{
-    let mut lastr = 0;
-    for coord in grid.layout.iter() {
-        if coord.r != lastr {
-            print!("\n{}", " ".repeat(coord.r.abs().try_into().unwrap()));
-            lastr = coord.r;
-        }
-        print!(" {}", display_item(&grid[coord]));
-    }
-    println!();
-}
-
-fn terrain_char(terrain: Terrain) -> char {
-    match terrain {
-        Terrain::Forest => '%',
-        Terrain::Mountain => '^',
-        Terrain::Ocean => '~',
-    }
+fn sample_map() -> Result<Grid<HexagonalGridLayout, Terrain>, &'static str> {
+    let mut file =
+        io::BufReader::new(File::open("assets/maps/test.txt").map_err(|_| "failed to open file")?);
+    load_grid(&mut file)
 }
 
 fn dump_output(template: &Template<Terrain>, grid: &Grid<HexagonalGridLayout, Cell>) {
-    dump_grid(grid, |cell| match cell {
-        Cell::Collapsed(tile) => terrain_char(template.contribution(*tile)),
+    dump_grid_with(grid, &mut io::stdout(), |cell| match cell {
+        Cell::Collapsed(tile) => template.contribution(*tile).into(),
         Cell::Alternatives(_, _) => '?',
     });
 }
@@ -124,7 +31,7 @@ fn dump_tile(tile: Tile<HexagonalGridLayout, Terrain>) {
             print!("\n{}", " ".repeat(coord.r.abs().try_into().unwrap()));
             lastr = coord.r;
         }
-        print!(" {}", terrain_char(tile[coord]));
+        print!(" {}", <Terrain as Into<char>>::into(tile[coord]));
     }
     println!();
 }
@@ -147,10 +54,11 @@ fn wrap_grid(grid: Grid<HexagonalGridLayout, Terrain>) -> Grid<HexagonalGridLayo
 }
 
 fn sample_template() -> Template<Terrain> {
-    let input = wrap_grid(sample_map());
-    dump_grid(&input, |&terrain| terrain_char(terrain));
+    let input = sample_map().unwrap();
+    dump_grid(&input, &mut io::stdout()).unwrap();
+    let wrapped_input = wrap_grid(input);
     let transforms = standard_tile_transforms();
-    Template::from_tiles(extract_tiles(&input, &transforms))
+    Template::from_tiles(extract_tiles(&wrapped_input, &transforms))
 }
 
 #[test]
@@ -184,7 +92,7 @@ fn test_collapse() {
         }
     }
     let output = generator.export().unwrap();
-    dump_grid(&output, |&terrain| terrain_char(terrain));
+    dump_grid(&output, &mut io::stdout()).unwrap();
 
     assert_eq!(output.layout.radius, 5);
 }

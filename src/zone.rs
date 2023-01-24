@@ -22,6 +22,29 @@ impl Distribution<Terrain> for Standard {
     }
 }
 
+impl From<Terrain> for char {
+    fn from(terrain: Terrain) -> Self {
+        match terrain {
+            Terrain::Forest => '%',
+            Terrain::Mountain => '^',
+            Terrain::Ocean => '~',
+        }
+    }
+}
+
+impl TryFrom<char> for Terrain {
+    type Error = &'static str;
+
+    fn try_from(c: char) -> Result<Terrain, Self::Error> {
+        match c {
+            '%' => Ok(Terrain::Forest),
+            '^' => Ok(Terrain::Mountain),
+            '~' => Ok(Terrain::Ocean),
+            _ => Err("Unknown terrain character"),
+        }
+    }
+}
+
 #[derive(Component, Copy, Clone, Debug)]
 pub struct Zone {
     pub terrain: Terrain,
