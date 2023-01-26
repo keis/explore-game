@@ -20,3 +20,4 @@ pathfinding = "3.0.13"
 rand = "0.8.5"
 smallvec = "1.6"
 splines = { git = "https://github.com/phaazon/splines", rev = "9deb82c4dace9765bb34d69bbefc2f0da0178e5b", features = ["glam"] }
+futures-lite = "1.12.0"
