@@ -1,33 +1,25 @@
 use explore_game::{
-    hexgrid::layout::HexagonalGridLayout,
+    hexgrid::layout::{HexagonalGridLayout, SquareGridLayout},
     hexgrid::{Grid, GridLayout},
     wfc::cell::Cell,
     wfc::generator::Generator,
     wfc::template::Template,
     wfc::tile::{extract_tiles, standard_tile_transforms},
-    wfc::util::{dump_grid, dump_grid_with, load_grid, wrap_grid},
+    wfc::util::{wrap_grid, DumpGrid, DumpGridWith, LoadGrid},
     zone::Terrain,
 };
 use std::fs::File;
 use std::io;
 
-fn dump_output(template: &Template<Terrain>, grid: &Grid<HexagonalGridLayout, Cell>) {
-    dump_grid_with(grid, &mut io::stdout(), |cell| match cell {
-        Cell::Collapsed(tile) => template.contribution(*tile).into(),
-        Cell::Alternatives(_, _) => '?',
-    })
-    .unwrap();
-}
-
 fn sample_map() -> Result<Grid<HexagonalGridLayout, Terrain>, &'static str> {
     let mut file =
         io::BufReader::new(File::open("assets/maps/test.txt").map_err(|_| "failed to open file")?);
-    load_grid(&mut file)
+    Grid::<HexagonalGridLayout, Terrain>::load(&mut file)
 }
 
 fn sample_template() -> Template<Terrain> {
     let input = sample_map().unwrap();
-    dump_grid(&input, &mut io::stdout()).unwrap();
+    input.dump(&mut io::stdout()).unwrap();
     let wrapped_input = wrap_grid(input);
     let transforms = standard_tile_transforms();
     Template::from_tiles(extract_tiles(&wrapped_input, &transforms))
@@ -38,11 +30,23 @@ fn main() {
     let template = sample_template();
     println!("{:?}", template.stats());
 
-    let mut generator = Generator::new(&template, HexagonalGridLayout { radius: 5 });
+    let mut generator = Generator::new(
+        &template,
+        SquareGridLayout {
+            width: 10,
+            height: 8,
+        },
+    );
     println!("map size is {:?}", generator.grid.layout.size());
     while generator.step(&mut rng).is_some() {
-        dump_output(generator.template, &generator.grid);
+        generator
+            .grid
+            .dump_with(&mut io::stdout(), |cell| match cell {
+                Cell::Collapsed(tile) => template.contribution(*tile).into(),
+                Cell::Alternatives(_, _) => '?',
+            })
+            .unwrap();
     }
     let output = generator.export().unwrap();
-    dump_grid(&output, &mut io::stdout()).unwrap();
+    output.dump(&mut io::stdout()).unwrap();
 }
