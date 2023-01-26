@@ -5,7 +5,7 @@ use explore_game::{
     wfc::generator::Generator,
     wfc::template::Template,
     wfc::tile::{extract_tiles, standard_tile_transforms},
-    wfc::util::{dump_grid, load_grid, wrap_grid},
+    wfc::util::{wrap_grid, DumpGrid, LoadGrid},
     zone::Terrain,
 };
 use std::fs::File;
@@ -14,12 +14,12 @@ use std::io;
 fn sample_map() -> Result<Grid<HexagonalGridLayout, Terrain>, &'static str> {
     let mut file =
         io::BufReader::new(File::open("assets/maps/test.txt").map_err(|_| "failed to open file")?);
-    load_grid(&mut file)
+    Grid::<HexagonalGridLayout, Terrain>::load(&mut file)
 }
 
 fn sample_template() -> Template<Terrain> {
     let input = sample_map().unwrap();
-    dump_grid(&input, &mut io::stdout()).unwrap();
+    input.dump(&mut io::stdout()).unwrap();
     let wrapped_input = wrap_grid(input);
     let transforms = standard_tile_transforms();
     Template::from_tiles(extract_tiles(&wrapped_input, &transforms))
@@ -56,7 +56,7 @@ fn test_collapse() {
         }
     }
     let output = generator.export().unwrap();
-    dump_grid(&output, &mut io::stdout()).unwrap();
+    output.dump(&mut io::stdout()).unwrap();
 
     assert_eq!(output.layout.radius, 5);
 }

@@ -14,16 +14,17 @@ use explore_game::{
     input::InputPlugin,
     interface::InterfacePlugin,
     map::{
-        AddMapPresence, GameMap, HexCoord, MapEvent, MapPlugin, MapPosition, MapPresence,
-        MapPrototype, Offset, PathGuided, ViewRadius,
+        start_map_generation, AddMapPresence, GameMap, GenerateMapTask, HexCoord, MapEvent,
+        MapPlugin, MapPosition, MapPresence, Offset, PathGuided, ViewRadius,
     },
     party::{reset_movement_points, JoinParty, Party, PartyMember},
     slide::{slide, Slide, SlideEvent},
     turn::Turn,
-    zone::Terrain,
+    zone::{Terrain, Zone},
     zone_material::{ZoneMaterial, ZoneMaterialPlugin},
     State, VIEW_RADIUS,
 };
+use futures_lite::future;
 use smallvec::SmallVec;
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
@@ -67,6 +68,7 @@ fn main() {
         .add_plugin(ZoneMaterialPlugin)
         .add_plugin(ActionPlugin)
         .add_startup_system(spawn_camera)
+        .add_startup_system(start_map_generation)
         .add_event::<SlideEvent>()
         .add_state(State::AssetLoading)
         .add_loading_state(
@@ -74,9 +76,9 @@ fn main() {
                 .continue_to_state(State::Running)
                 .with_collection::<MainAssets>(),
         )
-        .add_system_set(SystemSet::on_enter(State::Running).with_system(spawn_scene))
         .add_system_set(
             SystemSet::on_update(State::Running)
+                .with_system(spawn_scene)
                 .with_system(log_moves)
                 .with_system(update_indicator)
                 .with_system(reset_movement_points)
@@ -134,23 +136,40 @@ fn spawn_scene(
     mut meshes: ResMut<Assets<Mesh>>,
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
+    mut generate_map_task: Query<(Entity, &mut GenerateMapTask)>,
 ) {
+    if generate_map_task.is_empty() {
+        return;
+    }
+    let (task_entity, mut task) = generate_map_task.single_mut();
+    let mapprototype = match future::block_on(future::poll_once(&mut task.0)) {
+        Some(Ok(result)) => {
+            commands.entity(task_entity).despawn();
+            result
+        }
+        Some(Err(e)) => {
+            error!("something went wrong: {}", e);
+            commands.entity(task_entity).despawn();
+            return;
+        }
+        None => return,
+    };
+
     let offset = Vec3::new(0.0, 1.0, 0.0);
     let maplayout = SquareGridLayout {
         width: 20,
         height: 16,
     };
-    let mapprototype = MapPrototype::generate(maplayout);
     let cubecoord = HexCoord::new(2, 6);
     let tiles = maplayout
         .iter()
         .map(|position| {
-            let zone = mapprototype[position];
+            let terrain = mapprototype[position];
             commands
                 .spawn((
                     MaterialMeshBundle {
                         mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
-                        material: match zone.terrain {
+                        material: match terrain {
                             Terrain::Ocean => zone_materials.add(ZoneMaterial {
                                 cloud_texture: Some(assets.cloud_texture.clone()),
                                 terrain_texture: Some(assets.ocean_texture.clone()),
@@ -174,7 +193,7 @@ fn spawn_scene(
                         ..default()
                     },
                     MapPosition(position),
-                    zone,
+                    Zone { terrain },
                     Fog {
                         visible: false,
                         explored: false,

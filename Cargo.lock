@@ -1424,6 +1424,7 @@ dependencies = [
  "bevy_asset_loader",
  "bevy_mod_picking",
  "bevy_stl",
+ "futures-lite",
  "itertools",
  "leafwing-input-manager",
  "pathfinding",
