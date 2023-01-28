@@ -12,8 +12,9 @@ use explore_game::{
     input::InputPlugin,
     interface::InterfacePlugin,
     map::{
-        start_map_generation, AddMapPresence, Fog, GameMap, GenerateMapTask, HexCoord, MapEvent,
+        start_map_generation, AddMapPresence, GameMap, GenerateMapTask, HexCoord, MapEvent,
         MapPlugin, MapPosition, MapPresence, Offset, PathGuided, Terrain, ViewRadius, Zone,
+        ZoneBundle,
     },
     material::{ZoneMaterial, ZoneMaterialPlugin},
     party::{reset_movement_points, JoinParty, Party, PartyMember},
@@ -160,6 +161,11 @@ fn spawn_scene(
             let terrain = mapprototype[position];
             commands
                 .spawn((
+                    ZoneBundle {
+                        position: MapPosition(position),
+                        zone: Zone { terrain },
+                        ..default()
+                    },
                     MaterialMeshBundle {
                         mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
                         material: match terrain {
@@ -185,16 +191,6 @@ fn spawn_scene(
                         transform: Transform::from_translation(coord_to_vec3(position, 1.0)),
                         ..default()
                     },
-                    MapPosition(position),
-                    Zone { terrain },
-                    Fog {
-                        visible: false,
-                        explored: false,
-                    },
-                    bevy_mod_picking::PickableMesh::default(),
-                    bevy_mod_picking::Hover::default(),
-                    bevy_mod_picking::NoDeselect,
-                    Interaction::default(),
                 ))
                 .id()
         })
