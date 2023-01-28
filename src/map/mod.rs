@@ -7,20 +7,24 @@ use std::collections::hash_set::HashSet;
 
 mod commands;
 mod events;
+mod fog;
 mod generator;
 mod pathdisplay;
 mod pathguided;
 mod position;
 mod presence;
+mod zone;
 
 pub use crate::hexgrid::HexCoord;
 pub use commands::{AddMapPresence, DespawnPresence, MoveMapPresence};
 pub use events::MapEvent;
+pub use fog::Fog;
 pub use generator::{start_map_generation, GenerateMapTask};
 pub use pathdisplay::PathDisplay;
 pub use pathguided::PathGuided;
 pub use position::MapPosition;
 pub use presence::{MapPresence, Offset, ViewRadius};
+pub use zone::{Terrain, Zone, ZoneBundle};
 
 #[derive(Component)]
 pub struct GameMap {

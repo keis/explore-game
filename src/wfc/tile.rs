@@ -112,7 +112,7 @@ mod tests {
     use super::{extract_tiles, Tile};
     use crate::hexgrid::layout::HexagonalGridLayout;
     use crate::hexgrid::{Grid, GridLayout, HexCoord, Transform, TransformMatrix};
-    use crate::zone::Terrain;
+    use crate::map::Terrain;
 
     fn standard_transforms() -> Vec<TransformMatrix> {
         vec![

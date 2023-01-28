@@ -1,27 +1,24 @@
 use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
-use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
+use bevy_mod_picking::PickingCameraBundle;
 use explore_game::{
     action::ActionPlugin,
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     character::Character,
-    fog::Fog,
     hex::{coord_to_vec3, Hexagon},
-    hexgrid::layout::SquareGridLayout,
     hexgrid::GridLayout,
-    indicator::{update_indicator, Indicator},
+    indicator::update_indicator,
     input::InputPlugin,
     interface::InterfacePlugin,
     map::{
         start_map_generation, AddMapPresence, GameMap, GenerateMapTask, HexCoord, MapEvent,
-        MapPlugin, MapPosition, MapPresence, Offset, PathGuided, ViewRadius,
+        MapPlugin, MapPosition, MapPresence, Offset, Terrain, ViewRadius, Zone, ZoneBundle,
     },
-    party::{reset_movement_points, JoinParty, Party, PartyMember},
-    slide::{slide, Slide, SlideEvent},
+    material::{ZoneMaterial, ZoneMaterialPlugin},
+    party::{reset_movement_points, JoinParty, Party, PartyBundle, PartyMember},
+    slide::{slide, SlideEvent},
     turn::Turn,
-    zone::{Terrain, Zone},
-    zone_material::{ZoneMaterial, ZoneMaterialPlugin},
     State, VIEW_RADIUS,
 };
 use futures_lite::future;
@@ -156,17 +153,18 @@ fn spawn_scene(
     };
 
     let offset = Vec3::new(0.0, 1.0, 0.0);
-    let maplayout = SquareGridLayout {
-        width: 20,
-        height: 16,
-    };
-    let cubecoord = HexCoord::new(2, 6);
-    let tiles = maplayout
+    let tiles = mapprototype
+        .layout
         .iter()
         .map(|position| {
             let terrain = mapprototype[position];
             commands
                 .spawn((
+                    ZoneBundle {
+                        position: MapPosition(position),
+                        zone: Zone { terrain },
+                        ..default()
+                    },
                     MaterialMeshBundle {
                         mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
                         material: match terrain {
@@ -192,41 +190,34 @@ fn spawn_scene(
                         transform: Transform::from_translation(coord_to_vec3(position, 1.0)),
                         ..default()
                     },
-                    MapPosition(position),
-                    Zone { terrain },
-                    Fog {
-                        visible: false,
-                        explored: false,
-                    },
-                    bevy_mod_picking::PickableMesh::default(),
-                    bevy_mod_picking::Hover::default(),
-                    bevy_mod_picking::NoDeselect,
-                    Interaction::default(),
                 ))
                 .id()
         })
         .collect();
-    let map = commands.spawn(GameMap::new(maplayout, tiles, 1.0)).id();
+    let map = commands
+        .spawn(GameMap::new(mapprototype.layout, tiles, 1.0))
+        .id();
+
+    let cubecoord = HexCoord::new(2, 6);
     let alpha_group = commands
         .spawn((
+            PartyBundle {
+                party: Party {
+                    name: String::from("Alpha Group"),
+                    movement_points: 2,
+                    supplies: 1,
+                    members: SmallVec::new(),
+                },
+                offset: Offset(offset),
+                view_radius: ViewRadius(VIEW_RADIUS),
+                ..default()
+            },
             PbrBundle {
                 mesh: assets.indicator_mesh.clone(),
                 material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
                 transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
                 ..default()
             },
-            PickableBundle::default(),
-            Indicator,
-            Party {
-                name: String::from("Alpha Group"),
-                movement_points: 2,
-                supplies: 1,
-                members: SmallVec::new(),
-            },
-            Offset(offset),
-            ViewRadius(VIEW_RADIUS),
-            PathGuided::default(),
-            Slide::default(),
         ))
         .id();
     commands.add(AddMapPresence {
@@ -259,18 +250,17 @@ fn spawn_scene(
                 transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
                 ..default()
             },
-            PickableBundle::default(),
-            Indicator,
-            Party {
-                name: String::from("Beta Group"),
-                movement_points: 2,
-                supplies: 1,
-                members: SmallVec::new(),
+            PartyBundle {
+                party: Party {
+                    name: String::from("Beta Group"),
+                    movement_points: 2,
+                    supplies: 1,
+                    members: SmallVec::new(),
+                },
+                offset: Offset(offset),
+                view_radius: ViewRadius(VIEW_RADIUS),
+                ..default()
             },
-            Offset(offset),
-            ViewRadius(VIEW_RADIUS),
-            PathGuided::default(),
-            Slide::default(),
         ))
         .id();
     commands.add(AddMapPresence {

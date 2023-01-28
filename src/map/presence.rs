@@ -1,6 +1,4 @@
-use super::{Damaged, HexCoord, MapPosition};
-use crate::fog::Fog;
-use crate::zone::Zone;
+use super::{Damaged, Fog, HexCoord, MapPosition, Zone};
 use bevy::prelude::*;
 
 #[derive(Component, Debug)]
@@ -9,10 +7,10 @@ pub struct MapPresence {
     pub position: HexCoord,
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct Offset(pub Vec3);
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct ViewRadius(pub u32);
 
 pub fn update_visibility(

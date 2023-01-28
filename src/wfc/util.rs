@@ -126,7 +126,7 @@ pub fn wrap_grid<Item: Default + Clone + Copy>(
 mod tests {
     use super::{DumpGrid, LoadGrid};
     use crate::hexgrid::{layout::HexagonalGridLayout, Grid};
-    use crate::zone::Terrain;
+    use crate::map::Terrain;
     use std::fs::File;
     use std::io::{BufReader, BufWriter};
 

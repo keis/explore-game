@@ -3,10 +3,9 @@ use super::InterfaceAssets;
 use crate::action::GameAction;
 use crate::character::Character;
 use crate::input::{Action, ActionState};
-use crate::map::MapPosition;
+use crate::map::{MapPosition, Zone};
 use crate::party::Party;
 use crate::turn::Turn;
-use crate::zone::Zone;
 use bevy::{prelude::*, ui::FocusPolicy};
 use bevy_mod_picking::{HoverEvent, PickingEvent, Selection};
 

@@ -3,7 +3,7 @@ use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
 
 /// Represents a position on a hexagonal grid with axial coordinates
 /// https://www.redblobgames.com/grids/hexagons/#coordinates
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default)]
 pub struct HexCoord {
     pub q: i32,
     pub r: i32,

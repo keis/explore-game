@@ -3,20 +3,18 @@ pub mod assets;
 pub mod camera;
 pub mod camp;
 pub mod character;
-pub mod fog;
 pub mod hex;
 pub mod hexgrid;
 pub mod indicator;
 pub mod input;
 pub mod interface;
 pub mod map;
+pub mod material;
 pub mod party;
 pub mod path;
 pub mod slide;
 pub mod turn;
 pub mod wfc;
-pub mod zone;
-pub mod zone_material;
 
 pub const VIEW_RADIUS: u32 = 2;
 

@@ -1,3 +1,4 @@
+use super::{Fog, MapPosition};
 use bevy::prelude::*;
 use rand::{
     distributions::{Distribution, Standard},
@@ -46,7 +47,18 @@ impl TryFrom<char> for Terrain {
     }
 }
 
-#[derive(Component, Copy, Clone, Debug)]
+#[derive(Component, Copy, Clone, Debug, Default)]
 pub struct Zone {
     pub terrain: Terrain,
+}
+
+#[derive(Bundle, Default)]
+pub struct ZoneBundle {
+    pub zone: Zone,
+    pub fog: Fog,
+    pub position: MapPosition,
+    pub pickable_mesh: bevy_mod_picking::PickableMesh,
+    pub hover: bevy_mod_picking::Hover,
+    pub no_deselect: bevy_mod_picking::NoDeselect,
+    pub interaction: Interaction,
 }
