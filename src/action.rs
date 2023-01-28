@@ -3,7 +3,7 @@ use crate::camp::Camp;
 use crate::hex::coord_to_vec3;
 use crate::map::{
     find_path, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence, MoveMapPresence,
-    Offset, PathGuided, Terrain, ViewRadius, Zone,
+    Offset, PathGuided, ViewRadius, Zone,
 };
 use crate::party::Party;
 use crate::slide::{Slide, SlideEvent};
@@ -150,14 +150,7 @@ pub fn handle_move_to(
             if let Ok((presence, party, mut pathguided)) = presence_query.get_mut(*e) {
                 if let Ok(map) = map_query.get(presence.map) {
                     if let Some((path, _length)) =
-                        find_path(presence.position, *goal, &|c: &HexCoord| {
-                            if let Some(entity) = map.get(*c) {
-                                if let Ok(zone) = zone_query.get(*entity) {
-                                    return zone.terrain != Terrain::Ocean;
-                                }
-                            }
-                            false
-                        })
+                        find_path(map, &zone_query, presence.position, *goal)
                     {
                         pathguided.path(path);
                         if party.movement_points > 0 {

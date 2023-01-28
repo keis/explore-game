@@ -120,15 +120,20 @@ impl Plugin for MapPlugin {
 }
 
 pub fn find_path(
+    map: &GameMap,
+    zone_query: &Query<&Zone>,
     start: HexCoord,
     goal: HexCoord,
-    is_walkable: &impl Fn(&HexCoord) -> bool,
 ) -> Option<(Vec<HexCoord>, u32)> {
     astar(
         &start,
         |p| {
             p.neighbours()
-                .filter(is_walkable)
+                .filter(&|c: &HexCoord| {
+                    map.get(*c)
+                        .and_then(|&entity| zone_query.get(entity).ok())
+                        .map_or(false, |zone| zone.is_walkable())
+                })
                 .map(|p| (p, 1))
                 .collect::<Vec<(HexCoord, u32)>>()
         },
@@ -165,26 +170,102 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{find_path, HexCoord};
+    use super::{find_path, GameMap, HexCoord, SquareGridLayout, Terrain, Zone};
+    use bevy::prelude::*;
+    use rstest::*;
 
-    #[test]
-    fn pathfinding_neighbour() {
-        let start = HexCoord::new(2, 4);
-        let goal = HexCoord::new(2, 3);
-
-        let result = find_path(start, goal, &|_| true);
-        println!("neigbours {:?}", start.neighbours().collect::<Vec<_>>());
-        println!("path {:?}", result);
-        assert_eq!(result.expect("no path found").1, 1);
+    #[fixture]
+    fn app() -> App {
+        let mut app = App::new();
+        let tiles = app
+            .world
+            .spawn_batch(vec![
+                Zone {
+                    terrain: Terrain::Forest,
+                },
+                Zone {
+                    terrain: Terrain::Forest,
+                },
+                Zone {
+                    terrain: Terrain::Forest,
+                },
+                Zone {
+                    terrain: Terrain::Ocean,
+                },
+                Zone {
+                    terrain: Terrain::Ocean,
+                },
+                Zone {
+                    terrain: Terrain::Forest,
+                },
+                Zone {
+                    terrain: Terrain::Mountain,
+                },
+                Zone {
+                    terrain: Terrain::Mountain,
+                },
+                Zone {
+                    terrain: Terrain::Mountain,
+                },
+            ])
+            .collect();
+        app.world.spawn(GameMap::new(
+            SquareGridLayout {
+                width: 3,
+                height: 3,
+            },
+            tiles,
+        ));
+        app
     }
 
-    #[test]
-    fn pathfinding() {
-        let start = HexCoord::ZERO;
-        let goal = HexCoord::new(4, 2);
+    #[derive(Component, Debug)]
+    struct Goal(HexCoord);
 
-        let result = find_path(start, goal, &|_| true);
-        println!("path {:?}", result);
-        assert_eq!(result.expect("no path found").1, 6);
+    #[derive(Component, Debug)]
+    struct Start(HexCoord);
+
+    #[derive(Component, Debug)]
+    struct Path(Vec<HexCoord>, u32);
+
+    fn find_path_system(
+        mut commands: Commands,
+        map_query: Query<&GameMap>,
+        zone_query: Query<&Zone>,
+        params_query: Query<(Entity, &Start, &Goal)>,
+    ) {
+        let map = map_query.single();
+        let (entity, start, goal) = params_query.single();
+        if let Some(path) = find_path(map, &zone_query, start.0, goal.0) {
+            commands.entity(entity).insert(Path(path.0, path.1));
+        } else {
+            println!("WHAT");
+        }
+    }
+
+    #[rstest]
+    fn pathfinding_neighbour(mut app: App) {
+        app.world
+            .spawn((Start(HexCoord::new(2, 1)), Goal(HexCoord::new(2, 0))));
+        app.add_system(find_path_system);
+
+        app.update();
+
+        let path = app.world.query::<&Path>().single(&app.world);
+        println!("path {:?}", path.0);
+        assert_eq!(path.1, 1);
+    }
+
+    #[rstest]
+    fn pathfinding(mut app: App) {
+        app.world
+            .spawn((Start(HexCoord::new(0, 0)), Goal(HexCoord::new(0, 2))));
+        app.add_system(find_path_system);
+
+        app.update();
+
+        let path = app.world.query::<&Path>().single(&app.world);
+        println!("path {:?}", path.0);
+        assert_eq!(path.1, 5);
     }
 }

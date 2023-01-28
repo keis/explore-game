@@ -52,6 +52,12 @@ pub struct Zone {
     pub terrain: Terrain,
 }
 
+impl Zone {
+    pub fn is_walkable(&self) -> bool {
+        self.terrain != Terrain::Ocean
+    }
+}
+
 #[derive(Bundle, Default)]
 pub struct ZoneBundle {
     pub zone: Zone,
