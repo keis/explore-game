@@ -6,22 +6,19 @@ use explore_game::{
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     character::Character,
-    fog::Fog,
     hex::{coord_to_vec3, Hexagon},
-    hexgrid::layout::SquareGridLayout,
     hexgrid::GridLayout,
     indicator::{update_indicator, Indicator},
     input::InputPlugin,
     interface::InterfacePlugin,
     map::{
-        start_map_generation, AddMapPresence, GameMap, GenerateMapTask, HexCoord, MapEvent,
-        MapPlugin, MapPosition, MapPresence, Offset, PathGuided, ViewRadius,
+        start_map_generation, AddMapPresence, Fog, GameMap, GenerateMapTask, HexCoord, MapEvent,
+        MapPlugin, MapPosition, MapPresence, Offset, PathGuided, Terrain, ViewRadius, Zone,
     },
+    material::{ZoneMaterial, ZoneMaterialPlugin},
     party::{reset_movement_points, JoinParty, Party, PartyMember},
     slide::{slide, Slide, SlideEvent},
     turn::Turn,
-    zone::{Terrain, Zone},
-    zone_material::{ZoneMaterial, ZoneMaterialPlugin},
     State, VIEW_RADIUS,
 };
 use futures_lite::future;
@@ -156,12 +153,8 @@ fn spawn_scene(
     };
 
     let offset = Vec3::new(0.0, 1.0, 0.0);
-    let maplayout = SquareGridLayout {
-        width: 20,
-        height: 16,
-    };
-    let cubecoord = HexCoord::new(2, 6);
-    let tiles = maplayout
+    let tiles = mapprototype
+        .layout
         .iter()
         .map(|position| {
             let terrain = mapprototype[position];
@@ -206,7 +199,11 @@ fn spawn_scene(
                 .id()
         })
         .collect();
-    let map = commands.spawn(GameMap::new(maplayout, tiles, 1.0)).id();
+    let map = commands
+        .spawn(GameMap::new(mapprototype.layout, tiles, 1.0))
+        .id();
+
+    let cubecoord = HexCoord::new(2, 6);
     let alpha_group = commands
         .spawn((
             PbrBundle {

@@ -1,12 +1,12 @@
 use explore_game::{
     hexgrid::layout::HexagonalGridLayout,
     hexgrid::{Grid, GridLayout},
+    map::Terrain,
     wfc::cell::Cell,
     wfc::generator::Generator,
     wfc::template::Template,
     wfc::tile::{extract_tiles, standard_tile_transforms},
     wfc::util::{wrap_grid, DumpGrid, LoadGrid},
-    zone::Terrain,
 };
 use std::fs::File;
 use std::io;
