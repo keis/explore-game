@@ -1,6 +1,6 @@
 use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
-use bevy_mod_picking::{PickableBundle, PickingCameraBundle};
+use bevy_mod_picking::PickingCameraBundle;
 use explore_game::{
     action::ActionPlugin,
     assets::MainAssets,
@@ -8,17 +8,16 @@ use explore_game::{
     character::Character,
     hex::{coord_to_vec3, Hexagon},
     hexgrid::GridLayout,
-    indicator::{update_indicator, Indicator},
+    indicator::update_indicator,
     input::InputPlugin,
     interface::InterfacePlugin,
     map::{
         start_map_generation, AddMapPresence, GameMap, GenerateMapTask, HexCoord, MapEvent,
-        MapPlugin, MapPosition, MapPresence, Offset, PathGuided, Terrain, ViewRadius, Zone,
-        ZoneBundle,
+        MapPlugin, MapPosition, MapPresence, Offset, Terrain, ViewRadius, Zone, ZoneBundle,
     },
     material::{ZoneMaterial, ZoneMaterialPlugin},
-    party::{reset_movement_points, JoinParty, Party, PartyMember},
-    slide::{slide, Slide, SlideEvent},
+    party::{reset_movement_points, JoinParty, Party, PartyBundle, PartyMember},
+    slide::{slide, SlideEvent},
     turn::Turn,
     State, VIEW_RADIUS,
 };
@@ -202,24 +201,23 @@ fn spawn_scene(
     let cubecoord = HexCoord::new(2, 6);
     let alpha_group = commands
         .spawn((
+            PartyBundle {
+                party: Party {
+                    name: String::from("Alpha Group"),
+                    movement_points: 2,
+                    supplies: 1,
+                    members: SmallVec::new(),
+                },
+                offset: Offset(offset),
+                view_radius: ViewRadius(VIEW_RADIUS),
+                ..default()
+            },
             PbrBundle {
                 mesh: assets.indicator_mesh.clone(),
                 material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
                 transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
                 ..default()
             },
-            PickableBundle::default(),
-            Indicator,
-            Party {
-                name: String::from("Alpha Group"),
-                movement_points: 2,
-                supplies: 1,
-                members: SmallVec::new(),
-            },
-            Offset(offset),
-            ViewRadius(VIEW_RADIUS),
-            PathGuided::default(),
-            Slide::default(),
         ))
         .id();
     commands.add(AddMapPresence {
@@ -252,18 +250,17 @@ fn spawn_scene(
                 transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
                 ..default()
             },
-            PickableBundle::default(),
-            Indicator,
-            Party {
-                name: String::from("Beta Group"),
-                movement_points: 2,
-                supplies: 1,
-                members: SmallVec::new(),
+            PartyBundle {
+                party: Party {
+                    name: String::from("Beta Group"),
+                    movement_points: 2,
+                    supplies: 1,
+                    members: SmallVec::new(),
+                },
+                offset: Offset(offset),
+                view_radius: ViewRadius(VIEW_RADIUS),
+                ..default()
             },
-            Offset(offset),
-            ViewRadius(VIEW_RADIUS),
-            PathGuided::default(),
-            Slide::default(),
         ))
         .id();
     commands.add(AddMapPresence {

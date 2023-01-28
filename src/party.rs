@@ -1,15 +1,32 @@
-use crate::turn::Turn;
+use crate::{
+    indicator::Indicator,
+    map::{Offset, PathGuided, ViewRadius},
+    slide::Slide,
+    turn::Turn,
+};
 
 use bevy::ecs::system::Command;
 use bevy::prelude::*;
+use bevy_mod_picking::PickableBundle;
 use smallvec::SmallVec;
 
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Default)]
 pub struct Party {
     pub name: String,
     pub movement_points: u32,
     pub supplies: u32,
     pub members: SmallVec<[Entity; 8]>,
+}
+
+#[derive(Bundle, Default)]
+pub struct PartyBundle {
+    pub party: Party,
+    pub pickable_bundle: PickableBundle,
+    pub indicator: Indicator,
+    pub offset: Offset,
+    pub view_radius: ViewRadius,
+    pub path_guided: PathGuided,
+    pub slide: Slide,
 }
 
 #[derive(Component)]

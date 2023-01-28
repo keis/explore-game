@@ -7,10 +7,10 @@ pub struct MapPresence {
     pub position: HexCoord,
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct Offset(pub Vec3);
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct ViewRadius(pub u32);
 
 pub fn update_visibility(
