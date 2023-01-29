@@ -7,13 +7,13 @@ use explore_game::{
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     character::Character,
     hex::{coord_to_vec3, Hexagon},
-    hexgrid::GridLayout,
     indicator::update_indicator,
     input::InputPlugin,
     interface::InterfacePlugin,
     map::{
-        start_map_generation, AddMapPresence, GameMap, GenerateMapTask, HexCoord, MapEvent,
-        MapPlugin, MapPosition, MapPresence, Offset, Terrain, ViewRadius, Zone, ZoneBundle,
+        spawn_game_map_from_prototype, start_map_generation, AddMapPresence, GameMap,
+        GenerateMapTask, HexCoord, MapEvent, MapPlugin, MapPosition, MapPresence, Offset, Terrain,
+        ViewRadius, Zone, ZoneBundle,
     },
     material::{ZoneMaterial, ZoneMaterialPlugin},
     party::{reset_movement_points, JoinParty, Party, PartyBundle, PartyMember},
@@ -65,6 +65,7 @@ fn main() {
         .add_plugin(ZoneMaterialPlugin)
         .add_plugin(ActionPlugin)
         .add_startup_system(spawn_camera)
+        .add_startup_system(spawn_light)
         .add_startup_system(start_map_generation)
         .add_event::<SlideEvent>()
         .add_state(State::AssetLoading)
@@ -127,6 +128,86 @@ fn spawn_camera(mut commands: Commands) {
     ));
 }
 
+fn zone_material(assets: &Res<MainAssets>, terrain: Terrain) -> ZoneMaterial {
+    match terrain {
+        Terrain::Ocean => ZoneMaterial {
+            cloud_texture: Some(assets.cloud_texture.clone()),
+            terrain_texture: Some(assets.ocean_texture.clone()),
+            visible: 1,
+            explored: 1,
+        },
+        Terrain::Mountain => ZoneMaterial {
+            cloud_texture: Some(assets.cloud_texture.clone()),
+            terrain_texture: Some(assets.mountain_texture.clone()),
+            visible: 1,
+            explored: 1,
+        },
+        Terrain::Forest => ZoneMaterial {
+            cloud_texture: Some(assets.cloud_texture.clone()),
+            terrain_texture: Some(assets.forest_texture.clone()),
+            visible: 1,
+            explored: 1,
+        },
+    }
+}
+
+fn spawn_zone(
+    commands: &mut Commands,
+    assets: &Res<MainAssets>,
+    hexmesh: &Handle<Mesh>,
+    zone_materials: &mut ResMut<Assets<ZoneMaterial>>,
+    position: HexCoord,
+    terrain: Terrain,
+) -> Entity {
+    commands
+        .spawn((
+            ZoneBundle {
+                position: MapPosition(position),
+                zone: Zone { terrain },
+                ..default()
+            },
+            MaterialMeshBundle {
+                mesh: hexmesh.clone(),
+                material: zone_materials.add(zone_material(assets, terrain)),
+                transform: Transform::from_translation(coord_to_vec3(position)),
+                ..default()
+            },
+        ))
+        .id()
+}
+
+fn spawn_party(
+    commands: &mut Commands,
+    assets: &Res<MainAssets>,
+    standard_materials: &mut ResMut<Assets<StandardMaterial>>,
+    position: HexCoord,
+    color: Color,
+    name: String,
+) -> Entity {
+    let offset = Vec3::new(0.0, 1.0, 0.0);
+    commands
+        .spawn((
+            PbrBundle {
+                mesh: assets.indicator_mesh.clone(),
+                material: standard_materials.add(color.into()),
+                transform: Transform::from_translation(coord_to_vec3(position) + offset),
+                ..default()
+            },
+            PartyBundle {
+                party: Party {
+                    name,
+                    movement_points: 2,
+                    supplies: 1,
+                    members: SmallVec::new(),
+                },
+                offset: Offset(offset),
+                view_radius: ViewRadius(VIEW_RADIUS),
+                ..default()
+            },
+        ))
+        .id()
+}
+
 fn spawn_scene(
     mut commands: Commands,
     assets: Res<MainAssets>,
@@ -139,7 +220,7 @@ fn spawn_scene(
         return;
     }
     let (task_entity, mut task) = generate_map_task.single_mut();
-    let mapprototype = match future::block_on(future::poll_once(&mut task.0)) {
+    let prototype = match future::block_on(future::poll_once(&mut task.0)) {
         Some(Ok(result)) => {
             commands.entity(task_entity).despawn();
             result
@@ -153,74 +234,27 @@ fn spawn_scene(
     };
 
     let hexmesh = meshes.add(Mesh::from(Hexagon { radius: 1.0 }));
-    let offset = Vec3::new(0.0, 1.0, 0.0);
-    let tiles = mapprototype
-        .layout
-        .iter()
-        .map(|position| {
-            let terrain = mapprototype[position];
-            commands
-                .spawn((
-                    ZoneBundle {
-                        position: MapPosition(position),
-                        zone: Zone { terrain },
-                        ..default()
-                    },
-                    MaterialMeshBundle {
-                        mesh: hexmesh.clone(),
-                        material: match terrain {
-                            Terrain::Ocean => zone_materials.add(ZoneMaterial {
-                                cloud_texture: Some(assets.cloud_texture.clone()),
-                                terrain_texture: Some(assets.ocean_texture.clone()),
-                                visible: 1,
-                                explored: 1,
-                            }),
-                            Terrain::Mountain => zone_materials.add(ZoneMaterial {
-                                cloud_texture: Some(assets.cloud_texture.clone()),
-                                terrain_texture: Some(assets.mountain_texture.clone()),
-                                visible: 1,
-                                explored: 1,
-                            }),
-                            Terrain::Forest => zone_materials.add(ZoneMaterial {
-                                cloud_texture: Some(assets.cloud_texture.clone()),
-                                terrain_texture: Some(assets.forest_texture.clone()),
-                                visible: 1,
-                                explored: 1,
-                            }),
-                        },
-                        transform: Transform::from_translation(coord_to_vec3(position)),
-                        ..default()
-                    },
-                ))
-                .id()
-        })
-        .collect();
-    let map = commands
-        .spawn(GameMap::new(mapprototype.layout, tiles))
-        .id();
+    let map =
+        spawn_game_map_from_prototype(&mut commands, &prototype, |commands, position, terrain| {
+            spawn_zone(
+                commands,
+                &assets,
+                &hexmesh,
+                &mut zone_materials,
+                position,
+                terrain,
+            )
+        });
 
     let cubecoord = HexCoord::new(2, 6);
-    let alpha_group = commands
-        .spawn((
-            PartyBundle {
-                party: Party {
-                    name: String::from("Alpha Group"),
-                    movement_points: 2,
-                    supplies: 1,
-                    members: SmallVec::new(),
-                },
-                offset: Offset(offset),
-                view_radius: ViewRadius(VIEW_RADIUS),
-                ..default()
-            },
-            PbrBundle {
-                mesh: assets.indicator_mesh.clone(),
-                material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
-                transform: Transform::from_translation(coord_to_vec3(cubecoord) + offset),
-                ..default()
-            },
-        ))
-        .id();
+    let alpha_group = spawn_party(
+        &mut commands,
+        &assets,
+        &mut standard_materials,
+        cubecoord,
+        Color::rgb(0.165, 0.631, 0.596),
+        String::from("Alpha Group"),
+    );
     commands.add(AddMapPresence {
         map,
         presence: alpha_group,
@@ -243,27 +277,14 @@ fn spawn_scene(
     });
 
     let cubecoord = HexCoord::new(4, 5);
-    let beta_group = commands
-        .spawn((
-            PbrBundle {
-                mesh: assets.indicator_mesh.clone(),
-                material: standard_materials.add(Color::rgb(0.596, 0.165, 0.631).into()),
-                transform: Transform::from_translation(coord_to_vec3(cubecoord) + offset),
-                ..default()
-            },
-            PartyBundle {
-                party: Party {
-                    name: String::from("Beta Group"),
-                    movement_points: 2,
-                    supplies: 1,
-                    members: SmallVec::new(),
-                },
-                offset: Offset(offset),
-                view_radius: ViewRadius(VIEW_RADIUS),
-                ..default()
-            },
-        ))
-        .id();
+    let beta_group = spawn_party(
+        &mut commands,
+        &assets,
+        &mut standard_materials,
+        cubecoord,
+        Color::rgb(0.596, 0.165, 0.631),
+        String::from("Beta Group"),
+    );
     commands.add(AddMapPresence {
         map,
         presence: beta_group,
@@ -278,7 +299,9 @@ fn spawn_scene(
         party: beta_group,
         members: SmallVec::from_slice(&[character3]),
     });
+}
 
+fn spawn_light(mut commands: Commands) {
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
             illuminance: 20000.0,

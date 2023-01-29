@@ -137,6 +137,32 @@ pub fn find_path(
     )
 }
 
+pub fn spawn_game_map_from_prototype<F>(
+    commands: &mut Commands,
+    prototype: &Grid<SquareGridLayout, Terrain>,
+    mut spawn_tile: F,
+) -> Entity
+where
+    F: FnMut(&mut Commands, HexCoord, Terrain) -> Entity,
+{
+    let gamemap = GameMap {
+        tiles: Grid {
+            layout: prototype.layout,
+            data: prototype
+                .layout
+                .iter()
+                .map(|coord| spawn_tile(commands, coord, prototype[coord]))
+                .collect(),
+        },
+        presence: Grid {
+            layout: prototype.layout,
+            data: vec![HashSet::new(); prototype.layout.size()],
+        },
+        void: HashSet::new(),
+    };
+    commands.spawn(gamemap).id()
+}
+
 #[cfg(test)]
 mod tests {
     use super::{find_path, HexCoord};
