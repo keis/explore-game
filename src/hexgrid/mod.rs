@@ -8,5 +8,5 @@ mod transform;
 pub use coord::HexCoord;
 pub use grid::Grid;
 pub use layout::GridLayout;
-pub use ring::ring;
+pub use ring::{ring, spiral};
 pub use transform::{Transform, TransformMatrix};

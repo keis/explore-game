@@ -3,7 +3,7 @@ use crate::camp::Camp;
 use crate::hex::coord_to_vec3;
 use crate::map::{
     find_path, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence, MoveMapPresence,
-    Offset, PathGuided, Terrain, ViewRadius, Zone,
+    Offset, PathGuided, ViewRadius, Zone,
 };
 use crate::party::Party;
 use crate::slide::{Slide, SlideEvent};
@@ -86,23 +86,20 @@ pub fn trigger_action(
 
 pub fn handle_move(
     mut events: EventReader<GameAction>,
-    map_query: Query<&GameMap>,
-    mut party_query: Query<(&mut Party, &mut Slide, &Transform, &Offset, &MapPresence)>,
+    mut party_query: Query<(&mut Party, &mut Slide, &Transform, &Offset)>,
     mut queue: ResMut<GameActionQueue>,
 ) {
     for event in events.iter() {
         if let GameAction::Move(e, next) = event {
-            if let Ok((mut party, mut slide, transform, offset, presence)) = party_query.get_mut(*e)
-            {
+            if let Ok((mut party, mut slide, transform, offset)) = party_query.get_mut(*e) {
                 if party.movement_points == 0 {
                     warn!("tried to move without movement points");
                     queue.current.take();
                     continue;
                 }
-                let map = map_query.get(presence.map).expect("references valid map");
                 party.movement_points -= 1;
                 slide.start = transform.translation;
-                slide.end = coord_to_vec3(*next, map.radius) + offset.0;
+                slide.end = coord_to_vec3(*next) + offset.0;
                 slide.progress = 0.0;
             }
         }
@@ -153,14 +150,7 @@ pub fn handle_move_to(
             if let Ok((presence, party, mut pathguided)) = presence_query.get_mut(*e) {
                 if let Ok(map) = map_query.get(presence.map) {
                     if let Some((path, _length)) =
-                        find_path(presence.position, *goal, &|c: &HexCoord| {
-                            if let Some(entity) = map.get(*c) {
-                                if let Ok(zone) = zone_query.get(*entity) {
-                                    return zone.terrain != Terrain::Ocean;
-                                }
-                            }
-                            false
-                        })
+                        find_path(map, &zone_query, presence.position, *goal)
                     {
                         pathguided.path(path);
                         if party.movement_points > 0 {
@@ -231,7 +221,7 @@ pub fn handle_make_camp(
                             mesh: assets.tent_mesh.clone(),
                             material: standard_materials
                                 .add(Color::rgb(0.631, 0.596, 0.165).into()),
-                            transform: Transform::from_translation(coord_to_vec3(position, 1.0))
+                            transform: Transform::from_translation(coord_to_vec3(position))
                                 .with_rotation(Quat::from_rotation_y(1.0)),
                             ..default()
                         },

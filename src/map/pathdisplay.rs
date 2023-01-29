@@ -36,7 +36,7 @@ pub fn update_path_display(
                     .map(|(idx, pos)| {
                         Key::new(
                             idx as f32 * (1.0 / path_guided.path.len() as f32),
-                            coord_to_vec3(*pos, 1.0),
+                            coord_to_vec3(*pos),
                             Interpolation::default(),
                         )
                     }),

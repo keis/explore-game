@@ -1,5 +1,6 @@
 use bevy::{prelude::*, render::mesh::Indices, render::mesh::PrimitiveTopology};
 pub const HEX_RADIUS_RATIO: f32 = 0.866_025_4;
+pub const HEX_RADIUS: f32 = 1.0;
 
 use crate::map::HexCoord;
 
@@ -7,8 +8,8 @@ pub struct Hexagon {
     pub radius: f32,
 }
 
-pub fn coord_to_vec3(coord: HexCoord, radius: f32) -> Vec3 {
-    let (outer, inner) = (radius, radius * HEX_RADIUS_RATIO);
+pub fn coord_to_vec3(coord: HexCoord) -> Vec3 {
+    let (outer, inner) = (HEX_RADIUS, HEX_RADIUS * HEX_RADIUS_RATIO);
     Vec3::new(
         coord.r as f32 * outer * 1.5,
         0.0,
@@ -67,22 +68,21 @@ mod tests {
 
     #[test]
     fn coord_as_vec3() {
-        let radius = 1.0;
-        assert_eq!(coord_to_vec3(HexCoord::ZERO, radius), Vec3::ZERO);
+        assert_eq!(coord_to_vec3(HexCoord::ZERO), Vec3::ZERO);
         assert_eq!(
-            coord_to_vec3(HexCoord::new(1, 0), radius),
+            coord_to_vec3(HexCoord::new(1, 0)),
             Vec3::new(0.0, 0.0, 2.0 * HEX_RADIUS_RATIO)
         );
         assert_eq!(
-            coord_to_vec3(HexCoord::new(2, 0), radius),
+            coord_to_vec3(HexCoord::new(2, 0)),
             Vec3::new(0.0, 0.0, 4.0 * HEX_RADIUS_RATIO)
         );
         assert_eq!(
-            coord_to_vec3(HexCoord::new(0, 1), radius),
+            coord_to_vec3(HexCoord::new(0, 1)),
             Vec3::new(1.5, 0.0, HEX_RADIUS_RATIO)
         );
         assert_eq!(
-            coord_to_vec3(HexCoord::new(1, 1), radius),
+            coord_to_vec3(HexCoord::new(1, 1)),
             Vec3::new(1.5, 0.0, 3.0 * HEX_RADIUS_RATIO)
         );
     }
