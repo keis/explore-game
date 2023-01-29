@@ -7,6 +7,7 @@ use explore_game::{
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     character::Character,
     hex::{coord_to_vec3, Hexagon},
+    hexgrid::spiral,
     indicator::update_indicator,
     input::InputPlugin,
     interface::InterfacePlugin,
@@ -246,19 +247,21 @@ fn spawn_scene(
             )
         });
 
-    let cubecoord = HexCoord::new(2, 6);
+    let groupcoord = spiral((2, 6).into())
+        .find(|&c| prototype.get(c).map_or(false, |&t| t != Terrain::Ocean))
+        .unwrap();
     let alpha_group = spawn_party(
         &mut commands,
         &assets,
         &mut standard_materials,
-        cubecoord,
+        groupcoord,
         Color::rgb(0.165, 0.631, 0.596),
         String::from("Alpha Group"),
     );
     commands.add(AddMapPresence {
         map,
         presence: alpha_group,
-        position: cubecoord,
+        position: groupcoord,
     });
     let character1 = commands
         .spawn(Character {
@@ -276,19 +279,21 @@ fn spawn_scene(
         members: SmallVec::from_slice(&[character1, character2]),
     });
 
-    let cubecoord = HexCoord::new(4, 5);
+    let groupcoord = spiral((4, 5).into())
+        .find(|&c| prototype.get(c).map_or(false, |&t| t != Terrain::Ocean))
+        .unwrap();
     let beta_group = spawn_party(
         &mut commands,
         &assets,
         &mut standard_materials,
-        cubecoord,
+        groupcoord,
         Color::rgb(0.596, 0.165, 0.631),
         String::from("Beta Group"),
     );
     commands.add(AddMapPresence {
         map,
         presence: beta_group,
-        position: cubecoord,
+        position: groupcoord,
     });
     let character3 = commands
         .spawn(Character {
