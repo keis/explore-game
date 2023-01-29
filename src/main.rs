@@ -152,6 +152,7 @@ fn spawn_scene(
         None => return,
     };
 
+    let hexmesh = meshes.add(Mesh::from(Hexagon { radius: 1.0 }));
     let offset = Vec3::new(0.0, 1.0, 0.0);
     let tiles = mapprototype
         .layout
@@ -166,7 +167,7 @@ fn spawn_scene(
                         ..default()
                     },
                     MaterialMeshBundle {
-                        mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
+                        mesh: hexmesh.clone(),
                         material: match terrain {
                             Terrain::Ocean => zone_materials.add(ZoneMaterial {
                                 cloud_texture: Some(assets.cloud_texture.clone()),
@@ -187,7 +188,7 @@ fn spawn_scene(
                                 explored: 1,
                             }),
                         },
-                        transform: Transform::from_translation(coord_to_vec3(position, 1.0)),
+                        transform: Transform::from_translation(coord_to_vec3(position)),
                         ..default()
                     },
                 ))
@@ -195,7 +196,7 @@ fn spawn_scene(
         })
         .collect();
     let map = commands
-        .spawn(GameMap::new(mapprototype.layout, tiles, 1.0))
+        .spawn(GameMap::new(mapprototype.layout, tiles))
         .id();
 
     let cubecoord = HexCoord::new(2, 6);
@@ -215,7 +216,7 @@ fn spawn_scene(
             PbrBundle {
                 mesh: assets.indicator_mesh.clone(),
                 material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
-                transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
+                transform: Transform::from_translation(coord_to_vec3(cubecoord) + offset),
                 ..default()
             },
         ))
@@ -247,7 +248,7 @@ fn spawn_scene(
             PbrBundle {
                 mesh: assets.indicator_mesh.clone(),
                 material: standard_materials.add(Color::rgb(0.596, 0.165, 0.631).into()),
-                transform: Transform::from_translation(coord_to_vec3(cubecoord, 1.0) + offset),
+                transform: Transform::from_translation(coord_to_vec3(cubecoord) + offset),
                 ..default()
             },
             PartyBundle {

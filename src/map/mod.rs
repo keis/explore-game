@@ -31,11 +31,10 @@ pub struct GameMap {
     tiles: Grid<SquareGridLayout, Entity>,
     presence: Grid<SquareGridLayout, HashSet<Entity>>,
     void: HashSet<Entity>,
-    pub radius: f32,
 }
 
 impl GameMap {
-    pub fn new(layout: SquareGridLayout, tiles: Vec<Entity>, radius: f32) -> Self {
+    pub fn new(layout: SquareGridLayout, tiles: Vec<Entity>) -> Self {
         GameMap {
             tiles: Grid {
                 layout,
@@ -46,7 +45,6 @@ impl GameMap {
                 data: vec![HashSet::new(); layout.size()],
             },
             void: HashSet::new(),
-            radius,
         }
     }
 
