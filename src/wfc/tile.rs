@@ -109,38 +109,18 @@ pub fn standard_tile_transforms() -> Vec<TransformMatrix> {
 
 #[cfg(test)]
 mod tests {
-    use super::{extract_tiles, Tile};
+    use super::{extract_tiles, standard_tile_transforms, Tile};
     use crate::hexgrid::layout::HexagonalGridLayout;
     use crate::hexgrid::{Grid, GridLayout, HexCoord, Transform, TransformMatrix};
     use crate::map::Terrain;
+    use rstest::*;
 
+    #[fixture]
     fn standard_transforms() -> Vec<TransformMatrix> {
-        vec![
-            Transform::Identity.into(),
-            Transform::RotateClockwise60.into(),
-            Transform::RotateClockwise120.into(),
-            Transform::RotateClockwise180.into(),
-            Transform::RotateClockwise240.into(),
-            Transform::RotateClockwise300.into(),
-            Transform::ReflectS.into(),
-            TransformMatrix::from_transforms(
-                [Transform::ReflectS, Transform::RotateClockwise60].into_iter(),
-            ),
-            TransformMatrix::from_transforms(
-                [Transform::ReflectS, Transform::RotateClockwise120].into_iter(),
-            ),
-            TransformMatrix::from_transforms(
-                [Transform::ReflectS, Transform::RotateClockwise180].into_iter(),
-            ),
-            TransformMatrix::from_transforms(
-                [Transform::ReflectS, Transform::RotateClockwise240].into_iter(),
-            ),
-            TransformMatrix::from_transforms(
-                [Transform::ReflectS, Transform::RotateClockwise300].into_iter(),
-            ),
-        ]
+        standard_tile_transforms()
     }
 
+    #[fixture]
     fn sample_map() -> Grid<HexagonalGridLayout, Terrain> {
         let layout = HexagonalGridLayout { radius: 3 };
         Grid {
@@ -169,11 +149,10 @@ mod tests {
         }
     }
 
-    #[test]
-    fn iter_origin() {
-        let storage = &sample_map();
+    #[rstest]
+    fn iter_origin(sample_map: Grid<HexagonalGridLayout, Terrain>) {
         let tile = Tile {
-            grid: storage,
+            grid: &sample_map,
             offset: HexCoord::new(0, 0),
             layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
@@ -193,11 +172,10 @@ mod tests {
         );
     }
 
-    #[test]
-    fn iter_offset() {
-        let storage = &sample_map();
+    #[rstest]
+    fn iter_offset(sample_map: Grid<HexagonalGridLayout, Terrain>) {
         let tile = Tile {
-            grid: storage,
+            grid: &sample_map,
             offset: HexCoord::new(1, 0),
             layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
@@ -217,23 +195,22 @@ mod tests {
         );
     }
 
-    #[test]
-    fn equal() {
-        let grid = &sample_map();
+    #[rstest]
+    fn equal(sample_map: Grid<HexagonalGridLayout, Terrain>) {
         let tile_a = Tile {
-            grid,
+            grid: &sample_map,
             offset: HexCoord::new(1, 0),
             layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         let tile_b = Tile {
-            grid,
+            grid: &sample_map,
             offset: HexCoord::new(-1, 1),
             layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         let tile_c = Tile {
-            grid,
+            grid: &sample_map,
             offset: HexCoord::new(0, 0),
             layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
@@ -243,17 +220,16 @@ mod tests {
         assert_ne!(tile_b, tile_c);
     }
 
-    #[test]
-    fn compatible() {
-        let grid = &sample_map();
+    #[rstest]
+    fn compatible(sample_map: Grid<HexagonalGridLayout, Terrain>) {
         let tile_a = Tile {
-            grid,
+            grid: &sample_map,
             offset: HexCoord::new(1, -1),
             layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         let tile_b = Tile {
-            grid,
+            grid: &sample_map,
             offset: HexCoord::new(-1, 1),
             layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
@@ -263,19 +239,19 @@ mod tests {
         assert!(tile_b.compatible_with(&tile_a, HexCoord::new(0, -1)));
     }
 
-    #[test]
-    fn extract() {
-        let storage = &sample_map();
-        let transforms = &standard_transforms();
-        let tiles = extract_tiles(storage, transforms);
+    #[rstest]
+    fn extract(
+        standard_transforms: Vec<TransformMatrix>,
+        sample_map: Grid<HexagonalGridLayout, Terrain>,
+    ) {
+        let tiles = extract_tiles(&sample_map, &standard_transforms);
         assert_eq!(tiles.len(), 30);
     }
 
-    #[test]
-    fn transform() {
-        let grid = &sample_map();
+    #[rstest]
+    fn transform(sample_map: Grid<HexagonalGridLayout, Terrain>) {
         let tile = Tile {
-            grid,
+            grid: &sample_map,
             offset: (0, -1).into(),
             layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::RotateClockwise300.into(),
@@ -286,17 +262,16 @@ mod tests {
         }
     }
 
-    #[test]
-    fn compatible_transform() {
-        let grid = &sample_map();
+    #[rstest]
+    fn compatible_transform(sample_map: Grid<HexagonalGridLayout, Terrain>) {
         let tile = Tile {
-            grid,
+            grid: &sample_map,
             offset: (0, -1).into(),
             layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         let tilex = Tile {
-            grid,
+            grid: &sample_map,
             offset: (0, -1).into(),
             layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::RotateClockwise300.into(),
