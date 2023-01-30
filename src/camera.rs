@@ -54,26 +54,26 @@ pub fn camera_control(
     let acceleration = control.acceleration;
     let mut delta = Vec3::ZERO;
 
-    if action_state.pressed(Action::PanCameraUp)
+    if action_state.pressed(Action::PanCameraRight)
         && transform.translation.x
             <= control.bounds.position.x + control.bounds.extent.x - control.bounds.gap
     {
         delta += Vec3::X;
     }
 
-    if action_state.pressed(Action::PanCameraDown)
+    if action_state.pressed(Action::PanCameraLeft)
         && transform.translation.x >= control.bounds.position.x + control.bounds.gap
     {
         delta -= Vec3::X;
     }
 
-    if action_state.pressed(Action::PanCameraLeft)
+    if action_state.pressed(Action::PanCameraUp)
         && transform.translation.z >= control.bounds.position.z + control.bounds.gap
     {
         delta -= Vec3::Z;
     }
 
-    if action_state.pressed(Action::PanCameraRight)
+    if action_state.pressed(Action::PanCameraDown)
         && transform.translation.z
             <= control.bounds.position.z + control.bounds.extent.z - control.bounds.gap
     {
@@ -206,7 +206,7 @@ mod tests {
             .world
             .query::<&mut ActionState<Action>>()
             .single_mut(&mut app.world);
-        action_state.press(Action::PanCameraUp);
+        action_state.press(Action::PanCameraRight);
 
         app.update();
 
@@ -230,7 +230,7 @@ mod tests {
             .world
             .query::<&mut ActionState<Action>>()
             .single_mut(&mut app.world);
-        action_state.press(Action::PanCameraUp);
+        action_state.press(Action::PanCameraRight);
 
         app.update();
 

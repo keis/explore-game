@@ -34,8 +34,8 @@ fn fragment(
     #import bevy_pbr::mesh_vertex_output
 ) -> @location(0) vec4<f32> {
     var uv = vec2<f32>(
-        modulo(world_position.x * 0.2, 1.0),
-        modulo(world_position.z * 0.2, 1.0)
+        modulo(world_position.x * 0.3, 1.0),
+        modulo(world_position.z * 0.3, 1.0)
     );
     var base_color = textureSample(terrain_texture, terrain_texture_sampler, uv);
     var cloud_uv = vec2<f32>(
