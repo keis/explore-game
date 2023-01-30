@@ -113,14 +113,14 @@ fn log_moves(
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Camera3dBundle {
-            transform: Transform::from_xyz(-10.0, 20.0, 20.0)
-                .with_rotation(Quat::from_axis_angle(Vec3::new(-0.4, -0.8, -0.4), 1.6)),
+            transform: Transform::from_xyz(10.0, 20.0, 40.0)
+                .looking_at(Vec3::new(8.0, 0.0, 20.0), Vec3::Y),
             ..default()
         },
         CameraControl {
             bounds: CameraBounds {
-                position: Vec3::new(-10.0, 5.0, 0.0),
-                extent: Vec3::new(15.0, 25.0, 40.0),
+                position: Vec3::new(0.0, 5.0, 10.0),
+                extent: Vec3::new(40.0, 25.0, 40.0),
                 gap: 1.0,
             },
             ..default()
@@ -170,7 +170,8 @@ fn spawn_zone(
             MaterialMeshBundle {
                 mesh: hexmesh.clone(),
                 material: zone_materials.add(zone_material(assets, terrain)),
-                transform: Transform::from_translation(coord_to_vec3(position)),
+                transform: Transform::from_translation(coord_to_vec3(position))
+                    .with_rotation(Quat::from_rotation_y((90f32).to_radians())),
                 ..default()
             },
         ))

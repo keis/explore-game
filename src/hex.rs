@@ -11,9 +11,9 @@ pub struct Hexagon {
 pub fn coord_to_vec3(coord: HexCoord) -> Vec3 {
     let (outer, inner) = (HEX_RADIUS, HEX_RADIUS * HEX_RADIUS_RATIO);
     Vec3::new(
-        coord.r as f32 * outer * 1.5,
-        0.0,
         ((coord.q as f32) + 0.5 * coord.r as f32) * inner * 2.0,
+        0.0,
+        coord.r as f32 * outer * 1.5,
     )
 }
 
@@ -71,19 +71,19 @@ mod tests {
         assert_eq!(coord_to_vec3(HexCoord::ZERO), Vec3::ZERO);
         assert_eq!(
             coord_to_vec3(HexCoord::new(1, 0)),
-            Vec3::new(0.0, 0.0, 2.0 * HEX_RADIUS_RATIO)
+            Vec3::new(2.0 * HEX_RADIUS_RATIO, 0.0, 0.0)
         );
         assert_eq!(
             coord_to_vec3(HexCoord::new(2, 0)),
-            Vec3::new(0.0, 0.0, 4.0 * HEX_RADIUS_RATIO)
+            Vec3::new(4.0 * HEX_RADIUS_RATIO, 0.0, 0.0)
         );
         assert_eq!(
             coord_to_vec3(HexCoord::new(0, 1)),
-            Vec3::new(1.5, 0.0, HEX_RADIUS_RATIO)
+            Vec3::new(HEX_RADIUS_RATIO, 0.0, 1.5)
         );
         assert_eq!(
             coord_to_vec3(HexCoord::new(1, 1)),
-            Vec3::new(1.5, 0.0, 3.0 * HEX_RADIUS_RATIO)
+            Vec3::new(3.0 * HEX_RADIUS_RATIO, 0.0, 1.5)
         );
     }
 }
