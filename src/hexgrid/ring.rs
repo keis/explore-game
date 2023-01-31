@@ -31,14 +31,14 @@ mod tests {
         let coords: Vec<_> = ring(HexCoord::ZERO, 2).collect();
         assert_eq!(coords.len(), 6);
         for coord in coords {
-            assert_eq!(coord.distance(&HexCoord::ZERO), 1);
+            assert_eq!(coord.distance(HexCoord::ZERO), 1);
         }
     }
 
     #[test]
     fn test_spiral() {
         let center = HexCoord::new(4, 4);
-        let spiralgroups = spiral(center).group_by(|coord| coord.distance(&center));
+        let spiralgroups = spiral(center).group_by(|coord| coord.distance(center));
         let mut sgiter = spiralgroups.into_iter();
 
         let (distance, group) = sgiter.next().unwrap();

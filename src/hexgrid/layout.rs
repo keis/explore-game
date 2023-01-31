@@ -109,7 +109,7 @@ impl GridLayout for HexagonalGridLayout {
     }
 
     fn contains(&self, position: HexCoord) -> bool {
-        position.distance(&HexCoord::ZERO) <= (self.radius - 1) as u32
+        position.distance(HexCoord::ZERO) <= (self.radius - 1) as u32
     }
 
     fn wrap(&self, position: HexCoord) -> HexCoord {
@@ -124,7 +124,7 @@ impl GridLayout for HexagonalGridLayout {
         ]
         .iter()
         .map(|transform| transform.apply(base))
-        .min_by_key(|mc| position.distance(mc))
+        .min_by_key(|mc| position.distance(*mc))
         .unwrap();
         let mut result = position - mirror_center;
         while !self.contains(result) {
