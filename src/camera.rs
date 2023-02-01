@@ -9,6 +9,7 @@ impl Plugin for CameraControlPlugin {
         app.add_system_set(
             SystemSet::on_update(State::Running)
                 .with_system(camera_control.before(camera_movement))
+                .with_system(camera_target.before(camera_movement))
                 .with_system(cursor_grab)
                 .with_system(camera_movement),
         );
@@ -47,6 +48,11 @@ impl Default for CameraControl {
             mouse_sensitivity: 0.02,
         }
     }
+}
+
+#[derive(Component, Debug)]
+pub struct CameraTarget {
+    pub position: Vec3,
 }
 
 fn camera_control(
@@ -123,6 +129,21 @@ fn camera_control(
     control.velocity += delta.normalize_or_zero() * time.delta_seconds() * acceleration;
 }
 
+fn camera_target(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut camera_query: Query<(Entity, &Transform, &mut CameraControl, &CameraTarget)>,
+) {
+    if let Ok((entity, transform, mut control, target)) = camera_query.get_single_mut() {
+        let acceleration = control.acceleration;
+        let delta = target.position - transform.translation;
+        control.velocity += delta.normalize_or_zero() * time.delta_seconds() * acceleration;
+        if delta.length_squared() < 1.0 {
+            commands.entity(entity).remove::<CameraTarget>();
+        }
+    }
+}
+
 fn camera_movement(time: Res<Time>, mut camera_query: Query<(&mut Transform, &mut CameraControl)>) {
     let (mut transform, mut control) = camera_query.single_mut();
     transform.translation += control.velocity * time.delta_seconds();
@@ -146,7 +167,9 @@ fn cursor_grab(mut windows: ResMut<Windows>, action_state_query: Query<&ActionSt
 
 #[cfg(test)]
 mod tests {
-    use crate::camera::{camera_control, camera_movement, CameraBounds, CameraControl};
+    use crate::camera::{
+        camera_control, camera_movement, camera_target, CameraBounds, CameraControl, CameraTarget,
+    };
     use crate::input::Action;
     use bevy::{prelude::*, time::Time, utils::Duration};
     use leafwing_input_manager::prelude::ActionState;
@@ -154,6 +177,7 @@ mod tests {
     fn init_bare_app() -> App {
         let mut app = App::new();
         app.add_system(camera_control.before(camera_movement));
+        app.add_system(camera_target.before(camera_movement));
         app.add_system(camera_movement);
 
         let mut time = Time::default();
@@ -272,5 +296,35 @@ mod tests {
         assert!(cameracontrol
             .velocity
             .abs_diff_eq(Vec3::new(0.76, 0.0, 0.0), 0.01));
+    }
+
+    #[test]
+    fn moves_to_target() {
+        let mut app = init_bare_app();
+
+        let camera_id = app
+            .world
+            .spawn((
+                Transform::from_xyz(0.0, 10.0, 0.0),
+                CameraControl::default(),
+                CameraBounds::default(),
+                CameraTarget {
+                    position: Vec3::new(10.0, 10.0, 10.0),
+                },
+            ))
+            .id();
+
+        for _ in 0..100 {
+            let mut time = app.world.resource_mut::<Time>();
+            let last_update = time.last_update().unwrap();
+            time.update_with_instant(last_update + Duration::from_millis(100));
+            app.update()
+        }
+
+        let transform = app.world.get::<Transform>(camera_id).unwrap();
+        println!("transform {:?}", transform);
+        assert!(transform
+            .translation
+            .abs_diff_eq(Vec3::new(10.0, 10.0, 10.0), 2.0)); // Eh, good enough
     }
 }
