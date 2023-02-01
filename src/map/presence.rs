@@ -19,9 +19,9 @@ pub fn update_visibility(
     mut damaged: ResMut<Damaged>,
 ) {
     for (position, mut fog) in zone_query.iter_mut() {
-        fog.visible = presence_query.iter().any(|(presence, view_radius)| {
-            position.0.distance(&presence.position) <= view_radius.0
-        });
+        fog.visible = presence_query
+            .iter()
+            .any(|(presence, view_radius)| position.0.distance(presence.position) <= view_radius.0);
         fog.explored = fog.explored || fog.visible;
     }
     damaged.0 = false;

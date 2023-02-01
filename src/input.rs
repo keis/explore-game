@@ -1,8 +1,13 @@
 #![allow(clippy::type_complexity)]
 
-use crate::action::{GameAction, GameActionQueue};
-use crate::interface::MenuLayer;
-use crate::map::{MapPosition, MapPresence, PathGuided, Zone};
+use crate::{
+    action::{GameAction, GameActionQueue},
+    camera::{CameraControl, CameraTarget},
+    hex::coord_to_vec3,
+    interface::MenuLayer,
+    map::{MapPosition, MapPresence, PathGuided, Zone},
+    party::Party,
+};
 use bevy::prelude::*;
 use bevy_mod_picking::{DefaultPickingPlugins, PickingEvent, Selection};
 use leafwing_input_manager::plugin::InputManagerSystem;
@@ -16,6 +21,7 @@ impl Plugin for InputPlugin {
             .add_plugin(InputManagerPlugin::<Action>::default())
             .add_startup_system(spawn_input_manager)
             .add_system(handle_deselect)
+            .add_system(handle_select_next)
             .add_system_to_stage(
                 CoreStage::PreUpdate,
                 magic_cancel.after(InputManagerSystem::ManualControl),
@@ -37,6 +43,7 @@ pub enum Action {
     Cancel,
     ToggleMainMenu,
     Deselect,
+    SelectNext,
 }
 
 fn spawn_input_manager(mut commands: Commands) {
@@ -49,6 +56,7 @@ fn spawn_input_manager(mut commands: Commands) {
             .insert(KeyCode::Right, Action::PanCameraRight)
             .insert(KeyCode::LControl, Action::MultiSelect)
             .insert(KeyCode::Escape, Action::Cancel)
+            .insert(KeyCode::Space, Action::SelectNext)
             .insert(SingleAxis::mouse_wheel_y(), Action::ZoomCamera)
             .insert(MouseButton::Right, Action::PanCamera)
             .insert(DualAxis::mouse_motion(), Action::PanCameraMotion)
@@ -56,7 +64,7 @@ fn spawn_input_manager(mut commands: Commands) {
     });
 }
 
-pub fn magic_cancel(
+fn magic_cancel(
     mut action_state_query: Query<&mut ActionState<Action>>,
     menu_layer_query: Query<&Visibility, With<MenuLayer>>,
     selection_query: Query<&Selection>,
@@ -84,7 +92,7 @@ pub fn magic_cancel(
     action_state.set_action_data(Action::ToggleMainMenu, actiondata);
 }
 
-pub fn handle_deselect(
+fn handle_deselect(
     action_state_query: Query<&ActionState<Action>>,
     mut selection_query: Query<&mut Selection>,
 ) {
@@ -98,7 +106,55 @@ pub fn handle_deselect(
     }
 }
 
-pub fn handle_picking_events(
+fn _find_selected_and_next(
+    party_query: &Query<(Entity, &mut Selection, &MapPresence, &Party)>,
+) -> (Option<Entity>, Option<Entity>) {
+    let mut selected = None;
+    for (entity, selection, _, party) in party_query.iter() {
+        if selection.selected() {
+            selected = Some(entity);
+        } else if selected.is_some() && party.movement_points > 0 {
+            return (selected, Some(entity));
+        }
+    }
+
+    for (entity, _, _, party) in party_query.iter() {
+        if party.movement_points > 0 {
+            return (selected, Some(entity));
+        }
+    }
+
+    (None, None)
+}
+
+fn handle_select_next(
+    mut commands: Commands,
+    action_state_query: Query<&ActionState<Action>>,
+    mut party_query: Query<(Entity, &mut Selection, &MapPresence, &Party)>,
+    camera_query: Query<Entity, With<CameraControl>>,
+) {
+    let action_state = action_state_query.single();
+    let camera_entity = camera_query.single();
+    if action_state.just_pressed(Action::SelectNext) {
+        let (selected, next) = _find_selected_and_next(&party_query);
+        if selected == next {
+            return;
+        }
+        if let Some((_, mut selection, _, _)) = selected.and_then(|e| party_query.get_mut(e).ok()) {
+            selection.set_selected(false);
+        }
+        if let Some((_, mut selection, presence, _)) =
+            next.and_then(|e| party_query.get_mut(e).ok())
+        {
+            selection.set_selected(true);
+            commands.entity(camera_entity).insert(CameraTarget {
+                position: coord_to_vec3(presence.position) + Vec3::new(2.0, 20.0, 20.0),
+            });
+        }
+    }
+}
+
+fn handle_picking_events(
     mut events: EventReader<PickingEvent>,
     zone_query: Query<&MapPosition, With<Zone>>,
     presence_query: Query<(Entity, &Selection), (With<PathGuided>, With<MapPresence>)>,
@@ -117,7 +173,7 @@ pub fn handle_picking_events(
                 }
             }
             PickingEvent::Selection(e) => {
-                info!("Selection event {:?}", e);
+                debug!("Selection event {:?}", e);
             }
             _ => {}
         }

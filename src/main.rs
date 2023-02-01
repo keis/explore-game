@@ -117,14 +117,12 @@ fn spawn_camera(mut commands: Commands) {
                 .looking_at(Vec3::new(8.0, 0.0, 20.0), Vec3::Y),
             ..default()
         },
-        CameraControl {
-            bounds: CameraBounds {
-                position: Vec3::new(0.0, 5.0, 10.0),
-                extent: Vec3::new(40.0, 25.0, 40.0),
-                gap: 1.0,
-            },
-            ..default()
+        CameraBounds {
+            position: Vec3::new(0.0, 5.0, 10.0),
+            extent: Vec3::new(40.0, 25.0, 40.0),
+            gap: 1.0,
         },
+        CameraControl::default(),
         PickingCameraBundle::default(),
     ));
 }

@@ -34,12 +34,12 @@ impl HexCoord {
         IVec3::new(self.q, self.r, self.s())
     }
 
-    pub fn distance(&self, other: &Self) -> u32 {
-        let diff = HexCoord {
-            q: self.q - other.q,
-            r: self.r - other.r,
-        };
-        (diff.q.unsigned_abs() + (diff.q + diff.r).unsigned_abs() + diff.r.unsigned_abs()) / 2
+    pub fn length(&self) -> u32 {
+        (self.q.unsigned_abs() + (self.q + self.r).unsigned_abs() + self.r.unsigned_abs()) / 2
+    }
+
+    pub fn distance(&self, other: Self) -> u32 {
+        (*self - other).length()
     }
 
     pub fn neighbours(&self) -> impl '_ + Iterator<Item = HexCoord> {
@@ -135,15 +135,16 @@ mod tests {
     fn distance_to_neighbours() {
         let origin = HexCoord::ZERO;
         for neighbour in origin.neighbours() {
-            assert_eq!(origin.distance(&neighbour), 1);
+            assert_eq!(origin.distance(neighbour), 1);
         }
     }
 
     #[test]
     fn long_distance() {
         let origin = HexCoord::ZERO;
-        let dest = HexCoord::new(4, -2);
-        assert_eq!(origin.distance(&dest), 4);
+        assert_eq!(origin.distance(HexCoord::new(4, -2)), 4);
+        assert_eq!(origin.distance(HexCoord::new(4, -4)), 4);
+        assert_eq!(origin.distance(HexCoord::new(3, 3)), 6);
     }
 
     #[test]

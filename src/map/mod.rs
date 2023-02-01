@@ -137,7 +137,7 @@ pub fn find_path(
                 .map(|p| (p, 1))
                 .collect::<Vec<(HexCoord, u32)>>()
         },
-        |p| p.distance(&goal),
+        |p| p.distance(goal),
         |p| *p == goal,
     )
 }
