@@ -19,7 +19,7 @@ pub use crate::hexgrid::HexCoord;
 pub use commands::{AddMapPresence, DespawnPresence, MoveMapPresence};
 pub use events::MapEvent;
 pub use fog::Fog;
-pub use generator::{start_map_generation, GenerateMapTask};
+pub use generator::{start_map_generation, GenerateMapTask, MapSeed};
 pub use pathdisplay::PathDisplay;
 pub use pathguided::PathGuided;
 pub use position::MapPosition;
