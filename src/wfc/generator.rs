@@ -3,6 +3,7 @@ use crate::wfc::{cell::Cell, template::Template, TileId};
 use rand::Rng;
 use std::cmp::Reverse;
 use std::collections::HashSet;
+use std::hash::Hash;
 
 /// Generator is the state of the iterative process for generating a map using WFC
 pub struct Generator<'a, Layout: GridLayout, Item> {
@@ -15,7 +16,7 @@ pub struct Generator<'a, Layout: GridLayout, Item> {
 
 impl<'a, Layout: GridLayout, Item> Generator<'a, Layout, Item>
 where
-    Item: Copy + PartialEq,
+    Item: Copy + PartialEq + Ord + Hash,
 {
     pub fn new(template: &'a Template<Item>, layout: Layout) -> Self {
         let default_cell = Cell::Alternatives(

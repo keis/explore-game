@@ -1,7 +1,8 @@
 use crate::hexgrid::{GridLayout, HexCoord};
 use crate::wfc::tile::Tile;
 use crate::wfc::TileId;
-use std::collections::HashSet;
+use std::collections::{BinaryHeap, HashSet};
+use std::hash::Hash;
 
 pub struct TileDetails<Item> {
     contribution: Item,
@@ -24,14 +25,17 @@ pub struct TemplateStats {
 
 impl<'a, Item> Template<Item>
 where
-    Item: Copy + PartialEq + 'a,
+    Item: Copy + PartialEq + Ord + Hash + 'a,
 {
     pub fn from_tiles<Layout, Iter>(iter: Iter) -> Self
     where
         Layout: GridLayout + 'a,
         Iter: IntoIterator<Item = Tile<'a, Layout, Item>>,
     {
-        let tiles: Vec<_> = iter.into_iter().collect();
+        let tiles = iter
+            .into_iter()
+            .collect::<BinaryHeap<_>>()
+            .into_sorted_vec();
         let details = tiles
             .iter()
             .map(|tile| TileDetails {
@@ -85,5 +89,38 @@ where
             max: *connections.iter().max().unwrap(),
             min: *connections.iter().min().unwrap(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Template;
+    use crate::hexgrid::{layout::HexagonalGridLayout, Grid, TransformMatrix};
+    use crate::map::Terrain;
+    use crate::wfc::{
+        tile::{
+            extract_tiles,
+            tests::{sample_map, standard_transforms},
+        },
+        TileId,
+    };
+    use rstest::*;
+
+    #[rstest]
+    fn from_tiles(
+        standard_transforms: Vec<TransformMatrix>,
+        sample_map: Grid<HexagonalGridLayout, Terrain>,
+    ) {
+        let tiles = extract_tiles(&sample_map, &standard_transforms);
+        let ntiles = tiles.len();
+        let template = Template::from_tiles(tiles);
+
+        assert_eq!(template.available_tiles(), ntiles);
+        assert_eq!(template.contribution(0 as TileId), Terrain::Ocean);
+        assert_eq!(template.contribution(1 as TileId), Terrain::Mountain);
+        assert_eq!(template.contribution(2 as TileId), Terrain::Ocean);
+        assert_eq!(template.contribution(3 as TileId), Terrain::Mountain);
+        assert_eq!(template.contribution(4 as TileId), Terrain::Ocean);
+        assert_eq!(template.contribution(5 as TileId), Terrain::Mountain);
     }
 }

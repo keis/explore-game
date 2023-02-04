@@ -5,7 +5,7 @@ use rand::{
     Rng,
 };
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, Ord, PartialOrd)]
 pub enum Terrain {
     #[default]
     Ocean,
