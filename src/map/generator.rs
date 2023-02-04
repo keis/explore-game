@@ -25,16 +25,15 @@ fn generate_map() -> Result<Grid<SquareGridLayout, Terrain>, &'static str> {
     let wrapped_input = wrap_grid(input);
     let transforms = standard_tile_transforms();
     let template = Template::from_tiles(extract_tiles(&wrapped_input, &transforms));
-    let mut generator = Generator::new(
+    let mut generator = Generator::new_with_layout(
         &template,
         SquareGridLayout {
             width: 30,
             height: 24,
         },
     );
-    let mut rng = rand::thread_rng();
 
-    while generator.step(&mut rng).is_some() {}
+    while generator.step().is_some() {}
     info!("Generated map!");
     generator.export()
 }

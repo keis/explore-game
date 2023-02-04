@@ -1,6 +1,10 @@
 use crate::hexgrid::{Grid, GridLayout, HexCoord};
-use crate::wfc::{cell::Cell, template::Template, TileId};
-use rand::Rng;
+use crate::wfc::{
+    cell::Cell,
+    seed::{Seed, SeedType},
+    template::Template,
+    TileId,
+};
 use std::cmp::Reverse;
 use std::collections::HashSet;
 use std::hash::Hash;
@@ -12,17 +16,23 @@ pub struct Generator<'a, Layout: GridLayout, Item> {
     pub collapsed: Vec<(HexCoord, TileId, Vec<TileId>)>, // Coordinate, selected tile, rejected tiles
     pub queue: Vec<HexCoord>,
     pub rejected: Option<Vec<TileId>>,
+    rand: rand_xoshiro::Xoshiro256PlusPlus,
 }
 
-impl<'a, Layout: GridLayout, Item> Generator<'a, Layout, Item>
+impl<'a, Layout, Item> Generator<'a, Layout, Item>
 where
+    Layout: GridLayout,
     Item: Copy + PartialEq + Ord + Hash,
 {
-    pub fn new(template: &'a Template<Item>, layout: Layout) -> Self {
+    pub fn new_with_layout(template: &'a Template<Item>, layout: Layout) -> Self
+    where
+        Layout: Into<SeedType>,
+    {
         let default_cell = Cell::Alternatives(
             template.available_tiles(),
             vec![true; template.available_tiles()],
         );
+        let seed = Seed::new(layout.into());
         let grid = Grid {
             layout,
             data: vec![default_cell; layout.size()],
@@ -35,7 +45,34 @@ where
             collapsed,
             queue: vec![HexCoord::new(0, 0)],
             rejected: Some(Vec::new()),
+            rand: seed.into(),
         }
+    }
+
+    pub fn new_with_seed(template: &'a Template<Item>, seed: Seed) -> Result<Self, &'static str>
+    where
+        Layout: TryFrom<SeedType> + TryFrom<SeedType>,
+        &'static str: From<<Layout as TryFrom<SeedType>>::Error>,
+    {
+        let default_cell = Cell::Alternatives(
+            template.available_tiles(),
+            vec![true; template.available_tiles()],
+        );
+        let layout: Layout = seed.seed_type.try_into()?;
+        let grid = Grid {
+            layout,
+            data: vec![default_cell; layout.size()],
+        };
+        let collapsed: Vec<(HexCoord, TileId, Vec<TileId>)> =
+            Vec::with_capacity(grid.layout.size());
+        Ok(Self {
+            template,
+            grid,
+            collapsed,
+            queue: vec![HexCoord::new(0, 0)],
+            rejected: Some(Vec::new()),
+            rand: seed.into(),
+        })
     }
 
     pub fn alternatives(&self, coord: HexCoord) -> HashSet<TileId> {
@@ -90,9 +127,9 @@ where
         self.queue.push(last_coord);
     }
 
-    pub fn step<R: Rng + ?Sized>(&mut self, rng: &mut R) -> Option<()> {
+    pub fn step(&mut self) -> Option<()> {
         let coord = self.queue.pop()?;
-        self.grid[coord].collapse(rng);
+        self.grid[coord].collapse(&mut self.rand);
         if let Cell::Collapsed(tile) = self.grid[coord] {
             assert!(tile <= self.template.available_tiles());
             self.collapsed

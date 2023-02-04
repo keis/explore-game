@@ -2,11 +2,12 @@ use explore_game::{
     hexgrid::layout::{HexagonalGridLayout, SquareGridLayout},
     hexgrid::{Grid, GridLayout},
     map::Terrain,
-    wfc::cell::Cell,
-    wfc::generator::Generator,
-    wfc::template::Template,
-    wfc::tile::{extract_tiles, standard_tile_transforms},
-    wfc::util::{wrap_grid, DumpGrid, DumpGridWith, LoadGrid},
+    wfc::{
+        cell::Cell,
+        tile::{extract_tiles, standard_tile_transforms},
+        util::{wrap_grid, DumpGrid, DumpGridWith, LoadGrid},
+        Generator, Template,
+    },
 };
 use std::fs::File;
 use std::io;
@@ -26,11 +27,10 @@ fn sample_template() -> Template<Terrain> {
 }
 
 fn main() {
-    let mut rng = rand::thread_rng();
     let template = sample_template();
     println!("{:?}", template.stats());
 
-    let mut generator = Generator::new(
+    let mut generator = Generator::new_with_layout(
         &template,
         SquareGridLayout {
             width: 10,
@@ -38,7 +38,7 @@ fn main() {
         },
     );
     println!("map size is {:?}", generator.grid.layout.size());
-    while generator.step(&mut rng).is_some() {
+    while generator.step().is_some() {
         generator
             .grid
             .dump_with(&mut io::stdout(), |cell| match cell {
