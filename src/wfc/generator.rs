@@ -43,7 +43,7 @@ where
             template,
             grid,
             collapsed,
-            queue: vec![HexCoord::new(0, 0)],
+            queue: vec![layout.center()],
             rejected: Some(Vec::new()),
             rand: seed.into(),
         }
@@ -69,7 +69,7 @@ where
             template,
             grid,
             collapsed,
-            queue: vec![HexCoord::new(0, 0)],
+            queue: vec![layout.center()],
             rejected: Some(Vec::new()),
             rand: seed.into(),
         })
