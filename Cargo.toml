@@ -21,6 +21,11 @@ rand = "0.8.5"
 smallvec = "1.6"
 splines = { version = "4.2.0", features = ["glam"] }
 futures-lite = "1.12.0"
+data-encoding = "2.3.3"
+bincode = "1.3.3"
+serde = "1.0.152"
+rand_xoshiro = "0.6.0"
+clap = {version = "4.1.4", features = ["derive"] }
 
 [dev-dependencies]
 rstest = { version = "0.16.0", default-features = false }

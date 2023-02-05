@@ -10,6 +10,7 @@ pub trait GridLayout: Copy + Clone + PartialEq {
     fn offset(&self, position: HexCoord) -> Option<usize>;
     fn contains(&self, position: HexCoord) -> bool;
     fn wrap(&self, position: HexCoord) -> HexCoord;
+    fn center(&self) -> HexCoord;
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -45,6 +46,13 @@ impl GridLayout for SquareGridLayout {
 
     fn wrap(&self, _position: HexCoord) -> HexCoord {
         panic!("Not implemented");
+    }
+
+    fn center(&self) -> HexCoord {
+        HexCoord {
+            q: self.width / 2 - self.height / 4,
+            r: self.height / 2,
+        }
     }
 }
 
@@ -131,6 +139,9 @@ impl GridLayout for HexagonalGridLayout {
             result -= mirror_center;
         }
         result
+    }
+    fn center(&self) -> HexCoord {
+        HexCoord::ZERO
     }
 }
 

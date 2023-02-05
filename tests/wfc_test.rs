@@ -2,11 +2,12 @@ use explore_game::{
     hexgrid::layout::HexagonalGridLayout,
     hexgrid::{Grid, GridLayout},
     map::Terrain,
-    wfc::cell::Cell,
-    wfc::generator::Generator,
-    wfc::template::Template,
-    wfc::tile::{extract_tiles, standard_tile_transforms},
-    wfc::util::{wrap_grid, DumpGrid, LoadGrid},
+    wfc::{
+        cell::Cell,
+        tile::{extract_tiles, standard_tile_transforms},
+        util::{wrap_grid, LoadGrid},
+        Generator, Template,
+    },
 };
 use std::fs::File;
 use std::io;
@@ -19,7 +20,6 @@ fn sample_map() -> Result<Grid<HexagonalGridLayout, Terrain>, &'static str> {
 
 fn sample_template() -> Template<Terrain> {
     let input = sample_map().unwrap();
-    input.dump(&mut io::stdout()).unwrap();
     let wrapped_input = wrap_grid(input);
     let transforms = standard_tile_transforms();
     Template::from_tiles(extract_tiles(&wrapped_input, &transforms))
@@ -27,13 +27,12 @@ fn sample_template() -> Template<Terrain> {
 
 #[test]
 fn test_collapse() {
-    let mut rng = rand::thread_rng();
     let template = sample_template();
     println!("{:?}", template.stats());
 
-    let mut generator = Generator::new(&template, HexagonalGridLayout { radius: 5 });
+    let mut generator = Generator::new_with_layout(&template, HexagonalGridLayout { radius: 5 });
     println!("map size is {:?}", generator.grid.layout.size());
-    while generator.step(&mut rng).is_some() {
+    while generator.step().is_some() {
         for coord in generator.grid.layout.iter() {
             match generator.grid[coord] {
                 Cell::Collapsed(_) => {
@@ -56,7 +55,6 @@ fn test_collapse() {
         }
     }
     let output = generator.export().unwrap();
-    output.dump(&mut io::stdout()).unwrap();
 
     assert_eq!(output.layout.radius, 5);
 }

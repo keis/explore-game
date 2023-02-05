@@ -1,6 +1,7 @@
 use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
 use bevy_mod_picking::PickingCameraBundle;
+use clap::Parser;
 use explore_game::{
     action::ActionPlugin,
     assets::MainAssets,
@@ -13,13 +14,14 @@ use explore_game::{
     interface::InterfacePlugin,
     map::{
         spawn_game_map_from_prototype, start_map_generation, AddMapPresence, GameMap,
-        GenerateMapTask, HexCoord, MapEvent, MapPlugin, MapPosition, MapPresence, Offset, Terrain,
-        ViewRadius, Zone, ZoneBundle,
+        GenerateMapTask, HexCoord, MapEvent, MapPlugin, MapPosition, MapPresence, MapSeed, Offset,
+        Terrain, ViewRadius, Zone, ZoneBundle,
     },
     material::{ZoneMaterial, ZoneMaterialPlugin},
     party::{reset_movement_points, JoinParty, Party, PartyBundle, PartyMember},
     slide::{slide, SlideEvent},
     turn::Turn,
+    wfc::{Seed, SeedType},
     State, VIEW_RADIUS,
 };
 use futures_lite::future;
@@ -28,12 +30,23 @@ use smallvec::SmallVec;
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
 pub const ASPECT_RATIO: f32 = 16.0 / 9.0;
 
+#[derive(Parser, Debug)]
+struct Cli {
+    #[arg(long)]
+    seed: Option<Seed>,
+}
+
 fn main() {
+    let cli = Cli::parse();
     let height = 900.0;
+    let seed = cli
+        .seed
+        .unwrap_or_else(|| Seed::new(SeedType::Square(30, 24)));
 
     App::new()
         .insert_resource(ClearColor(CLEAR))
         .insert_resource(Turn { number: 0 })
+        .insert_resource(MapSeed(seed))
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {

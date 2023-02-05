@@ -1,5 +1,6 @@
 use crate::hexgrid::layout::HexagonalGridLayout;
 use crate::hexgrid::{Grid, GridLayout, HexCoord, Transform, TransformMatrix};
+use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::ops::Index;
@@ -58,6 +59,25 @@ impl<'a, Layout: GridLayout, Item: Copy + PartialEq + Eq + Hash> PartialEq
 
 impl<'a, Layout: GridLayout, Item: Copy + Eq + Hash> Eq for Tile<'a, Layout, Item> {}
 
+impl<'a, Layout: GridLayout, Item: Copy + PartialEq + Eq + Hash + Ord + PartialOrd> Ord
+    for Tile<'a, Layout, Item>
+{
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.layout
+            .size()
+            .cmp(&other.layout.size())
+            .then_with(|| self.iter().cmp(other.iter()))
+    }
+}
+
+impl<'a, Layout: GridLayout, Item: Copy + PartialEq + Eq + Hash + Ord + PartialOrd> PartialOrd
+    for Tile<'a, Layout, Item>
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 /// Construct tiles by iterating over the grid and applying the transformations.
 pub fn extract_tiles<'a, Item: Copy + Eq + Hash>(
     grid: &'a Grid<HexagonalGridLayout, Item>,
@@ -108,20 +128,21 @@ pub fn standard_tile_transforms() -> Vec<TransformMatrix> {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{extract_tiles, standard_tile_transforms, Tile};
     use crate::hexgrid::layout::HexagonalGridLayout;
     use crate::hexgrid::{Grid, GridLayout, HexCoord, Transform, TransformMatrix};
     use crate::map::Terrain;
     use rstest::*;
+    use std::cmp::Ordering;
 
     #[fixture]
-    fn standard_transforms() -> Vec<TransformMatrix> {
+    pub fn standard_transforms() -> Vec<TransformMatrix> {
         standard_tile_transforms()
     }
 
     #[fixture]
-    fn sample_map() -> Grid<HexagonalGridLayout, Terrain> {
+    pub fn sample_map() -> Grid<HexagonalGridLayout, Terrain> {
         let layout = HexagonalGridLayout { radius: 3 };
         Grid {
             layout,
@@ -218,6 +239,31 @@ mod tests {
         assert_eq!(tile_a, tile_b);
         assert_ne!(tile_a, tile_c);
         assert_ne!(tile_b, tile_c);
+    }
+
+    #[rstest]
+    fn ordering(sample_map: Grid<HexagonalGridLayout, Terrain>) {
+        let tile_a = Tile {
+            grid: &sample_map,
+            offset: HexCoord::new(1, 0),
+            layout: HexagonalGridLayout { radius: 2 },
+            transform: &Transform::Identity.into(),
+        };
+        let tile_b = Tile {
+            grid: &sample_map,
+            offset: HexCoord::new(-1, 1),
+            layout: HexagonalGridLayout { radius: 2 },
+            transform: &Transform::Identity.into(),
+        };
+        let tile_c = Tile {
+            grid: &sample_map,
+            offset: HexCoord::new(0, 0),
+            layout: HexagonalGridLayout { radius: 2 },
+            transform: &Transform::Identity.into(),
+        };
+        assert_eq!(tile_a.cmp(&tile_b), Ordering::Equal);
+        assert_eq!(tile_a.cmp(&tile_c), Ordering::Greater);
+        assert_eq!(tile_b.cmp(&tile_c), Ordering::Greater);
     }
 
     #[rstest]

@@ -60,7 +60,7 @@ impl<Item> DumpGridWith for Grid<SquareGridLayout, Item> {
         for coord in self.layout.iter() {
             if coord.r != lastr {
                 writeln!(writer)?;
-                if coord.r % 2 == 0 {
+                if coord.r % 2 == 1 {
                     write!(writer, " ")?;
                 }
                 lastr = coord.r;
