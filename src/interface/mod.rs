@@ -31,6 +31,8 @@ impl Plugin for InterfacePlugin {
                 .with_system(party::update_party_movement_points)
                 .with_system(party::handle_party_display_interaction)
                 .with_system(character::update_character_list)
+                .with_system(character::update_character_selection)
+                .with_system(character::handle_character_display_interaction)
                 .with_system(shell::update_turn_text)
                 .with_system(shell::update_zone_text)
                 .with_system(shell::handle_move_button_interaction)

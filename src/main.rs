@@ -1,6 +1,6 @@
 use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
-use bevy_mod_picking::PickingCameraBundle;
+use bevy_mod_picking::{PickingCameraBundle, Selection};
 use clap::Parser;
 use explore_game::{
     action::ActionPlugin,
@@ -276,15 +276,21 @@ fn spawn_scene(
         position: groupcoord,
     });
     let character1 = commands
-        .spawn(Character {
-            name: String::from("Alice"),
-        })
+        .spawn((
+            Character {
+                name: String::from("Alice"),
+            },
+            Selection::default(),
+        ))
         .insert(PartyMember { party: alpha_group })
         .id();
     let character2 = commands
-        .spawn(Character {
-            name: String::from("Bob"),
-        })
+        .spawn((
+            Character {
+                name: String::from("Bob"),
+            },
+            Selection::default(),
+        ))
         .id();
     commands.add(JoinParty {
         party: alpha_group,
@@ -308,9 +314,12 @@ fn spawn_scene(
         position: groupcoord,
     });
     let character3 = commands
-        .spawn(Character {
-            name: String::from("Carol"),
-        })
+        .spawn((
+            Character {
+                name: String::from("Carol"),
+            },
+            Selection::default(),
+        ))
         .id();
     commands.add(JoinParty {
         party: beta_group,

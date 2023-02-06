@@ -115,10 +115,10 @@ pub fn update_party_list(
 
 pub fn update_party_selection(
     mut party_display_query: Query<(&PartyDisplay, &mut BackgroundColor)>,
-    party_query: Query<&Selection, (With<Party>, Changed<Selection>)>,
+    selection_query: Query<&Selection, (With<Party>, Changed<Selection>)>,
 ) {
-    for (party_display, mut color) in party_display_query.iter_mut() {
-        if let Ok(selection) = party_query.get(party_display.party) {
+    for (display, mut color) in party_display_query.iter_mut() {
+        if let Ok(selection) = selection_query.get(display.party) {
             if selection.selected() {
                 *color = SELECTED.into();
             } else {
@@ -145,17 +145,16 @@ pub fn update_party_movement_points(
 pub fn handle_party_display_interaction(
     action_state_query: Query<&ActionState<Action>>,
     interaction_query: Query<(&Interaction, &PartyDisplay), Changed<Interaction>>,
-    mut party_query: Query<(Entity, &Party, &mut Selection)>,
+    mut selection_query: Query<(Entity, &mut Selection), With<Party>>,
 ) {
     let action_state = action_state_query.single();
-    if let Ok((Interaction::Clicked, partydisplay)) = interaction_query.get_single() {
-        if let Ok((entity, party, mut selection)) = party_query.get_mut(partydisplay.party) {
-            info!("Clicked party {:?}", party);
+    if let Ok((Interaction::Clicked, display)) = interaction_query.get_single() {
+        if let Ok((entity, mut selection)) = selection_query.get_mut(display.party) {
             if action_state.pressed(Action::MultiSelect) {
                 let selected = selection.selected();
                 selection.set_selected(!selected);
             } else {
-                for (e, _, mut selection) in party_query.iter_mut() {
+                for (e, mut selection) in selection_query.iter_mut() {
                     selection.set_selected(e == entity)
                 }
             }
