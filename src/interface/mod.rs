@@ -2,8 +2,10 @@ use crate::State;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
+mod character;
 mod color;
 mod menu;
+mod party;
 mod shell;
 
 pub use menu::MenuLayer;
@@ -24,13 +26,13 @@ impl Plugin for InterfacePlugin {
         )
         .add_system_set(
             SystemSet::on_update(State::Running)
-                .with_system(shell::update_party_list)
-                .with_system(shell::update_party_selection)
-                .with_system(shell::update_party_movement_points)
-                .with_system(shell::update_character_list)
+                .with_system(party::update_party_list)
+                .with_system(party::update_party_selection)
+                .with_system(party::update_party_movement_points)
+                .with_system(party::handle_party_display_interaction)
+                .with_system(character::update_character_list)
                 .with_system(shell::update_turn_text)
                 .with_system(shell::update_zone_text)
-                .with_system(shell::handle_party_display_interaction)
                 .with_system(shell::handle_move_button_interaction)
                 .with_system(shell::handle_turn_button_interaction)
                 .with_system(shell::handle_camp_button_interaction)
