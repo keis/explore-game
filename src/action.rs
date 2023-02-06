@@ -7,7 +7,7 @@ use crate::{
         find_path, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence,
         MoveMapPresence, Offset, PathGuided, ViewRadius, Zone,
     },
-    party::Party,
+    party::{spawn_party, JoinParty, Party},
     slide::{Slide, SlideEvent},
     turn::Turn,
     State, VIEW_RADIUS,
@@ -15,15 +15,17 @@ use crate::{
 use bevy::ecs::schedule::ShouldRun;
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
+use smallvec::SmallVec;
 use std::collections::VecDeque;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub enum GameAction {
     Move(Entity, HexCoord),
     MoveTo(Entity, HexCoord),
     ResumeMove(Entity),
     MakeCamp(Entity),
     BreakCamp(Entity),
+    SplitParty(Entity, SmallVec<[Entity; 8]>),
     Save(),
 }
 
@@ -41,7 +43,8 @@ impl Plugin for ActionPlugin {
                     .with_system(handle_move_to)
                     .with_system(handle_resume_move)
                     .with_system(handle_make_camp)
-                    .with_system(handle_break_camp),
+                    .with_system(handle_break_camp)
+                    .with_system(handle_split_party),
             )
             .add_system_set(
                 SystemSet::new()
@@ -74,14 +77,14 @@ pub fn trigger_action(
 ) {
     if turn.is_changed() {
         if let Some(action) = queue.deque.pop_front() {
-            events.send(action);
+            events.send(action.clone());
             queue.current = Some(action);
         }
     }
 
     if queue.is_changed() && !queue.is_waiting() {
         if let Some(action) = queue.deque.pop_front() {
-            events.send(action);
+            events.send(action.clone());
             queue.current = Some(action);
         }
     }
@@ -278,6 +281,45 @@ pub fn handle_break_camp(
                 }
             }
         }
+    }
+}
+
+pub fn handle_split_party(
+    mut commands: Commands,
+    mut spawn_party_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
+    mut events: EventReader<GameAction>,
+    mut party_query: Query<(&mut Party, &MapPresence)>,
+) {
+    for event in events.iter() {
+        let GameAction::SplitParty(party_entity, characters) = event else { continue };
+
+        let (mut party, presence) = party_query.get_mut(*party_entity).unwrap();
+        if party.members.len() == characters.len() {
+            info!("Refusing split resulting in empty party");
+            continue;
+        }
+        let new_supplies = if party.supplies > 1 {
+            party.supplies -= 1;
+            1
+        } else {
+            0
+        };
+        let new_party = spawn_party(
+            &mut commands,
+            &mut spawn_party_params,
+            presence.position,
+            "New Party".to_string(),
+            new_supplies,
+        );
+        commands.add(AddMapPresence {
+            map: presence.map,
+            presence: new_party,
+            position: presence.position,
+        });
+        commands.add(JoinParty {
+            party: new_party,
+            members: characters.clone(),
+        });
     }
 }
 

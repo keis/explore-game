@@ -130,6 +130,13 @@ pub fn update_party_list(
             spawn_party_display(parent, entity, party, party_movement, &assets);
         });
     }
+
+    let party_entities: Vec<Entity> = party_query.iter().map(|(e, _, _)| e).collect();
+    for (display_entity, display) in party_display_query.iter() {
+        if !party_entities.iter().any(|&entity| display.party == entity) {
+            commands.entity(display_entity).despawn_recursive();
+        }
+    }
 }
 
 pub fn update_party_selection(

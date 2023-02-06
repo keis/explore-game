@@ -7,12 +7,14 @@ use super::{
 };
 use crate::{
     action::GameAction,
+    character::Character,
     map::{MapPosition, Zone},
     party::Party,
     turn::Turn,
 };
 use bevy::{prelude::*, ui::FocusPolicy};
 use bevy_mod_picking::{HoverEvent, PickingEvent, Selection};
+use smallvec::SmallVec;
 
 #[derive(Component)]
 pub struct Shell;
@@ -34,6 +36,9 @@ pub struct CampButton;
 
 #[derive(Component)]
 pub struct BreakCampButton;
+
+#[derive(Component)]
+pub struct SplitPartyButton;
 
 fn spawn_toolbar_icon(
     parent: &mut ChildBuilder,
@@ -141,6 +146,13 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         assets.knapsack_icon.clone(),
                         "Break camp",
                     );
+                    spawn_toolbar_icon(
+                        parent,
+                        &assets,
+                        SplitPartyButton,
+                        assets.back_forth_icon.clone(),
+                        "Split selected from party",
+                    );
                 });
             parent
                 .spawn((
@@ -240,6 +252,25 @@ pub fn handle_break_camp_button_interaction(
     if let Ok(Interaction::Clicked) = interaction_query.get_single() {
         for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
             game_action_event.send(GameAction::BreakCamp(entity));
+        }
+    }
+}
+
+pub fn handle_split_party_button_interaction(
+    interaction_query: Query<&Interaction, (With<SplitPartyButton>, Changed<Interaction>)>,
+    party_query: Query<(Entity, &Party, &Selection)>,
+    character_query: Query<(Entity, &Selection), With<Character>>,
+    mut game_action_event: EventWriter<GameAction>,
+) {
+    let Ok(Interaction::Clicked) = interaction_query.get_single() else { return };
+    for (entity, party, _) in party_query.iter().filter(|(_, _, s)| s.selected()) {
+        let selected: SmallVec<[Entity; 8]> = character_query
+            .iter_many(&party.members)
+            .filter(|(_, s)| s.selected())
+            .map(|(e, _)| e)
+            .collect();
+        if !selected.is_empty() {
+            game_action_event.send(GameAction::SplitParty(entity, selected));
         }
     }
 }

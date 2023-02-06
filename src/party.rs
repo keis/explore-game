@@ -1,14 +1,18 @@
 use crate::{
+    assets::MainAssets,
     character::Movement,
+    hex::coord_to_vec3,
     indicator::Indicator,
-    map::{Offset, PathGuided, ViewRadius},
+    map::{HexCoord, Offset, PathGuided, ViewRadius},
     slide::Slide,
+    VIEW_RADIUS,
 };
 
 use bevy::ecs::system::Command;
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
 use smallvec::SmallVec;
+use std::collections::HashSet;
 
 #[derive(Component, Debug, Default)]
 pub struct Party {
@@ -41,12 +45,28 @@ pub struct JoinParty {
 
 impl Command for JoinParty {
     fn write(mut self, world: &mut World) {
+        let mut old = HashSet::new();
         for &member in &self.members {
-            let mut member_entity = world.entity_mut(member);
-            if let Some(mut party_member) = member_entity.get_mut::<PartyMember>() {
-                party_member.party = self.party;
+            if let Some(mut party_member) = world.entity_mut(member).get_mut::<PartyMember>() {
+                if party_member.party != self.party {
+                    old.insert(party_member.party);
+                    party_member.party = self.party;
+                }
             } else {
-                member_entity.insert(PartyMember { party: self.party });
+                world
+                    .entity_mut(member)
+                    .insert(PartyMember { party: self.party });
+            }
+        }
+
+        for old_party_entity in old {
+            if let Some(mut old_party) = world.entity_mut(old_party_entity).get_mut::<Party>() {
+                old_party
+                    .members
+                    .retain(|m| !self.members.iter().any(|o| *m == *o));
+                if old_party.members.is_empty() {
+                    world.despawn(old_party_entity);
+                }
             }
         }
 
@@ -68,6 +88,36 @@ pub fn derive_party_movement(
             .min()
             .unwrap_or(0);
     }
+}
+
+pub fn spawn_party(
+    commands: &mut Commands,
+    params: &mut ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
+    position: HexCoord,
+    name: String,
+    supplies: u32,
+) -> Entity {
+    let offset = Vec3::new(0.0, 1.0, 0.0);
+    commands
+        .spawn((
+            PbrBundle {
+                mesh: params.p0().indicator_mesh.clone(),
+                material: params.p1().add(Color::rgb(0.165, 0.631, 0.596).into()),
+                transform: Transform::from_translation(coord_to_vec3(position) + offset),
+                ..default()
+            },
+            PartyBundle {
+                party: Party {
+                    name,
+                    supplies,
+                    members: SmallVec::new(),
+                },
+                offset: Offset(offset),
+                view_radius: ViewRadius(VIEW_RADIUS),
+                ..default()
+            },
+        ))
+        .id()
 }
 
 #[cfg(test)]
@@ -107,6 +157,29 @@ mod tests {
 
         assert_eq!(member_from_party_entity, member_entity);
         assert_eq!(member.party, party_entity);
+    }
+
+    #[rstest]
+    fn change_party(mut app: App) {
+        let (member_entity, _) = app
+            .world
+            .query::<(Entity, &PartyMember)>()
+            .single(&app.world);
+
+        let new_party_entity = app.world.spawn(Party::default()).id();
+        let joinparty = JoinParty {
+            party: new_party_entity,
+            members: SmallVec::from_slice(&[member_entity]),
+        };
+        joinparty.write(&mut app.world);
+
+        let party = app.world.query::<&Party>().single(&app.world);
+
+        assert_eq!(party.members.len(), 1);
+        assert_eq!(party.members[0], member_entity);
+
+        let member = app.world.query::<&PartyMember>().single(&app.world);
+        assert_eq!(member.party, new_party_entity);
     }
 
     #[rstest]

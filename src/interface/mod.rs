@@ -43,6 +43,7 @@ impl Plugin for InterfacePlugin {
                 .with_system(shell::handle_turn_button_interaction)
                 .with_system(shell::handle_camp_button_interaction)
                 .with_system(shell::handle_break_camp_button_interaction)
+                .with_system(shell::handle_split_party_button_interaction)
                 .with_system(tooltip::show_tooltip_on_hover)
                 .with_system(menu::handle_toggle_main_menu)
                 .with_system(menu::handle_save)
@@ -61,4 +62,6 @@ pub struct InterfaceAssets {
     knapsack_icon: Handle<Image>,
     #[asset(path = "icons/bottom-right-3d-arrow.png")]
     arrow_icon: Handle<Image>,
+    #[asset(path = "icons/back-forth.png")]
+    back_forth_icon: Handle<Image>,
 }

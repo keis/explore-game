@@ -14,15 +14,15 @@ use explore_game::{
     interface::InterfacePlugin,
     map::{
         spawn_game_map_from_prototype, start_map_generation, AddMapPresence, GameMap,
-        GenerateMapTask, HexCoord, MapEvent, MapPlugin, MapPosition, MapPresence, MapSeed, Offset,
-        Terrain, ViewRadius, Zone, ZoneBundle,
+        GenerateMapTask, HexCoord, MapEvent, MapPlugin, MapPosition, MapPresence, MapSeed, Terrain,
+        Zone, ZoneBundle,
     },
     material::{ZoneMaterial, ZoneMaterialPlugin},
-    party::{derive_party_movement, JoinParty, Party, PartyBundle, PartyMember},
+    party::{derive_party_movement, spawn_party, JoinParty, PartyMember},
     slide::{slide, SlideEvent},
     turn::Turn,
     wfc::{Seed, SeedType},
-    State, VIEW_RADIUS,
+    State,
 };
 use futures_lite::future;
 use smallvec::SmallVec;
@@ -190,42 +190,11 @@ fn spawn_zone(
         .id()
 }
 
-fn spawn_party(
-    commands: &mut Commands,
-    assets: &Res<MainAssets>,
-    standard_materials: &mut ResMut<Assets<StandardMaterial>>,
-    position: HexCoord,
-    color: Color,
-    name: String,
-) -> Entity {
-    let offset = Vec3::new(0.0, 1.0, 0.0);
-    commands
-        .spawn((
-            PbrBundle {
-                mesh: assets.indicator_mesh.clone(),
-                material: standard_materials.add(color.into()),
-                transform: Transform::from_translation(coord_to_vec3(position) + offset),
-                ..default()
-            },
-            PartyBundle {
-                party: Party {
-                    name,
-                    supplies: 1,
-                    members: SmallVec::new(),
-                },
-                offset: Offset(offset),
-                view_radius: ViewRadius(VIEW_RADIUS),
-                ..default()
-            },
-        ))
-        .id()
-}
-
 fn spawn_scene(
     mut commands: Commands,
+    mut spawn_party_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
     assets: Res<MainAssets>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     mut generate_map_task: Query<(Entity, &mut GenerateMapTask)>,
 ) {
@@ -264,11 +233,10 @@ fn spawn_scene(
         .unwrap();
     let alpha_group = spawn_party(
         &mut commands,
-        &assets,
-        &mut standard_materials,
+        &mut spawn_party_params,
         groupcoord,
-        Color::rgb(0.165, 0.631, 0.596),
         String::from("Alpha Group"),
+        1,
     );
     commands.add(AddMapPresence {
         map,
@@ -304,11 +272,10 @@ fn spawn_scene(
         .unwrap();
     let beta_group = spawn_party(
         &mut commands,
-        &assets,
-        &mut standard_materials,
+        &mut spawn_party_params,
         groupcoord,
-        Color::rgb(0.596, 0.165, 0.631),
         String::from("Beta Group"),
+        1,
     );
     commands.add(AddMapPresence {
         map,
