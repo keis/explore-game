@@ -1,11 +1,12 @@
-use super::color::{NORMAL, SELECTED};
-use super::InterfaceAssets;
-use crate::action::GameAction;
-use crate::character::Character;
-use crate::input::{Action, ActionState};
-use crate::map::{MapPosition, Zone};
-use crate::party::Party;
-use crate::turn::Turn;
+use super::{
+    character::CharacterListBundle, color::NORMAL, party::PartyListBundle, InterfaceAssets,
+};
+use crate::{
+    action::GameAction,
+    map::{MapPosition, Zone},
+    party::Party,
+    turn::Turn,
+};
 use bevy::{prelude::*, ui::FocusPolicy};
 use bevy_mod_picking::{HoverEvent, PickingEvent, Selection};
 
@@ -22,12 +23,6 @@ pub struct TurnButton;
 pub struct TurnText;
 
 #[derive(Component)]
-pub struct PartyList;
-
-#[derive(Component)]
-pub struct PartyMovementPointsText;
-
-#[derive(Component)]
 pub struct MoveButton;
 
 #[derive(Component)]
@@ -35,19 +30,6 @@ pub struct CampButton;
 
 #[derive(Component)]
 pub struct BreakCampButton;
-
-#[derive(Component, Debug)]
-pub struct PartyDisplay {
-    party: Entity,
-}
-
-#[derive(Component)]
-pub struct CharacterList;
-
-#[derive(Component)]
-pub struct CharacterDisplay {
-    character: Entity,
-}
 
 fn spawn_toolbar_icon(parent: &mut ChildBuilder, tag: impl Component, image: Handle<Image>) {
     parent
@@ -68,37 +50,6 @@ fn spawn_toolbar_icon(parent: &mut ChildBuilder, tag: impl Component, image: Han
                 focus_policy: FocusPolicy::Pass,
                 ..default()
             });
-        });
-}
-
-fn spawn_character_display(
-    parent: &mut ChildBuilder,
-    entity: Entity,
-    character: &Character,
-    assets: &Res<InterfaceAssets>,
-) {
-    parent
-        .spawn((
-            CharacterDisplay { character: entity },
-            NodeBundle {
-                style: Style {
-                    size: Size::new(Val::Percent(100.0), Val::Px(40.0)),
-                    margin: UiRect::all(Val::Px(2.0)),
-                    ..default()
-                },
-                background_color: NORMAL.into(),
-                ..default()
-            },
-        ))
-        .with_children(|parent| {
-            parent.spawn(TextBundle::from_section(
-                character.name.clone(),
-                TextStyle {
-                    font: assets.font.clone(),
-                    font_size: 28.0,
-                    color: Color::WHITE,
-                },
-            ));
         });
 }
 
@@ -144,33 +95,8 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     ..default()
                 })
                 .with_children(|parent| {
-                    parent.spawn((
-                        NodeBundle {
-                            style: Style {
-                                size: Size::new(Val::Px(200.0), Val::Percent(100.0)),
-                                flex_direction: FlexDirection::Column,
-                                margin: UiRect {
-                                    right: Val::Px(8.0),
-                                    ..default()
-                                },
-                                ..default()
-                            },
-                            background_color: Color::NONE.into(),
-                            ..default()
-                        },
-                        PartyList,
-                    ));
-                    parent.spawn((
-                        NodeBundle {
-                            style: Style {
-                                size: Size::new(Val::Px(200.0), Val::Percent(100.0)),
-                                flex_direction: FlexDirection::Column,
-                                ..default()
-                            },
-                            ..default()
-                        },
-                        CharacterList,
-                    ));
+                    parent.spawn(PartyListBundle::default());
+                    parent.spawn(CharacterListBundle::default());
                 });
             parent
                 .spawn(NodeBundle {
@@ -217,143 +143,6 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     ));
                 });
         });
-}
-
-pub fn update_party_list(
-    mut commands: Commands,
-    assets: Res<InterfaceAssets>,
-    party_list_query: Query<Entity, With<PartyList>>,
-    party_query: Query<(Entity, &Party)>,
-    party_display_query: Query<&PartyDisplay>,
-) {
-    let party_list = party_list_query.single();
-    for (entity, party) in party_query.iter() {
-        if party_display_query
-            .iter()
-            .any(|display| display.party == entity)
-        {
-            continue;
-        }
-        commands.get_or_spawn(party_list).add_children(|parent| {
-            parent
-                .spawn((
-                    PartyDisplay { party: entity },
-                    ButtonBundle {
-                        style: Style {
-                            size: Size::new(Val::Percent(100.0), Val::Px(120.0)),
-                            margin: UiRect::all(Val::Px(2.0)),
-                            flex_direction: FlexDirection::Column,
-                            justify_content: JustifyContent::SpaceBetween,
-                            ..default()
-                        },
-                        background_color: NORMAL.into(),
-                        ..default()
-                    },
-                ))
-                .with_children(|parent| {
-                    parent.spawn(TextBundle::from_section(
-                        party.name.clone(),
-                        TextStyle {
-                            font: assets.font.clone(),
-                            font_size: 32.0,
-                            color: Color::WHITE,
-                        },
-                    ));
-                    parent.spawn((
-                        PartyMovementPointsText,
-                        TextBundle::from_sections([
-                            TextSection::new(
-                                "Movement: ",
-                                TextStyle {
-                                    font: assets.font.clone(),
-                                    font_size: 32.0,
-                                    color: Color::WHITE,
-                                },
-                            ),
-                            TextSection::new(
-                                format!("{:?}", party.movement_points),
-                                TextStyle {
-                                    font: assets.font.clone(),
-                                    font_size: 32.0,
-                                    color: Color::WHITE,
-                                },
-                            ),
-                        ]),
-                    ));
-                });
-        });
-    }
-}
-
-pub fn update_character_list(
-    mut commands: Commands,
-    assets: Res<InterfaceAssets>,
-    character_list_query: Query<Entity, With<CharacterList>>,
-    character_query: Query<(Entity, &Character)>,
-    party_query: Query<(&Party, &Selection)>,
-    character_display_query: Query<(Entity, &CharacterDisplay)>,
-) {
-    let character_list = character_list_query.single();
-
-    let characters = party_query
-        .iter()
-        .filter(|(_, selection)| selection.selected())
-        .flat_map(|(party, _)| party.members.iter());
-    for (entity, character) in character_query.iter_many(characters) {
-        if !character_display_query
-            .iter()
-            .any(|(_, display)| display.character == entity)
-        {
-            commands
-                .get_or_spawn(character_list)
-                .add_children(|parent| {
-                    spawn_character_display(parent, entity, character, &assets);
-                });
-        }
-    }
-
-    let characters: Vec<&Entity> = party_query
-        .iter()
-        .filter(|(_, selection)| selection.selected())
-        .flat_map(|(party, _)| party.members.iter())
-        .collect();
-    for (display_entity, display) in character_display_query.iter() {
-        if !characters
-            .iter()
-            .any(|entity| display.character == **entity)
-        {
-            commands.entity(display_entity).despawn_recursive();
-        }
-    }
-}
-
-pub fn update_party_selection(
-    mut party_display_query: Query<(&PartyDisplay, &mut BackgroundColor)>,
-    party_query: Query<&Selection, (With<Party>, Changed<Selection>)>,
-) {
-    for (party_display, mut color) in party_display_query.iter_mut() {
-        if let Ok(selection) = party_query.get(party_display.party) {
-            if selection.selected() {
-                *color = SELECTED.into();
-            } else {
-                *color = NORMAL.into();
-            }
-        }
-    }
-}
-
-pub fn update_party_movement_points(
-    mut party_movement_points_query: Query<(&mut Text, &Parent), With<PartyMovementPointsText>>,
-    party_display_query: Query<&PartyDisplay>,
-    party_query: Query<&Party, Changed<Party>>,
-) {
-    for (mut text, parent) in party_movement_points_query.iter_mut() {
-        if let Ok(party_display) = party_display_query.get(parent.get()) {
-            if let Ok(party) = party_query.get(party_display.party) {
-                text.sections[1].value = format!("{:?}", party.movement_points);
-            }
-        }
-    }
 }
 
 pub fn update_turn_text(mut turn_text_query: Query<&mut Text, With<TurnText>>, turn: Res<Turn>) {
@@ -421,26 +210,6 @@ pub fn handle_break_camp_button_interaction(
     if let Ok(Interaction::Clicked) = interaction_query.get_single() {
         for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
             game_action_event.send(GameAction::BreakCamp(entity));
-        }
-    }
-}
-pub fn handle_party_display_interaction(
-    action_state_query: Query<&ActionState<Action>>,
-    interaction_query: Query<(&Interaction, &PartyDisplay), Changed<Interaction>>,
-    mut party_query: Query<(Entity, &Party, &mut Selection)>,
-) {
-    let action_state = action_state_query.single();
-    if let Ok((Interaction::Clicked, partydisplay)) = interaction_query.get_single() {
-        if let Ok((entity, party, mut selection)) = party_query.get_mut(partydisplay.party) {
-            info!("Clicked party {:?}", party);
-            if action_state.pressed(Action::MultiSelect) {
-                let selected = selection.selected();
-                selection.set_selected(!selected);
-            } else {
-                for (e, _, mut selection) in party_query.iter_mut() {
-                    selection.set_selected(e == entity)
-                }
-            }
         }
     }
 }
