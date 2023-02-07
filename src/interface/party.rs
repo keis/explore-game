@@ -6,7 +6,7 @@ use crate::{
     input::{Action, ActionState},
     party::Party,
 };
-use bevy::prelude::*;
+use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use bevy_mod_picking::Selection;
 
 #[derive(Component)]
@@ -47,68 +47,85 @@ impl Default for PartyListBundle {
     }
 }
 
-pub fn update_party_list(
-    mut commands: Commands,
-    assets: Res<InterfaceAssets>,
-    party_list_query: Query<Entity, With<PartyList>>,
-    party_query: Query<(Entity, &Party)>,
-    party_display_query: Query<&PartyDisplay>,
+fn spawn_party_display(
+    parent: &mut ChildBuilder,
+    entity: Entity,
+    party: &Party,
+    assets: &Res<InterfaceAssets>,
 ) {
-    let party_list = party_list_query.single();
-    for (entity, party) in party_query.iter() {
-        if party_display_query
-            .iter()
-            .any(|display| display.party == entity)
-        {
-            continue;
-        }
-        commands.get_or_spawn(party_list).add_children(|parent| {
-            parent
-                .spawn((
-                    PartyDisplay { party: entity },
-                    ButtonBundle {
-                        style: Style {
-                            size: Size::new(Val::Percent(100.0), Val::Px(120.0)),
-                            margin: UiRect::all(Val::Px(2.0)),
-                            flex_direction: FlexDirection::Column,
-                            justify_content: JustifyContent::SpaceBetween,
-                            ..default()
-                        },
-                        background_color: NORMAL.into(),
-                        ..default()
-                    },
-                ))
-                .with_children(|parent| {
-                    parent.spawn(TextBundle::from_section(
-                        party.name.clone(),
+    parent
+        .spawn((
+            PartyDisplay { party: entity },
+            ButtonBundle {
+                style: Style {
+                    size: Size::new(Val::Percent(100.0), Val::Px(120.0)),
+                    margin: UiRect::all(Val::Px(2.0)),
+                    flex_direction: FlexDirection::Column,
+                    justify_content: JustifyContent::SpaceBetween,
+                    ..default()
+                },
+                background_color: NORMAL.into(),
+                ..default()
+            },
+        ))
+        .with_children(|parent| {
+            parent.spawn(TextBundle::from_section(
+                party.name.clone(),
+                TextStyle {
+                    font: assets.font.clone(),
+                    font_size: 32.0,
+                    color: Color::WHITE,
+                },
+            ));
+            parent.spawn((
+                PartyMovementPointsText,
+                TextBundle::from_sections([
+                    TextSection::new(
+                        "Movement: ",
                         TextStyle {
                             font: assets.font.clone(),
                             font_size: 32.0,
                             color: Color::WHITE,
                         },
-                    ));
-                    parent.spawn((
-                        PartyMovementPointsText,
-                        TextBundle::from_sections([
-                            TextSection::new(
-                                "Movement: ",
-                                TextStyle {
-                                    font: assets.font.clone(),
-                                    font_size: 32.0,
-                                    color: Color::WHITE,
-                                },
-                            ),
-                            TextSection::new(
-                                format!("{:?}", party.movement_points),
-                                TextStyle {
-                                    font: assets.font.clone(),
-                                    font_size: 32.0,
-                                    color: Color::WHITE,
-                                },
-                            ),
-                        ]),
-                    ));
-                });
+                    ),
+                    TextSection::new(
+                        format!("{:?}", party.movement_points),
+                        TextStyle {
+                            font: assets.font.clone(),
+                            font_size: 32.0,
+                            color: Color::WHITE,
+                        },
+                    ),
+                ]),
+            ));
+        });
+}
+
+pub fn run_if_any_party_changed(party_query: Query<Entity, Changed<Party>>) -> ShouldRun {
+    if !party_query.is_empty() {
+        ShouldRun::Yes
+    } else {
+        ShouldRun::No
+    }
+}
+
+pub fn update_party_list(
+    mut commands: Commands,
+    assets: Res<InterfaceAssets>,
+    party_list_query: Query<Entity, With<PartyList>>,
+    party_query: Query<(Entity, &Party)>,
+    party_display_query: Query<(Entity, &PartyDisplay)>,
+) {
+    let party_list = party_list_query.single();
+    for (entity, party) in party_query.iter() {
+        if party_display_query
+            .iter()
+            .any(|(_, display)| display.party == entity)
+        {
+            continue;
+        }
+        commands.get_or_spawn(party_list).add_children(|parent| {
+            spawn_party_display(parent, entity, party, &assets);
         });
     }
 }

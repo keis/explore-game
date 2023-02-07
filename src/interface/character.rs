@@ -7,7 +7,7 @@ use crate::{
     input::{Action, ActionState},
     party::Party,
 };
-use bevy::prelude::*;
+use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use bevy_mod_picking::Selection;
 
 #[derive(Component)]
@@ -69,6 +69,16 @@ fn spawn_character_display(
                 },
             ));
         });
+}
+
+pub fn run_if_any_party_or_selection_changed(
+    party_query: Query<Entity, Or<(Changed<Party>, Changed<Selection>)>>,
+) -> ShouldRun {
+    if !party_query.is_empty() {
+        ShouldRun::Yes
+    } else {
+        ShouldRun::No
+    }
 }
 
 pub fn update_character_list(

@@ -24,13 +24,16 @@ impl Plugin for InterfacePlugin {
                 .with_system(shell::spawn_shell)
                 .with_system(menu::spawn_menu),
         )
+        .add_system(party::update_party_list.with_run_criteria(party::run_if_any_party_changed))
+        .add_system(
+            character::update_character_list
+                .with_run_criteria(character::run_if_any_party_or_selection_changed),
+        )
         .add_system_set(
             SystemSet::on_update(State::Running)
-                .with_system(party::update_party_list)
                 .with_system(party::update_party_selection)
                 .with_system(party::update_party_movement_points)
                 .with_system(party::handle_party_display_interaction)
-                .with_system(character::update_character_list)
                 .with_system(character::update_character_selection)
                 .with_system(character::handle_character_display_interaction)
                 .with_system(shell::update_turn_text)
