@@ -6,7 +6,7 @@ use explore_game::{
     action::ActionPlugin,
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
-    character::Character,
+    character::{reset_movement_points, Character, Movement},
     hex::{coord_to_vec3, Hexagon},
     hexgrid::spiral,
     indicator::update_indicator,
@@ -18,7 +18,7 @@ use explore_game::{
         Terrain, ViewRadius, Zone, ZoneBundle,
     },
     material::{ZoneMaterial, ZoneMaterialPlugin},
-    party::{reset_movement_points, JoinParty, Party, PartyBundle, PartyMember},
+    party::{derive_party_movement, JoinParty, Party, PartyBundle, PartyMember},
     slide::{slide, SlideEvent},
     turn::Turn,
     wfc::{Seed, SeedType},
@@ -94,6 +94,7 @@ fn main() {
                 .with_system(log_moves)
                 .with_system(update_indicator)
                 .with_system(reset_movement_points)
+                .with_system(derive_party_movement)
                 .with_system(slide),
         )
         .run();
@@ -209,7 +210,6 @@ fn spawn_party(
             PartyBundle {
                 party: Party {
                     name,
-                    movement_points: 2,
                     supplies: 1,
                     members: SmallVec::new(),
                 },
@@ -280,6 +280,7 @@ fn spawn_scene(
             Character {
                 name: String::from("Alice"),
             },
+            Movement { points: 2 },
             Selection::default(),
         ))
         .insert(PartyMember { party: alpha_group })
@@ -289,6 +290,7 @@ fn spawn_scene(
             Character {
                 name: String::from("Bob"),
             },
+            Movement { points: 2 },
             Selection::default(),
         ))
         .id();
@@ -318,6 +320,7 @@ fn spawn_scene(
             Character {
                 name: String::from("Carol"),
             },
+            Movement { points: 2 },
             Selection::default(),
         ))
         .id();

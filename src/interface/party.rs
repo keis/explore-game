@@ -3,6 +3,7 @@ use super::{
     InterfaceAssets,
 };
 use crate::{
+    character::Movement,
     input::{Action, ActionState},
     party::Party,
 };
@@ -51,6 +52,7 @@ fn spawn_party_display(
     parent: &mut ChildBuilder,
     entity: Entity,
     party: &Party,
+    party_movement: &Movement,
     assets: &Res<InterfaceAssets>,
 ) {
     parent
@@ -89,7 +91,7 @@ fn spawn_party_display(
                         },
                     ),
                     TextSection::new(
-                        format!("{:?}", party.movement_points),
+                        format!("{:?}", party_movement.points),
                         TextStyle {
                             font: assets.font.clone(),
                             font_size: 32.0,
@@ -113,11 +115,11 @@ pub fn update_party_list(
     mut commands: Commands,
     assets: Res<InterfaceAssets>,
     party_list_query: Query<Entity, With<PartyList>>,
-    party_query: Query<(Entity, &Party)>,
+    party_query: Query<(Entity, &Party, &Movement)>,
     party_display_query: Query<(Entity, &PartyDisplay)>,
 ) {
     let party_list = party_list_query.single();
-    for (entity, party) in party_query.iter() {
+    for (entity, party, party_movement) in party_query.iter() {
         if party_display_query
             .iter()
             .any(|(_, display)| display.party == entity)
@@ -125,7 +127,7 @@ pub fn update_party_list(
             continue;
         }
         commands.get_or_spawn(party_list).add_children(|parent| {
-            spawn_party_display(parent, entity, party, &assets);
+            spawn_party_display(parent, entity, party, party_movement, &assets);
         });
     }
 }
@@ -148,12 +150,12 @@ pub fn update_party_selection(
 pub fn update_party_movement_points(
     mut party_movement_points_query: Query<(&mut Text, &Parent), With<PartyMovementPointsText>>,
     party_display_query: Query<&PartyDisplay>,
-    party_query: Query<&Party, Changed<Party>>,
+    party_query: Query<&Movement, (Changed<Movement>, With<Party>)>,
 ) {
     for (mut text, parent) in party_movement_points_query.iter_mut() {
         if let Ok(party_display) = party_display_query.get(parent.get()) {
-            if let Ok(party) = party_query.get(party_display.party) {
-                text.sections[1].value = format!("{:?}", party.movement_points);
+            if let Ok(party_movement) = party_query.get(party_display.party) {
+                text.sections[1].value = format!("{:?}", party_movement.points);
             }
         }
     }

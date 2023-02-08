@@ -3,10 +3,10 @@
 use crate::{
     action::{GameAction, GameActionQueue},
     camera::{CameraControl, CameraTarget},
+    character::Movement,
     hex::coord_to_vec3,
     interface::MenuLayer,
     map::{MapPosition, MapPresence, PathGuided, Zone},
-    party::Party,
 };
 use bevy::prelude::*;
 use bevy_mod_picking::{DefaultPickingPlugins, PickingEvent, Selection};
@@ -107,19 +107,19 @@ fn handle_deselect(
 }
 
 fn _find_selected_and_next(
-    party_query: &Query<(Entity, &mut Selection, &MapPresence, &Party)>,
+    party_query: &Query<(Entity, &mut Selection, &MapPresence, &Movement)>,
 ) -> (Option<Entity>, Option<Entity>) {
     let mut selected = None;
-    for (entity, selection, _, party) in party_query.iter() {
+    for (entity, selection, _, movement) in party_query.iter() {
         if selection.selected() {
             selected = Some(entity);
-        } else if selected.is_some() && party.movement_points > 0 {
+        } else if selected.is_some() && movement.points > 0 {
             return (selected, Some(entity));
         }
     }
 
-    for (entity, _, _, party) in party_query.iter() {
-        if party.movement_points > 0 {
+    for (entity, _, _, movement) in party_query.iter() {
+        if movement.points > 0 {
             return (selected, Some(entity));
         }
     }
@@ -130,7 +130,7 @@ fn _find_selected_and_next(
 fn handle_select_next(
     mut commands: Commands,
     action_state_query: Query<&ActionState<Action>>,
-    mut party_query: Query<(Entity, &mut Selection, &MapPresence, &Party)>,
+    mut party_query: Query<(Entity, &mut Selection, &MapPresence, &Movement)>,
     camera_query: Query<Entity, With<CameraControl>>,
 ) {
     let action_state = action_state_query.single();

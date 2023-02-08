@@ -1,14 +1,17 @@
-use crate::assets::MainAssets;
-use crate::camp::Camp;
-use crate::hex::coord_to_vec3;
-use crate::map::{
-    find_path, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence, MoveMapPresence,
-    Offset, PathGuided, ViewRadius, Zone,
+use crate::{
+    assets::MainAssets,
+    camp::Camp,
+    character::Movement,
+    hex::coord_to_vec3,
+    map::{
+        find_path, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence,
+        MoveMapPresence, Offset, PathGuided, ViewRadius, Zone,
+    },
+    party::Party,
+    slide::{Slide, SlideEvent},
+    turn::Turn,
+    State, VIEW_RADIUS,
 };
-use crate::party::Party;
-use crate::slide::{Slide, SlideEvent};
-use crate::turn::Turn;
-use crate::{State, VIEW_RADIUS};
 use bevy::ecs::schedule::ShouldRun;
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
@@ -86,18 +89,24 @@ pub fn trigger_action(
 
 pub fn handle_move(
     mut events: EventReader<GameAction>,
-    mut party_query: Query<(&mut Party, &mut Slide, &Transform, &Offset)>,
+    mut party_query: Query<(&Party, &mut Movement, &mut Slide, &Transform, &Offset)>,
+    mut member_movement_query: Query<&mut Movement, Without<Party>>,
     mut queue: ResMut<GameActionQueue>,
 ) {
     for event in events.iter() {
         if let GameAction::Move(e, next) = event {
-            if let Ok((mut party, mut slide, transform, offset)) = party_query.get_mut(*e) {
-                if party.movement_points == 0 {
+            if let Ok((party, mut movement, mut slide, transform, offset)) = party_query.get_mut(*e)
+            {
+                if movement.points == 0 {
                     warn!("tried to move without movement points");
                     queue.current.take();
                     continue;
                 }
-                party.movement_points -= 1;
+                movement.points -= 1;
+                let mut iter = member_movement_query.iter_many_mut(&party.members);
+                while let Some(mut movement) = iter.fetch_next() {
+                    movement.points -= 1;
+                }
                 slide.start = transform.translation;
                 slide.end = coord_to_vec3(*next) + offset.0;
                 slide.progress = 0.0;
@@ -110,12 +119,12 @@ pub fn handle_slide_stopped(
     mut commands: Commands,
     mut events: EventReader<SlideEvent>,
     mut queue: ResMut<GameActionQueue>,
-    mut presence_query: Query<(&MapPresence, &Party, &mut PathGuided)>,
+    mut presence_query: Query<(&MapPresence, &Movement, &mut PathGuided)>,
 ) {
     for _ in events.iter() {
         if let Some(last_action) = queue.current.take() {
             if let GameAction::Move(e, next) = last_action {
-                let (presence, party, mut pathguided) = presence_query.get_mut(e).unwrap();
+                let (presence, party_movement, mut pathguided) = presence_query.get_mut(e).unwrap();
                 info!("done with move action {:?}", last_action);
                 commands.add(MoveMapPresence {
                     map: presence.map,
@@ -124,7 +133,7 @@ pub fn handle_slide_stopped(
                 });
                 pathguided.advance();
                 // Keep moving if a path is set
-                if party.movement_points > 0 {
+                if party_movement.points > 0 {
                     if let Some(next) = pathguided.next() {
                         queue.add(GameAction::Move(e, *next));
                     }
@@ -139,7 +148,7 @@ pub fn handle_slide_stopped(
 pub fn handle_move_to(
     mut events: EventReader<GameAction>,
     mut queue: ResMut<GameActionQueue>,
-    mut presence_query: Query<(&MapPresence, &Party, &mut PathGuided)>,
+    mut presence_query: Query<(&MapPresence, &Movement, &mut PathGuided)>,
     zone_query: Query<&Zone>,
     map_query: Query<&GameMap>,
 ) {
@@ -147,13 +156,13 @@ pub fn handle_move_to(
     for event in events.iter() {
         if let GameAction::MoveTo(e, goal) = event {
             queue.current.take();
-            if let Ok((presence, party, mut pathguided)) = presence_query.get_mut(*e) {
+            if let Ok((presence, party_movement, mut pathguided)) = presence_query.get_mut(*e) {
                 if let Ok(map) = map_query.get(presence.map) {
                     if let Some((path, _length)) =
                         find_path(map, &zone_query, presence.position, *goal)
                     {
                         pathguided.path(path);
-                        if party.movement_points > 0 {
+                        if party_movement.points > 0 {
                             if let Some(next) = pathguided.next() {
                                 queue.add(GameAction::Move(*e, *next));
                             }
