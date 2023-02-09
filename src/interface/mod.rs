@@ -7,6 +7,7 @@ mod color;
 mod menu;
 mod party;
 mod shell;
+mod tooltip;
 
 pub use menu::MenuLayer;
 
@@ -42,6 +43,7 @@ impl Plugin for InterfacePlugin {
                 .with_system(shell::handle_turn_button_interaction)
                 .with_system(shell::handle_camp_button_interaction)
                 .with_system(shell::handle_break_camp_button_interaction)
+                .with_system(tooltip::show_tooltip_on_hover)
                 .with_system(menu::handle_toggle_main_menu)
                 .with_system(menu::handle_save)
                 .with_system(menu::handle_quit),
