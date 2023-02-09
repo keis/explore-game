@@ -1,5 +1,9 @@
 use super::{
-    character::CharacterListBundle, color::NORMAL, party::PartyListBundle, InterfaceAssets,
+    character::CharacterListBundle,
+    color::NORMAL,
+    party::PartyListBundle,
+    tooltip::{spawn_tooltip, TooltipTarget},
+    InterfaceAssets,
 };
 use crate::{
     action::GameAction,
@@ -31,9 +35,16 @@ pub struct CampButton;
 #[derive(Component)]
 pub struct BreakCampButton;
 
-fn spawn_toolbar_icon(parent: &mut ChildBuilder, tag: impl Component, image: Handle<Image>) {
+fn spawn_toolbar_icon(
+    parent: &mut ChildBuilder,
+    assets: &Res<InterfaceAssets>,
+    tag: impl Component,
+    image: Handle<Image>,
+    tooltip: impl Into<String>,
+) {
     parent
         .spawn((
+            TooltipTarget,
             ButtonBundle {
                 background_color: NORMAL.into(),
                 ..default()
@@ -50,6 +61,7 @@ fn spawn_toolbar_icon(parent: &mut ChildBuilder, tag: impl Component, image: Han
                 focus_policy: FocusPolicy::Pass,
                 ..default()
             });
+            spawn_tooltip(parent, assets, tooltip)
         });
 }
 
@@ -108,9 +120,27 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     ..default()
                 })
                 .with_children(|parent| {
-                    spawn_toolbar_icon(parent, MoveButton, assets.arrow_icon.clone());
-                    spawn_toolbar_icon(parent, CampButton, assets.campfire_icon.clone());
-                    spawn_toolbar_icon(parent, BreakCampButton, assets.knapsack_icon.clone());
+                    spawn_toolbar_icon(
+                        parent,
+                        &assets,
+                        MoveButton,
+                        assets.arrow_icon.clone(),
+                        "Continue movement",
+                    );
+                    spawn_toolbar_icon(
+                        parent,
+                        &assets,
+                        CampButton,
+                        assets.campfire_icon.clone(),
+                        "Make camp",
+                    );
+                    spawn_toolbar_icon(
+                        parent,
+                        &assets,
+                        BreakCampButton,
+                        assets.knapsack_icon.clone(),
+                        "Break camp",
+                    );
                 });
             parent
                 .spawn((
