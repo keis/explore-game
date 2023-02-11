@@ -10,7 +10,7 @@ use crate::{
     action::GameAction,
     camp::Camp,
     character::Character,
-    map::{MapPosition, Zone},
+    map::{GameMap, MapPosition, MapPresence, Zone},
     party::{Group, Party},
     turn::Turn,
 };
@@ -150,7 +150,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         &assets,
                         CampButton,
                         assets.campfire_icon.clone(),
-                        "Make camp",
+                        "Make/Enter camp",
                     );
                     spawn_toolbar_icon(
                         parent,
@@ -254,12 +254,20 @@ pub fn handle_turn_button_interaction(
 
 pub fn handle_camp_button_interaction(
     interaction_query: Query<&Interaction, (With<CampButton>, Changed<Interaction>)>,
-    party_query: Query<(Entity, &Selection), With<Party>>,
+    party_query: Query<(Entity, &MapPresence, &Selection), With<Party>>,
+    map_query: Query<&GameMap>,
+    camp_query: Query<Entity, With<Camp>>,
     mut game_action_event: EventWriter<GameAction>,
 ) {
     if let Ok(Interaction::Clicked) = interaction_query.get_single() {
-        for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
-            game_action_event.send(GameAction::MakeCamp(entity));
+        for (entity, presence, _) in party_query.iter().filter(|(_, _, s)| s.selected()) {
+            let Ok(map) = map_query.get(presence.map) else { continue };
+            if let Some(camp_entity) = camp_query.iter_many(map.presence(presence.position)).next()
+            {
+                game_action_event.send(GameAction::EnterCamp(entity, camp_entity));
+            } else {
+                game_action_event.send(GameAction::MakeCamp(entity));
+            }
         }
     }
 }

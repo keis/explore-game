@@ -24,6 +24,7 @@ pub enum GameAction {
     ResumeMove(Entity),
     MakeCamp(Entity),
     BreakCamp(Entity),
+    EnterCamp(Entity, Entity),
     SplitParty(Entity, SmallVec<[Entity; 8]>),
     CreatePartyFromCamp(Entity, SmallVec<[Entity; 8]>),
     Save(),
@@ -44,6 +45,7 @@ impl Plugin for ActionPlugin {
                     .with_system(handle_resume_move)
                     .with_system(handle_make_camp)
                     .with_system(handle_break_camp)
+                    .with_system(handle_enter_camp)
                     .with_system(handle_create_party_from_camp)
                     .with_system(handle_split_party),
             )
@@ -252,7 +254,7 @@ pub fn handle_break_camp(
     mut events: EventReader<GameAction>,
     mut party_query: Query<(&mut Party, &MapPresence)>,
     mut map_query: Query<(Entity, &GameMap)>,
-    camp_query: Query<(Entity, &Group), With<Camp>>,
+    camp_query: Query<(Entity, &Camp, &Group)>,
 ) {
     for event in events.iter() {
         if let GameAction::BreakCamp(e) = event {
@@ -262,16 +264,18 @@ pub fn handle_break_camp(
                     .expect("references valid map");
 
                 let position = presence.position;
-                if let Some((camp, group)) = camp_query.iter_many(map.presence(position)).next() {
+                if let Some((camp_entity, camp, group)) =
+                    camp_query.iter_many(map.presence(position)).next()
+                {
                     if !group.members.is_empty() {
                         info!("Camp is not empty");
                         continue;
                     }
                     info!("Depawning camp at {:?}", position);
-                    party.supplies += 1;
+                    party.supplies += camp.supplies + 1;
                     commands.add(DespawnPresence {
                         map: map_entity,
-                        presence: camp,
+                        presence: camp_entity,
                     });
                 }
             }
@@ -279,22 +283,47 @@ pub fn handle_break_camp(
     }
 }
 
+pub fn handle_enter_camp(
+    mut commands: Commands,
+    mut events: EventReader<GameAction>,
+    mut party_query: Query<(&mut Party, &Group)>,
+    mut camp_query: Query<&mut Camp>,
+) {
+    for event in events.iter() {
+        let GameAction::EnterCamp(party_entity, camp_entity) = event else { continue };
+        let Ok((mut party, group)) = party_query.get_mut(*party_entity) else { continue };
+        let Ok(mut camp) = camp_query.get_mut(*camp_entity) else { continue };
+        camp.supplies += party.supplies;
+        party.supplies = 0;
+        commands.add(JoinGroup {
+            group: *camp_entity,
+            members: group.members.clone(),
+        });
+    }
+}
+
 pub fn handle_create_party_from_camp(
     mut commands: Commands,
     mut spawn_party_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
     mut events: EventReader<GameAction>,
-    camp_query: Query<&MapPresence>,
+    mut camp_query: Query<(&mut Camp, &MapPresence)>,
 ) {
     for event in events.iter() {
         let GameAction::CreatePartyFromCamp(camp_entity, characters) = event else { continue };
         info!("Creating party at camp {:?} {:?}", camp_entity, characters);
-        let presence = camp_query.get(*camp_entity).unwrap();
+        let (mut camp, presence) = camp_query.get_mut(*camp_entity).unwrap();
+        let new_supplies = if camp.supplies > 0 {
+            camp.supplies -= 1;
+            1
+        } else {
+            0
+        };
         let new_party = spawn_party(
             &mut commands,
             &mut spawn_party_params,
             presence.position,
             "New Party".to_string(),
-            0,
+            new_supplies,
         );
         commands.add(AddMapPresence {
             map: presence.map,

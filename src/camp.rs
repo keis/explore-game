@@ -12,6 +12,7 @@ use bevy_mod_picking::PickableBundle;
 #[derive(Component, Debug, Default)]
 pub struct Camp {
     pub name: String,
+    pub supplies: u32,
 }
 
 #[derive(Bundle, Default)]
@@ -39,7 +40,7 @@ pub fn spawn_camp(
                 ..default()
             },
             CampBundle {
-                camp: Camp { name },
+                camp: Camp { name, ..default() },
                 view_radius: ViewRadius(VIEW_RADIUS),
                 ..default()
             },
