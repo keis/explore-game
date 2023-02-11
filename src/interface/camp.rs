@@ -6,6 +6,7 @@ use crate::{
     camp::Camp,
     character::Character,
     input::{Action, ActionState},
+    party::Group,
 };
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use bevy_mod_picking::Selection;
@@ -78,7 +79,10 @@ fn spawn_camp_display(
         });
 }
 
-pub fn run_if_any_camp_changed(camp_query: Query<Entity, Changed<Camp>>) -> ShouldRun {
+#[allow(clippy::type_complexity)]
+pub fn run_if_any_camp_changed(
+    camp_query: Query<Entity, Or<(Changed<Camp>, Changed<Group>)>>,
+) -> ShouldRun {
     if !camp_query.is_empty() {
         ShouldRun::Yes
     } else {

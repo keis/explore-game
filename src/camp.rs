@@ -3,6 +3,7 @@ use crate::{
     hex::coord_to_vec3,
     hexgrid::HexCoord,
     map::{Offset, ViewRadius},
+    party::Group,
     VIEW_RADIUS,
 };
 use bevy::prelude::*;
@@ -16,6 +17,7 @@ pub struct Camp {
 #[derive(Bundle, Default)]
 pub struct CampBundle {
     pub camp: Camp,
+    pub group: Group,
     pub pickable_bundle: PickableBundle,
     pub offset: Offset,
     pub view_radius: ViewRadius,

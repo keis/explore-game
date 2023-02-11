@@ -198,12 +198,12 @@ pub fn handle_make_camp(
     mut spawn_camp_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
     mut events: EventReader<GameAction>,
     mut map_query: Query<(Entity, &GameMap)>,
-    mut party_query: Query<(&mut Party, &MapPresence)>,
+    mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
     camp_query: Query<&Camp>,
 ) {
     for event in events.iter() {
         if let GameAction::MakeCamp(e) = event {
-            if let Ok((mut party, presence)) = party_query.get_mut(*e) {
+            if let Ok((mut party, group, presence)) = party_query.get_mut(*e) {
                 let (map_entity, map) = map_query
                     .get_mut(presence.map)
                     .expect("references valid map");
@@ -235,7 +235,11 @@ pub fn handle_make_camp(
                     map: map_entity,
                     presence: entity,
                     position,
-                })
+                });
+                commands.add(JoinGroup {
+                    group: entity,
+                    members: group.members.clone(),
+                });
             }
         }
     }
@@ -246,7 +250,7 @@ pub fn handle_break_camp(
     mut events: EventReader<GameAction>,
     mut party_query: Query<(&mut Party, &MapPresence)>,
     mut map_query: Query<(Entity, &GameMap)>,
-    camp_query: Query<Entity, With<Camp>>,
+    camp_query: Query<(Entity, &Group), With<Camp>>,
 ) {
     for event in events.iter() {
         if let GameAction::BreakCamp(e) = event {
@@ -256,8 +260,11 @@ pub fn handle_break_camp(
                     .expect("references valid map");
 
                 let position = presence.position;
-                let maybe_camp = camp_query.iter_many(map.presence(position)).next();
-                if let Some(camp) = maybe_camp {
+                if let Some((camp, group)) = camp_query.iter_many(map.presence(position)).next() {
+                    if !group.members.is_empty() {
+                        info!("Camp is not empty");
+                        continue;
+                    }
                     info!("Depawning camp at {:?}", position);
                     party.supplies += 1;
                     commands.add(DespawnPresence {
