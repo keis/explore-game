@@ -7,7 +7,7 @@ use crate::{
         find_path, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence,
         MoveMapPresence, Offset, PathGuided, ViewRadius, Zone,
     },
-    party::{spawn_party, JoinParty, Party},
+    party::{spawn_party, Group, JoinGroup, Party},
     slide::{Slide, SlideEvent},
     turn::Turn,
     State, VIEW_RADIUS,
@@ -92,13 +92,13 @@ pub fn trigger_action(
 
 pub fn handle_move(
     mut events: EventReader<GameAction>,
-    mut party_query: Query<(&Party, &mut Movement, &mut Slide, &Transform, &Offset)>,
+    mut party_query: Query<(&Group, &mut Movement, &mut Slide, &Transform, &Offset), With<Party>>,
     mut member_movement_query: Query<&mut Movement, Without<Party>>,
     mut queue: ResMut<GameActionQueue>,
 ) {
     for event in events.iter() {
         if let GameAction::Move(e, next) = event {
-            if let Ok((party, mut movement, mut slide, transform, offset)) = party_query.get_mut(*e)
+            if let Ok((group, mut movement, mut slide, transform, offset)) = party_query.get_mut(*e)
             {
                 if movement.points == 0 {
                     warn!("tried to move without movement points");
@@ -106,7 +106,7 @@ pub fn handle_move(
                     continue;
                 }
                 movement.points -= 1;
-                let mut iter = member_movement_query.iter_many_mut(&party.members);
+                let mut iter = member_movement_query.iter_many_mut(&group.members);
                 while let Some(mut movement) = iter.fetch_next() {
                     movement.points -= 1;
                 }
@@ -288,13 +288,13 @@ pub fn handle_split_party(
     mut commands: Commands,
     mut spawn_party_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
     mut events: EventReader<GameAction>,
-    mut party_query: Query<(&mut Party, &MapPresence)>,
+    mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
 ) {
     for event in events.iter() {
         let GameAction::SplitParty(party_entity, characters) = event else { continue };
 
-        let (mut party, presence) = party_query.get_mut(*party_entity).unwrap();
-        if party.members.len() == characters.len() {
+        let (mut party, group, presence) = party_query.get_mut(*party_entity).unwrap();
+        if group.members.len() == characters.len() {
             info!("Refusing split resulting in empty party");
             continue;
         }
@@ -316,8 +316,8 @@ pub fn handle_split_party(
             presence: new_party,
             position: presence.position,
         });
-        commands.add(JoinParty {
-            party: new_party,
+        commands.add(JoinGroup {
+            group: new_party,
             members: characters.clone(),
         });
     }

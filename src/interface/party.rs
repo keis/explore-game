@@ -5,7 +5,7 @@ use super::{
 use crate::{
     character::Movement,
     input::{Action, ActionState},
-    party::Party,
+    party::{Group, Party},
 };
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use bevy_mod_picking::Selection;
@@ -103,7 +103,10 @@ fn spawn_party_display(
         });
 }
 
-pub fn run_if_any_party_changed(party_query: Query<Entity, Changed<Party>>) -> ShouldRun {
+#[allow(clippy::type_complexity)]
+pub fn run_if_any_party_changed(
+    party_query: Query<Entity, Or<(Changed<Party>, Changed<Group>)>>,
+) -> ShouldRun {
     if !party_query.is_empty() {
         ShouldRun::Yes
     } else {
@@ -115,11 +118,11 @@ pub fn update_party_list(
     mut commands: Commands,
     assets: Res<InterfaceAssets>,
     party_list_query: Query<Entity, With<PartyList>>,
-    party_query: Query<(Entity, &Party, &Movement)>,
+    party_query: Query<(Entity, &Party, &Group, &Movement)>,
     party_display_query: Query<(Entity, &PartyDisplay)>,
 ) {
     let party_list = party_list_query.single();
-    for (entity, party, party_movement) in party_query.iter() {
+    for (entity, party, _, party_movement) in party_query.iter() {
         if party_display_query
             .iter()
             .any(|(_, display)| display.party == entity)
@@ -131,7 +134,11 @@ pub fn update_party_list(
         });
     }
 
-    let party_entities: Vec<Entity> = party_query.iter().map(|(e, _, _)| e).collect();
+    let party_entities: Vec<Entity> = party_query
+        .iter()
+        .filter(|(_, _, g, _)| !g.members.is_empty())
+        .map(|(e, _, _, _)| e)
+        .collect();
     for (display_entity, display) in party_display_query.iter() {
         if !party_entities.iter().any(|&entity| display.party == entity) {
             commands.entity(display_entity).despawn_recursive();

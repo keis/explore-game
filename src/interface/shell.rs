@@ -9,7 +9,7 @@ use crate::{
     action::GameAction,
     character::Character,
     map::{MapPosition, Zone},
-    party::Party,
+    party::{Group, Party},
     turn::Turn,
 };
 use bevy::{prelude::*, ui::FocusPolicy};
@@ -258,14 +258,14 @@ pub fn handle_break_camp_button_interaction(
 
 pub fn handle_split_party_button_interaction(
     interaction_query: Query<&Interaction, (With<SplitPartyButton>, Changed<Interaction>)>,
-    party_query: Query<(Entity, &Party, &Selection)>,
+    party_query: Query<(Entity, &Group, &Selection), With<Party>>,
     character_query: Query<(Entity, &Selection), With<Character>>,
     mut game_action_event: EventWriter<GameAction>,
 ) {
     let Ok(Interaction::Clicked) = interaction_query.get_single() else { return };
-    for (entity, party, _) in party_query.iter().filter(|(_, _, s)| s.selected()) {
+    for (entity, group, _) in party_query.iter().filter(|(_, _, s)| s.selected()) {
         let selected: SmallVec<[Entity; 8]> = character_query
-            .iter_many(&party.members)
+            .iter_many(&group.members)
             .filter(|(_, s)| s.selected())
             .map(|(e, _)| e)
             .collect();

@@ -18,7 +18,7 @@ use explore_game::{
         Zone, ZoneBundle,
     },
     material::{ZoneMaterial, ZoneMaterialPlugin},
-    party::{derive_party_movement, spawn_party, JoinParty, PartyMember},
+    party::{derive_party_movement, despawn_empty_party, spawn_party, JoinGroup},
     slide::{slide, SlideEvent},
     turn::Turn,
     wfc::{Seed, SeedType},
@@ -95,6 +95,7 @@ fn main() {
                 .with_system(update_indicator)
                 .with_system(reset_movement_points)
                 .with_system(derive_party_movement)
+                .with_system(despawn_empty_party)
                 .with_system(slide),
         )
         .run();
@@ -251,7 +252,6 @@ fn spawn_scene(
             Movement { points: 2 },
             Selection::default(),
         ))
-        .insert(PartyMember { party: alpha_group })
         .id();
     let character2 = commands
         .spawn((
@@ -262,8 +262,8 @@ fn spawn_scene(
             Selection::default(),
         ))
         .id();
-    commands.add(JoinParty {
-        party: alpha_group,
+    commands.add(JoinGroup {
+        group: alpha_group,
         members: SmallVec::from_slice(&[character1, character2]),
     });
 
@@ -291,8 +291,8 @@ fn spawn_scene(
             Selection::default(),
         ))
         .id();
-    commands.add(JoinParty {
-        party: beta_group,
+    commands.add(JoinGroup {
+        group: beta_group,
         members: SmallVec::from_slice(&[character3]),
     });
 }
