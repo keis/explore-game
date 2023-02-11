@@ -8,6 +8,7 @@ use super::{
 };
 use crate::{
     action::GameAction,
+    camp::Camp,
     character::Character,
     map::{MapPosition, Zone},
     party::{Group, Party},
@@ -37,6 +38,9 @@ pub struct CampButton;
 
 #[derive(Component)]
 pub struct BreakCampButton;
+
+#[derive(Component)]
+pub struct CreatePartyButton;
 
 #[derive(Component)]
 pub struct SplitPartyButton;
@@ -152,8 +156,15 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         parent,
                         &assets,
                         BreakCampButton,
-                        assets.knapsack_icon.clone(),
+                        assets.cancel_icon.clone(),
                         "Break camp",
+                    );
+                    spawn_toolbar_icon(
+                        parent,
+                        &assets,
+                        CreatePartyButton,
+                        assets.knapsack_icon.clone(),
+                        "Create party",
                     );
                     spawn_toolbar_icon(
                         parent,
@@ -261,6 +272,25 @@ pub fn handle_break_camp_button_interaction(
     if let Ok(Interaction::Clicked) = interaction_query.get_single() {
         for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
             game_action_event.send(GameAction::BreakCamp(entity));
+        }
+    }
+}
+
+pub fn handle_create_party_button_interaction(
+    interaction_query: Query<&Interaction, (With<CreatePartyButton>, Changed<Interaction>)>,
+    camp_query: Query<(Entity, &Group, &Selection), With<Camp>>,
+    character_query: Query<(Entity, &Selection), With<Character>>,
+    mut game_action_event: EventWriter<GameAction>,
+) {
+    let Ok(Interaction::Clicked) = interaction_query.get_single() else { return };
+    for (entity, group, _) in camp_query.iter().filter(|(_, _, s)| s.selected()) {
+        let selected: SmallVec<[Entity; 8]> = character_query
+            .iter_many(&group.members)
+            .filter(|(_, s)| s.selected())
+            .map(|(e, _)| e)
+            .collect();
+        if !selected.is_empty() {
+            game_action_event.send(GameAction::CreatePartyFromCamp(entity, selected));
         }
     }
 }

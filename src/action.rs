@@ -25,6 +25,7 @@ pub enum GameAction {
     MakeCamp(Entity),
     BreakCamp(Entity),
     SplitParty(Entity, SmallVec<[Entity; 8]>),
+    CreatePartyFromCamp(Entity, SmallVec<[Entity; 8]>),
     Save(),
 }
 
@@ -43,6 +44,7 @@ impl Plugin for ActionPlugin {
                     .with_system(handle_resume_move)
                     .with_system(handle_make_camp)
                     .with_system(handle_break_camp)
+                    .with_system(handle_create_party_from_camp)
                     .with_system(handle_split_party),
             )
             .add_system_set(
@@ -274,6 +276,35 @@ pub fn handle_break_camp(
                 }
             }
         }
+    }
+}
+
+pub fn handle_create_party_from_camp(
+    mut commands: Commands,
+    mut spawn_party_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
+    mut events: EventReader<GameAction>,
+    camp_query: Query<&MapPresence>,
+) {
+    for event in events.iter() {
+        let GameAction::CreatePartyFromCamp(camp_entity, characters) = event else { continue };
+        info!("Creating party at camp {:?} {:?}", camp_entity, characters);
+        let presence = camp_query.get(*camp_entity).unwrap();
+        let new_party = spawn_party(
+            &mut commands,
+            &mut spawn_party_params,
+            presence.position,
+            "New Party".to_string(),
+            0,
+        );
+        commands.add(AddMapPresence {
+            map: presence.map,
+            presence: new_party,
+            position: presence.position,
+        });
+        commands.add(JoinGroup {
+            group: new_party,
+            members: characters.clone(),
+        });
     }
 }
 

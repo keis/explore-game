@@ -47,6 +47,7 @@ impl Plugin for InterfacePlugin {
                 .with_system(shell::handle_turn_button_interaction)
                 .with_system(shell::handle_camp_button_interaction)
                 .with_system(shell::handle_break_camp_button_interaction)
+                .with_system(shell::handle_create_party_button_interaction)
                 .with_system(shell::handle_split_party_button_interaction)
                 .with_system(tooltip::show_tooltip_on_hover)
                 .with_system(menu::handle_toggle_main_menu)
@@ -68,4 +69,6 @@ pub struct InterfaceAssets {
     arrow_icon: Handle<Image>,
     #[asset(path = "icons/back-forth.png")]
     back_forth_icon: Handle<Image>,
+    #[asset(path = "icons/cancel.png")]
+    cancel_icon: Handle<Image>,
 }
