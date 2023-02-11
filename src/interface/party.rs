@@ -3,7 +3,7 @@ use super::{
     InterfaceAssets,
 };
 use crate::{
-    character::Movement,
+    character::{Character, Movement},
     input::{Action, ActionState},
     party::{Group, Party},
 };
@@ -32,7 +32,7 @@ impl Default for PartyListBundle {
         Self {
             node_bundle: NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Px(200.0), Val::Percent(100.0)),
+                    size: Size::new(Val::Px(200.0), Val::Auto),
                     flex_direction: FlexDirection::Column,
                     margin: UiRect {
                         right: Val::Px(8.0),
@@ -178,7 +178,7 @@ pub fn update_party_movement_points(
 pub fn handle_party_display_interaction(
     action_state_query: Query<&ActionState<Action>>,
     interaction_query: Query<(&Interaction, &PartyDisplay), Changed<Interaction>>,
-    mut selection_query: Query<(Entity, &mut Selection), With<Party>>,
+    mut selection_query: Query<(Entity, &mut Selection), Without<Character>>,
 ) {
     let action_state = action_state_query.single();
     if let Ok((Interaction::Clicked, display)) = interaction_query.get_single() {

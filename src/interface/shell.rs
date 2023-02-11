@@ -1,4 +1,5 @@
 use super::{
+    camp::CampListBundle,
     character::CharacterListBundle,
     color::NORMAL,
     party::PartyListBundle,
@@ -107,12 +108,20 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                 }),
             ));
             parent
-                .spawn(NodeBundle {
-                    background_color: Color::NONE.into(),
-                    ..default()
-                })
+                .spawn(NodeBundle { ..default() })
                 .with_children(|parent| {
-                    parent.spawn(PartyListBundle::default());
+                    parent
+                        .spawn(NodeBundle {
+                            style: Style {
+                                flex_direction: FlexDirection::Column,
+                                ..default()
+                            },
+                            ..default()
+                        })
+                        .with_children(|parent| {
+                            parent.spawn(CampListBundle::default());
+                            parent.spawn(PartyListBundle::default());
+                        });
                     parent.spawn(CharacterListBundle::default());
                 });
             parent

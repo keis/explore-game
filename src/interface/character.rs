@@ -29,7 +29,7 @@ impl Default for CharacterListBundle {
         Self {
             node_bundle: NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Px(200.0), Val::Percent(100.0)),
+                    size: Size::new(Val::Px(200.0), Val::Auto),
                     flex_direction: FlexDirection::Column,
                     ..default()
                 },
