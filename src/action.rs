@@ -1,20 +1,19 @@
 use crate::{
     assets::MainAssets,
-    camp::Camp,
+    camp::{spawn_camp, Camp},
     character::Movement,
     hex::coord_to_vec3,
     map::{
         find_path, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence,
-        MoveMapPresence, Offset, PathGuided, ViewRadius, Zone,
+        MoveMapPresence, Offset, PathGuided, Zone,
     },
     party::{spawn_party, Group, JoinGroup, Party},
     slide::{Slide, SlideEvent},
     turn::Turn,
-    State, VIEW_RADIUS,
+    State,
 };
 use bevy::ecs::schedule::ShouldRun;
 use bevy::prelude::*;
-use bevy_mod_picking::PickableBundle;
 use smallvec::SmallVec;
 use std::collections::VecDeque;
 
@@ -196,8 +195,7 @@ pub fn handle_resume_move(
 
 pub fn handle_make_camp(
     mut commands: Commands,
-    assets: Res<MainAssets>,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
+    mut spawn_camp_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
     mut events: EventReader<GameAction>,
     mut map_query: Query<(Entity, &GameMap)>,
     mut party_query: Query<(&mut Party, &MapPresence)>,
@@ -227,24 +225,12 @@ pub fn handle_make_camp(
 
                 info!("Spawning camp at {:?}", position);
                 party.supplies -= 1;
-                let entity = commands
-                    .spawn((
-                        PbrBundle {
-                            mesh: assets.tent_mesh.clone(),
-                            material: standard_materials
-                                .add(Color::rgb(0.631, 0.596, 0.165).into()),
-                            transform: Transform::from_translation(coord_to_vec3(position))
-                                .with_rotation(Quat::from_rotation_y(1.0)),
-                            ..default()
-                        },
-                        PickableBundle::default(),
-                        Camp {
-                            name: String::from("New Camp"),
-                        },
-                        Offset(Vec3::ZERO),
-                        ViewRadius(VIEW_RADIUS),
-                    ))
-                    .id();
+                let entity = spawn_camp(
+                    &mut commands,
+                    &mut spawn_camp_params,
+                    position,
+                    String::from("New camp"),
+                );
                 commands.add(AddMapPresence {
                     map: map_entity,
                     presence: entity,
