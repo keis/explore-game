@@ -2,6 +2,7 @@ use crate::State;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
+mod camp;
 mod character;
 mod color;
 mod menu;
@@ -26,6 +27,7 @@ impl Plugin for InterfacePlugin {
                 .with_system(menu::spawn_menu),
         )
         .add_system(party::update_party_list.with_run_criteria(party::run_if_any_party_changed))
+        .add_system(camp::update_camp_list.with_run_criteria(camp::run_if_any_camp_changed))
         .add_system(
             character::update_character_list
                 .with_run_criteria(character::run_if_any_party_or_selection_changed),
@@ -35,6 +37,8 @@ impl Plugin for InterfacePlugin {
                 .with_system(party::update_party_selection)
                 .with_system(party::update_party_movement_points)
                 .with_system(party::handle_party_display_interaction)
+                .with_system(camp::update_camp_selection)
+                .with_system(camp::handle_camp_display_interaction)
                 .with_system(character::update_character_selection)
                 .with_system(character::handle_character_display_interaction)
                 .with_system(shell::update_turn_text)
@@ -43,6 +47,9 @@ impl Plugin for InterfacePlugin {
                 .with_system(shell::handle_turn_button_interaction)
                 .with_system(shell::handle_camp_button_interaction)
                 .with_system(shell::handle_break_camp_button_interaction)
+                .with_system(shell::handle_create_party_button_interaction)
+                .with_system(shell::handle_split_party_button_interaction)
+                .with_system(shell::handle_merge_party_button_interaction)
                 .with_system(tooltip::show_tooltip_on_hover)
                 .with_system(menu::handle_toggle_main_menu)
                 .with_system(menu::handle_save)
@@ -61,4 +68,10 @@ pub struct InterfaceAssets {
     knapsack_icon: Handle<Image>,
     #[asset(path = "icons/bottom-right-3d-arrow.png")]
     arrow_icon: Handle<Image>,
+    #[asset(path = "icons/back-forth.png")]
+    back_forth_icon: Handle<Image>,
+    #[asset(path = "icons/cancel.png")]
+    cancel_icon: Handle<Image>,
+    #[asset(path = "icons/contract.png")]
+    contract_icon: Handle<Image>,
 }

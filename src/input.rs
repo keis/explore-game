@@ -3,10 +3,10 @@
 use crate::{
     action::{GameAction, GameActionQueue},
     camera::{CameraControl, CameraTarget},
+    character::Movement,
     hex::coord_to_vec3,
     interface::MenuLayer,
     map::{MapPosition, MapPresence, PathGuided, Zone},
-    party::Party,
 };
 use bevy::prelude::*;
 use bevy_mod_picking::{DefaultPickingPlugins, PickingEvent, Selection};
@@ -106,50 +106,56 @@ fn handle_deselect(
     }
 }
 
-fn _find_selected_and_next(
-    party_query: &Query<(Entity, &mut Selection, &MapPresence, &Party)>,
-) -> (Option<Entity>, Option<Entity>) {
+fn _find_next(
+    party_query: &Query<(Entity, &mut Selection, &MapPresence, Option<&Movement>)>,
+) -> Option<Entity> {
     let mut selected = None;
-    for (entity, selection, _, party) in party_query.iter() {
+    for (entity, selection, _, m) in party_query.iter() {
         if selection.selected() {
             selected = Some(entity);
-        } else if selected.is_some() && party.movement_points > 0 {
-            return (selected, Some(entity));
+        } else if let Some(movement) = m {
+            if selected.is_some() && movement.points > 0 {
+                return Some(entity);
+            }
         }
     }
 
-    for (entity, _, _, party) in party_query.iter() {
-        if party.movement_points > 0 {
-            return (selected, Some(entity));
+    for (entity, _, _, m) in party_query.iter() {
+        if selected == Some(entity) {
+            break;
+        }
+        if let Some(movement) = m {
+            if movement.points > 0 {
+                if selected == Some(entity) {
+                    return None;
+                }
+                return Some(entity);
+            }
         }
     }
 
-    (None, None)
+    None
 }
 
 fn handle_select_next(
     mut commands: Commands,
     action_state_query: Query<&ActionState<Action>>,
-    mut party_query: Query<(Entity, &mut Selection, &MapPresence, &Party)>,
+    mut party_query: Query<(Entity, &mut Selection, &MapPresence, Option<&Movement>)>,
     camera_query: Query<Entity, With<CameraControl>>,
 ) {
     let action_state = action_state_query.single();
     let camera_entity = camera_query.single();
     if action_state.just_pressed(Action::SelectNext) {
-        let (selected, next) = _find_selected_and_next(&party_query);
-        if selected == next {
-            return;
-        }
-        if let Some((_, mut selection, _, _)) = selected.and_then(|e| party_query.get_mut(e).ok()) {
-            selection.set_selected(false);
-        }
-        if let Some((_, mut selection, presence, _)) =
-            next.and_then(|e| party_query.get_mut(e).ok())
-        {
-            selection.set_selected(true);
-            commands.entity(camera_entity).insert(CameraTarget {
-                position: coord_to_vec3(presence.position) + Vec3::new(2.0, 20.0, 20.0),
-            });
+        let Some(next) = _find_next(&party_query) else { return };
+        for (entity, mut selection, presence, _) in party_query.iter_mut() {
+            if entity == next {
+                selection.set_selected(true);
+                commands.entity(camera_entity).insert(CameraTarget {
+                    position: coord_to_vec3(presence.position) + Vec3::new(2.0, 20.0, 20.0),
+                });
+            } else if selection.selected() {
+                selection.set_selected(false);
+            }
         }
     }
 }

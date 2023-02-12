@@ -1,4 +1,5 @@
 use super::{
+    camp::CampListBundle,
     character::CharacterListBundle,
     color::NORMAL,
     party::PartyListBundle,
@@ -7,12 +8,15 @@ use super::{
 };
 use crate::{
     action::GameAction,
-    map::{MapPosition, Zone},
-    party::Party,
+    camp::Camp,
+    character::Character,
+    map::{GameMap, MapPosition, MapPresence, Zone},
+    party::{Group, Party},
     turn::Turn,
 };
 use bevy::{prelude::*, ui::FocusPolicy};
 use bevy_mod_picking::{HoverEvent, PickingEvent, Selection};
+use smallvec::SmallVec;
 
 #[derive(Component)]
 pub struct Shell;
@@ -34,6 +38,15 @@ pub struct CampButton;
 
 #[derive(Component)]
 pub struct BreakCampButton;
+
+#[derive(Component)]
+pub struct CreatePartyButton;
+
+#[derive(Component)]
+pub struct SplitPartyButton;
+
+#[derive(Component)]
+pub struct MergePartyButton;
 
 fn spawn_toolbar_icon(
     parent: &mut ChildBuilder,
@@ -102,12 +115,20 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                 }),
             ));
             parent
-                .spawn(NodeBundle {
-                    background_color: Color::NONE.into(),
-                    ..default()
-                })
+                .spawn(NodeBundle { ..default() })
                 .with_children(|parent| {
-                    parent.spawn(PartyListBundle::default());
+                    parent
+                        .spawn(NodeBundle {
+                            style: Style {
+                                flex_direction: FlexDirection::Column,
+                                ..default()
+                            },
+                            ..default()
+                        })
+                        .with_children(|parent| {
+                            parent.spawn(CampListBundle::default());
+                            parent.spawn(PartyListBundle::default());
+                        });
                     parent.spawn(CharacterListBundle::default());
                 });
             parent
@@ -132,14 +153,35 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         &assets,
                         CampButton,
                         assets.campfire_icon.clone(),
-                        "Make camp",
+                        "Make/Enter camp",
                     );
                     spawn_toolbar_icon(
                         parent,
                         &assets,
                         BreakCampButton,
-                        assets.knapsack_icon.clone(),
+                        assets.cancel_icon.clone(),
                         "Break camp",
+                    );
+                    spawn_toolbar_icon(
+                        parent,
+                        &assets,
+                        CreatePartyButton,
+                        assets.knapsack_icon.clone(),
+                        "Create party",
+                    );
+                    spawn_toolbar_icon(
+                        parent,
+                        &assets,
+                        SplitPartyButton,
+                        assets.back_forth_icon.clone(),
+                        "Split selected from party",
+                    );
+                    spawn_toolbar_icon(
+                        parent,
+                        &assets,
+                        MergePartyButton,
+                        assets.contract_icon.clone(),
+                        "Merge selected parties",
                     );
                 });
             parent
@@ -222,12 +264,20 @@ pub fn handle_turn_button_interaction(
 
 pub fn handle_camp_button_interaction(
     interaction_query: Query<&Interaction, (With<CampButton>, Changed<Interaction>)>,
-    party_query: Query<(Entity, &Selection), With<Party>>,
+    party_query: Query<(Entity, &MapPresence, &Selection), With<Party>>,
+    map_query: Query<&GameMap>,
+    camp_query: Query<Entity, With<Camp>>,
     mut game_action_event: EventWriter<GameAction>,
 ) {
     if let Ok(Interaction::Clicked) = interaction_query.get_single() {
-        for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
-            game_action_event.send(GameAction::MakeCamp(entity));
+        for (entity, presence, _) in party_query.iter().filter(|(_, _, s)| s.selected()) {
+            let Ok(map) = map_query.get(presence.map) else { continue };
+            if let Some(camp_entity) = camp_query.iter_many(map.presence(presence.position)).next()
+            {
+                game_action_event.send(GameAction::EnterCamp(entity, camp_entity));
+            } else {
+                game_action_event.send(GameAction::MakeCamp(entity));
+            }
         }
     }
 }
@@ -241,5 +291,59 @@ pub fn handle_break_camp_button_interaction(
         for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
             game_action_event.send(GameAction::BreakCamp(entity));
         }
+    }
+}
+
+pub fn handle_create_party_button_interaction(
+    interaction_query: Query<&Interaction, (With<CreatePartyButton>, Changed<Interaction>)>,
+    camp_query: Query<(Entity, &Group, &Selection), With<Camp>>,
+    character_query: Query<(Entity, &Selection), With<Character>>,
+    mut game_action_event: EventWriter<GameAction>,
+) {
+    let Ok(Interaction::Clicked) = interaction_query.get_single() else { return };
+    for (entity, group, _) in camp_query.iter().filter(|(_, _, s)| s.selected()) {
+        let selected: SmallVec<[Entity; 8]> = character_query
+            .iter_many(&group.members)
+            .filter(|(_, s)| s.selected())
+            .map(|(e, _)| e)
+            .collect();
+        if !selected.is_empty() {
+            game_action_event.send(GameAction::CreatePartyFromCamp(entity, selected));
+        }
+    }
+}
+
+pub fn handle_split_party_button_interaction(
+    interaction_query: Query<&Interaction, (With<SplitPartyButton>, Changed<Interaction>)>,
+    party_query: Query<(Entity, &Group, &Selection), With<Party>>,
+    character_query: Query<(Entity, &Selection), With<Character>>,
+    mut game_action_event: EventWriter<GameAction>,
+) {
+    let Ok(Interaction::Clicked) = interaction_query.get_single() else { return };
+    for (entity, group, _) in party_query.iter().filter(|(_, _, s)| s.selected()) {
+        let selected: SmallVec<[Entity; 8]> = character_query
+            .iter_many(&group.members)
+            .filter(|(_, s)| s.selected())
+            .map(|(e, _)| e)
+            .collect();
+        if !selected.is_empty() {
+            game_action_event.send(GameAction::SplitParty(entity, selected));
+        }
+    }
+}
+
+pub fn handle_merge_party_button_interaction(
+    interaction_query: Query<&Interaction, (With<MergePartyButton>, Changed<Interaction>)>,
+    party_query: Query<(Entity, &Selection), With<Party>>,
+    mut game_action_event: EventWriter<GameAction>,
+) {
+    let Ok(Interaction::Clicked) = interaction_query.get_single() else { return };
+    let selected_parties: SmallVec<[Entity; 8]> = party_query
+        .iter()
+        .filter(|(_, s)| s.selected())
+        .map(|(e, _)| e)
+        .collect();
+    if !selected_parties.is_empty() {
+        game_action_event.send(GameAction::MergeParty(selected_parties));
     }
 }

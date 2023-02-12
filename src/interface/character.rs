@@ -5,7 +5,7 @@ use super::{
 use crate::{
     character::Character,
     input::{Action, ActionState},
-    party::Party,
+    party::{Group, Party},
 };
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use bevy_mod_picking::Selection;
@@ -29,7 +29,7 @@ impl Default for CharacterListBundle {
         Self {
             node_bundle: NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Px(200.0), Val::Percent(100.0)),
+                    size: Size::new(Val::Px(200.0), Val::Auto),
                     flex_direction: FlexDirection::Column,
                     ..default()
                 },
@@ -86,7 +86,7 @@ pub fn update_character_list(
     assets: Res<InterfaceAssets>,
     character_list_query: Query<Entity, With<CharacterList>>,
     character_query: Query<(Entity, &Character)>,
-    party_query: Query<(&Party, &Selection), Without<Character>>,
+    party_query: Query<(&Group, &Selection), Without<Character>>,
     character_display_query: Query<(Entity, &CharacterDisplay)>,
     mut selection_query: Query<&mut Selection, With<Character>>,
 ) {
@@ -95,7 +95,7 @@ pub fn update_character_list(
     let characters = party_query
         .iter()
         .filter(|(_, selection)| selection.selected())
-        .flat_map(|(party, _)| party.members.iter());
+        .flat_map(|(group, _)| group.members.iter());
     for (entity, character) in character_query.iter_many(characters) {
         if !character_display_query
             .iter()

@@ -6,7 +6,7 @@ use explore_game::{
     action::ActionPlugin,
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
-    character::Character,
+    character::{reset_movement_points, Character, Movement},
     hex::{coord_to_vec3, Hexagon},
     hexgrid::spiral,
     indicator::update_indicator,
@@ -14,15 +14,15 @@ use explore_game::{
     interface::InterfacePlugin,
     map::{
         spawn_game_map_from_prototype, start_map_generation, AddMapPresence, GameMap,
-        GenerateMapTask, HexCoord, MapEvent, MapPlugin, MapPosition, MapPresence, MapSeed, Offset,
-        Terrain, ViewRadius, Zone, ZoneBundle,
+        GenerateMapTask, HexCoord, MapEvent, MapPlugin, MapPosition, MapPresence, MapSeed, Terrain,
+        Zone, ZoneBundle,
     },
     material::{ZoneMaterial, ZoneMaterialPlugin},
-    party::{reset_movement_points, JoinParty, Party, PartyBundle, PartyMember},
+    party::{derive_party_movement, despawn_empty_party, spawn_party, JoinGroup},
     slide::{slide, SlideEvent},
     turn::Turn,
     wfc::{Seed, SeedType},
-    State, VIEW_RADIUS,
+    State,
 };
 use futures_lite::future;
 use smallvec::SmallVec;
@@ -94,6 +94,8 @@ fn main() {
                 .with_system(log_moves)
                 .with_system(update_indicator)
                 .with_system(reset_movement_points)
+                .with_system(derive_party_movement)
+                .with_system(despawn_empty_party)
                 .with_system(slide),
         )
         .run();
@@ -189,43 +191,11 @@ fn spawn_zone(
         .id()
 }
 
-fn spawn_party(
-    commands: &mut Commands,
-    assets: &Res<MainAssets>,
-    standard_materials: &mut ResMut<Assets<StandardMaterial>>,
-    position: HexCoord,
-    color: Color,
-    name: String,
-) -> Entity {
-    let offset = Vec3::new(0.0, 1.0, 0.0);
-    commands
-        .spawn((
-            PbrBundle {
-                mesh: assets.indicator_mesh.clone(),
-                material: standard_materials.add(color.into()),
-                transform: Transform::from_translation(coord_to_vec3(position) + offset),
-                ..default()
-            },
-            PartyBundle {
-                party: Party {
-                    name,
-                    movement_points: 2,
-                    supplies: 1,
-                    members: SmallVec::new(),
-                },
-                offset: Offset(offset),
-                view_radius: ViewRadius(VIEW_RADIUS),
-                ..default()
-            },
-        ))
-        .id()
-}
-
 fn spawn_scene(
     mut commands: Commands,
+    mut spawn_party_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
     assets: Res<MainAssets>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     mut generate_map_task: Query<(Entity, &mut GenerateMapTask)>,
 ) {
@@ -264,11 +234,10 @@ fn spawn_scene(
         .unwrap();
     let alpha_group = spawn_party(
         &mut commands,
-        &assets,
-        &mut standard_materials,
+        &mut spawn_party_params,
         groupcoord,
-        Color::rgb(0.165, 0.631, 0.596),
         String::from("Alpha Group"),
+        1,
     );
     commands.add(AddMapPresence {
         map,
@@ -280,20 +249,21 @@ fn spawn_scene(
             Character {
                 name: String::from("Alice"),
             },
+            Movement { points: 2 },
             Selection::default(),
         ))
-        .insert(PartyMember { party: alpha_group })
         .id();
     let character2 = commands
         .spawn((
             Character {
                 name: String::from("Bob"),
             },
+            Movement { points: 2 },
             Selection::default(),
         ))
         .id();
-    commands.add(JoinParty {
-        party: alpha_group,
+    commands.add(JoinGroup {
+        group: alpha_group,
         members: SmallVec::from_slice(&[character1, character2]),
     });
 
@@ -302,11 +272,10 @@ fn spawn_scene(
         .unwrap();
     let beta_group = spawn_party(
         &mut commands,
-        &assets,
-        &mut standard_materials,
+        &mut spawn_party_params,
         groupcoord,
-        Color::rgb(0.596, 0.165, 0.631),
         String::from("Beta Group"),
+        1,
     );
     commands.add(AddMapPresence {
         map,
@@ -318,11 +287,12 @@ fn spawn_scene(
             Character {
                 name: String::from("Carol"),
             },
+            Movement { points: 2 },
             Selection::default(),
         ))
         .id();
-    commands.add(JoinParty {
-        party: beta_group,
+    commands.add(JoinGroup {
+        group: beta_group,
         members: SmallVec::from_slice(&[character3]),
     });
 }
