@@ -26,6 +26,7 @@ pub enum GameAction {
     BreakCamp(Entity),
     EnterCamp(Entity, Entity),
     SplitParty(Entity, SmallVec<[Entity; 8]>),
+    MergeParty(SmallVec<[Entity; 8]>),
     CreatePartyFromCamp(Entity, SmallVec<[Entity; 8]>),
     Save(),
 }
@@ -47,7 +48,8 @@ impl Plugin for ActionPlugin {
                     .with_system(handle_break_camp)
                     .with_system(handle_enter_camp)
                     .with_system(handle_create_party_from_camp)
-                    .with_system(handle_split_party),
+                    .with_system(handle_split_party)
+                    .with_system(handle_merge_party),
             )
             .add_system_set(
                 SystemSet::new()
@@ -372,6 +374,39 @@ pub fn handle_split_party(
         commands.add(JoinGroup {
             group: new_party,
             members: characters.clone(),
+        });
+    }
+}
+
+pub fn handle_merge_party(
+    mut commands: Commands,
+    mut events: EventReader<GameAction>,
+    mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
+) {
+    for event in events.iter() {
+        let GameAction::MergeParty(parties) = event else { continue };
+        let [target, rest @ ..] = parties.as_slice() else { continue };
+        let target_position = party_query
+            .get(*target)
+            .map(|(_, _, p)| p.position)
+            .unwrap();
+        let mut characters = SmallVec::<[Entity; 8]>::new();
+        let mut supplies = 0;
+        let mut iter = party_query.iter_many_mut(rest);
+        while let Some((mut party, group, presence)) = iter.fetch_next() {
+            if presence.position != target_position {
+                info!("Skipping party in other location");
+                continue;
+            }
+            supplies += party.supplies;
+            party.supplies = 0;
+            characters.append(&mut group.members.clone());
+        }
+        let (mut party, _, _) = party_query.get_mut(*target).unwrap();
+        party.supplies += supplies;
+        commands.add(JoinGroup {
+            group: *target,
+            members: characters,
         });
     }
 }

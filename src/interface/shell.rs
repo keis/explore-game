@@ -45,6 +45,9 @@ pub struct CreatePartyButton;
 #[derive(Component)]
 pub struct SplitPartyButton;
 
+#[derive(Component)]
+pub struct MergePartyButton;
+
 fn spawn_toolbar_icon(
     parent: &mut ChildBuilder,
     assets: &Res<InterfaceAssets>,
@@ -172,6 +175,13 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         SplitPartyButton,
                         assets.back_forth_icon.clone(),
                         "Split selected from party",
+                    );
+                    spawn_toolbar_icon(
+                        parent,
+                        &assets,
+                        MergePartyButton,
+                        assets.contract_icon.clone(),
+                        "Merge selected parties",
                     );
                 });
             parent
@@ -319,5 +329,21 @@ pub fn handle_split_party_button_interaction(
         if !selected.is_empty() {
             game_action_event.send(GameAction::SplitParty(entity, selected));
         }
+    }
+}
+
+pub fn handle_merge_party_button_interaction(
+    interaction_query: Query<&Interaction, (With<MergePartyButton>, Changed<Interaction>)>,
+    party_query: Query<(Entity, &Selection), With<Party>>,
+    mut game_action_event: EventWriter<GameAction>,
+) {
+    let Ok(Interaction::Clicked) = interaction_query.get_single() else { return };
+    let selected_parties: SmallVec<[Entity; 8]> = party_query
+        .iter()
+        .filter(|(_, s)| s.selected())
+        .map(|(e, _)| e)
+        .collect();
+    if !selected_parties.is_empty() {
+        game_action_event.send(GameAction::MergeParty(selected_parties));
     }
 }
