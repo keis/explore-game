@@ -53,7 +53,7 @@ pub fn update_path_mesh(path: Path, mesh: &mut Mesh) {
     let indextmpl = vec![0, 1, 3, 0, 3, 2];
     let indices = Indices::U32(
         (0..path.steps)
-            .map(|idx| (idx * 2) as u32)
+            .map(|idx| idx * 2)
             .flat_map(|a| indextmpl.iter().map(move |b| a + b))
             .collect(),
     );

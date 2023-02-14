@@ -1,7 +1,7 @@
 use crate::hex::coord_to_vec3;
-use crate::map::{MapPresence, PathGuided};
+use crate::map::PathGuided;
 use crate::path::{path_mesh, update_path_mesh, Path};
-use bevy::prelude::*;
+use bevy::{pbr::NotShadowCaster, prelude::*};
 use splines::{Interpolation, Key, Spline};
 use std::iter;
 
@@ -11,13 +11,13 @@ pub struct PathDisplay {
 }
 
 pub fn update_path_display(
-    path_guided_query: Query<(Entity, &MapPresence, &PathGuided), Changed<PathGuided>>,
+    path_guided_query: Query<(Entity, &PathGuided), Changed<PathGuided>>,
     path_display_query: Query<(Entity, &PathDisplay, &mut Handle<Mesh>)>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut commands: Commands,
 ) {
-    for (entity, presence, path_guided) in path_guided_query.iter() {
+    for (entity, path_guided) in path_guided_query.iter() {
         if path_guided.path.is_empty() {
             if let Some((path_display_entity, _, _)) = path_display_query
                 .iter()
@@ -28,20 +28,34 @@ pub fn update_path_display(
             continue;
         }
 
+        let start = path_guided.current().unwrap();
+        let mut prev = coord_to_vec3(start);
+        let end = *path_guided.last().unwrap();
         let path = Path {
             spline: Spline::from_iter(
-                iter::once(&presence.position)
-                    .chain(path_guided.path.iter())
-                    .enumerate()
-                    .map(|(idx, pos)| {
-                        Key::new(
-                            idx as f32 * (1.0 / path_guided.path.len() as f32),
-                            coord_to_vec3(*pos),
-                            Interpolation::default(),
-                        )
-                    }),
+                iter::once(Key::new(
+                    0.0,
+                    coord_to_vec3(start),
+                    Interpolation::default(),
+                ))
+                .chain(path_guided.path.iter().enumerate().map(|(idx, &pos)| {
+                    let new = coord_to_vec3(pos);
+                    let edge = prev + (new - prev) / 2.0;
+                    let interpolation = Interpolation::Bezier(new);
+                    prev = new;
+                    Key::new(
+                        (idx + 1) as f32 * (1.0 / (path_guided.path.len() + 1) as f32),
+                        edge,
+                        interpolation,
+                    )
+                }))
+                .chain(iter::once(Key::new(
+                    1.0,
+                    coord_to_vec3(end),
+                    Interpolation::default(),
+                ))),
             ),
-            steps: 40,
+            steps: 16 * (path_guided.path.len() as u32 + 1),
             stroke: 0.05,
         };
 
@@ -62,6 +76,7 @@ pub fn update_path_display(
                     transform: Transform::from_translation(Vec3::new(0.0, 0.5, 0.0)),
                     ..default()
                 },
+                NotShadowCaster,
             ));
         }
     }
