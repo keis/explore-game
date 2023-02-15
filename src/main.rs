@@ -8,7 +8,7 @@ use explore_game::{
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     character::{reset_movement_points, Character, Movement},
     hex::{coord_to_vec3, Hexagon},
-    hexgrid::spiral,
+    hexgrid::{spiral, GridLayout},
     indicator::update_indicator,
     input::InputPlugin,
     interface::InterfacePlugin,
@@ -128,8 +128,8 @@ fn log_moves(
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Camera3dBundle {
-            transform: Transform::from_xyz(10.0, 20.0, 40.0)
-                .looking_at(Vec3::new(8.0, 0.0, 20.0), Vec3::Y),
+            transform: Transform::from_xyz(30.0, 20.0, 40.0)
+                .looking_at(Vec3::new(28.0, 0.0, 20.0), Vec3::Y),
             ..default()
         },
         CameraBounds {
@@ -229,7 +229,7 @@ fn spawn_scene(
             )
         });
 
-    let groupcoord = spiral((2, 6).into())
+    let groupcoord = spiral(prototype.layout.center())
         .find(|&c| prototype.get(c).map_or(false, |&t| t != Terrain::Ocean))
         .unwrap();
     let alpha_group = spawn_party(
@@ -262,26 +262,6 @@ fn spawn_scene(
             Selection::default(),
         ))
         .id();
-    commands.add(JoinGroup {
-        group: alpha_group,
-        members: SmallVec::from_slice(&[character1, character2]),
-    });
-
-    let groupcoord = spiral((4, 5).into())
-        .find(|&c| prototype.get(c).map_or(false, |&t| t != Terrain::Ocean))
-        .unwrap();
-    let beta_group = spawn_party(
-        &mut commands,
-        &mut spawn_party_params,
-        groupcoord,
-        String::from("Beta Group"),
-        1,
-    );
-    commands.add(AddMapPresence {
-        map,
-        presence: beta_group,
-        position: groupcoord,
-    });
     let character3 = commands
         .spawn((
             Character {
@@ -292,8 +272,8 @@ fn spawn_scene(
         ))
         .id();
     commands.add(JoinGroup {
-        group: beta_group,
-        members: SmallVec::from_slice(&[character3]),
+        group: alpha_group,
+        members: SmallVec::from_slice(&[character1, character2, character3]),
     });
 }
 
