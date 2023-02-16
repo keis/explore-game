@@ -123,6 +123,8 @@ where
                 self.grid[neighbour].set_alternatives(&alternatives)
             }
         }
+        // Because self.rejected refers to the cell at `last_coord` it is important this is the
+        // next cell that gets collapsed. This could probably be done in some better way.
         self.rejected = Some(last_rejected);
         self.queue.push(last_coord);
     }
@@ -131,21 +133,22 @@ where
         let coord = self.queue.pop()?;
         self.grid[coord].collapse(&mut self.rand);
         if let Cell::Collapsed(tile) = self.grid[coord] {
+            let rejected = self.rejected.replace(Vec::new()).unwrap();
             assert!(tile <= self.template.available_tiles());
-            self.collapsed
-                .push((coord, tile, self.rejected.replace(Vec::new()).unwrap()));
+            assert!(!rejected.contains(&tile));
+            self.collapsed.push((coord, tile, rejected));
             self.propagate(coord, tile);
+            self.queue.sort_by_key(|e| match self.grid[*e] {
+                Cell::Collapsed(tile) => {
+                    panic!("Collapsed cell in queue {:?} {:?}", e, tile,);
+                }
+                Cell::Alternatives(num_alts, _) => (Reverse(num_alts), e.q, e.r),
+            });
+            self.queue.dedup();
         } else {
-            self.rewind();
             self.queue.push(coord);
+            self.rewind();
         }
-        self.queue.sort_by_key(|e| match self.grid[*e] {
-            Cell::Collapsed(tile) => {
-                panic!("Collapsed cell in queue {:?} {:?}", e, tile,);
-            }
-            Cell::Alternatives(num_alts, _) => (Reverse(num_alts), e.q, e.r),
-        });
-        self.queue.dedup();
         Some(())
     }
 

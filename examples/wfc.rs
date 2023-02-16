@@ -32,6 +32,8 @@ struct Cli {
     command: Command,
     #[arg(global = true, long)]
     seed: Option<Seed>,
+    #[arg(global = true, long)]
+    verbose: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -51,21 +53,26 @@ struct SquareArgs {
     height: u16,
 }
 
-fn generate_map<Layout>(template: &Template<Terrain>, generator: &mut Generator<Layout, Terrain>)
-where
+fn generate_map<Layout>(
+    template: &Template<Terrain>,
+    generator: &mut Generator<Layout, Terrain>,
+    verbose: bool,
+) where
     Layout: GridLayout,
     Grid<Layout, Terrain>: DumpGrid,
     Grid<Layout, Cell>: DumpGridWith<Item = Cell>,
 {
     while generator.step().is_some() {
-        generator
-            .grid
-            .dump_with(&mut io::stdout(), |cell| match cell {
-                Cell::Collapsed(tile) => template.contribution(*tile).into(),
-                Cell::Alternatives(alts, _) if alts < &template.available_tiles() => '?',
-                Cell::Alternatives(_, _) => '.',
-            })
-            .unwrap();
+        if verbose {
+            generator
+                .grid
+                .dump_with(&mut io::stdout(), |cell| match cell {
+                    Cell::Collapsed(tile) => template.contribution(*tile).into(),
+                    Cell::Alternatives(alts, _) if alts < &template.available_tiles() => '?',
+                    Cell::Alternatives(_, _) => '.',
+                })
+                .unwrap();
+        }
     }
     let output = generator.export().unwrap();
     output.dump(&mut io::stdout()).unwrap();
@@ -85,7 +92,7 @@ fn main() -> Result<(), &'static str> {
             println!("Generating map with seed {}", seed);
             let mut generator: Generator<HexagonalGridLayout, Terrain> =
                 Generator::new_with_seed(&template, seed)?;
-            generate_map(&template, &mut generator);
+            generate_map(&template, &mut generator, args.verbose);
             Ok(())
         }
         Command::Square(params) => {
@@ -95,7 +102,7 @@ fn main() -> Result<(), &'static str> {
             println!("Generating map with seed {}", seed);
             let mut generator: Generator<SquareGridLayout, Terrain> =
                 Generator::new_with_seed(&template, seed)?;
-            generate_map(&template, &mut generator);
+            generate_map(&template, &mut generator, args.verbose);
             Ok(())
         }
     }
