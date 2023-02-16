@@ -1,5 +1,4 @@
-use crate::hex::coord_to_vec3;
-use crate::map::PathGuided;
+use super::{coord_to_vec3, PathGuided};
 use crate::path::{path_mesh, update_path_mesh, Path};
 use bevy::{pbr::NotShadowCaster, prelude::*};
 use splines::{Interpolation, Key, Spline};

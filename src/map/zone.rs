@@ -1,4 +1,5 @@
-use super::{Fog, MapPosition};
+use super::{coord_to_vec3, Fog, HexAssets, HexCoord, MapPosition};
+use crate::{assets::MainAssets, material::ZoneMaterial};
 use bevy::prelude::*;
 use rand::{
     distributions::{Distribution, Standard},
@@ -67,4 +68,57 @@ pub struct ZoneBundle {
     pub hover: bevy_mod_picking::Hover,
     pub no_deselect: bevy_mod_picking::NoDeselect,
     pub interaction: Interaction,
+}
+
+fn zone_material(assets: &Res<MainAssets>, terrain: Terrain) -> ZoneMaterial {
+    match terrain {
+        Terrain::Ocean => ZoneMaterial {
+            cloud_texture: Some(assets.cloud_texture.clone()),
+            terrain_texture: Some(assets.ocean_texture.clone()),
+            visible: 1,
+            explored: 1,
+        },
+        Terrain::Mountain => ZoneMaterial {
+            cloud_texture: Some(assets.cloud_texture.clone()),
+            terrain_texture: Some(assets.mountain_texture.clone()),
+            visible: 1,
+            explored: 1,
+        },
+        Terrain::Forest => ZoneMaterial {
+            cloud_texture: Some(assets.cloud_texture.clone()),
+            terrain_texture: Some(assets.forest_texture.clone()),
+            visible: 1,
+            explored: 1,
+        },
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn spawn_zone(
+    commands: &mut Commands,
+    params: &mut ParamSet<(
+        Res<MainAssets>,
+        Res<HexAssets>,
+        ResMut<Assets<ZoneMaterial>>,
+    )>,
+    position: HexCoord,
+    terrain: Terrain,
+) -> Entity {
+    let material = zone_material(&params.p0(), terrain);
+    commands
+        .spawn((
+            ZoneBundle {
+                position: MapPosition(position),
+                zone: Zone { terrain },
+                ..default()
+            },
+            MaterialMeshBundle {
+                mesh: params.p1().mesh.clone(),
+                material: params.p2().add(material),
+                transform: Transform::from_translation(coord_to_vec3(position))
+                    .with_rotation(Quat::from_rotation_y((90f32).to_radians())),
+                ..default()
+            },
+        ))
+        .id()
 }

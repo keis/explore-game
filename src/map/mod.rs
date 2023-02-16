@@ -1,6 +1,8 @@
-use crate::hexgrid::layout::SquareGridLayout;
-use crate::hexgrid::{Grid, GridLayout};
-use crate::State;
+use crate::{
+    hexgrid::layout::SquareGridLayout,
+    hexgrid::{Grid, GridLayout},
+    State,
+};
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use pathfinding::prelude::astar;
 use std::collections::hash_set::HashSet;
@@ -9,6 +11,7 @@ mod commands;
 mod events;
 mod fog;
 mod generator;
+mod hex;
 mod pathdisplay;
 mod pathguided;
 mod position;
@@ -20,11 +23,12 @@ pub use commands::{AddMapPresence, DespawnPresence, MoveMapPresence};
 pub use events::MapEvent;
 pub use fog::Fog;
 pub use generator::{start_map_generation, GenerateMapTask, MapSeed};
+pub use hex::{coord_to_vec3, Hexagon};
 pub use pathdisplay::PathDisplay;
 pub use pathguided::PathGuided;
 pub use position::MapPosition;
 pub use presence::{MapPresence, Offset, ViewRadius};
-pub use zone::{Terrain, Zone, ZoneBundle};
+pub use zone::{spawn_zone, Terrain, Zone, ZoneBundle};
 
 #[derive(Component)]
 pub struct GameMap {
@@ -103,9 +107,21 @@ fn damage(mut entered_event: EventReader<MapEvent>, mut damaged: ResMut<Damaged>
 
 pub struct MapPlugin;
 
+#[derive(Resource)]
+pub struct HexAssets {
+    pub mesh: Handle<Mesh>,
+}
+
+fn insert_hex_assets(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
+    commands.insert_resource(HexAssets {
+        mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
+    });
+}
+
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Damaged(true))
+            .add_startup_system(insert_hex_assets)
             .add_system_set(
                 SystemSet::new()
                     .with_run_criteria(run_if_damaged)

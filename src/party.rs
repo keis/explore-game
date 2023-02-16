@@ -1,9 +1,8 @@
 use crate::{
     assets::MainAssets,
     character::Movement,
-    hex::coord_to_vec3,
     indicator::Indicator,
-    map::{DespawnPresence, HexCoord, MapPresence, Offset, PathGuided, ViewRadius},
+    map::{coord_to_vec3, DespawnPresence, HexCoord, MapPresence, Offset, PathGuided, ViewRadius},
     slide::Slide,
     VIEW_RADIUS,
 };

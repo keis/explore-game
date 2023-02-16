@@ -2,7 +2,7 @@ use bevy::{prelude::*, render::mesh::Indices, render::mesh::PrimitiveTopology};
 pub const HEX_RADIUS_RATIO: f32 = 0.866_025_4;
 pub const HEX_RADIUS: f32 = 1.0;
 
-use crate::map::HexCoord;
+use super::HexCoord;
 
 pub struct Hexagon {
     pub radius: f32,
@@ -62,8 +62,7 @@ impl From<Hexagon> for Mesh {
 }
 #[cfg(test)]
 mod tests {
-    use crate::hex::{coord_to_vec3, HEX_RADIUS_RATIO};
-    use crate::map::HexCoord;
+    use super::{coord_to_vec3, HexCoord, HEX_RADIUS_RATIO};
     use bevy::prelude::*;
 
     #[test]
