@@ -125,10 +125,12 @@ impl Plugin for MapPlugin {
             .add_system_set(
                 SystemSet::new()
                     .with_run_criteria(run_if_damaged)
-                    .with_system(presence::update_visibility),
+                    .with_system(presence::update_zone_visibility),
             )
             .add_system_set(
-                SystemSet::on_update(State::Running).with_system(pathdisplay::update_path_display),
+                SystemSet::on_update(State::Running)
+                    .with_system(pathdisplay::update_path_display)
+                    .with_system(presence::update_enemy_visibility),
             )
             .add_system_to_stage(CoreStage::PostUpdate, damage)
             .add_event::<MapEvent>();

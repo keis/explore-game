@@ -7,7 +7,8 @@ use explore_game::{
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     character::{reset_movement_points, spawn_character},
-    hexgrid::{spiral, GridLayout},
+    enemy::spawn_enemy,
+    hexgrid::{spiral, GridLayout, HexCoord},
     indicator::update_indicator,
     input::InputPlugin,
     interface::InterfacePlugin,
@@ -143,11 +144,17 @@ fn spawn_camera(mut commands: Commands) {
 #[allow(clippy::type_complexity)]
 fn spawn_scene(
     mut commands: Commands,
-    mut spawn_party_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
-    mut spawn_zone_params: ParamSet<(
-        Res<MainAssets>,
-        Res<HexAssets>,
-        ResMut<Assets<ZoneMaterial>>,
+    mut params: ParamSet<(
+        // spawn_party params
+        ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
+        // spawn_zone params
+        ParamSet<(
+            Res<MainAssets>,
+            Res<HexAssets>,
+            ResMut<Assets<ZoneMaterial>>,
+        )>,
+        // spawn_enemy params
+        ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
     )>,
     mut generate_map_task: Query<(Entity, &mut GenerateMapTask)>,
 ) {
@@ -170,7 +177,7 @@ fn spawn_scene(
 
     let map =
         spawn_game_map_from_prototype(&mut commands, &prototype, |commands, position, terrain| {
-            spawn_zone(commands, &mut spawn_zone_params, position, terrain)
+            spawn_zone(commands, &mut params.p1(), position, terrain)
         });
 
     let groupcoord = spiral(prototype.layout.center())
@@ -178,7 +185,7 @@ fn spawn_scene(
         .unwrap();
     let alpha_group = spawn_party(
         &mut commands,
-        &mut spawn_party_params,
+        &mut params.p0(),
         groupcoord,
         String::from("Alpha Group"),
         1,
@@ -194,6 +201,16 @@ fn spawn_scene(
     commands.add(JoinGroup {
         group: alpha_group,
         members: SmallVec::from_slice(&[character1, character2, character3]),
+    });
+
+    let enemycoord = spiral(prototype.layout.center() + HexCoord::new(2, 3))
+        .find(|&c| prototype.get(c).map_or(false, |&t| t != Terrain::Ocean))
+        .unwrap();
+    let enemy = spawn_enemy(&mut commands, &mut params.p2(), enemycoord);
+    commands.add(AddMapPresence {
+        map,
+        presence: enemy,
+        position: enemycoord,
     });
 }
 

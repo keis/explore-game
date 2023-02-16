@@ -15,4 +15,6 @@ pub struct MainAssets {
     pub indicator_mesh: Handle<Mesh>,
     #[asset(path = "models/tent.stl")]
     pub tent_mesh: Handle<Mesh>,
+    #[asset(path = "models/blob.stl")]
+    pub blob_mesh: Handle<Mesh>,
 }
