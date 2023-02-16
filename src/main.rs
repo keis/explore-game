@@ -1,12 +1,12 @@
 use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
-use bevy_mod_picking::{PickingCameraBundle, Selection};
+use bevy_mod_picking::PickingCameraBundle;
 use clap::Parser;
 use explore_game::{
     action::ActionPlugin,
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
-    character::{reset_movement_points, Character, Movement},
+    character::{reset_movement_points, spawn_character},
     hex::{coord_to_vec3, Hexagon},
     hexgrid::{spiral, GridLayout},
     indicator::update_indicator,
@@ -244,33 +244,9 @@ fn spawn_scene(
         presence: alpha_group,
         position: groupcoord,
     });
-    let character1 = commands
-        .spawn((
-            Character {
-                name: String::from("Alice"),
-            },
-            Movement { points: 2 },
-            Selection::default(),
-        ))
-        .id();
-    let character2 = commands
-        .spawn((
-            Character {
-                name: String::from("Bob"),
-            },
-            Movement { points: 2 },
-            Selection::default(),
-        ))
-        .id();
-    let character3 = commands
-        .spawn((
-            Character {
-                name: String::from("Carol"),
-            },
-            Movement { points: 2 },
-            Selection::default(),
-        ))
-        .id();
+    let character1 = spawn_character(&mut commands, String::from("Alice"));
+    let character2 = spawn_character(&mut commands, String::from("Bob"));
+    let character3 = spawn_character(&mut commands, String::from("Carol"));
     commands.add(JoinGroup {
         group: alpha_group,
         members: SmallVec::from_slice(&[character1, character2, character3]),
