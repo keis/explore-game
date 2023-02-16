@@ -1,5 +1,8 @@
 use bevy::math::IVec3;
-use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
+use std::{
+    fmt,
+    ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
+};
 
 /// Represents a position on a hexagonal grid with axial coordinates
 /// https://www.redblobgames.com/grids/hexagons/#coordinates
@@ -46,6 +49,12 @@ impl HexCoord {
         HexCoord::NEIGHBOUR_OFFSETS
             .iter()
             .map(|offset| *self + *offset)
+    }
+}
+
+impl fmt::Display for HexCoord {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "q{}r{}", self.q, self.r)
     }
 }
 
