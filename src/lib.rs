@@ -3,7 +3,7 @@ pub mod assets;
 pub mod camera;
 pub mod camp;
 pub mod character;
-pub mod hex;
+pub mod enemy;
 pub mod hexgrid;
 pub mod indicator;
 pub mod input;

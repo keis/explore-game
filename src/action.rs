@@ -2,9 +2,8 @@ use crate::{
     assets::MainAssets,
     camp::{spawn_camp, Camp},
     character::Movement,
-    hex::coord_to_vec3,
     map::{
-        find_path, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence,
+        coord_to_vec3, find_path, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence,
         MoveMapPresence, Offset, PathGuided, Zone,
     },
     party::{spawn_party, Group, JoinGroup, Party},

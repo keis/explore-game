@@ -1,21 +1,20 @@
 use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
-use bevy_mod_picking::{PickingCameraBundle, Selection};
+use bevy_mod_picking::PickingCameraBundle;
 use clap::Parser;
 use explore_game::{
     action::ActionPlugin,
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
-    character::{reset_movement_points, Character, Movement},
-    hex::{coord_to_vec3, Hexagon},
-    hexgrid::spiral,
+    character::{reset_movement_points, spawn_character},
+    enemy::spawn_enemy,
+    hexgrid::{spiral, GridLayout, HexCoord},
     indicator::update_indicator,
     input::InputPlugin,
     interface::InterfacePlugin,
     map::{
-        spawn_game_map_from_prototype, start_map_generation, AddMapPresence, GameMap,
-        GenerateMapTask, HexCoord, MapEvent, MapPlugin, MapPosition, MapPresence, MapSeed, Terrain,
-        Zone, ZoneBundle,
+        spawn_game_map_from_prototype, spawn_zone, start_map_generation, AddMapPresence, GameMap,
+        GenerateMapTask, HexAssets, MapEvent, MapPlugin, MapPresence, MapSeed, Terrain,
     },
     material::{ZoneMaterial, ZoneMaterialPlugin},
     party::{derive_party_movement, despawn_empty_party, spawn_party, JoinGroup},
@@ -128,8 +127,8 @@ fn log_moves(
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Camera3dBundle {
-            transform: Transform::from_xyz(10.0, 20.0, 40.0)
-                .looking_at(Vec3::new(8.0, 0.0, 20.0), Vec3::Y),
+            transform: Transform::from_xyz(30.0, 20.0, 40.0)
+                .looking_at(Vec3::new(28.0, 0.0, 20.0), Vec3::Y),
             ..default()
         },
         CameraBounds {
@@ -142,61 +141,21 @@ fn spawn_camera(mut commands: Commands) {
     ));
 }
 
-fn zone_material(assets: &Res<MainAssets>, terrain: Terrain) -> ZoneMaterial {
-    match terrain {
-        Terrain::Ocean => ZoneMaterial {
-            cloud_texture: Some(assets.cloud_texture.clone()),
-            terrain_texture: Some(assets.ocean_texture.clone()),
-            visible: 1,
-            explored: 1,
-        },
-        Terrain::Mountain => ZoneMaterial {
-            cloud_texture: Some(assets.cloud_texture.clone()),
-            terrain_texture: Some(assets.mountain_texture.clone()),
-            visible: 1,
-            explored: 1,
-        },
-        Terrain::Forest => ZoneMaterial {
-            cloud_texture: Some(assets.cloud_texture.clone()),
-            terrain_texture: Some(assets.forest_texture.clone()),
-            visible: 1,
-            explored: 1,
-        },
-    }
-}
-
-fn spawn_zone(
-    commands: &mut Commands,
-    assets: &Res<MainAssets>,
-    hexmesh: &Handle<Mesh>,
-    zone_materials: &mut ResMut<Assets<ZoneMaterial>>,
-    position: HexCoord,
-    terrain: Terrain,
-) -> Entity {
-    commands
-        .spawn((
-            ZoneBundle {
-                position: MapPosition(position),
-                zone: Zone { terrain },
-                ..default()
-            },
-            MaterialMeshBundle {
-                mesh: hexmesh.clone(),
-                material: zone_materials.add(zone_material(assets, terrain)),
-                transform: Transform::from_translation(coord_to_vec3(position))
-                    .with_rotation(Quat::from_rotation_y((90f32).to_radians())),
-                ..default()
-            },
-        ))
-        .id()
-}
-
+#[allow(clippy::type_complexity)]
 fn spawn_scene(
     mut commands: Commands,
-    mut spawn_party_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
-    assets: Res<MainAssets>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut zone_materials: ResMut<Assets<ZoneMaterial>>,
+    mut params: ParamSet<(
+        // spawn_party params
+        ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
+        // spawn_zone params
+        ParamSet<(
+            Res<MainAssets>,
+            Res<HexAssets>,
+            ResMut<Assets<ZoneMaterial>>,
+        )>,
+        // spawn_enemy params
+        ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
+    )>,
     mut generate_map_task: Query<(Entity, &mut GenerateMapTask)>,
 ) {
     if generate_map_task.is_empty() {
@@ -216,25 +175,17 @@ fn spawn_scene(
         None => return,
     };
 
-    let hexmesh = meshes.add(Mesh::from(Hexagon { radius: 1.0 }));
     let map =
         spawn_game_map_from_prototype(&mut commands, &prototype, |commands, position, terrain| {
-            spawn_zone(
-                commands,
-                &assets,
-                &hexmesh,
-                &mut zone_materials,
-                position,
-                terrain,
-            )
+            spawn_zone(commands, &mut params.p1(), position, terrain)
         });
 
-    let groupcoord = spiral((2, 6).into())
+    let groupcoord = spiral(prototype.layout.center())
         .find(|&c| prototype.get(c).map_or(false, |&t| t != Terrain::Ocean))
         .unwrap();
     let alpha_group = spawn_party(
         &mut commands,
-        &mut spawn_party_params,
+        &mut params.p0(),
         groupcoord,
         String::from("Alpha Group"),
         1,
@@ -244,56 +195,22 @@ fn spawn_scene(
         presence: alpha_group,
         position: groupcoord,
     });
-    let character1 = commands
-        .spawn((
-            Character {
-                name: String::from("Alice"),
-            },
-            Movement { points: 2 },
-            Selection::default(),
-        ))
-        .id();
-    let character2 = commands
-        .spawn((
-            Character {
-                name: String::from("Bob"),
-            },
-            Movement { points: 2 },
-            Selection::default(),
-        ))
-        .id();
+    let character1 = spawn_character(&mut commands, String::from("Alice"));
+    let character2 = spawn_character(&mut commands, String::from("Bob"));
+    let character3 = spawn_character(&mut commands, String::from("Carol"));
     commands.add(JoinGroup {
         group: alpha_group,
-        members: SmallVec::from_slice(&[character1, character2]),
+        members: SmallVec::from_slice(&[character1, character2, character3]),
     });
 
-    let groupcoord = spiral((4, 5).into())
+    let enemycoord = spiral(prototype.layout.center() + HexCoord::new(2, 3))
         .find(|&c| prototype.get(c).map_or(false, |&t| t != Terrain::Ocean))
         .unwrap();
-    let beta_group = spawn_party(
-        &mut commands,
-        &mut spawn_party_params,
-        groupcoord,
-        String::from("Beta Group"),
-        1,
-    );
+    let enemy = spawn_enemy(&mut commands, &mut params.p2(), enemycoord);
     commands.add(AddMapPresence {
         map,
-        presence: beta_group,
-        position: groupcoord,
-    });
-    let character3 = commands
-        .spawn((
-            Character {
-                name: String::from("Carol"),
-            },
-            Movement { points: 2 },
-            Selection::default(),
-        ))
-        .id();
-    commands.add(JoinGroup {
-        group: beta_group,
-        members: SmallVec::from_slice(&[character3]),
+        presence: enemy,
+        position: enemycoord,
     });
 }
 

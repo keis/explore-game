@@ -4,9 +4,8 @@ use crate::{
     action::{GameAction, GameActionQueue},
     camera::{CameraControl, CameraTarget},
     character::Movement,
-    hex::coord_to_vec3,
     interface::MenuLayer,
-    map::{MapPosition, MapPresence, PathGuided, Zone},
+    map::{coord_to_vec3, MapPosition, MapPresence, PathGuided, Zone},
 };
 use bevy::prelude::*;
 use bevy_mod_picking::{DefaultPickingPlugins, PickingEvent, Selection};
