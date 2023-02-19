@@ -1,4 +1,7 @@
 use bevy::prelude::*;
+use interpolation::Ease;
+
+const SLIDE_SPEED: f32 = 1.7;
 
 #[derive(Component)]
 pub struct Slide {
@@ -30,8 +33,10 @@ pub fn slide(
         if slide.progress == 1.0 {
             continue;
         }
-        slide.progress = (slide.progress + time.delta_seconds()).clamp(0.0, 1.0);
-        transform.translation = slide.start.lerp(slide.end, slide.progress);
+        slide.progress = (slide.progress + time.delta_seconds() * SLIDE_SPEED).clamp(0.0, 1.0);
+        transform.translation = slide
+            .start
+            .lerp(slide.end, slide.progress.quadratic_in_out());
         if slide.progress == 1.0 {
             events.send(SlideEvent::Stopped);
         }
