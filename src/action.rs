@@ -3,8 +3,8 @@ use crate::{
     camp::{spawn_camp, Camp},
     character::Movement,
     map::{
-        coord_to_vec3, find_path, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence,
-        MoveMapPresence, Offset, PathGuided, Zone,
+        coord_to_vec3, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence,
+        MoveMapPresence, Offset, PathFinder, PathGuided,
     },
     party::{spawn_party, Group, JoinGroup, Party},
     slide::{Slide, SlideEvent},
@@ -156,23 +156,18 @@ pub fn handle_move_to(
     mut events: EventReader<GameAction>,
     mut queue: ResMut<GameActionQueue>,
     mut presence_query: Query<(&MapPresence, &Movement, &mut PathGuided)>,
-    zone_query: Query<&Zone>,
-    map_query: Query<&GameMap>,
+    path_finder: PathFinder,
 ) {
     // Use let_chains after rust 1.64
     for event in events.iter() {
         if let GameAction::MoveTo(e, goal) = event {
             queue.current.take();
             if let Ok((presence, party_movement, mut pathguided)) = presence_query.get_mut(*e) {
-                if let Ok(map) = map_query.get(presence.map) {
-                    if let Some((path, _length)) =
-                        find_path(map, &zone_query, presence.position, *goal)
-                    {
-                        pathguided.path(path);
-                        if party_movement.points > 0 {
-                            if let Some(next) = pathguided.next() {
-                                queue.add(GameAction::Move(*e, *next));
-                            }
+                if let Some((path, _length)) = path_finder.find_path(presence.position, *goal) {
+                    pathguided.path(path);
+                    if party_movement.points > 0 {
+                        if let Some(next) = pathguided.next() {
+                            queue.add(GameAction::Move(*e, *next));
                         }
                     }
                 }

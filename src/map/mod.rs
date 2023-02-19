@@ -3,7 +3,10 @@ use crate::{
     hexgrid::{Grid, GridLayout},
     State,
 };
-use bevy::{ecs::schedule::ShouldRun, prelude::*};
+use bevy::{
+    ecs::{schedule::ShouldRun, system::SystemParam},
+    prelude::*,
+};
 use pathfinding::prelude::astar;
 use std::collections::hash_set::HashSet;
 
@@ -137,27 +140,31 @@ impl Plugin for MapPlugin {
     }
 }
 
-pub fn find_path(
-    map: &GameMap,
-    zone_query: &Query<&Zone>,
-    start: HexCoord,
-    goal: HexCoord,
-) -> Option<(Vec<HexCoord>, u32)> {
-    astar(
-        &start,
-        |p| {
-            p.neighbours()
-                .filter(&|c: &HexCoord| {
-                    map.get(*c)
-                        .and_then(|&entity| zone_query.get(entity).ok())
-                        .map_or(false, |zone| zone.is_walkable())
-                })
-                .map(|p| (p, 1))
-                .collect::<Vec<(HexCoord, u32)>>()
-        },
-        |p| p.distance(goal),
-        |p| *p == goal,
-    )
+#[derive(SystemParam)]
+pub struct PathFinder<'w, 's> {
+    map_query: Query<'w, 's, &'static GameMap>,
+    zone_query: Query<'w, 's, &'static Zone>,
+}
+
+impl<'w, 's> PathFinder<'w, 's> {
+    pub fn find_path(&self, start: HexCoord, goal: HexCoord) -> Option<(Vec<HexCoord>, u32)> {
+        let map = self.map_query.single();
+        astar(
+            &start,
+            |p| {
+                p.neighbours()
+                    .filter(&|c: &HexCoord| {
+                        map.get(*c)
+                            .and_then(|&entity| self.zone_query.get(entity).ok())
+                            .map_or(false, |zone| zone.is_walkable())
+                    })
+                    .map(|p| (p, 1))
+                    .collect::<Vec<(HexCoord, u32)>>()
+            },
+            |p| p.distance(goal),
+            |p| *p == goal,
+        )
+    }
 }
 
 pub fn spawn_game_map_from_prototype<F>(
@@ -188,7 +195,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{find_path, GameMap, HexCoord, SquareGridLayout, Terrain, Zone};
+    use super::{GameMap, HexCoord, PathFinder, SquareGridLayout, Terrain, Zone};
     use bevy::prelude::*;
     use rstest::*;
 
@@ -248,13 +255,11 @@ mod tests {
 
     fn find_path_system(
         mut commands: Commands,
-        map_query: Query<&GameMap>,
-        zone_query: Query<&Zone>,
+        path_finder: PathFinder,
         params_query: Query<(Entity, &Start, &Goal)>,
     ) {
-        let map = map_query.single();
         let (entity, start, goal) = params_query.single();
-        if let Some(path) = find_path(map, &zone_query, start.0, goal.0) {
+        if let Some(path) = path_finder.find_path(start.0, goal.0) {
             commands.entity(entity).insert(Path(path.0, path.1));
         } else {
             println!("WHAT");
