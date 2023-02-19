@@ -1500,6 +1500,7 @@ dependencies = [
  "clap",
  "data-encoding",
  "futures-lite",
+ "interpolation",
  "itertools",
  "leafwing-input-manager",
  "pathfinding",
@@ -1934,6 +1935,12 @@ checksum = "276ec31bcb4a9ee45f58bec6f9ec700ae4cf4f4f8f2fa7e06cb406bd5ffdd770"
 dependencies = [
  "num-traits",
 ]
+
+[[package]]
+name = "interpolation"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3b7357d2bbc5ee92f8e899ab645233e43d21407573cceb37fed8bc3dede2c02"
 
 [[package]]
 name = "io-kit-sys"
