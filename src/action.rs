@@ -8,7 +8,6 @@ use crate::{
     },
     party::{spawn_party, Group, JoinGroup, Party},
     slide::{Slide, SlideEvent},
-    turn::Turn,
     State,
 };
 use bevy::ecs::schedule::ShouldRun;
@@ -40,6 +39,7 @@ impl Plugin for ActionPlugin {
                 SystemSet::on_update(State::Running)
                     .with_system(trigger_action)
                     .with_system(handle_move)
+                    .with_system(handle_enemy_move)
                     .with_system(handle_slide_stopped)
                     .with_system(handle_move_to)
                     .with_system(handle_resume_move)
@@ -74,18 +74,7 @@ impl GameActionQueue {
     }
 }
 
-pub fn trigger_action(
-    mut events: EventWriter<GameAction>,
-    mut queue: ResMut<GameActionQueue>,
-    turn: Res<Turn>,
-) {
-    if turn.is_changed() {
-        if let Some(action) = queue.deque.pop_front() {
-            events.send(action.clone());
-            queue.current = Some(action);
-        }
-    }
-
+pub fn trigger_action(mut events: EventWriter<GameAction>, mut queue: ResMut<GameActionQueue>) {
     if queue.is_changed() && !queue.is_waiting() {
         if let Some(action) = queue.deque.pop_front() {
             events.send(action.clone());
@@ -101,24 +90,36 @@ pub fn handle_move(
     mut queue: ResMut<GameActionQueue>,
 ) {
     for event in events.iter() {
-        if let GameAction::Move(e, next) = event {
-            if let Ok((group, mut movement, mut slide, transform, offset)) = party_query.get_mut(*e)
-            {
-                if movement.points == 0 {
-                    warn!("tried to move without movement points");
-                    queue.current.take();
-                    continue;
-                }
-                movement.points -= 1;
-                let mut iter = member_movement_query.iter_many_mut(&group.members);
-                while let Some(mut movement) = iter.fetch_next() {
-                    movement.points -= 1;
-                }
-                slide.start = transform.translation;
-                slide.end = coord_to_vec3(*next) + offset.0;
-                slide.progress = 0.0;
-            }
+        let GameAction::Move(e, next) = event else { continue };
+        let Ok((group, mut movement, mut slide, transform, offset)) = party_query.get_mut(*e) else { continue };
+
+        if movement.points == 0 {
+            warn!("tried to move without movement points");
+            queue.current.take();
+            continue;
         }
+        movement.points -= 1;
+        let mut iter = member_movement_query.iter_many_mut(&group.members);
+        while let Some(mut movement) = iter.fetch_next() {
+            movement.points -= 1;
+        }
+        slide.start = transform.translation;
+        slide.end = coord_to_vec3(*next) + offset.0;
+        slide.progress = 0.0;
+    }
+}
+
+fn handle_enemy_move(
+    mut events: EventReader<GameAction>,
+    mut enemy_query: Query<(&mut Slide, &Transform, &Offset), Without<Party>>,
+) {
+    for event in events.iter() {
+        let GameAction::Move(e, next) = event else { continue };
+        let Ok((mut slide, transform, offset)) = enemy_query.get_mut(*e) else { continue };
+
+        slide.start = transform.translation;
+        slide.end = coord_to_vec3(*next) + offset.0;
+        slide.progress = 0.0;
     }
 }
 
@@ -126,27 +127,29 @@ pub fn handle_slide_stopped(
     mut commands: Commands,
     mut events: EventReader<SlideEvent>,
     mut queue: ResMut<GameActionQueue>,
-    mut presence_query: Query<(&MapPresence, &Movement, &mut PathGuided)>,
+    mut presence_query: Query<(&MapPresence, Option<(&Movement, &mut PathGuided)>)>,
 ) {
     for _ in events.iter() {
-        if let Some(last_action) = queue.current.take() {
-            if let GameAction::Move(e, next) = last_action {
-                let (presence, party_movement, mut pathguided) = presence_query.get_mut(e).unwrap();
-                info!("done with move action {:?}", last_action);
-                commands.add(MoveMapPresence {
-                    map: presence.map,
-                    presence: e,
-                    position: next,
-                });
-                pathguided.advance();
-                // Keep moving if a path is set
-                if party_movement.points > 0 {
-                    if let Some(next) = pathguided.next() {
-                        queue.add(GameAction::Move(e, *next));
-                    }
+        let Some(last_action) = queue.current.take() else {
+            warn!("Slide finished for some unknown action");
+            continue
+        };
+        let GameAction::Move(e, next) = last_action else { continue };
+        let Ok((presence, optional)) = presence_query.get_mut(e) else { continue };
+
+        commands.add(MoveMapPresence {
+            map: presence.map,
+            presence: e,
+            position: next,
+        });
+
+        if let Some((party_movement, mut pathguided)) = optional {
+            pathguided.advance();
+            // Keep moving if a path is set
+            if party_movement.points > 0 {
+                if let Some(next) = pathguided.next() {
+                    queue.add(GameAction::Move(e, *next));
                 }
-            } else {
-                warn!("Slide finished for some unknown action");
             }
         }
     }
@@ -158,19 +161,16 @@ pub fn handle_move_to(
     mut presence_query: Query<(&MapPresence, &Movement, &mut PathGuided)>,
     path_finder: PathFinder,
 ) {
-    // Use let_chains after rust 1.64
     for event in events.iter() {
-        if let GameAction::MoveTo(e, goal) = event {
-            queue.current.take();
-            if let Ok((presence, party_movement, mut pathguided)) = presence_query.get_mut(*e) {
-                if let Some((path, _length)) = path_finder.find_path(presence.position, *goal) {
-                    pathguided.path(path);
-                    if party_movement.points > 0 {
-                        if let Some(next) = pathguided.next() {
-                            queue.add(GameAction::Move(*e, *next));
-                        }
-                    }
-                }
+        let GameAction::MoveTo(e, goal) = event else { continue };
+        let Ok((presence, party_movement, mut pathguided)) = presence_query.get_mut(*e) else { continue };
+
+        queue.current.take();
+        let Some((path, _length)) = path_finder.find_path(presence.position, *goal) else { continue };
+        pathguided.path(path);
+        if party_movement.points > 0 {
+            if let Some(next) = pathguided.next() {
+                queue.add(GameAction::Move(*e, *next));
             }
         }
     }
@@ -182,13 +182,12 @@ pub fn handle_resume_move(
     path_guided_query: Query<&PathGuided>,
 ) {
     for event in events.iter() {
-        if let GameAction::ResumeMove(e) = event {
-            if let Ok(pathguided) = path_guided_query.get(*e) {
-                if let Some(next) = pathguided.next() {
-                    info!("Resuming move!");
-                    queue.add(GameAction::Move(*e, *next));
-                }
-            }
+        let GameAction::ResumeMove(e) = event else { continue };
+        let Ok(pathguided) = path_guided_query.get(*e) else { continue };
+
+        if let Some(next) = pathguided.next() {
+            info!("Resuming move!");
+            queue.add(GameAction::Move(*e, *next));
         }
     }
 }

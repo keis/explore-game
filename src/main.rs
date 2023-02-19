@@ -7,7 +7,7 @@ use explore_game::{
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     character::{reset_movement_points, spawn_character},
-    enemy::spawn_enemy,
+    enemy::{move_enemy, spawn_enemy},
     hexgrid::{spiral, GridLayout, HexCoord},
     indicator::update_indicator,
     input::InputPlugin,
@@ -95,6 +95,7 @@ fn main() {
                 .with_system(reset_movement_points)
                 .with_system(derive_party_movement)
                 .with_system(despawn_empty_party)
+                .with_system(move_enemy)
                 .with_system(slide),
         )
         .run();
@@ -112,7 +113,7 @@ fn log_moves(
             ..
         } = event
         {
-            info!("{:?} moved to {:?}", entity, position);
+            info!("{:?} moved to {}", entity, position);
             if let Ok(presence) = presence_query.get(*entity) {
                 if let Ok(map) = map_query.get(presence.map) {
                     for other in map.presence(presence.position).filter(|e| *e != entity) {

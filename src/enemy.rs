@@ -1,11 +1,21 @@
 use crate::{
+    action::{GameAction, GameActionQueue},
     assets::MainAssets,
-    map::{coord_to_vec3, HexCoord, Offset},
+    map::{coord_to_vec3, HexCoord, MapPresence, Offset, PathFinder, ViewRadius},
+    slide::Slide,
+    turn::Turn,
 };
-use bevy::prelude::*;
+use bevy::{ecs::system::SystemParam, prelude::*};
 
+#[derive(Component, Default)]
+pub struct Enemy;
+
+#[derive(Bundle, Default)]
 pub struct EnemyBundle {
+    pub enemy: Enemy,
     pub offset: Offset,
+    pub view_radius: ViewRadius,
+    pub slide: Slide,
 }
 
 pub fn spawn_enemy(
@@ -15,13 +25,55 @@ pub fn spawn_enemy(
 ) -> Entity {
     let offset = Vec3::ZERO;
     commands
-        .spawn((PbrBundle {
-            mesh: params.p0().blob_mesh.clone(),
-            material: params
-                .p1()
-                .add(Color::rgba(0.749, 0.584, 0.901, 0.666).into()),
-            transform: Transform::from_translation(coord_to_vec3(position) + offset),
-            ..default()
-        },))
+        .spawn((
+            PbrBundle {
+                mesh: params.p0().blob_mesh.clone(),
+                material: params
+                    .p1()
+                    .add(Color::rgba(0.749, 0.584, 0.901, 0.666).into()),
+                transform: Transform::from_translation(coord_to_vec3(position) + offset),
+                visibility: Visibility { is_visible: false },
+                ..default()
+            },
+            EnemyBundle {
+                view_radius: ViewRadius(3),
+                ..default()
+            },
+        ))
         .id()
+}
+
+#[derive(SystemParam)]
+pub struct Target<'w, 's> {
+    presence_query: Query<'w, 's, &'static MapPresence, Without<Enemy>>,
+}
+
+impl<'w, 's> Target<'w, 's> {
+    fn closest_in_view(
+        &self,
+        position: HexCoord,
+        view_radius: &ViewRadius,
+    ) -> Option<&MapPresence> {
+        self.presence_query
+            .iter()
+            .filter(|&other| position.distance(other.position) <= view_radius.0)
+            .min_by_key(|other| position.distance(other.position))
+    }
+}
+
+pub fn move_enemy(
+    mut queue: ResMut<GameActionQueue>,
+    turn: Res<Turn>,
+    enemy_query: Query<(Entity, &MapPresence, &ViewRadius), With<Enemy>>,
+    target: Target,
+    path_finder: PathFinder,
+) {
+    if turn.is_changed() {
+        for (entity, presence, view_radius) in &enemy_query {
+            let Some(target) = target.closest_in_view(presence.position, view_radius) else { continue };
+            let Some((path, _length)) = path_finder.find_path(presence.position, target.position) else { continue };
+            let Some(next) = path.get(1) else { continue };
+            queue.add(GameAction::Move(entity, *next));
+        }
+    }
 }
