@@ -34,6 +34,21 @@ pub fn update_zone_visibility(
     damaged.0 = false;
 }
 
+pub fn update_terrain_visibility(
+    zone_query: Query<(&Children, &Fog), Changed<Fog>>,
+    mut terrain_query: Query<(&mut Fog, &mut Visibility), Without<Children>>,
+) {
+    for (children, parent_fog) in &zone_query {
+        let mut terrain_iter = terrain_query.iter_many_mut(children);
+        while let Some((mut fog, mut visibility)) = terrain_iter.fetch_next() {
+            fog.visible = parent_fog.visible;
+            fog.explored = parent_fog.explored;
+
+            visibility.is_visible = fog.explored;
+        }
+    }
+}
+
 #[allow(clippy::type_complexity)]
 pub fn update_enemy_visibility(
     map_query: Query<&GameMap>,

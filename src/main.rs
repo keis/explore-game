@@ -16,7 +16,7 @@ use explore_game::{
         spawn_game_map_from_prototype, spawn_zone, start_map_generation, AddMapPresence, GameMap,
         GenerateMapTask, HexAssets, MapEvent, MapPlugin, MapPresence, MapSeed, Terrain,
     },
-    material::{ZoneMaterial, ZoneMaterialPlugin},
+    material::{TerrainMaterial, TerrainMaterialPlugin, ZoneMaterial, ZoneMaterialPlugin},
     party::{derive_party_movement, despawn_empty_party, spawn_party, JoinGroup},
     slide::{slide, SlideEvent},
     turn::Turn,
@@ -76,6 +76,7 @@ fn main() {
         .add_plugin(InterfacePlugin)
         .add_plugin(MapPlugin)
         .add_plugin(ZoneMaterialPlugin)
+        .add_plugin(TerrainMaterialPlugin)
         .add_plugin(ActionPlugin)
         .add_startup_system(spawn_camera)
         .add_startup_system(spawn_light)
@@ -153,6 +154,7 @@ fn spawn_scene(
             Res<MainAssets>,
             Res<HexAssets>,
             ResMut<Assets<ZoneMaterial>>,
+            ResMut<Assets<TerrainMaterial>>,
         )>,
         // spawn_enemy params
         ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,

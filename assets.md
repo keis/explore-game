@@ -11,3 +11,5 @@
  - assets/textures/ocean_inner.png
  - assets/textures/mountains_inner.png
  - assets/textures/conifer_forest_inner.png
+* By OdinTdh CC-BY 4.0 (https://opengameart.org/content/textured-low-poly-pine)
+ - assets/pine.blend

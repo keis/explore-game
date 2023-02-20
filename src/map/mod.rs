@@ -133,6 +133,7 @@ impl Plugin for MapPlugin {
             .add_system_set(
                 SystemSet::on_update(State::Running)
                     .with_system(pathdisplay::update_path_display)
+                    .with_system(presence::update_terrain_visibility)
                     .with_system(presence::update_enemy_visibility),
             )
             .add_system_to_stage(CoreStage::PostUpdate, damage)
