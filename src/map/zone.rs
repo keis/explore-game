@@ -77,18 +77,21 @@ fn zone_material(assets: &Res<MainAssets>, terrain: Terrain) -> ZoneMaterial {
             terrain_texture: Some(assets.ocean_texture.clone()),
             visible: 1,
             explored: 1,
+            hover: 0,
         },
         Terrain::Mountain => ZoneMaterial {
             cloud_texture: Some(assets.cloud_texture.clone()),
             terrain_texture: Some(assets.mountain_texture.clone()),
             visible: 1,
             explored: 1,
+            hover: 0,
         },
         Terrain::Forest => ZoneMaterial {
             cloud_texture: Some(assets.cloud_texture.clone()),
             terrain_texture: Some(assets.forest_texture.clone()),
             visible: 1,
             explored: 1,
+            hover: 0,
         },
     }
 }

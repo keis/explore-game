@@ -10,6 +10,7 @@
 struct UniformData {
     visible: u32,
     explored: u32,
+    hover: u32,
 }
 
 @group(1) @binding(0)
@@ -33,11 +34,11 @@ fn fragment(
     @builtin(position) position: vec4<f32>,
     #import bevy_pbr::mesh_vertex_output
 ) -> @location(0) vec4<f32> {
-    var uv = vec2<f32>(
+    var world_uv = vec2<f32>(
         modulo(world_position.x * 0.3, 1.0),
         modulo(world_position.z * 0.3, 1.0)
     );
-    var base_color = textureSample(terrain_texture, terrain_texture_sampler, uv);
+    var base_color = textureSample(terrain_texture, terrain_texture_sampler, world_uv);
     var cloud_uv = vec2<f32>(
         modulo(uv.x + cos(globals.time * 0.01), 1.0),
         modulo(uv.y + sin(globals.time * 0.01), 1.0)
@@ -54,6 +55,17 @@ fn fragment(
 
     if uniform_data.explored == 0u {
         base_color = vec4<f32>(0.005, 0.005, 0.01, 1.0);
+    }
+
+    if uniform_data.hover == 1u {
+        var d = length(uv - 0.5);
+        var c = smoothstep(0.3, 0.5, d) * 0.7;
+        base_color = vec4<f32>(
+            mix(base_color[0], 0.863, c),
+            mix(base_color[1], 0.969, c),
+            mix(base_color[2], 0.710, c),
+            1.0
+        );
     }
 
     var pbr_input: PbrInput = pbr_input_new();
@@ -75,7 +87,7 @@ fn fragment(
         in.world_tangent,
         #endif
         #endif
-        uv,
+        world_uv,
     );
     pbr_input.V = calculate_view(world_position, pbr_input.is_orthographic);
 
