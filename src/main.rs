@@ -7,7 +7,7 @@ use explore_game::{
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     character::{reset_movement_points, spawn_character},
-    enemy::spawn_enemy,
+    enemy::{move_enemy, spawn_enemy},
     hexgrid::{spiral, GridLayout, HexCoord},
     indicator::update_indicator,
     input::InputPlugin,
@@ -16,7 +16,7 @@ use explore_game::{
         spawn_game_map_from_prototype, spawn_zone, start_map_generation, AddMapPresence, GameMap,
         GenerateMapTask, HexAssets, MapEvent, MapPlugin, MapPresence, MapSeed, Terrain,
     },
-    material::{ZoneMaterial, ZoneMaterialPlugin},
+    material::{TerrainMaterial, TerrainMaterialPlugin, ZoneMaterial, ZoneMaterialPlugin},
     party::{derive_party_movement, despawn_empty_party, spawn_party, JoinGroup},
     slide::{slide, SlideEvent},
     turn::Turn,
@@ -76,6 +76,7 @@ fn main() {
         .add_plugin(InterfacePlugin)
         .add_plugin(MapPlugin)
         .add_plugin(ZoneMaterialPlugin)
+        .add_plugin(TerrainMaterialPlugin)
         .add_plugin(ActionPlugin)
         .add_startup_system(spawn_camera)
         .add_startup_system(spawn_light)
@@ -95,6 +96,7 @@ fn main() {
                 .with_system(reset_movement_points)
                 .with_system(derive_party_movement)
                 .with_system(despawn_empty_party)
+                .with_system(move_enemy)
                 .with_system(slide),
         )
         .run();
@@ -112,7 +114,7 @@ fn log_moves(
             ..
         } = event
         {
-            info!("{:?} moved to {:?}", entity, position);
+            info!("{:?} moved to {}", entity, position);
             if let Ok(presence) = presence_query.get(*entity) {
                 if let Ok(map) = map_query.get(presence.map) {
                     for other in map.presence(presence.position).filter(|e| *e != entity) {
@@ -152,6 +154,7 @@ fn spawn_scene(
             Res<MainAssets>,
             Res<HexAssets>,
             ResMut<Assets<ZoneMaterial>>,
+            ResMut<Assets<TerrainMaterial>>,
         )>,
         // spawn_enemy params
         ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,

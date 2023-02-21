@@ -1,5 +1,8 @@
 use super::{coord_to_vec3, Fog, HexAssets, HexCoord, MapPosition};
-use crate::{assets::MainAssets, material::ZoneMaterial};
+use crate::{
+    assets::MainAssets,
+    material::{TerrainMaterial, ZoneMaterial},
+};
 use bevy::prelude::*;
 use rand::{
     distributions::{Distribution, Standard},
@@ -75,22 +78,50 @@ fn zone_material(assets: &Res<MainAssets>, terrain: Terrain) -> ZoneMaterial {
         Terrain::Ocean => ZoneMaterial {
             cloud_texture: Some(assets.cloud_texture.clone()),
             terrain_texture: Some(assets.ocean_texture.clone()),
-            visible: 1,
-            explored: 1,
+            visible: 0,
+            explored: 0,
+            hover: 0,
         },
         Terrain::Mountain => ZoneMaterial {
             cloud_texture: Some(assets.cloud_texture.clone()),
             terrain_texture: Some(assets.mountain_texture.clone()),
-            visible: 1,
-            explored: 1,
+            visible: 0,
+            explored: 0,
+            hover: 0,
         },
         Terrain::Forest => ZoneMaterial {
             cloud_texture: Some(assets.cloud_texture.clone()),
             terrain_texture: Some(assets.forest_texture.clone()),
-            visible: 1,
-            explored: 1,
+            visible: 0,
+            explored: 0,
+            hover: 0,
         },
     }
+}
+
+fn random_in_circle<R: Rng>(rng: &mut R, radius: f32) -> Vec2 {
+    let max_r = radius * radius;
+    let sqrtr = rng.gen_range(0.0f32..max_r).sqrt();
+    let angle = rng.gen_range(0.0f32..(2.0 * std::f32::consts::PI));
+    Vec2::new(sqrtr * angle.cos(), sqrtr * angle.sin())
+}
+
+fn random_fill() -> Vec<(Vec2, f32)> {
+    // Pretty stupid algorithm that simply tries a few random positions and returns whatever didn't
+    // overlap
+    let mut rng = rand::thread_rng();
+    let mut result: Vec<(Vec2, f32)> = vec![];
+    for _ in 0..16 {
+        let newpos = random_in_circle(&mut rng, 0.8);
+        let newradius = rng.gen_range(0.18f32..0.22);
+        if !result
+            .iter()
+            .any(|(pos, radius)| pos.distance(newpos) < radius + newradius)
+        {
+            result.push((newpos, newradius));
+        }
+    }
+    result
 }
 
 #[allow(clippy::type_complexity)]
@@ -100,6 +131,7 @@ pub fn spawn_zone(
         Res<MainAssets>,
         Res<HexAssets>,
         ResMut<Assets<ZoneMaterial>>,
+        ResMut<Assets<TerrainMaterial>>,
     )>,
     position: HexCoord,
     terrain: Terrain,
@@ -120,5 +152,26 @@ pub fn spawn_zone(
                 ..default()
             },
         ))
+        .with_children(|parent| {
+            if terrain == Terrain::Forest {
+                for (pos, scale) in random_fill() {
+                    parent.spawn((
+                        Fog::default(),
+                        MaterialMeshBundle {
+                            mesh: params.p0().pine_mesh.clone(),
+                            material: params.p3().add(TerrainMaterial {
+                                color: Color::rgb(0.2, 0.7, 0.3),
+                                visible: 0,
+                                explored: 0,
+                            }),
+                            visibility: Visibility { is_visible: false },
+                            transform: Transform::from_translation(Vec3::new(pos.x, 0.0, pos.y))
+                                .with_scale(Vec3::splat(scale * 0.5)),
+                            ..default()
+                        },
+                    ));
+                }
+            }
+        })
         .id()
 }
