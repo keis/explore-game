@@ -5,7 +5,7 @@ use crate::{
     camera::{CameraControl, CameraTarget},
     character::Movement,
     interface::MenuLayer,
-    map::{coord_to_vec3, MapPosition, MapPresence, PathGuided, Zone},
+    map::{MapPosition, MapPresence, PathGuided, Zone},
 };
 use bevy::prelude::*;
 use bevy_mod_picking::{DefaultPickingPlugins, PickingEvent, Selection};
@@ -149,9 +149,9 @@ fn handle_select_next(
         for (entity, mut selection, presence, _) in party_query.iter_mut() {
             if entity == next {
                 selection.set_selected(true);
-                commands.entity(camera_entity).insert(CameraTarget {
-                    position: coord_to_vec3(presence.position) + Vec3::new(2.0, 20.0, 20.0),
-                });
+                commands
+                    .entity(camera_entity)
+                    .insert(CameraTarget::from_hexcoord(presence.position));
             } else if selection.selected() {
                 selection.set_selected(false);
             }

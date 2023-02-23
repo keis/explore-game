@@ -127,10 +127,12 @@ fn log_moves(
 }
 
 fn spawn_camera(mut commands: Commands) {
+    let translation = Vec3::new(30.0, 10.0, 30.0);
+    let lookto = Vec3::new(-2.0, -20.0, -20.0);
     commands.spawn((
         Camera3dBundle {
-            transform: Transform::from_xyz(30.0, 20.0, 40.0)
-                .looking_at(Vec3::new(28.0, 0.0, 20.0), Vec3::Y),
+            transform: Transform::from_translation(translation)
+                .looking_at(translation + lookto, Vec3::Y),
             ..default()
         },
         CameraBounds {
