@@ -5,7 +5,7 @@ use super::{
 use crate::{
     character::Character,
     input::{Action, ActionState},
-    party::{Group, Party},
+    party::Group,
 };
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use bevy_mod_picking::Selection;
@@ -71,8 +71,9 @@ fn spawn_character_display(
         });
 }
 
+#[allow(clippy::type_complexity)]
 pub fn run_if_any_party_or_selection_changed(
-    party_query: Query<Entity, Or<(Changed<Party>, Changed<Selection>)>>,
+    party_query: Query<Entity, Or<(Changed<Group>, Changed<Selection>)>>,
 ) -> ShouldRun {
     if !party_query.is_empty() {
         ShouldRun::Yes

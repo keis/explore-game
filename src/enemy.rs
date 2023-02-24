@@ -1,6 +1,7 @@
 use crate::{
     action::{GameAction, GameActionQueue},
     assets::MainAssets,
+    combat::{Attack, Health},
     map::{coord_to_vec3, HexCoord, MapPresence, Offset, PathFinder, ViewRadius},
     slide::Slide,
     turn::Turn,
@@ -16,6 +17,8 @@ pub struct EnemyBundle {
     pub offset: Offset,
     pub view_radius: ViewRadius,
     pub slide: Slide,
+    pub attack: Attack,
+    pub health: Health,
 }
 
 pub fn spawn_enemy(
@@ -37,6 +40,8 @@ pub fn spawn_enemy(
             },
             EnemyBundle {
                 view_radius: ViewRadius(3),
+                attack: Attack(1..10),
+                health: Health(20),
                 ..default()
             },
         ))

@@ -7,6 +7,7 @@ use explore_game::{
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     character::{reset_movement_points, spawn_character},
+    combat,
     enemy::{move_enemy, spawn_enemy},
     hexgrid::{spiral, GridLayout, HexCoord},
     indicator::update_indicator,
@@ -97,6 +98,10 @@ fn main() {
                 .with_system(derive_party_movement)
                 .with_system(despawn_empty_party)
                 .with_system(move_enemy)
+                .with_system(combat::initiate_combat)
+                .with_system(combat::combat_round)
+                .with_system(combat::despawn_no_health.after(combat::combat_round))
+                .with_system(combat::finish_combat.after(combat::despawn_no_health))
                 .with_system(slide),
         )
         .run();

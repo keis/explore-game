@@ -1,4 +1,7 @@
-use crate::turn::Turn;
+use crate::{
+    combat::{Attack, Health},
+    turn::Turn,
+};
 use bevy::prelude::*;
 use bevy_mod_picking::Selection;
 
@@ -12,6 +15,8 @@ pub struct CharacterBundle {
     pub character: Character,
     pub movement: Movement,
     pub selection: Selection,
+    pub attack: Attack,
+    pub health: Health,
 }
 
 #[derive(Component, Default, Debug)]
@@ -29,10 +34,12 @@ pub fn reset_movement_points(turn: Res<Turn>, mut movement_query: Query<&mut Mov
 
 pub fn spawn_character(commands: &mut Commands, name: String) -> Entity {
     commands
-        .spawn((
-            Character { name },
-            Movement { points: 2 },
-            Selection::default(),
-        ))
+        .spawn(CharacterBundle {
+            character: Character { name },
+            movement: Movement { points: 2 },
+            attack: Attack(0..8),
+            health: Health(10),
+            ..default()
+        })
         .id()
 }

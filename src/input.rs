@@ -166,21 +166,10 @@ fn handle_picking_events(
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
     for event in events.iter() {
-        match event {
-            PickingEvent::Clicked(e) => {
-                if let Ok(zone_position) = zone_query.get(*e) {
-                    info!("Clicked a zone: {:?}", zone_position);
-                    for (entity, _) in presence_query.iter().filter(|(_, s)| s.selected()) {
-                        game_action_queue.add(GameAction::MoveTo(entity, zone_position.0));
-                    }
-                } else {
-                    info!("Clicked something: {:?}", e);
-                }
-            }
-            PickingEvent::Selection(e) => {
-                debug!("Selection event {:?}", e);
-            }
-            _ => {}
+        let PickingEvent::Clicked(e) = event else { continue };
+        let Ok(zone_position) = zone_query.get(*e) else { continue };
+        for (entity, _) in presence_query.iter().filter(|(_, s)| s.selected()) {
+            game_action_queue.add(GameAction::MoveTo(entity, zone_position.0));
         }
     }
 }

@@ -47,6 +47,11 @@ pub struct JoinGroup {
     pub members: SmallVec<[Entity; 8]>,
 }
 
+pub struct RemoveMembers {
+    pub group: Entity,
+    pub members: SmallVec<[Entity; 8]>,
+}
+
 impl Command for JoinGroup {
     fn write(mut self, world: &mut World) {
         let mut old = HashSet::new();
@@ -74,6 +79,20 @@ impl Command for JoinGroup {
         let mut group_entity = world.entity_mut(self.group);
         if let Some(mut group) = group_entity.get_mut::<Group>() {
             group.members.append(&mut self.members);
+        }
+    }
+}
+
+impl Command for RemoveMembers {
+    fn write(self, world: &mut World) {
+        let mut group_entity = world.entity_mut(self.group);
+        if let Some(mut group) = group_entity.get_mut::<Group>() {
+            group
+                .members
+                .retain(|member| !self.members.contains(member));
+        }
+        for member in self.members {
+            world.entity_mut(member).remove::<Parent>();
         }
     }
 }
