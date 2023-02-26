@@ -1497,6 +1497,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "expl_wfc"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "clap",
+ "data-encoding",
+ "expl_hexgrid",
+ "rand",
+ "rand_xoshiro",
+ "rstest",
+ "serde",
+]
+
+[[package]]
 name = "explore_game"
 version = "0.1.0"
 dependencies = [
@@ -1504,19 +1518,16 @@ dependencies = [
  "bevy_asset_loader",
  "bevy_mod_picking",
  "bevy_stl",
- "bincode",
  "clap",
- "data-encoding",
  "expl_hexgrid",
+ "expl_wfc",
  "futures-lite",
  "interpolation",
  "itertools",
  "leafwing-input-manager",
  "pathfinding",
  "rand",
- "rand_xoshiro",
  "rstest",
- "serde",
  "smallvec",
  "splines",
 ]

@@ -131,7 +131,6 @@ pub fn standard_tile_transforms() -> Vec<TransformMatrix> {
 #[cfg(test)]
 pub mod tests {
     use super::{extract_tiles, standard_tile_transforms, Tile};
-    use crate::map::Terrain;
     use expl_hexgrid::{
         layout::HexagonalGridLayout, Grid, GridLayout, HexCoord, Transform, TransformMatrix,
     };
@@ -144,36 +143,19 @@ pub mod tests {
     }
 
     #[fixture]
-    pub fn sample_map() -> Grid<HexagonalGridLayout, Terrain> {
+    pub fn sample_map() -> Grid<HexagonalGridLayout, char> {
         let layout = HexagonalGridLayout { radius: 3 };
         Grid {
             layout,
             data: vec![
-                Terrain::Ocean,
-                Terrain::Ocean,
-                Terrain::Ocean,
-                Terrain::Ocean,
-                Terrain::Ocean,
-                Terrain::Mountain,
-                Terrain::Mountain,
-                Terrain::Ocean,
-                Terrain::Mountain,
-                Terrain::Mountain,
-                Terrain::Mountain,
-                Terrain::Forest,
-                Terrain::Mountain,
-                Terrain::Mountain,
-                Terrain::Forest,
-                Terrain::Forest,
-                Terrain::Forest,
-                Terrain::Forest,
-                Terrain::Forest,
+                '~', '~', '~', '~', '~', '^', '^', '~', '^', '^', '^', '%', '^', '^', '%', '%',
+                '%', '%', '%',
             ],
         }
     }
 
     #[rstest]
-    fn iter_origin(sample_map: Grid<HexagonalGridLayout, Terrain>) {
+    fn iter_origin(sample_map: Grid<HexagonalGridLayout, char>) {
         let tile = Tile {
             grid: &sample_map,
             offset: HexCoord::new(0, 0),
@@ -181,22 +163,11 @@ pub mod tests {
             transform: &Transform::Identity.into(),
         };
         let items: Vec<_> = tile.iter().collect();
-        assert_eq!(
-            items,
-            vec![
-                Terrain::Ocean,
-                Terrain::Mountain,
-                Terrain::Mountain,
-                Terrain::Mountain,
-                Terrain::Mountain,
-                Terrain::Mountain,
-                Terrain::Forest
-            ]
-        );
+        assert_eq!(items, vec!['~', '^', '^', '^', '^', '^', '%']);
     }
 
     #[rstest]
-    fn iter_offset(sample_map: Grid<HexagonalGridLayout, Terrain>) {
+    fn iter_offset(sample_map: Grid<HexagonalGridLayout, char>) {
         let tile = Tile {
             grid: &sample_map,
             offset: HexCoord::new(1, 0),
@@ -204,22 +175,11 @@ pub mod tests {
             transform: &Transform::Identity.into(),
         };
         let items: Vec<_> = tile.iter().collect();
-        assert_eq!(
-            items,
-            vec![
-                Terrain::Mountain,
-                Terrain::Mountain,
-                Terrain::Mountain,
-                Terrain::Mountain,
-                Terrain::Forest,
-                Terrain::Forest,
-                Terrain::Forest
-            ]
-        );
+        assert_eq!(items, vec!['^', '^', '^', '^', '%', '%', '%']);
     }
 
     #[rstest]
-    fn equal(sample_map: Grid<HexagonalGridLayout, Terrain>) {
+    fn equal(sample_map: Grid<HexagonalGridLayout, char>) {
         let tile_a = Tile {
             grid: &sample_map,
             offset: HexCoord::new(1, 0),
@@ -244,7 +204,7 @@ pub mod tests {
     }
 
     #[rstest]
-    fn ordering(sample_map: Grid<HexagonalGridLayout, Terrain>) {
+    fn ordering(sample_map: Grid<HexagonalGridLayout, char>) {
         let tile_a = Tile {
             grid: &sample_map,
             offset: HexCoord::new(1, 0),
@@ -264,12 +224,12 @@ pub mod tests {
             transform: &Transform::Identity.into(),
         };
         assert_eq!(tile_a.cmp(&tile_b), Ordering::Equal);
-        assert_eq!(tile_a.cmp(&tile_c), Ordering::Greater);
-        assert_eq!(tile_b.cmp(&tile_c), Ordering::Greater);
+        assert_eq!(tile_a.cmp(&tile_c), Ordering::Less);
+        assert_eq!(tile_b.cmp(&tile_c), Ordering::Less);
     }
 
     #[rstest]
-    fn compatible(sample_map: Grid<HexagonalGridLayout, Terrain>) {
+    fn compatible(sample_map: Grid<HexagonalGridLayout, char>) {
         let tile_a = Tile {
             grid: &sample_map,
             offset: HexCoord::new(1, -1),
@@ -290,14 +250,14 @@ pub mod tests {
     #[rstest]
     fn extract(
         standard_transforms: Vec<TransformMatrix>,
-        sample_map: Grid<HexagonalGridLayout, Terrain>,
+        sample_map: Grid<HexagonalGridLayout, char>,
     ) {
         let tiles = extract_tiles(&sample_map, &standard_transforms);
         assert_eq!(tiles.len(), 30);
     }
 
     #[rstest]
-    fn transform(sample_map: Grid<HexagonalGridLayout, Terrain>) {
+    fn transform(sample_map: Grid<HexagonalGridLayout, char>) {
         let tile = Tile {
             grid: &sample_map,
             offset: (0, -1).into(),
@@ -311,7 +271,7 @@ pub mod tests {
     }
 
     #[rstest]
-    fn compatible_transform(sample_map: Grid<HexagonalGridLayout, Terrain>) {
+    fn compatible_transform(sample_map: Grid<HexagonalGridLayout, char>) {
         let tile = Tile {
             grid: &sample_map,
             offset: (0, -1).into(),

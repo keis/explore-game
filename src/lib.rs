@@ -14,7 +14,6 @@ pub mod party;
 pub mod path;
 pub mod slide;
 pub mod turn;
-pub mod wfc;
 
 pub const VIEW_RADIUS: u32 = 2;
 

@@ -1,4 +1,4 @@
-use crate::wfc::{tile::Tile, TileId};
+use super::{tile::Tile, TileId};
 use expl_hexgrid::{GridLayout, HexCoord};
 use std::collections::{BinaryHeap, HashSet};
 use std::hash::Hash;
@@ -94,8 +94,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::Template;
-    use crate::map::Terrain;
-    use crate::wfc::{
+    use crate::{
         tile::{
             extract_tiles,
             tests::{sample_map, standard_transforms},
@@ -108,18 +107,18 @@ mod tests {
     #[rstest]
     fn from_tiles(
         standard_transforms: Vec<TransformMatrix>,
-        sample_map: Grid<HexagonalGridLayout, Terrain>,
+        sample_map: Grid<HexagonalGridLayout, char>,
     ) {
         let tiles = extract_tiles(&sample_map, &standard_transforms);
         let ntiles = tiles.len();
         let template = Template::from_tiles(tiles);
 
         assert_eq!(template.available_tiles(), ntiles);
-        assert_eq!(template.contribution(0 as TileId), Terrain::Ocean);
-        assert_eq!(template.contribution(1 as TileId), Terrain::Mountain);
-        assert_eq!(template.contribution(2 as TileId), Terrain::Ocean);
-        assert_eq!(template.contribution(3 as TileId), Terrain::Mountain);
-        assert_eq!(template.contribution(4 as TileId), Terrain::Ocean);
-        assert_eq!(template.contribution(5 as TileId), Terrain::Mountain);
+        assert_eq!(template.contribution(0 as TileId), '%');
+        assert_eq!(template.contribution(1 as TileId), '^');
+        assert_eq!(template.contribution(2 as TileId), '%');
+        assert_eq!(template.contribution(3 as TileId), '^');
+        assert_eq!(template.contribution(4 as TileId), '%');
+        assert_eq!(template.contribution(5 as TileId), '^');
     }
 }

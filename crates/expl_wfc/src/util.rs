@@ -125,14 +125,44 @@ pub fn wrap_grid<Item: Default + Clone + Copy>(
 #[cfg(test)]
 mod tests {
     use super::{DumpGrid, LoadGrid};
-    use crate::map::Terrain;
     use expl_hexgrid::{layout::HexagonalGridLayout, Grid};
     use std::fs::File;
     use std::io::{BufReader, BufWriter};
 
+    #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, Ord, PartialOrd)]
+    pub enum Terrain {
+        #[default]
+        Ocean,
+        Mountain,
+        Forest,
+    }
+
+    impl From<Terrain> for char {
+        fn from(terrain: Terrain) -> Self {
+            match terrain {
+                Terrain::Forest => '%',
+                Terrain::Mountain => '^',
+                Terrain::Ocean => '~',
+            }
+        }
+    }
+
+    impl TryFrom<char> for Terrain {
+        type Error = &'static str;
+
+        fn try_from(c: char) -> Result<Terrain, Self::Error> {
+            match c {
+                '%' => Ok(Terrain::Forest),
+                '^' => Ok(Terrain::Mountain),
+                '~' => Ok(Terrain::Ocean),
+                _ => Err("Unknown terrain character"),
+            }
+        }
+    }
+
     #[test]
     fn load_sample_grid() {
-        let mut file = BufReader::new(File::open("assets/maps/test.txt").unwrap());
+        let mut file = BufReader::new(File::open("res/test.txt").unwrap());
         let grid = Grid::<HexagonalGridLayout, Terrain>::load(&mut file).unwrap();
         assert_eq!(grid.layout.radius, 5);
         let mut writer = BufWriter::new(Vec::new());

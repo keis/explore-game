@@ -3,6 +3,7 @@ use bevy_asset_loader::prelude::*;
 use bevy_mod_picking::PickingCameraBundle;
 use clap::Parser;
 use expl_hexgrid::{spiral, GridLayout};
+use expl_wfc::{Seed, SeedType};
 use explore_game::{
     action::ActionPlugin,
     assets::MainAssets,
@@ -21,7 +22,6 @@ use explore_game::{
     party::{derive_party_movement, despawn_empty_party, spawn_party, JoinGroup},
     slide::{slide, SlideEvent},
     turn::Turn,
-    wfc::{Seed, SeedType},
     State,
 };
 use futures_lite::future;

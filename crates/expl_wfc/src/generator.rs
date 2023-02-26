@@ -1,4 +1,4 @@
-use crate::wfc::{
+use super::{
     cell::Cell,
     seed::{Seed, SeedType},
     template::Template,
