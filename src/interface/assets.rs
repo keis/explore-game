@@ -21,4 +21,8 @@ pub struct InterfaceAssets {
     pub footsteps_icon: Handle<Image>,
     #[asset(path = "icons/person.png")]
     pub person_icon: Handle<Image>,
+    #[asset(path = "icons/gladius.png")]
+    pub gladius_icon: Handle<Image>,
+    #[asset(path = "icons/heart-shield.png")]
+    pub heart_shield_icon: Handle<Image>,
 }

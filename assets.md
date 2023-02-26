@@ -8,8 +8,10 @@
 * By Delapouite under CC-BY 3.0 (https://delapouite.com/)
  - assets/icons/contract.png
  - assets/icons/person.png
+ - assets/icons/hearth-shield.png
 * By Skoll under CC-BY 3.0 (https://game-icons.net)
  - assets/icons/footsteps.png
+ - assets/icons/gladius.png
 * By Jinn under CC-BY SA 3.0 (https://opengameart.org/content/world-map-tiles)
  - assets/textures/ocean_inner.png
  - assets/textures/mountains_inner.png

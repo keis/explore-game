@@ -43,6 +43,7 @@ impl Plugin for InterfacePlugin {
                 .with_system(camp::update_camp_selection)
                 .with_system(camp::handle_camp_display_interaction)
                 .with_system(character::update_character_selection)
+                .with_system(character::update_character_health)
                 .with_system(character::handle_character_display_interaction)
                 .with_system(shell::update_turn_text)
                 .with_system(shell::update_zone_text)
