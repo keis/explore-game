@@ -2,6 +2,7 @@ use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
 use bevy_mod_picking::PickingCameraBundle;
 use clap::Parser;
+use expl_hexgrid::{spiral, GridLayout};
 use explore_game::{
     action::ActionPlugin,
     assets::MainAssets,
@@ -9,13 +10,12 @@ use explore_game::{
     character::{reset_movement_points, spawn_character},
     combat,
     enemy::{move_enemy, spawn_enemy},
-    hexgrid::{spiral, GridLayout, HexCoord},
     indicator::update_indicator,
     input::InputPlugin,
     interface::InterfacePlugin,
     map::{
         spawn_game_map_from_prototype, spawn_zone, start_map_generation, AddMapPresence, GameMap,
-        GenerateMapTask, HexAssets, MapEvent, MapPlugin, MapPresence, MapSeed, Terrain,
+        GenerateMapTask, HexAssets, HexCoord, MapEvent, MapPlugin, MapPresence, MapSeed, Terrain,
     },
     material::{TerrainMaterial, TerrainMaterialPlugin, ZoneMaterial, ZoneMaterialPlugin},
     party::{derive_party_movement, despawn_empty_party, spawn_party, JoinGroup},

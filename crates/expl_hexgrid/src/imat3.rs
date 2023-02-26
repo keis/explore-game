@@ -1,4 +1,4 @@
-use bevy::math::IVec3;
+use glam::IVec3;
 use std::ops::Mul;
 
 /// Basic 3x3 matrix based on glam's Mat3 for f32 but using IVec3 to instead operate using integers.

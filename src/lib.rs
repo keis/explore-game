@@ -5,7 +5,6 @@ pub mod camp;
 pub mod character;
 pub mod combat;
 pub mod enemy;
-pub mod hexgrid;
 pub mod indicator;
 pub mod input;
 pub mod interface;

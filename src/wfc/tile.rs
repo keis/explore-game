@@ -1,5 +1,6 @@
-use crate::hexgrid::layout::HexagonalGridLayout;
-use crate::hexgrid::{Grid, GridLayout, HexCoord, Transform, TransformMatrix};
+use expl_hexgrid::{
+    layout::HexagonalGridLayout, Grid, GridLayout, HexCoord, Transform, TransformMatrix,
+};
 use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
@@ -130,9 +131,10 @@ pub fn standard_tile_transforms() -> Vec<TransformMatrix> {
 #[cfg(test)]
 pub mod tests {
     use super::{extract_tiles, standard_tile_transforms, Tile};
-    use crate::hexgrid::layout::HexagonalGridLayout;
-    use crate::hexgrid::{Grid, GridLayout, HexCoord, Transform, TransformMatrix};
     use crate::map::Terrain;
+    use expl_hexgrid::{
+        layout::HexagonalGridLayout, Grid, GridLayout, HexCoord, Transform, TransformMatrix,
+    };
     use rstest::*;
     use std::cmp::Ordering;
 

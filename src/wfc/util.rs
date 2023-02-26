@@ -1,4 +1,4 @@
-use crate::hexgrid::{
+use expl_hexgrid::{
     layout::{HexagonalGridLayout, SquareGridLayout},
     ring, Grid, GridLayout, HexCoord,
 };
@@ -125,8 +125,8 @@ pub fn wrap_grid<Item: Default + Clone + Copy>(
 #[cfg(test)]
 mod tests {
     use super::{DumpGrid, LoadGrid};
-    use crate::hexgrid::{layout::HexagonalGridLayout, Grid};
     use crate::map::Terrain;
+    use expl_hexgrid::{layout::HexagonalGridLayout, Grid};
     use std::fs::File;
     use std::io::{BufReader, BufWriter};
 

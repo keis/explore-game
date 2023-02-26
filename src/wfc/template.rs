@@ -1,6 +1,5 @@
-use crate::hexgrid::{GridLayout, HexCoord};
-use crate::wfc::tile::Tile;
-use crate::wfc::TileId;
+use crate::wfc::{tile::Tile, TileId};
+use expl_hexgrid::{GridLayout, HexCoord};
 use std::collections::{BinaryHeap, HashSet};
 use std::hash::Hash;
 
@@ -95,7 +94,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::Template;
-    use crate::hexgrid::{layout::HexagonalGridLayout, Grid, TransformMatrix};
     use crate::map::Terrain;
     use crate::wfc::{
         tile::{
@@ -104,6 +102,7 @@ mod tests {
         },
         TileId,
     };
+    use expl_hexgrid::{layout::HexagonalGridLayout, Grid, TransformMatrix};
     use rstest::*;
 
     #[rstest]

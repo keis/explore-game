@@ -1,7 +1,6 @@
 use crate::{
     assets::MainAssets,
-    hexgrid::HexCoord,
-    map::{coord_to_vec3, Offset, ViewRadius},
+    map::{coord_to_vec3, HexCoord, Offset, ViewRadius},
     party::Group,
     VIEW_RADIUS,
 };

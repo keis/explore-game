@@ -1,12 +1,9 @@
-use crate::{
-    hexgrid::layout::SquareGridLayout,
-    hexgrid::{Grid, GridLayout},
-    State,
-};
+use crate::State;
 use bevy::{
     ecs::{schedule::ShouldRun, system::SystemParam},
     prelude::*,
 };
+use expl_hexgrid::{layout::SquareGridLayout, Grid, GridLayout};
 use pathfinding::prelude::astar;
 use std::collections::hash_set::HashSet;
 
@@ -21,9 +18,9 @@ mod position;
 mod presence;
 mod zone;
 
-pub use crate::hexgrid::HexCoord;
 pub use commands::{AddMapPresence, DespawnPresence, MoveMapPresence};
 pub use events::MapEvent;
+pub use expl_hexgrid::HexCoord;
 pub use fog::Fog;
 pub use generator::{start_map_generation, GenerateMapTask, MapSeed};
 pub use hex::{coord_to_vec3, Hexagon};

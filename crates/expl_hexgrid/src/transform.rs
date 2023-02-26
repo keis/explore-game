@@ -1,6 +1,5 @@
-use crate::hexgrid::imat3::IMat3;
-use crate::map::HexCoord;
-use bevy::math::IVec3;
+use super::{imat3::IMat3, HexCoord};
+use glam::IVec3;
 
 #[derive(Copy, Clone, Debug)]
 pub enum Transform {
@@ -111,9 +110,8 @@ impl From<Transform> for TransformMatrix {
 
 #[cfg(test)]
 mod tests {
-    use super::{Transform, TransformMatrix};
-    use crate::map::HexCoord;
-    use bevy::math::IVec3;
+    use super::{HexCoord, Transform, TransformMatrix};
+    use glam::IVec3;
 
     #[test]
     fn transform_apply() {

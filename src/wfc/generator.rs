@@ -1,10 +1,10 @@
-use crate::hexgrid::{Grid, GridLayout, HexCoord};
 use crate::wfc::{
     cell::Cell,
     seed::{Seed, SeedType},
     template::Template,
     TileId,
 };
+use expl_hexgrid::{Grid, GridLayout, HexCoord};
 use std::cmp::Reverse;
 use std::collections::HashSet;
 use std::hash::Hash;

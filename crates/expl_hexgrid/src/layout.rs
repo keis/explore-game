@@ -1,4 +1,4 @@
-use crate::hexgrid::{HexCoord, Transform};
+use super::{HexCoord, Transform};
 
 pub trait GridLayout: Copy + Clone + PartialEq {
     type LayoutIter<'a>: Iterator<Item = HexCoord>

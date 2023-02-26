@@ -1,5 +1,4 @@
-use super::GridLayout;
-use super::HexCoord;
+use super::{GridLayout, HexCoord};
 use std::fmt;
 use std::ops::{Index, IndexMut};
 
@@ -53,7 +52,7 @@ impl<L: GridLayout, T> IndexMut<HexCoord> for Grid<L, T> {
 #[cfg(test)]
 mod tests {
     use super::{Grid, GridLayout, HexCoord};
-    use crate::hexgrid::layout::SquareGridLayout;
+    use crate::layout::SquareGridLayout;
 
     #[test]
     fn mutate_and_read_back() {

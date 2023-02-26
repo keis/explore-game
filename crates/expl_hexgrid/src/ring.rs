@@ -1,4 +1,4 @@
-use crate::hexgrid::HexCoord;
+use super::HexCoord;
 use std::iter;
 
 /// Iterate over the coordinates forming a ring of the given radius around `center`.

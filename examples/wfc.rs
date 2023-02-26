@@ -1,7 +1,9 @@
 use clap::{Args, Parser, Subcommand};
+use expl_hexgrid::{
+    layout::{HexagonalGridLayout, SquareGridLayout},
+    Grid, GridLayout,
+};
 use explore_game::{
-    hexgrid::layout::{HexagonalGridLayout, SquareGridLayout},
-    hexgrid::{Grid, GridLayout},
     map::Terrain,
     wfc::{
         cell::Cell,

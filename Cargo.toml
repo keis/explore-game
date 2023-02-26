@@ -1,3 +1,7 @@
+[workspace]
+members = [".", "crates/*"]
+default-members = [".", "crates/*"]
+
 [package]
 name = "explore_game"
 version = "0.1.0"
@@ -10,6 +14,7 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
+expl_hexgrid = { path = "crates/expl_hexgrid" }
 bevy_asset_loader = "0.14.1"
 bevy_mod_picking = "0.11"
 bevy_stl = { version = "0.7.0" }

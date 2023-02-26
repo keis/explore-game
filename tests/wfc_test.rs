@@ -1,6 +1,5 @@
+use expl_hexgrid::{layout::HexagonalGridLayout, Grid, GridLayout};
 use explore_game::{
-    hexgrid::layout::HexagonalGridLayout,
-    hexgrid::{Grid, GridLayout},
     map::Terrain,
     wfc::{
         cell::Cell,
