@@ -1,15 +1,15 @@
 use super::Terrain;
-use crate::hexgrid::{
-    layout::{HexagonalGridLayout, SquareGridLayout},
-    Grid,
-};
-use crate::wfc::{
-    tile::extract_tiles, tile::standard_tile_transforms, util::wrap_grid, util::LoadGrid,
-    Generator, Seed, Template,
-};
 use bevy::{
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task},
+};
+use expl_hexgrid::{
+    layout::{HexagonalGridLayout, SquareGridLayout},
+    Grid,
+};
+use expl_wfc::{
+    tile::extract_tiles, tile::standard_tile_transforms, util::wrap_grid, util::LoadGrid,
+    Generator, Seed, Template,
 };
 use std::fs::File;
 use std::io;

@@ -1489,6 +1489,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
+name = "expl_hexgrid"
+version = "0.1.0"
+dependencies = [
+ "glam",
+ "itertools",
+]
+
+[[package]]
+name = "expl_wfc"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "clap",
+ "data-encoding",
+ "expl_hexgrid",
+ "rand",
+ "rand_xoshiro",
+ "rstest",
+ "serde",
+]
+
+[[package]]
 name = "explore_game"
 version = "0.1.0"
 dependencies = [
@@ -1496,18 +1518,16 @@ dependencies = [
  "bevy_asset_loader",
  "bevy_mod_picking",
  "bevy_stl",
- "bincode",
  "clap",
- "data-encoding",
+ "expl_hexgrid",
+ "expl_wfc",
  "futures-lite",
  "interpolation",
  "itertools",
  "leafwing-input-manager",
  "pathfinding",
  "rand",
- "rand_xoshiro",
  "rstest",
- "serde",
  "smallvec",
  "splines",
 ]

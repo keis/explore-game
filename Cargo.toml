@@ -1,3 +1,7 @@
+[workspace]
+members = [".", "crates/*"]
+default-members = [".", "crates/*"]
+
 [package]
 name = "explore_game"
 version = "0.1.0"
@@ -14,6 +18,8 @@ bevy_asset_loader = "0.14.1"
 bevy_mod_picking = "0.11"
 bevy_stl = { version = "0.7.0" }
 bevy = { version = "0.9", features = ["dynamic", "wayland"] }
+expl_hexgrid = { path = "crates/expl_hexgrid" }
+expl_wfc = { path = "crates/expl_wfc" }
 itertools = "0.10.5"
 leafwing-input-manager = "0.8.0"
 pathfinding = "4.2.1"
@@ -21,10 +27,6 @@ rand = "0.8.5"
 smallvec = "1.6"
 splines = { version = "4.2.0", features = ["glam"] }
 futures-lite = "1.12.0"
-data-encoding = "2.3.3"
-bincode = "1.3.3"
-serde = "1.0.152"
-rand_xoshiro = "0.6.0"
 clap = {version = "4.1.6", features = ["derive"] }
 interpolation = "0.2.0"
 

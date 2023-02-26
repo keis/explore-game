@@ -1,24 +1,20 @@
-use explore_game::{
-    hexgrid::layout::HexagonalGridLayout,
-    hexgrid::{Grid, GridLayout},
-    map::Terrain,
-    wfc::{
-        cell::Cell,
-        tile::{extract_tiles, standard_tile_transforms},
-        util::{wrap_grid, LoadGrid},
-        Generator, Template,
-    },
+use expl_hexgrid::{layout::HexagonalGridLayout, Grid, GridLayout};
+use expl_wfc::{
+    cell::Cell,
+    tile::{extract_tiles, standard_tile_transforms},
+    util::{wrap_grid, LoadGrid},
+    Generator, Template,
 };
 use std::fs::File;
 use std::io;
 
-fn sample_map() -> Result<Grid<HexagonalGridLayout, Terrain>, &'static str> {
+fn sample_map() -> Result<Grid<HexagonalGridLayout, char>, &'static str> {
     let mut file =
-        io::BufReader::new(File::open("assets/maps/test.txt").map_err(|_| "failed to open file")?);
-    Grid::<HexagonalGridLayout, Terrain>::load(&mut file)
+        io::BufReader::new(File::open("res/test.txt").map_err(|_| "failed to open file")?);
+    Grid::<HexagonalGridLayout, char>::load(&mut file).map_err(|_| "infallible")
 }
 
-fn sample_template() -> Template<Terrain> {
+fn sample_template() -> Template<char> {
     let input = sample_map().unwrap();
     let wrapped_input = wrap_grid(input);
     let transforms = standard_tile_transforms();

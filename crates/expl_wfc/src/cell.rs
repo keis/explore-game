@@ -1,4 +1,4 @@
-use crate::wfc::TileId;
+use super::TileId;
 use rand::Rng;
 use std::collections::HashSet;
 

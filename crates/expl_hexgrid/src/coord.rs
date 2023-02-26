@@ -1,4 +1,4 @@
-use bevy::math::IVec3;
+use glam::IVec3;
 use std::{
     fmt,
     ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
@@ -137,8 +137,8 @@ impl TryFrom<IVec3> for HexCoord {
 
 #[cfg(test)]
 mod tests {
-    use crate::map::HexCoord;
-    use bevy::math::IVec3;
+    use super::HexCoord;
+    use glam::IVec3;
 
     #[test]
     fn distance_to_neighbours() {

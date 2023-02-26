@@ -1,15 +1,15 @@
 use clap::{Args, Parser, Subcommand};
-use explore_game::{
-    hexgrid::layout::{HexagonalGridLayout, SquareGridLayout},
-    hexgrid::{Grid, GridLayout},
-    map::Terrain,
-    wfc::{
-        cell::Cell,
-        tile::{extract_tiles, standard_tile_transforms},
-        util::{wrap_grid, DumpGrid, DumpGridWith, LoadGrid},
-        Generator, Seed, SeedType, Template,
-    },
+use expl_hexgrid::{
+    layout::{HexagonalGridLayout, SquareGridLayout},
+    Grid, GridLayout,
 };
+use expl_wfc::{
+    cell::Cell,
+    tile::{extract_tiles, standard_tile_transforms},
+    util::{wrap_grid, DumpGrid, DumpGridWith, LoadGrid},
+    Generator, Seed, SeedType, Template,
+};
+use explore_game::map::Terrain;
 use std::fs::File;
 use std::io;
 

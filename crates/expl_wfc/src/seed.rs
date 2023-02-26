@@ -1,6 +1,6 @@
-use crate::hexgrid::layout::{HexagonalGridLayout, SquareGridLayout};
 use bincode::Options;
 use data_encoding::BASE32_NOPAD;
+use expl_hexgrid::layout::{HexagonalGridLayout, SquareGridLayout};
 use rand::{Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
 use std::{fmt, str::FromStr};
