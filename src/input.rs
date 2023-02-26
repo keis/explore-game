@@ -5,7 +5,7 @@ use crate::{
     camera::{CameraControl, CameraTarget},
     character::Movement,
     interface::MenuLayer,
-    map::{coord_to_vec3, MapPosition, MapPresence, PathGuided, Zone},
+    map::{MapPosition, MapPresence, PathGuided, Zone},
 };
 use bevy::prelude::*;
 use bevy_mod_picking::{DefaultPickingPlugins, PickingEvent, Selection};
@@ -149,9 +149,9 @@ fn handle_select_next(
         for (entity, mut selection, presence, _) in party_query.iter_mut() {
             if entity == next {
                 selection.set_selected(true);
-                commands.entity(camera_entity).insert(CameraTarget {
-                    position: coord_to_vec3(presence.position) + Vec3::new(2.0, 20.0, 20.0),
-                });
+                commands
+                    .entity(camera_entity)
+                    .insert(CameraTarget::from_hexcoord(presence.position));
             } else if selection.selected() {
                 selection.set_selected(false);
             }
@@ -166,21 +166,10 @@ fn handle_picking_events(
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
     for event in events.iter() {
-        match event {
-            PickingEvent::Clicked(e) => {
-                if let Ok(zone_position) = zone_query.get(*e) {
-                    info!("Clicked a zone: {:?}", zone_position);
-                    for (entity, _) in presence_query.iter().filter(|(_, s)| s.selected()) {
-                        game_action_queue.add(GameAction::MoveTo(entity, zone_position.0));
-                    }
-                } else {
-                    info!("Clicked something: {:?}", e);
-                }
-            }
-            PickingEvent::Selection(e) => {
-                debug!("Selection event {:?}", e);
-            }
-            _ => {}
+        let PickingEvent::Clicked(e) = event else { continue };
+        let Ok(zone_position) = zone_query.get(*e) else { continue };
+        for (entity, _) in presence_query.iter().filter(|(_, s)| s.selected()) {
+            game_action_queue.add(GameAction::MoveTo(entity, zone_position.0));
         }
     }
 }

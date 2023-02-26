@@ -1,5 +1,8 @@
-use crate::input::{Action, ActionState};
-use crate::State;
+use crate::{
+    input::{Action, ActionState},
+    map::{coord_to_vec3, HexCoord},
+    State,
+};
 use bevy::{prelude::*, window::CursorGrabMode};
 
 pub struct CameraControlPlugin;
@@ -52,7 +55,17 @@ impl Default for CameraControl {
 
 #[derive(Component, Debug)]
 pub struct CameraTarget {
-    pub position: Vec3,
+    translation: Vec3,
+}
+
+impl CameraTarget {
+    const OFFSET: Vec3 = Vec3::new(2.0, 10.0, 10.0);
+
+    pub fn from_hexcoord(coord: HexCoord) -> Self {
+        Self {
+            translation: coord_to_vec3(coord) + Self::OFFSET,
+        }
+    }
 }
 
 fn camera_control(
@@ -136,7 +149,7 @@ fn camera_target(
 ) {
     if let Ok((entity, transform, mut control, target)) = camera_query.get_single_mut() {
         let acceleration = control.acceleration;
-        let delta = target.position - transform.translation;
+        let delta = target.translation - transform.translation;
         control.velocity += delta.normalize_or_zero() * time.delta_seconds() * acceleration;
         if delta.length_squared() < 1.0 {
             commands.entity(entity).remove::<CameraTarget>();
@@ -309,7 +322,7 @@ mod tests {
                 CameraControl::default(),
                 CameraBounds::default(),
                 CameraTarget {
-                    position: Vec3::new(10.0, 10.0, 10.0),
+                    translation: Vec3::new(10.0, 10.0, 10.0),
                 },
             ))
             .id();
