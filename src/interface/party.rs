@@ -21,6 +21,9 @@ pub struct PartyDisplay {
 #[derive(Component)]
 pub struct PartyMovementPointsText;
 
+#[derive(Component)]
+pub struct PartySizeText;
+
 #[derive(Bundle)]
 pub struct PartyListBundle {
     node_bundle: NodeBundle,
@@ -53,6 +56,7 @@ fn spawn_party_display(
     entity: Entity,
     party: &Party,
     party_movement: &Movement,
+    group: &Group,
     assets: &Res<InterfaceAssets>,
 ) {
     parent
@@ -64,6 +68,7 @@ fn spawn_party_display(
                     margin: UiRect::all(Val::Px(2.0)),
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::SpaceBetween,
+                    align_items: AlignItems::FlexStart,
                     ..default()
                 },
                 background_color: NORMAL.into(),
@@ -79,27 +84,50 @@ fn spawn_party_display(
                     color: Color::WHITE,
                 },
             ));
-            parent.spawn((
-                PartyMovementPointsText,
-                TextBundle::from_sections([
-                    TextSection::new(
-                        "Movement: ",
-                        TextStyle {
-                            font: assets.font.clone(),
-                            font_size: 32.0,
-                            color: Color::WHITE,
+            parent.spawn(NodeBundle::default()).with_children(|parent| {
+                parent.spawn(NodeBundle::default()).with_children(|parent| {
+                    parent.spawn(ImageBundle {
+                        style: Style {
+                            size: Size::new(Val::Px(24.0), Val::Px(24.0)),
+                            ..default()
                         },
-                    ),
-                    TextSection::new(
-                        format!("{:?}", party_movement.points),
-                        TextStyle {
-                            font: assets.font.clone(),
-                            font_size: 32.0,
-                            color: Color::WHITE,
+                        image: assets.footsteps_icon.clone().into(),
+                        ..default()
+                    });
+                    parent.spawn((
+                        PartyMovementPointsText,
+                        TextBundle::from_sections([TextSection::new(
+                            format!("{:?}", party_movement.points),
+                            TextStyle {
+                                font: assets.font.clone(),
+                                font_size: 24.0,
+                                color: Color::WHITE,
+                            },
+                        )]),
+                    ));
+                });
+                parent.spawn(NodeBundle::default()).with_children(|parent| {
+                    parent.spawn(ImageBundle {
+                        style: Style {
+                            size: Size::new(Val::Px(24.0), Val::Px(24.0)),
+                            ..default()
                         },
-                    ),
-                ]),
-            ));
+                        image: assets.person_icon.clone().into(),
+                        ..default()
+                    });
+                    parent.spawn((
+                        PartySizeText,
+                        TextBundle::from_sections([TextSection::new(
+                            format!("{:?}", group.members.len()),
+                            TextStyle {
+                                font: assets.font.clone(),
+                                font_size: 24.0,
+                                color: Color::WHITE,
+                            },
+                        )]),
+                    ));
+                });
+            });
         });
 }
 
@@ -122,7 +150,7 @@ pub fn update_party_list(
     party_display_query: Query<(Entity, &PartyDisplay)>,
 ) {
     let party_list = party_list_query.single();
-    for (entity, party, _, party_movement) in party_query.iter() {
+    for (entity, party, group, party_movement) in party_query.iter() {
         if party_display_query
             .iter()
             .any(|(_, display)| display.party == entity)
@@ -130,7 +158,7 @@ pub fn update_party_list(
             continue;
         }
         commands.get_or_spawn(party_list).add_children(|parent| {
-            spawn_party_display(parent, entity, party, party_movement, &assets);
+            spawn_party_display(parent, entity, party, party_movement, group, &assets);
         });
     }
 
@@ -163,15 +191,31 @@ pub fn update_party_selection(
 
 pub fn update_party_movement_points(
     mut party_movement_points_query: Query<(&mut Text, &Parent), With<PartyMovementPointsText>>,
+    intermediate_parent_query: Query<&Parent>,
     party_display_query: Query<&PartyDisplay>,
     party_query: Query<&Movement, (Changed<Movement>, With<Party>)>,
 ) {
     for (mut text, parent) in party_movement_points_query.iter_mut() {
-        if let Ok(party_display) = party_display_query.get(parent.get()) {
-            if let Ok(party_movement) = party_query.get(party_display.party) {
-                text.sections[1].value = format!("{:?}", party_movement.points);
-            }
-        }
+        let Ok(intermediate_parent_a) = intermediate_parent_query.get(parent.get()) else { continue };
+        let Ok(intermediate_parent_b) = intermediate_parent_query.get(intermediate_parent_a.get()) else { continue };
+        let Ok(party_display) = party_display_query.get(intermediate_parent_b.get()) else { continue };
+        let Ok(party_movement) = party_query.get(party_display.party) else { continue };
+        text.sections[0].value = format!("{:?}", party_movement.points);
+    }
+}
+
+pub fn update_party_size(
+    mut party_size_text_query: Query<(&mut Text, &Parent), With<PartySizeText>>,
+    intermediate_parent_query: Query<&Parent>,
+    party_display_query: Query<&PartyDisplay>,
+    party_query: Query<&Group, (Changed<Group>, With<Party>)>,
+) {
+    for (mut text, parent) in party_size_text_query.iter_mut() {
+        let Ok(intermediate_parent_a) = intermediate_parent_query.get(parent.get()) else { continue };
+        let Ok(intermediate_parent_b) = intermediate_parent_query.get(intermediate_parent_a.get()) else { continue };
+        let Ok(party_display) = party_display_query.get(intermediate_parent_b.get()) else { continue };
+        let Ok(group) = party_query.get(party_display.party) else { continue };
+        text.sections[0].value = format!("{:?}", group.members.len());
     }
 }
 

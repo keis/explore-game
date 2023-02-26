@@ -1,4 +1,4 @@
-* By lorc under CC-BY 3.0 (http://game-icons.net)
+* By lorc under CC-BY 3.0 (https://game-icons.net)
  - assets/icons/back-forth.png
  - assets/icons/bottom-right-3d-arrow.png
  - assets/icons/campfire.png
@@ -7,6 +7,9 @@
  - assets/icons/cancel.png
 * By Delapouite under CC-BY 3.0 (https://delapouite.com/)
  - assets/icons/contract.png
+ - assets/icons/person.png
+* By Skoll under CC-BY 3.0 (https://game-icons.net)
+ - assets/icons/footsteps.png
 * By Jinn under CC-BY SA 3.0 (https://opengameart.org/content/world-map-tiles)
  - assets/textures/ocean_inner.png
  - assets/textures/mountains_inner.png
