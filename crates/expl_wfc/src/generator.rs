@@ -30,10 +30,7 @@ where
     {
         let default_cell = Cell::empty(template.available_tiles());
         let seed = Seed::new(layout.into());
-        let grid = Grid {
-            layout,
-            data: vec![default_cell; layout.size()],
-        };
+        let grid = Grid::with_fill(layout, default_cell);
         let collapsed: Vec<(HexCoord, TileId, Vec<TileId>)> =
             Vec::with_capacity(grid.layout.size());
         Self {
@@ -53,10 +50,7 @@ where
     {
         let default_cell = Cell::empty(template.available_tiles());
         let layout: Layout = seed.seed_type.try_into()?;
-        let grid = Grid {
-            layout,
-            data: vec![default_cell; layout.size()],
-        };
+        let grid = Grid::with_fill(layout, default_cell);
         let collapsed: Vec<(HexCoord, TileId, Vec<TileId>)> =
             Vec::with_capacity(grid.layout.size());
         Ok(Self {
@@ -141,19 +135,15 @@ where
     }
 
     pub fn export(&self) -> Result<Grid<Layout, Item>, &'static str> {
-        let data = self
+        let data: Vec<_> = self
             .grid
-            .data
-            .iter()
+            .iter_data()
             .map(|cell| match cell {
                 Cell::Collapsed(tile) => Ok(self.template.contribution(*tile)),
                 Cell::Alternatives(_, _) => Err("Cell not collapsed"),
             })
             .collect::<Result<_, _>>()?;
 
-        Ok(Grid {
-            layout: self.grid.layout,
-            data,
-        })
+        Ok(Grid::with_data(self.grid.layout, data))
     }
 }

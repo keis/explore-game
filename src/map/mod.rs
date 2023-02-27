@@ -3,7 +3,7 @@ use bevy::{
     ecs::{schedule::ShouldRun, system::SystemParam},
     prelude::*,
 };
-use expl_hexgrid::{layout::SquareGridLayout, Grid, GridLayout};
+use expl_hexgrid::{layout::SquareGridLayout, Grid};
 use pathfinding::prelude::astar;
 use std::collections::hash_set::HashSet;
 
@@ -40,14 +40,8 @@ pub struct GameMap {
 impl GameMap {
     pub fn new(layout: SquareGridLayout, tiles: Vec<Entity>) -> Self {
         GameMap {
-            tiles: Grid {
-                layout,
-                data: tiles,
-            },
-            presence: Grid {
-                layout,
-                data: vec![HashSet::new(); layout.size()],
-            },
+            tiles: Grid::with_data(layout, tiles),
+            presence: Grid::new(layout),
             void: HashSet::new(),
         }
     }
@@ -174,18 +168,13 @@ where
     F: FnMut(&mut Commands, HexCoord, Terrain) -> Entity,
 {
     let gamemap = GameMap {
-        tiles: Grid {
-            layout: prototype.layout,
-            data: prototype
-                .layout
+        tiles: Grid::with_data(
+            prototype.layout,
+            prototype
                 .iter()
-                .map(|coord| spawn_tile(commands, coord, prototype[coord]))
-                .collect(),
-        },
-        presence: Grid {
-            layout: prototype.layout,
-            data: vec![HashSet::new(); prototype.layout.size()],
-        },
+                .map(|(coord, terrain)| spawn_tile(commands, coord, *terrain)),
+        ),
+        presence: Grid::new(prototype.layout),
         void: HashSet::new(),
     };
     commands.spawn(gamemap).id()
