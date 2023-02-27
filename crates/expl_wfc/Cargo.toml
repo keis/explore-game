@@ -10,6 +10,7 @@ bench = false
 bincode = "1.3.3"
 data-encoding = "2.3.3"
 expl_hexgrid = { path = "../expl_hexgrid" }
+fixedbitset = "0.4.2"
 rand = "0.8.5"
 rand_xoshiro = "0.6.0"
 serde = { version = "1.0.152", features = ["derive"] }

@@ -1636,6 +1636,7 @@ dependencies = [
  "criterion",
  "data-encoding",
  "expl_hexgrid",
+ "fixedbitset",
  "rand",
  "rand_xoshiro",
  "rstest",
