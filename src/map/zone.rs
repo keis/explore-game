@@ -62,6 +62,11 @@ impl Zone {
     }
 }
 
+pub struct ZonePrototype {
+    pub terrain: Terrain,
+    pub random_fill: Vec<(Vec2, f32)>,
+}
+
 #[derive(Bundle, Default)]
 pub struct ZoneBundle {
     pub zone: Zone,
@@ -99,31 +104,6 @@ fn zone_material(assets: &Res<MainAssets>, terrain: Terrain) -> ZoneMaterial {
     }
 }
 
-fn random_in_circle<R: Rng>(rng: &mut R, radius: f32) -> Vec2 {
-    let max_r = radius * radius;
-    let sqrtr = rng.gen_range(0.0f32..max_r).sqrt();
-    let angle = rng.gen_range(0.0f32..(2.0 * std::f32::consts::PI));
-    Vec2::new(sqrtr * angle.cos(), sqrtr * angle.sin())
-}
-
-fn random_fill() -> Vec<(Vec2, f32)> {
-    // Pretty stupid algorithm that simply tries a few random positions and returns whatever didn't
-    // overlap
-    let mut rng = rand::thread_rng();
-    let mut result: Vec<(Vec2, f32)> = vec![];
-    for _ in 0..16 {
-        let newpos = random_in_circle(&mut rng, 0.8);
-        let newradius = rng.gen_range(0.18f32..0.22);
-        if !result
-            .iter()
-            .any(|(pos, radius)| pos.distance(newpos) < radius + newradius)
-        {
-            result.push((newpos, newradius));
-        }
-    }
-    result
-}
-
 #[allow(clippy::type_complexity)]
 pub fn spawn_zone(
     commands: &mut Commands,
@@ -134,14 +114,17 @@ pub fn spawn_zone(
         ResMut<Assets<TerrainMaterial>>,
     )>,
     position: HexCoord,
-    terrain: Terrain,
+    ZonePrototype {
+        terrain,
+        random_fill,
+    }: &ZonePrototype,
 ) -> Entity {
-    let material = zone_material(&params.p0(), terrain);
+    let material = zone_material(&params.p0(), *terrain);
     commands
         .spawn((
             ZoneBundle {
                 position: MapPosition(position),
-                zone: Zone { terrain },
+                zone: Zone { terrain: *terrain },
                 ..default()
             },
             MaterialMeshBundle {
@@ -153,8 +136,8 @@ pub fn spawn_zone(
             },
         ))
         .with_children(|parent| {
-            if terrain == Terrain::Forest {
-                for (pos, scale) in random_fill() {
+            if *terrain == Terrain::Forest {
+                for (pos, scale) in random_fill {
                     parent.spawn((
                         Fog::default(),
                         MaterialMeshBundle {

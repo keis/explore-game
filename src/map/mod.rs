@@ -22,13 +22,13 @@ pub use commands::{AddMapPresence, DespawnPresence, MoveMapPresence};
 pub use events::MapEvent;
 pub use expl_hexgrid::HexCoord;
 pub use fog::Fog;
-pub use generator::{start_map_generation, GenerateMapTask, MapSeed};
+pub use generator::{start_map_generation, GenerateMapTask, MapPrototype, MapSeed};
 pub use hex::{coord_to_vec3, Hexagon};
 pub use pathdisplay::PathDisplay;
 pub use pathguided::PathGuided;
 pub use position::MapPosition;
 pub use presence::{MapPresence, Offset, ViewRadius};
-pub use zone::{spawn_zone, Terrain, Zone, ZoneBundle};
+pub use zone::{spawn_zone, Terrain, Zone, ZoneBundle, ZonePrototype};
 
 #[derive(Component)]
 pub struct GameMap {
@@ -161,18 +161,18 @@ impl<'w, 's> PathFinder<'w, 's> {
 
 pub fn spawn_game_map_from_prototype<F>(
     commands: &mut Commands,
-    prototype: &Grid<SquareGridLayout, Terrain>,
+    prototype: &MapPrototype,
     mut spawn_tile: F,
 ) -> Entity
 where
-    F: FnMut(&mut Commands, HexCoord, Terrain) -> Entity,
+    F: FnMut(&mut Commands, HexCoord, &ZonePrototype) -> Entity,
 {
     let gamemap = GameMap {
         tiles: Grid::with_data(
             prototype.layout,
             prototype
                 .iter()
-                .map(|(coord, terrain)| spawn_tile(commands, coord, *terrain)),
+                .map(|(coord, zoneproto)| spawn_tile(commands, coord, zoneproto)),
         ),
         presence: Grid::new(prototype.layout),
         void: HashSet::new(),

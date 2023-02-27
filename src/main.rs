@@ -185,13 +185,18 @@ fn spawn_scene(
         None => return,
     };
 
-    let map =
-        spawn_game_map_from_prototype(&mut commands, &prototype, |commands, position, terrain| {
-            spawn_zone(commands, &mut params.p1(), position, terrain)
-        });
+    let map = spawn_game_map_from_prototype(
+        &mut commands,
+        &prototype,
+        |commands, position, zoneproto| spawn_zone(commands, &mut params.p1(), position, zoneproto),
+    );
 
     let groupcoord = spiral(prototype.layout.center())
-        .find(|&c| prototype.get(c).map_or(false, |&t| t != Terrain::Ocean))
+        .find(|&c| {
+            prototype
+                .get(c)
+                .map_or(false, |proto| proto.terrain != Terrain::Ocean)
+        })
         .unwrap();
     let alpha_group = spawn_party(
         &mut commands,
@@ -214,7 +219,11 @@ fn spawn_scene(
     });
 
     let enemycoord = spiral(prototype.layout.center() + HexCoord::new(2, 3))
-        .find(|&c| prototype.get(c).map_or(false, |&t| t != Terrain::Ocean))
+        .find(|&c| {
+            prototype
+                .get(c)
+                .map_or(false, |proto| proto.terrain != Terrain::Ocean)
+        })
         .unwrap();
     let enemy = spawn_enemy(&mut commands, &mut params.p2(), enemycoord);
     commands.add(AddMapPresence {
