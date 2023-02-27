@@ -5,8 +5,8 @@ use super::{
     TileId,
 };
 use expl_hexgrid::{Grid, GridLayout, HexCoord};
+use fixedbitset::FixedBitSet;
 use std::cmp::Reverse;
-use std::collections::HashSet;
 use std::hash::Hash;
 
 /// Generator is the state of the iterative process for generating a map using WFC
@@ -28,10 +28,7 @@ where
     where
         Layout: Into<SeedType>,
     {
-        let default_cell = Cell::Alternatives(
-            template.available_tiles(),
-            vec![true; template.available_tiles()],
-        );
+        let default_cell = Cell::empty(template.available_tiles());
         let seed = Seed::new(layout.into());
         let grid = Grid {
             layout,
@@ -54,10 +51,7 @@ where
         Layout: TryFrom<SeedType> + TryFrom<SeedType>,
         &'static str: From<<Layout as TryFrom<SeedType>>::Error>,
     {
-        let default_cell = Cell::Alternatives(
-            template.available_tiles(),
-            vec![true; template.available_tiles()],
-        );
+        let default_cell = Cell::empty(template.available_tiles());
         let layout: Layout = seed.seed_type.try_into()?;
         let grid = Grid {
             layout,
@@ -75,16 +69,14 @@ where
         })
     }
 
-    pub fn alternatives(&self, coord: HexCoord) -> HashSet<TileId> {
-        let mut alts: HashSet<TileId> = (0..self.template.available_tiles())
-            .map(|id| id as TileId)
-            .collect();
+    pub fn alternatives(&self, coord: HexCoord) -> FixedBitSet {
+        let mut alts = FixedBitSet::with_capacity(self.template.available_tiles());
+        alts.set_range(.., true);
         for neighbour in coord.neighbours() {
-            if let Some(Cell::Collapsed(tile)) = self.grid.get(neighbour) {
-                for (offset, compatible) in self.template.compatible_tiles(*tile) {
-                    if neighbour + *offset == coord {
-                        alts = alts.intersection(compatible).cloned().collect();
-                    }
+            let Some(Cell::Collapsed(tile)) = self.grid.get(neighbour) else { continue };
+            for (offset, compatible) in self.template.compatible_tiles(*tile) {
+                if neighbour + *offset == coord {
+                    alts.intersect_with(compatible);
                 }
             }
         }
@@ -109,18 +101,14 @@ where
         last_rejected.push(last_tile);
         let mut alternatives = self.alternatives(last_coord);
         for tile in &last_rejected {
-            alternatives.remove(tile);
+            alternatives.set(*tile, false);
         }
-        self.grid[last_coord] = Cell::Alternatives(
-            alternatives.len(),
-            (0..self.template.available_tiles())
-                .map(|id| alternatives.contains(&(id as TileId)))
-                .collect(),
-        );
+        self.grid[last_coord] = Cell::empty(self.template.available_tiles());
+        self.grid[last_coord].set_alternatives(alternatives);
         for neighbour in last_coord.neighbours() {
             if let Some(Cell::Alternatives(_, _)) = self.grid.get(neighbour) {
                 let alternatives = self.alternatives(neighbour);
-                self.grid[neighbour].set_alternatives(&alternatives)
+                self.grid[neighbour].set_alternatives(alternatives)
             }
         }
         // Because self.rejected refers to the cell at `last_coord` it is important this is the

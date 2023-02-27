@@ -1,11 +1,12 @@
 use super::{tile::Tile, TileId};
 use expl_hexgrid::{GridLayout, HexCoord};
-use std::collections::{BinaryHeap, HashSet};
+use fixedbitset::FixedBitSet;
+use std::collections::BinaryHeap;
 use std::hash::Hash;
 
 pub struct TileDetails<Item> {
     contribution: Item,
-    compatible: [HashSet<TileId>; 6],
+    compatible: [FixedBitSet; 6],
 }
 
 /// A Template holds the rules for how tiles can be combined
@@ -45,7 +46,7 @@ where
                         .enumerate()
                         .filter(|(_, other)| tile.compatible_with(other, offset))
                         .map(|(id, _)| id as TileId)
-                        .collect::<HashSet<TileId>>()
+                        .collect::<FixedBitSet>()
                 }),
             })
             .collect();
@@ -55,7 +56,7 @@ where
     pub fn compatible_tiles(
         &self,
         tile_id: TileId,
-    ) -> impl '_ + Iterator<Item = (&HexCoord, &HashSet<TileId>)> {
+    ) -> impl '_ + Iterator<Item = (&HexCoord, &FixedBitSet)> {
         HexCoord::NEIGHBOUR_OFFSETS
             .iter()
             .zip(self.details[tile_id].compatible.iter())

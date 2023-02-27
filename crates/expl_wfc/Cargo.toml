@@ -3,16 +3,23 @@ name = "expl_wfc"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+bench = false
 
 [dependencies]
 bincode = "1.3.3"
 data-encoding = "2.3.3"
 expl_hexgrid = { path = "../expl_hexgrid" }
+fixedbitset = "0.4.2"
 rand = "0.8.5"
 rand_xoshiro = "0.6.0"
 serde = { version = "1.0.152", features = ["derive"] }
 
 [dev-dependencies]
 clap = { version = "4.1.6", features = ["derive"] }
+criterion = "0.4.0"
 rstest = { version = "0.16.0", default-features = false }
+
+[[bench]]
+name = "generate"
+harness = false
