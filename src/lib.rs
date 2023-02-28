@@ -4,6 +4,7 @@ pub mod camera;
 pub mod camp;
 pub mod character;
 pub mod combat;
+pub mod crystals;
 pub mod enemy;
 pub mod indicator;
 pub mod input;

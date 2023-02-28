@@ -61,16 +61,19 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
     while generator.step().is_some() {}
     info!("Generated map!");
     let terrain = generator.export()?;
+    let mut rng = rand::thread_rng();
     Ok(Grid::with_data(
         terrain.layout,
         terrain.iter().map(|(_coord, &terrain)| match terrain {
             Terrain::Forest => ZonePrototype {
                 terrain,
                 random_fill: random_fill(),
+                crystals: rng.gen_range(0..8) == 0,
             },
             _ => ZonePrototype {
                 terrain,
                 random_fill: Vec::new(),
+                crystals: false,
             },
         }),
     ))

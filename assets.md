@@ -18,3 +18,5 @@
  - assets/textures/conifer_forest_inner.png
 * By OdinTdh CC-BY 4.0 (https://opengameart.org/content/textured-low-poly-pine)
  - assets/pine.blend
+* By rubberduck under CC0 (https://opengameart.org/content/simple-3d-crystals-unwrapped-simple-texture)
+ - assets/crystals.blend
