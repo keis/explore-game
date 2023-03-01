@@ -25,6 +25,9 @@ pub struct PartyMovementPointsText;
 #[derive(Component)]
 pub struct PartySizeText;
 
+#[derive(Component)]
+pub struct PartyCrystalsText;
+
 #[derive(Bundle)]
 pub struct PartyListBundle {
     node_bundle: NodeBundle,
@@ -99,6 +102,13 @@ fn spawn_party_display(
                     PartySizeText,
                     assets.person_icon.clone(),
                     format!("{}", group.members.len()),
+                );
+                spawn_stat_display(
+                    parent,
+                    assets,
+                    PartyCrystalsText,
+                    assets.crystals_icon.clone(),
+                    format!("{}", party.crystals),
                 );
             });
         });
@@ -189,6 +199,21 @@ pub fn update_party_size(
         let Ok(party_display) = party_display_query.get(intermediate_parent_b.get()) else { continue };
         let Ok(group) = party_query.get(party_display.party) else { continue };
         text.sections[0].value = format!("{:?}", group.members.len());
+    }
+}
+
+pub fn update_party_crystals(
+    mut party_crystals_text_query: Query<(&mut Text, &Parent), With<PartyCrystalsText>>,
+    intermediate_parent_query: Query<&Parent>,
+    party_display_query: Query<&PartyDisplay>,
+    party_query: Query<&Party, Changed<Party>>,
+) {
+    for (mut text, parent) in party_crystals_text_query.iter_mut() {
+        let Ok(intermediate_parent_a) = intermediate_parent_query.get(parent.get()) else { continue };
+        let Ok(intermediate_parent_b) = intermediate_parent_query.get(intermediate_parent_a.get()) else { continue };
+        let Ok(party_display) = party_display_query.get(intermediate_parent_b.get()) else { continue };
+        let Ok(party) = party_query.get(party_display.party) else { continue };
+        text.sections[0].value = format!("{}", party.crystals);
     }
 }
 
