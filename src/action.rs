@@ -196,51 +196,47 @@ pub fn handle_make_camp(
     mut commands: Commands,
     mut spawn_camp_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
     mut events: EventReader<GameAction>,
-    mut map_query: Query<(Entity, &GameMap)>,
+    map_query: Query<(Entity, &GameMap)>,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
     camp_query: Query<&Camp>,
 ) {
     for event in events.iter() {
-        if let GameAction::MakeCamp(e) = event {
-            if let Ok((mut party, group, presence)) = party_query.get_mut(*e) {
-                let (map_entity, map) = map_query
-                    .get_mut(presence.map)
-                    .expect("references valid map");
+        let GameAction::MakeCamp(party_entity) = event else { continue };
+        let Ok((mut party, group, presence)) = party_query.get_mut(*party_entity) else { continue };
+        let Ok((map_entity, map)) = map_query.get(presence.map) else { continue };
 
-                let position = presence.position;
-                if camp_query
-                    .iter_many(map.presence(position))
-                    .next()
-                    .is_some()
-                {
-                    info!("There's already a camp here");
-                    return;
-                }
-
-                if party.supplies == 0 {
-                    info!("Party does not have enough supplies to make camp");
-                    return;
-                }
-
-                info!("Spawning camp at {:?}", position);
-                party.supplies -= 1;
-                let entity = spawn_camp(
-                    &mut commands,
-                    &mut spawn_camp_params,
-                    position,
-                    String::from("New camp"),
-                );
-                commands.add(AddMapPresence {
-                    map: map_entity,
-                    presence: entity,
-                    position,
-                });
-                commands.add(JoinGroup {
-                    group: entity,
-                    members: group.members.clone(),
-                });
-            }
+        let position = presence.position;
+        if camp_query
+            .iter_many(map.presence(position))
+            .next()
+            .is_some()
+        {
+            info!("There's already a camp here");
+            return;
         }
+
+        if party.supplies == 0 {
+            info!("Party does not have enough supplies to make camp");
+            return;
+        }
+
+        info!("Spawning camp at {:?}", position);
+        party.supplies -= 1;
+        let entity = spawn_camp(
+            &mut commands,
+            &mut spawn_camp_params,
+            position,
+            String::from("New camp"),
+        );
+        commands.add(AddMapPresence {
+            map: map_entity,
+            presence: entity,
+            position,
+        });
+        commands.add(JoinGroup {
+            group: entity,
+            members: group.members.clone(),
+        });
     }
 }
 
