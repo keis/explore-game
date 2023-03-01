@@ -1,5 +1,6 @@
 use super::{
     color::{NORMAL, SELECTED},
+    stat::spawn_stat_display,
     InterfaceAssets,
 };
 use crate::{
@@ -55,7 +56,7 @@ fn spawn_party_display(
     parent: &mut ChildBuilder,
     entity: Entity,
     party: &Party,
-    party_movement: &Movement,
+    movement: &Movement,
     group: &Group,
     assets: &Res<InterfaceAssets>,
 ) {
@@ -85,48 +86,20 @@ fn spawn_party_display(
                 },
             ));
             parent.spawn(NodeBundle::default()).with_children(|parent| {
-                parent.spawn(NodeBundle::default()).with_children(|parent| {
-                    parent.spawn(ImageBundle {
-                        style: Style {
-                            size: Size::new(Val::Px(24.0), Val::Px(24.0)),
-                            ..default()
-                        },
-                        image: assets.footsteps_icon.clone().into(),
-                        ..default()
-                    });
-                    parent.spawn((
-                        PartyMovementPointsText,
-                        TextBundle::from_sections([TextSection::new(
-                            format!("{:?}", party_movement.points),
-                            TextStyle {
-                                font: assets.font.clone(),
-                                font_size: 24.0,
-                                color: Color::WHITE,
-                            },
-                        )]),
-                    ));
-                });
-                parent.spawn(NodeBundle::default()).with_children(|parent| {
-                    parent.spawn(ImageBundle {
-                        style: Style {
-                            size: Size::new(Val::Px(24.0), Val::Px(24.0)),
-                            ..default()
-                        },
-                        image: assets.person_icon.clone().into(),
-                        ..default()
-                    });
-                    parent.spawn((
-                        PartySizeText,
-                        TextBundle::from_sections([TextSection::new(
-                            format!("{:?}", group.members.len()),
-                            TextStyle {
-                                font: assets.font.clone(),
-                                font_size: 24.0,
-                                color: Color::WHITE,
-                            },
-                        )]),
-                    ));
-                });
+                spawn_stat_display(
+                    parent,
+                    assets,
+                    PartyMovementPointsText,
+                    assets.footsteps_icon.clone(),
+                    format!("{}", movement.points),
+                );
+                spawn_stat_display(
+                    parent,
+                    assets,
+                    PartySizeText,
+                    assets.person_icon.clone(),
+                    format!("{}", group.members.len()),
+                );
             });
         });
 }

@@ -1,5 +1,6 @@
 use super::{
     color::{NORMAL, SELECTED},
+    stat::spawn_stat_display,
     InterfaceAssets,
 };
 use crate::{
@@ -81,48 +82,20 @@ fn spawn_character_display(
                 },
             ));
             parent.spawn(NodeBundle::default()).with_children(|parent| {
-                parent.spawn(NodeBundle::default()).with_children(|parent| {
-                    parent.spawn(ImageBundle {
-                        style: Style {
-                            size: Size::new(Val::Px(24.0), Val::Px(24.0)),
-                            ..default()
-                        },
-                        image: assets.gladius_icon.clone().into(),
-                        ..default()
-                    });
-                    parent.spawn((
-                        AttackText,
-                        TextBundle::from_sections([TextSection::new(
-                            format!("{:?}", attack.0),
-                            TextStyle {
-                                font: assets.font.clone(),
-                                font_size: 24.0,
-                                color: Color::WHITE,
-                            },
-                        )]),
-                    ));
-                });
-                parent.spawn(NodeBundle::default()).with_children(|parent| {
-                    parent.spawn(ImageBundle {
-                        style: Style {
-                            size: Size::new(Val::Px(24.0), Val::Px(24.0)),
-                            ..default()
-                        },
-                        image: assets.heart_shield_icon.clone().into(),
-                        ..default()
-                    });
-                    parent.spawn((
-                        HealthText,
-                        TextBundle::from_sections([TextSection::new(
-                            format!("{:?}", health.0),
-                            TextStyle {
-                                font: assets.font.clone(),
-                                font_size: 24.0,
-                                color: Color::WHITE,
-                            },
-                        )]),
-                    ));
-                });
+                spawn_stat_display(
+                    parent,
+                    assets,
+                    AttackText,
+                    assets.gladius_icon.clone(),
+                    format!("{}-{}", attack.0.start, attack.0.end),
+                );
+                spawn_stat_display(
+                    parent,
+                    assets,
+                    HealthText,
+                    assets.heart_shield_icon.clone(),
+                    format!("{}", health.0),
+                );
             });
         });
 }

@@ -9,6 +9,7 @@ mod color;
 mod menu;
 mod party;
 mod shell;
+mod stat;
 mod tooltip;
 
 pub use assets::InterfaceAssets;
