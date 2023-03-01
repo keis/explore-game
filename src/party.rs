@@ -17,6 +17,7 @@ use std::collections::HashSet;
 pub struct Party {
     pub name: String,
     pub supplies: u32,
+    pub crystals: u32,
 }
 
 #[derive(Bundle, Default)]
@@ -143,7 +144,11 @@ pub fn spawn_party(
                 ..default()
             },
             PartyBundle {
-                party: Party { name, supplies },
+                party: Party {
+                    name,
+                    supplies,
+                    ..default()
+                },
                 group: Group::default(),
                 offset: Offset(offset),
                 view_radius: ViewRadius(VIEW_RADIUS),

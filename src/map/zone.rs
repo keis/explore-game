@@ -151,7 +151,7 @@ pub fn spawn_zone(
                     let (pos, scale) = filliter.next().unwrap();
                     parent.spawn((
                         Fog::default(),
-                        ZoneDecorationTree,
+                        ZoneDecorationCrystals,
                         MaterialMeshBundle {
                             mesh: params.p0().crystals_mesh.clone(),
                             material: params.p3().add(TerrainMaterial {
@@ -170,7 +170,7 @@ pub fn spawn_zone(
                 for (pos, scale) in filliter {
                     parent.spawn((
                         Fog::default(),
-                        ZoneDecorationCrystals,
+                        ZoneDecorationTree,
                         MaterialMeshBundle {
                             mesh: params.p0().pine_mesh.clone(),
                             material: params.p3().add(TerrainMaterial {
@@ -198,4 +198,19 @@ pub fn spawn_zone(
     }
 
     zone_entity
+}
+
+pub fn despawn_empty_crystal_deposit(
+    mut commands: Commands,
+    crystal_deposit_query: Query<(&CrystalDeposit, &Children), Changed<CrystalDeposit>>,
+    zone_decoration_query: Query<Entity, With<ZoneDecorationCrystals>>,
+) {
+    for (_, children) in crystal_deposit_query
+        .iter()
+        .filter(|(deposit, _)| deposit.amount == 0)
+    {
+        for decoration_entity in zone_decoration_query.iter_many(children.iter()) {
+            commands.entity(decoration_entity).despawn();
+        }
+    }
 }

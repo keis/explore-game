@@ -2,6 +2,7 @@ use crate::{
     assets::MainAssets,
     camp::{spawn_camp, Camp},
     character::Movement,
+    crystals::CrystalDeposit,
     map::{
         coord_to_vec3, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence,
         MoveMapPresence, Offset, PathFinder, PathGuided,
@@ -26,6 +27,7 @@ pub enum GameAction {
     SplitParty(Entity, SmallVec<[Entity; 8]>),
     MergeParty(SmallVec<[Entity; 8]>),
     CreatePartyFromCamp(Entity, SmallVec<[Entity; 8]>),
+    CollectCrystals(Entity),
     Save(),
 }
 
@@ -48,7 +50,8 @@ impl Plugin for ActionPlugin {
                     .with_system(handle_enter_camp)
                     .with_system(handle_create_party_from_camp)
                     .with_system(handle_split_party)
-                    .with_system(handle_merge_party),
+                    .with_system(handle_merge_party)
+                    .with_system(handle_collect_crystals),
             )
             .add_system_set(
                 SystemSet::new()
@@ -226,7 +229,11 @@ pub fn handle_make_camp(
             &mut commands,
             &mut spawn_camp_params,
             position,
-            String::from("New camp"),
+            Camp {
+                name: String::from("New camp"),
+                supplies: party.supplies,
+                crystals: party.crystals,
+            },
         );
         commands.add(AddMapPresence {
             map: map_entity,
@@ -286,6 +293,8 @@ pub fn handle_enter_camp(
         let Ok(mut camp) = camp_query.get_mut(*camp_entity) else { continue };
         camp.supplies += party.supplies;
         party.supplies = 0;
+        camp.crystals += party.crystals;
+        party.crystals = 0;
         commands.add(JoinGroup {
             group: *camp_entity,
             members: group.members.clone(),
@@ -381,6 +390,7 @@ pub fn handle_merge_party(
             .unwrap();
         let mut characters = SmallVec::<[Entity; 8]>::new();
         let mut supplies = 0;
+        let mut crystals = 0;
         let mut iter = party_query.iter_many_mut(rest);
         while let Some((mut party, group, presence)) = iter.fetch_next() {
             if presence.position != target_position {
@@ -389,14 +399,38 @@ pub fn handle_merge_party(
             }
             supplies += party.supplies;
             party.supplies = 0;
+            crystals += party.crystals;
+            party.crystals = 0;
             characters.append(&mut group.members.clone());
         }
         let (mut party, _, _) = party_query.get_mut(*target).unwrap();
         party.supplies += supplies;
+        party.crystals += crystals;
         commands.add(JoinGroup {
             group: *target,
             members: characters,
         });
+    }
+}
+
+pub fn handle_collect_crystals(
+    mut events: EventReader<GameAction>,
+    mut party_query: Query<(&mut Party, &MapPresence)>,
+    map_query: Query<&GameMap>,
+    mut crystal_deposit_query: Query<&mut CrystalDeposit>,
+) {
+    for event in events.iter() {
+        let GameAction::CollectCrystals(party_entity) = event else { continue };
+        let Ok((mut party, presence)) = party_query.get_mut(*party_entity) else { continue };
+        let Ok(map) = map_query.get(presence.map) else { continue };
+        let Some(mut crystal_deposit) = map
+            .get(presence.position)
+            .and_then(|&e| crystal_deposit_query.get_mut(e).ok()) else {
+                info!("No crystal deposit here");
+                continue;
+            };
+
+        party.crystals += crystal_deposit.take() as u32
     }
 }
 
