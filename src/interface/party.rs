@@ -1,5 +1,6 @@
 use super::{
     color::{NORMAL, SELECTED},
+    databinding::{DataBindingExt, DataBindings},
     stat::spawn_stat_display,
     InterfaceAssets,
 };
@@ -79,6 +80,7 @@ fn spawn_party_display(
                 ..default()
             },
         ))
+        .bind_to(entity)
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
                 party.name.clone(),
@@ -157,17 +159,20 @@ pub fn update_party_list(
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn update_party_selection(
-    mut party_display_query: Query<(&PartyDisplay, &mut BackgroundColor)>,
-    selection_query: Query<&Selection, (With<Party>, Changed<Selection>)>,
+    mut party_display_query: Query<&mut BackgroundColor, With<PartyDisplay>>,
+    selection_query: Query<(&Selection, &DataBindings), (With<Party>, Changed<Selection>)>,
 ) {
-    for (display, mut color) in party_display_query.iter_mut() {
-        if let Ok(selection) = selection_query.get(display.party) {
-            if selection.selected() {
-                *color = SELECTED.into();
+    for (selection, bindings) in &selection_query {
+        let mut party_display_iter = party_display_query.iter_many_mut(bindings);
+        while let Some(mut background_color) = party_display_iter.fetch_next() {
+            *background_color = if selection.selected() {
+                SELECTED
             } else {
-                *color = NORMAL.into();
+                NORMAL
             }
+            .into();
         }
     }
 }

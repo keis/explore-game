@@ -1,5 +1,6 @@
 use super::{
     color::{NORMAL, SELECTED},
+    databinding::{DataBindingExt, DataBindings},
     stat::spawn_stat_display,
     InterfaceAssets,
 };
@@ -71,6 +72,7 @@ fn spawn_camp_display(
                 ..default()
             },
         ))
+        .bind_to(entity)
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
                 camp.name.clone(),
@@ -131,17 +133,20 @@ pub fn update_camp_list(
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn update_camp_selection(
-    mut camp_display_query: Query<(&CampDisplay, &mut BackgroundColor)>,
-    selection_query: Query<&Selection, (With<Camp>, Changed<Selection>)>,
+    mut camp_display_query: Query<&mut BackgroundColor, With<CampDisplay>>,
+    selection_query: Query<(&Selection, &DataBindings), (With<Camp>, Changed<Selection>)>,
 ) {
-    for (display, mut color) in camp_display_query.iter_mut() {
-        if let Ok(selection) = selection_query.get(display.camp) {
-            if selection.selected() {
-                *color = SELECTED.into();
+    for (selection, bindings) in &selection_query {
+        let mut camp_display_iter = camp_display_query.iter_many_mut(bindings);
+        while let Some(mut background_color) = camp_display_iter.fetch_next() {
+            *background_color = if selection.selected() {
+                SELECTED
             } else {
-                *color = NORMAL.into();
+                NORMAL
             }
+            .into();
         }
     }
 }
