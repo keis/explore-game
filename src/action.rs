@@ -7,6 +7,7 @@ use crate::{
         coord_to_vec3, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence,
         MoveMapPresence, Offset, PathFinder, PathGuided,
     },
+    material::TerrainMaterial,
     party::{spawn_party, Group, JoinGroup, Party},
     slide::{Slide, SlideEvent},
     State,
@@ -197,7 +198,7 @@ pub fn handle_resume_move(
 
 pub fn handle_make_camp(
     mut commands: Commands,
-    mut spawn_camp_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
+    mut spawn_camp_params: ParamSet<(Res<MainAssets>, ResMut<Assets<TerrainMaterial>>)>,
     mut events: EventReader<GameAction>,
     map_query: Query<(Entity, &GameMap)>,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,

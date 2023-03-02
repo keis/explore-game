@@ -8,6 +8,7 @@ use explore_game::{
     action::ActionPlugin,
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
+    camp::update_camp_view_radius,
     character::{reset_movement_points, spawn_character},
     combat,
     enemy::{move_enemy, spawn_enemy},
@@ -98,6 +99,7 @@ fn main() {
                 .with_system(derive_party_movement)
                 .with_system(despawn_empty_party)
                 .with_system(move_enemy)
+                .with_system(update_camp_view_radius)
                 .with_system(combat::initiate_combat)
                 .with_system(combat::combat_round)
                 .with_system(combat::despawn_no_health.after(combat::combat_round))

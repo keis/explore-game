@@ -16,7 +16,7 @@ pub mod path;
 pub mod slide;
 pub mod turn;
 
-pub const VIEW_RADIUS: u32 = 2;
+pub const VIEW_RADIUS: u32 = 3;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum State {
