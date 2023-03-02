@@ -1,9 +1,10 @@
-use super::InterfaceAssets;
+use super::{databinding::DataBindingExt, InterfaceAssets};
 use bevy::prelude::*;
 
 pub fn spawn_stat_display(
     parent: &mut ChildBuilder,
     assets: &Res<InterfaceAssets>,
+    entity: Entity,
     tag: impl Component,
     image: Handle<Image>,
     value: impl Into<String>,
@@ -26,16 +27,18 @@ pub fn spawn_stat_display(
                 image: image.into(),
                 ..default()
             });
-            parent.spawn((
-                tag,
-                TextBundle::from_sections([TextSection::new(
-                    value,
-                    TextStyle {
-                        font: assets.font.clone(),
-                        font_size: 24.0,
-                        color: Color::WHITE,
-                    },
-                )]),
-            ));
+            parent
+                .spawn((
+                    tag,
+                    TextBundle::from_sections([TextSection::new(
+                        value,
+                        TextStyle {
+                            font: assets.font.clone(),
+                            font_size: 24.0,
+                            color: Color::WHITE,
+                        },
+                    )]),
+                ))
+                .bind_to(entity);
         });
 }

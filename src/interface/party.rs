@@ -1,5 +1,6 @@
 use super::{
     color::{NORMAL, SELECTED},
+    databinding::{DataBindingExt, DataBindings},
     stat::spawn_stat_display,
     InterfaceAssets,
 };
@@ -79,6 +80,7 @@ fn spawn_party_display(
                 ..default()
             },
         ))
+        .bind_to(entity)
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
                 party.name.clone(),
@@ -92,6 +94,7 @@ fn spawn_party_display(
                 spawn_stat_display(
                     parent,
                     assets,
+                    entity,
                     PartyMovementPointsText,
                     assets.footsteps_icon.clone(),
                     format!("{}", movement.points),
@@ -99,6 +102,7 @@ fn spawn_party_display(
                 spawn_stat_display(
                     parent,
                     assets,
+                    entity,
                     PartySizeText,
                     assets.person_icon.clone(),
                     format!("{}", group.members.len()),
@@ -106,6 +110,7 @@ fn spawn_party_display(
                 spawn_stat_display(
                     parent,
                     assets,
+                    entity,
                     PartyCrystalsText,
                     assets.crystals_icon.clone(),
                     format!("{}", party.crystals),
@@ -157,63 +162,60 @@ pub fn update_party_list(
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn update_party_selection(
-    mut party_display_query: Query<(&PartyDisplay, &mut BackgroundColor)>,
-    selection_query: Query<&Selection, (With<Party>, Changed<Selection>)>,
+    mut party_display_query: Query<&mut BackgroundColor, With<PartyDisplay>>,
+    selection_query: Query<(&Selection, &DataBindings), (With<Party>, Changed<Selection>)>,
 ) {
-    for (display, mut color) in party_display_query.iter_mut() {
-        if let Ok(selection) = selection_query.get(display.party) {
-            if selection.selected() {
-                *color = SELECTED.into();
+    for (selection, bindings) in &selection_query {
+        let mut party_display_iter = party_display_query.iter_many_mut(bindings);
+        while let Some(mut background_color) = party_display_iter.fetch_next() {
+            *background_color = if selection.selected() {
+                SELECTED
             } else {
-                *color = NORMAL.into();
+                NORMAL
             }
+            .into();
         }
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn update_party_movement_points(
-    mut party_movement_points_query: Query<(&mut Text, &Parent), With<PartyMovementPointsText>>,
-    intermediate_parent_query: Query<&Parent>,
-    party_display_query: Query<&PartyDisplay>,
-    party_query: Query<&Movement, (Changed<Movement>, With<Party>)>,
+    mut party_movement_points_query: Query<&mut Text, With<PartyMovementPointsText>>,
+    party_query: Query<(&Movement, &DataBindings), (Changed<Movement>, With<Party>)>,
 ) {
-    for (mut text, parent) in party_movement_points_query.iter_mut() {
-        let Ok(intermediate_parent_a) = intermediate_parent_query.get(parent.get()) else { continue };
-        let Ok(intermediate_parent_b) = intermediate_parent_query.get(intermediate_parent_a.get()) else { continue };
-        let Ok(party_display) = party_display_query.get(intermediate_parent_b.get()) else { continue };
-        let Ok(party_movement) = party_query.get(party_display.party) else { continue };
-        text.sections[0].value = format!("{:?}", party_movement.points);
+    for (party_movement, bindings) in &party_query {
+        let mut party_movement_points_text_iter =
+            party_movement_points_query.iter_many_mut(bindings);
+        while let Some(mut text) = party_movement_points_text_iter.fetch_next() {
+            text.sections[0].value = format!("{}", party_movement.points);
+        }
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn update_party_size(
-    mut party_size_text_query: Query<(&mut Text, &Parent), With<PartySizeText>>,
-    intermediate_parent_query: Query<&Parent>,
-    party_display_query: Query<&PartyDisplay>,
-    party_query: Query<&Group, (Changed<Group>, With<Party>)>,
+    mut party_size_text_query: Query<&mut Text, With<PartySizeText>>,
+    party_query: Query<(&Group, &DataBindings), (Changed<Group>, With<Party>)>,
 ) {
-    for (mut text, parent) in party_size_text_query.iter_mut() {
-        let Ok(intermediate_parent_a) = intermediate_parent_query.get(parent.get()) else { continue };
-        let Ok(intermediate_parent_b) = intermediate_parent_query.get(intermediate_parent_a.get()) else { continue };
-        let Ok(party_display) = party_display_query.get(intermediate_parent_b.get()) else { continue };
-        let Ok(group) = party_query.get(party_display.party) else { continue };
-        text.sections[0].value = format!("{:?}", group.members.len());
+    for (group, bindings) in &party_query {
+        let mut party_size_text_iter = party_size_text_query.iter_many_mut(bindings);
+        while let Some(mut text) = party_size_text_iter.fetch_next() {
+            text.sections[0].value = format!("{}", group.members.len());
+        }
     }
 }
 
 pub fn update_party_crystals(
-    mut party_crystals_text_query: Query<(&mut Text, &Parent), With<PartyCrystalsText>>,
-    intermediate_parent_query: Query<&Parent>,
-    party_display_query: Query<&PartyDisplay>,
-    party_query: Query<&Party, Changed<Party>>,
+    mut party_crystals_text_query: Query<&mut Text, With<PartyCrystalsText>>,
+    party_query: Query<(&Party, &DataBindings), Changed<Party>>,
 ) {
-    for (mut text, parent) in party_crystals_text_query.iter_mut() {
-        let Ok(intermediate_parent_a) = intermediate_parent_query.get(parent.get()) else { continue };
-        let Ok(intermediate_parent_b) = intermediate_parent_query.get(intermediate_parent_a.get()) else { continue };
-        let Ok(party_display) = party_display_query.get(intermediate_parent_b.get()) else { continue };
-        let Ok(party) = party_query.get(party_display.party) else { continue };
-        text.sections[0].value = format!("{}", party.crystals);
+    for (party, bindings) in &party_query {
+        let mut party_crystals_text_iter = party_crystals_text_query.iter_many_mut(bindings);
+        while let Some(mut text) = party_crystals_text_iter.fetch_next() {
+            text.sections[0].value = format!("{}", party.crystals);
+        }
     }
 }
 

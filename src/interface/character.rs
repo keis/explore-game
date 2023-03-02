@@ -1,5 +1,6 @@
 use super::{
     color::{NORMAL, SELECTED},
+    databinding::{DataBindingExt, DataBindings},
     stat::spawn_stat_display,
     InterfaceAssets,
 };
@@ -72,6 +73,7 @@ fn spawn_character_display(
                 ..default()
             },
         ))
+        .bind_to(entity)
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
                 character.name.clone(),
@@ -85,6 +87,7 @@ fn spawn_character_display(
                 spawn_stat_display(
                     parent,
                     assets,
+                    entity,
                     AttackText,
                     assets.gladius_icon.clone(),
                     format!("{}-{}", attack.0.start, attack.0.end),
@@ -92,6 +95,7 @@ fn spawn_character_display(
                 spawn_stat_display(
                     parent,
                     assets,
+                    entity,
                     HealthText,
                     assets.heart_shield_icon.clone(),
                     format!("{}", health.0),
@@ -157,33 +161,33 @@ pub fn update_character_list(
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn update_character_selection(
-    mut character_display_query: Query<(&CharacterDisplay, &mut BackgroundColor)>,
-    selection_query: Query<&Selection, (With<Character>, Changed<Selection>)>,
+    mut character_display_query: Query<&mut BackgroundColor, With<CharacterDisplay>>,
+    selection_query: Query<(&Selection, &DataBindings), (With<Character>, Changed<Selection>)>,
 ) {
-    for (display, mut color) in character_display_query.iter_mut() {
-        if let Ok(selection) = selection_query.get(display.character) {
-            if selection.selected() {
-                *color = SELECTED.into();
+    for (selection, bindings) in &selection_query {
+        let mut character_display_iter = character_display_query.iter_many_mut(bindings);
+        while let Some(mut background_color) = character_display_iter.fetch_next() {
+            *background_color = if selection.selected() {
+                SELECTED
             } else {
-                *color = NORMAL.into();
+                NORMAL
             }
+            .into();
         }
     }
 }
 
 pub fn update_character_health(
-    mut health_text_query: Query<(&mut Text, &Parent), With<HealthText>>,
-    intermediate_parent_query: Query<&Parent>,
-    character_display_query: Query<&CharacterDisplay>,
-    health_query: Query<&Health, Changed<Health>>,
+    mut health_text_query: Query<&mut Text, With<HealthText>>,
+    health_query: Query<(&Health, &DataBindings), Changed<Health>>,
 ) {
-    for (mut text, parent) in health_text_query.iter_mut() {
-        let Ok(intermediate_parent_a) = intermediate_parent_query.get(parent.get()) else { continue };
-        let Ok(intermediate_parent_b) = intermediate_parent_query.get(intermediate_parent_a.get()) else { continue };
-        let Ok(character_display) = character_display_query.get(intermediate_parent_b.get()) else { continue };
-        let Ok(health) = health_query.get(character_display.character) else { continue };
-        text.sections[0].value = format!("{}", health.0);
+    for (health, bindings) in &health_query {
+        let mut health_text_iter = health_text_query.iter_many_mut(bindings);
+        while let Some(mut text) = health_text_iter.fetch_next() {
+            text.sections[0].value = format!("{}", health.0);
+        }
     }
 }
 

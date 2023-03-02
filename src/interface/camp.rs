@@ -1,5 +1,6 @@
 use super::{
     color::{NORMAL, SELECTED},
+    databinding::{DataBindingExt, DataBindings},
     stat::spawn_stat_display,
     InterfaceAssets,
 };
@@ -71,6 +72,7 @@ fn spawn_camp_display(
                 ..default()
             },
         ))
+        .bind_to(entity)
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
                 camp.name.clone(),
@@ -84,6 +86,7 @@ fn spawn_camp_display(
                 spawn_stat_display(
                     parent,
                     assets,
+                    entity,
                     CampCrystalsText,
                     assets.crystals_icon.clone(),
                     format!("{}", camp.crystals),
@@ -131,33 +134,33 @@ pub fn update_camp_list(
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn update_camp_selection(
-    mut camp_display_query: Query<(&CampDisplay, &mut BackgroundColor)>,
-    selection_query: Query<&Selection, (With<Camp>, Changed<Selection>)>,
+    mut camp_display_query: Query<&mut BackgroundColor, With<CampDisplay>>,
+    selection_query: Query<(&Selection, &DataBindings), (With<Camp>, Changed<Selection>)>,
 ) {
-    for (display, mut color) in camp_display_query.iter_mut() {
-        if let Ok(selection) = selection_query.get(display.camp) {
-            if selection.selected() {
-                *color = SELECTED.into();
+    for (selection, bindings) in &selection_query {
+        let mut camp_display_iter = camp_display_query.iter_many_mut(bindings);
+        while let Some(mut background_color) = camp_display_iter.fetch_next() {
+            *background_color = if selection.selected() {
+                SELECTED
             } else {
-                *color = NORMAL.into();
+                NORMAL
             }
+            .into();
         }
     }
 }
 
 pub fn update_camp_crystals(
-    mut camp_crystals_text_query: Query<(&mut Text, &Parent), With<CampCrystalsText>>,
-    intermediate_parent_query: Query<&Parent>,
-    camp_display_query: Query<&CampDisplay>,
-    camp_query: Query<&Camp, Changed<Camp>>,
+    mut camp_crystals_text_query: Query<&mut Text, With<CampCrystalsText>>,
+    camp_query: Query<(&Camp, &DataBindings), Changed<Camp>>,
 ) {
-    for (mut text, parent) in camp_crystals_text_query.iter_mut() {
-        let Ok(intermediate_parent_a) = intermediate_parent_query.get(parent.get()) else { continue };
-        let Ok(intermediate_parent_b) = intermediate_parent_query.get(intermediate_parent_a.get()) else { continue };
-        let Ok(camp_display) = camp_display_query.get(intermediate_parent_b.get()) else { continue };
-        let Ok(camp) = camp_query.get(camp_display.camp) else { continue };
-        text.sections[0].value = format!("{}", camp.crystals);
+    for (camp, bindings) in &camp_query {
+        let mut camp_crystals_text_iter = camp_crystals_text_query.iter_many_mut(bindings);
+        while let Some(mut text) = camp_crystals_text_iter.fetch_next() {
+            text.sections[0].value = format!("{}", camp.crystals);
+        }
     }
 }
 
