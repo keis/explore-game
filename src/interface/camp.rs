@@ -86,6 +86,7 @@ fn spawn_camp_display(
                 spawn_stat_display(
                     parent,
                     assets,
+                    entity,
                     CampCrystalsText,
                     assets.crystals_icon.clone(),
                     format!("{}", camp.crystals),
@@ -152,17 +153,14 @@ pub fn update_camp_selection(
 }
 
 pub fn update_camp_crystals(
-    mut camp_crystals_text_query: Query<(&mut Text, &Parent), With<CampCrystalsText>>,
-    intermediate_parent_query: Query<&Parent>,
-    camp_display_query: Query<&CampDisplay>,
-    camp_query: Query<&Camp, Changed<Camp>>,
+    mut camp_crystals_text_query: Query<&mut Text, With<CampCrystalsText>>,
+    camp_query: Query<(&Camp, &DataBindings), Changed<Camp>>,
 ) {
-    for (mut text, parent) in camp_crystals_text_query.iter_mut() {
-        let Ok(intermediate_parent_a) = intermediate_parent_query.get(parent.get()) else { continue };
-        let Ok(intermediate_parent_b) = intermediate_parent_query.get(intermediate_parent_a.get()) else { continue };
-        let Ok(camp_display) = camp_display_query.get(intermediate_parent_b.get()) else { continue };
-        let Ok(camp) = camp_query.get(camp_display.camp) else { continue };
-        text.sections[0].value = format!("{}", camp.crystals);
+    for (camp, bindings) in &camp_query {
+        let mut camp_crystals_text_iter = camp_crystals_text_query.iter_many_mut(bindings);
+        while let Some(mut text) = camp_crystals_text_iter.fetch_next() {
+            text.sections[0].value = format!("{}", camp.crystals);
+        }
     }
 }
 
