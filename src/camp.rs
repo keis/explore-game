@@ -35,7 +35,8 @@ pub fn spawn_camp(
                 mesh: params.p0().tent_mesh.clone(),
                 material: params.p1().add(Color::rgb(0.631, 0.596, 0.165).into()),
                 transform: Transform::from_translation(coord_to_vec3(position))
-                    .with_rotation(Quat::from_rotation_y(1.0)),
+                    .with_rotation(Quat::from_rotation_y(1.0))
+                    .with_scale(Vec3::splat(0.5)),
                 ..default()
             },
             CampBundle {

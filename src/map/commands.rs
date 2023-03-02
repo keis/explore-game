@@ -81,6 +81,13 @@ impl Command for DespawnPresence {
             if let Some(mut map) = world.entity_mut(self.map).get_mut::<GameMap>() {
                 map.remove_presence(position, self.presence);
             }
+            if let Some(mut events) = world.get_resource_mut::<Events<MapEvent>>() {
+                events.send(MapEvent::PresenceRemoved {
+                    map: self.map,
+                    presence: self.presence,
+                    position,
+                });
+            }
         }
 
         world.despawn(self.presence);

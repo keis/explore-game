@@ -126,7 +126,9 @@ impl Plugin for MapPlugin {
                     .with_system(pathdisplay::update_path_display)
                     .with_system(presence::update_terrain_visibility)
                     .with_system(presence::update_enemy_visibility)
-                    .with_system(zone::despawn_empty_crystal_deposit),
+                    .with_system(zone::despawn_empty_crystal_deposit)
+                    .with_system(zone::hide_decorations_behind_camp)
+                    .with_system(zone::show_decorations_behind_camp),
             )
             .add_system_to_stage(CoreStage::PostUpdate, damage)
             .add_event::<MapEvent>();
