@@ -1,5 +1,6 @@
 use super::{
     color::{NORMAL, SELECTED},
+    stat::spawn_stat_display,
     InterfaceAssets,
 };
 use crate::{
@@ -18,6 +19,9 @@ pub struct CampList;
 pub struct CampDisplay {
     camp: Entity,
 }
+
+#[derive(Component)]
+pub struct CampCrystalsText;
 
 #[derive(Bundle)]
 pub struct CampListBundle {
@@ -76,6 +80,15 @@ fn spawn_camp_display(
                     color: Color::WHITE,
                 },
             ));
+            parent.spawn(NodeBundle::default()).with_children(|parent| {
+                spawn_stat_display(
+                    parent,
+                    assets,
+                    CampCrystalsText,
+                    assets.crystals_icon.clone(),
+                    format!("{}", camp.crystals),
+                );
+            });
         });
 }
 
@@ -130,6 +143,21 @@ pub fn update_camp_selection(
                 *color = NORMAL.into();
             }
         }
+    }
+}
+
+pub fn update_camp_crystals(
+    mut camp_crystals_text_query: Query<(&mut Text, &Parent), With<CampCrystalsText>>,
+    intermediate_parent_query: Query<&Parent>,
+    camp_display_query: Query<&CampDisplay>,
+    camp_query: Query<&Camp, Changed<Camp>>,
+) {
+    for (mut text, parent) in camp_crystals_text_query.iter_mut() {
+        let Ok(intermediate_parent_a) = intermediate_parent_query.get(parent.get()) else { continue };
+        let Ok(intermediate_parent_b) = intermediate_parent_query.get(intermediate_parent_a.get()) else { continue };
+        let Ok(camp_display) = camp_display_query.get(intermediate_parent_b.get()) else { continue };
+        let Ok(camp) = camp_query.get(camp_display.camp) else { continue };
+        text.sections[0].value = format!("{}", camp.crystals);
     }
 }
 

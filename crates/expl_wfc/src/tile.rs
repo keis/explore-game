@@ -145,13 +145,13 @@ pub mod tests {
     #[fixture]
     pub fn sample_map() -> Grid<HexagonalGridLayout, char> {
         let layout = HexagonalGridLayout { radius: 3 };
-        Grid {
+        Grid::with_data(
             layout,
-            data: vec![
+            [
                 '~', '~', '~', '~', '~', '^', '^', '~', '^', '^', '^', '%', '^', '^', '%', '%',
                 '%', '%', '%',
             ],
-        }
+        )
     }
 
     #[rstest]

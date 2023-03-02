@@ -4,10 +4,52 @@ use std::ops::{Index, IndexMut};
 
 pub struct Grid<L: GridLayout, T> {
     pub layout: L,
-    pub data: Vec<T>,
+    data: Vec<T>,
 }
 
 impl<L: GridLayout, T> Grid<L, T> {
+    /// Create a new grid of the given layout filled with the default value of T
+    pub fn new(layout: L) -> Self
+    where
+        T: Default + Clone,
+    {
+        Self {
+            layout,
+            data: vec![T::default(); layout.size()],
+        }
+    }
+
+    /// Create a new grid of the given layout filled with clones of the specified T
+    pub fn with_fill(layout: L, fill: T) -> Self
+    where
+        T: Clone,
+    {
+        Self {
+            layout,
+            data: vec![fill; layout.size()],
+        }
+    }
+
+    /// Create a new grid of the given layout with the given data
+    pub fn with_data<Iter>(layout: L, iter: Iter) -> Self
+    where
+        Iter: IntoIterator<Item = T>,
+    {
+        let data: Vec<_> = iter.into_iter().collect();
+        assert!(data.len() == layout.size());
+        Self { layout, data }
+    }
+
+    /// An iterator visiting all coordinate-value pairs of the grid
+    pub fn iter(&self) -> impl Iterator<Item = (HexCoord, &T)> {
+        self.layout.iter().map(|coord| (coord, &self[coord]))
+    }
+
+    /// An iterator visiting all values contained in the grid
+    pub fn iter_data(&self) -> impl Iterator<Item = &T> {
+        self.data.iter()
+    }
+
     pub fn set(&mut self, position: HexCoord, value: T) {
         if let Some(offset) = self.layout.offset(position) {
             self.data[offset] = value;

@@ -1,5 +1,6 @@
 use super::{
     color::{NORMAL, SELECTED},
+    stat::spawn_stat_display,
     InterfaceAssets,
 };
 use crate::{
@@ -23,6 +24,9 @@ pub struct PartyMovementPointsText;
 
 #[derive(Component)]
 pub struct PartySizeText;
+
+#[derive(Component)]
+pub struct PartyCrystalsText;
 
 #[derive(Bundle)]
 pub struct PartyListBundle {
@@ -55,7 +59,7 @@ fn spawn_party_display(
     parent: &mut ChildBuilder,
     entity: Entity,
     party: &Party,
-    party_movement: &Movement,
+    movement: &Movement,
     group: &Group,
     assets: &Res<InterfaceAssets>,
 ) {
@@ -85,48 +89,27 @@ fn spawn_party_display(
                 },
             ));
             parent.spawn(NodeBundle::default()).with_children(|parent| {
-                parent.spawn(NodeBundle::default()).with_children(|parent| {
-                    parent.spawn(ImageBundle {
-                        style: Style {
-                            size: Size::new(Val::Px(24.0), Val::Px(24.0)),
-                            ..default()
-                        },
-                        image: assets.footsteps_icon.clone().into(),
-                        ..default()
-                    });
-                    parent.spawn((
-                        PartyMovementPointsText,
-                        TextBundle::from_sections([TextSection::new(
-                            format!("{:?}", party_movement.points),
-                            TextStyle {
-                                font: assets.font.clone(),
-                                font_size: 24.0,
-                                color: Color::WHITE,
-                            },
-                        )]),
-                    ));
-                });
-                parent.spawn(NodeBundle::default()).with_children(|parent| {
-                    parent.spawn(ImageBundle {
-                        style: Style {
-                            size: Size::new(Val::Px(24.0), Val::Px(24.0)),
-                            ..default()
-                        },
-                        image: assets.person_icon.clone().into(),
-                        ..default()
-                    });
-                    parent.spawn((
-                        PartySizeText,
-                        TextBundle::from_sections([TextSection::new(
-                            format!("{:?}", group.members.len()),
-                            TextStyle {
-                                font: assets.font.clone(),
-                                font_size: 24.0,
-                                color: Color::WHITE,
-                            },
-                        )]),
-                    ));
-                });
+                spawn_stat_display(
+                    parent,
+                    assets,
+                    PartyMovementPointsText,
+                    assets.footsteps_icon.clone(),
+                    format!("{}", movement.points),
+                );
+                spawn_stat_display(
+                    parent,
+                    assets,
+                    PartySizeText,
+                    assets.person_icon.clone(),
+                    format!("{}", group.members.len()),
+                );
+                spawn_stat_display(
+                    parent,
+                    assets,
+                    PartyCrystalsText,
+                    assets.crystals_icon.clone(),
+                    format!("{}", party.crystals),
+                );
             });
         });
 }
@@ -216,6 +199,21 @@ pub fn update_party_size(
         let Ok(party_display) = party_display_query.get(intermediate_parent_b.get()) else { continue };
         let Ok(group) = party_query.get(party_display.party) else { continue };
         text.sections[0].value = format!("{:?}", group.members.len());
+    }
+}
+
+pub fn update_party_crystals(
+    mut party_crystals_text_query: Query<(&mut Text, &Parent), With<PartyCrystalsText>>,
+    intermediate_parent_query: Query<&Parent>,
+    party_display_query: Query<&PartyDisplay>,
+    party_query: Query<&Party, Changed<Party>>,
+) {
+    for (mut text, parent) in party_crystals_text_query.iter_mut() {
+        let Ok(intermediate_parent_a) = intermediate_parent_query.get(parent.get()) else { continue };
+        let Ok(intermediate_parent_b) = intermediate_parent_query.get(intermediate_parent_a.get()) else { continue };
+        let Ok(party_display) = party_display_query.get(intermediate_parent_b.get()) else { continue };
+        let Ok(party) = party_query.get(party_display.party) else { continue };
+        text.sections[0].value = format!("{}", party.crystals);
     }
 }
 

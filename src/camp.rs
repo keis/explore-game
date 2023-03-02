@@ -11,6 +11,7 @@ use bevy_mod_picking::PickableBundle;
 pub struct Camp {
     pub name: String,
     pub supplies: u32,
+    pub crystals: u32,
 }
 
 #[derive(Bundle, Default)]
@@ -26,7 +27,7 @@ pub fn spawn_camp(
     commands: &mut Commands,
     params: &mut ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
     position: HexCoord,
-    name: String,
+    camp: Camp,
 ) -> Entity {
     commands
         .spawn((
@@ -38,7 +39,7 @@ pub fn spawn_camp(
                 ..default()
             },
             CampBundle {
-                camp: Camp { name, ..default() },
+                camp,
                 view_radius: ViewRadius(VIEW_RADIUS),
                 ..default()
             },

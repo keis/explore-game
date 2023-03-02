@@ -1,6 +1,7 @@
 use super::{coord_to_vec3, Fog, HexAssets, HexCoord, MapPosition};
 use crate::{
     assets::MainAssets,
+    crystals::CrystalDeposit,
     material::{TerrainMaterial, ZoneMaterial},
 };
 use bevy::prelude::*;
@@ -51,6 +52,12 @@ impl TryFrom<char> for Terrain {
     }
 }
 
+#[derive(Component)]
+pub struct ZoneDecorationCrystals;
+
+#[derive(Component)]
+pub struct ZoneDecorationTree;
+
 #[derive(Component, Copy, Clone, Debug, Default)]
 pub struct Zone {
     pub terrain: Terrain,
@@ -60,6 +67,12 @@ impl Zone {
     pub fn is_walkable(&self) -> bool {
         self.terrain != Terrain::Ocean
     }
+}
+
+pub struct ZonePrototype {
+    pub terrain: Terrain,
+    pub random_fill: Vec<(Vec2, f32)>,
+    pub crystals: bool,
 }
 
 #[derive(Bundle, Default)]
@@ -99,31 +112,6 @@ fn zone_material(assets: &Res<MainAssets>, terrain: Terrain) -> ZoneMaterial {
     }
 }
 
-fn random_in_circle<R: Rng>(rng: &mut R, radius: f32) -> Vec2 {
-    let max_r = radius * radius;
-    let sqrtr = rng.gen_range(0.0f32..max_r).sqrt();
-    let angle = rng.gen_range(0.0f32..(2.0 * std::f32::consts::PI));
-    Vec2::new(sqrtr * angle.cos(), sqrtr * angle.sin())
-}
-
-fn random_fill() -> Vec<(Vec2, f32)> {
-    // Pretty stupid algorithm that simply tries a few random positions and returns whatever didn't
-    // overlap
-    let mut rng = rand::thread_rng();
-    let mut result: Vec<(Vec2, f32)> = vec![];
-    for _ in 0..16 {
-        let newpos = random_in_circle(&mut rng, 0.8);
-        let newradius = rng.gen_range(0.18f32..0.22);
-        if !result
-            .iter()
-            .any(|(pos, radius)| pos.distance(newpos) < radius + newradius)
-        {
-            result.push((newpos, newradius));
-        }
-    }
-    result
-}
-
 #[allow(clippy::type_complexity)]
 pub fn spawn_zone(
     commands: &mut Commands,
@@ -134,14 +122,18 @@ pub fn spawn_zone(
         ResMut<Assets<TerrainMaterial>>,
     )>,
     position: HexCoord,
-    terrain: Terrain,
+    ZonePrototype {
+        terrain,
+        random_fill,
+        crystals,
+    }: &ZonePrototype,
 ) -> Entity {
-    let material = zone_material(&params.p0(), terrain);
-    commands
+    let material = zone_material(&params.p0(), *terrain);
+    let zone_entity = commands
         .spawn((
             ZoneBundle {
                 position: MapPosition(position),
-                zone: Zone { terrain },
+                zone: Zone { terrain: *terrain },
                 ..default()
             },
             MaterialMeshBundle {
@@ -152,11 +144,33 @@ pub fn spawn_zone(
                 ..default()
             },
         ))
-        .with_children(|parent| {
-            if terrain == Terrain::Forest {
-                for (pos, scale) in random_fill() {
+        .with_children(|parent| match terrain {
+            Terrain::Forest => {
+                let mut filliter = random_fill.iter();
+                if *crystals {
+                    let (pos, scale) = filliter.next().unwrap();
                     parent.spawn((
                         Fog::default(),
+                        ZoneDecorationCrystals,
+                        MaterialMeshBundle {
+                            mesh: params.p0().crystals_mesh.clone(),
+                            material: params.p3().add(TerrainMaterial {
+                                color: Color::rgba(0.7, 0.4, 0.4, 0.777),
+                                visible: 0,
+                                explored: 0,
+                            }),
+                            visibility: Visibility { is_visible: false },
+                            transform: Transform::from_translation(Vec3::new(pos.x, 0.0, pos.y))
+                                .with_scale(Vec3::splat(scale * 0.3)),
+                            ..default()
+                        },
+                    ));
+                }
+
+                for (pos, scale) in filliter {
+                    parent.spawn((
+                        Fog::default(),
+                        ZoneDecorationTree,
                         MaterialMeshBundle {
                             mesh: params.p0().pine_mesh.clone(),
                             material: params.p3().add(TerrainMaterial {
@@ -172,6 +186,31 @@ pub fn spawn_zone(
                     ));
                 }
             }
+            Terrain::Mountain => {}
+            _ => {}
         })
-        .id()
+        .id();
+
+    if *crystals {
+        commands
+            .entity(zone_entity)
+            .insert(CrystalDeposit { amount: 20 });
+    }
+
+    zone_entity
+}
+
+pub fn despawn_empty_crystal_deposit(
+    mut commands: Commands,
+    crystal_deposit_query: Query<(&CrystalDeposit, &Children), Changed<CrystalDeposit>>,
+    zone_decoration_query: Query<Entity, With<ZoneDecorationCrystals>>,
+) {
+    for (_, children) in crystal_deposit_query
+        .iter()
+        .filter(|(deposit, _)| deposit.amount == 0)
+    {
+        for decoration_entity in zone_decoration_query.iter_many(children.iter()) {
+            commands.entity(decoration_entity).despawn();
+        }
+    }
 }

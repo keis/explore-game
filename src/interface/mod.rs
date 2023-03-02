@@ -9,6 +9,7 @@ mod color;
 mod menu;
 mod party;
 mod shell;
+mod stat;
 mod tooltip;
 
 pub use assets::InterfaceAssets;
@@ -39,8 +40,10 @@ impl Plugin for InterfacePlugin {
                 .with_system(party::update_party_selection)
                 .with_system(party::update_party_movement_points)
                 .with_system(party::update_party_size)
+                .with_system(party::update_party_crystals)
                 .with_system(party::handle_party_display_interaction)
                 .with_system(camp::update_camp_selection)
+                .with_system(camp::update_camp_crystals)
                 .with_system(camp::handle_camp_display_interaction)
                 .with_system(character::update_character_selection)
                 .with_system(character::update_character_health)
@@ -54,6 +57,7 @@ impl Plugin for InterfacePlugin {
                 .with_system(shell::handle_create_party_button_interaction)
                 .with_system(shell::handle_split_party_button_interaction)
                 .with_system(shell::handle_merge_party_button_interaction)
+                .with_system(shell::handle_collect_crystals_button_interaction)
                 .with_system(tooltip::show_tooltip_on_hover)
                 .with_system(menu::handle_toggle_main_menu)
                 .with_system(menu::handle_save)

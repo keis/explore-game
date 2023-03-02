@@ -88,7 +88,7 @@ impl<Item: TryFrom<char> + Clone> LoadGrid for Grid<HexagonalGridLayout, Item> {
         let layout = HexagonalGridLayout {
             radius: (lines.len() / 2 + 1) as i32,
         };
-        let data = lines
+        let data: Vec<_> = lines
             .iter()
             .enumerate()
             .flat_map(|(i, l)| {
@@ -99,7 +99,7 @@ impl<Item: TryFrom<char> + Clone> LoadGrid for Grid<HexagonalGridLayout, Item> {
             })
             .collect::<Result<_, _>>()?;
 
-        Ok(Self { layout, data })
+        Ok(Self::with_data(layout, data))
     }
 }
 
@@ -109,10 +109,7 @@ pub fn wrap_grid<Item: Default + Clone + Copy>(
     let layout = HexagonalGridLayout {
         radius: grid.layout.radius + 1,
     };
-    let mut wrapped = Grid {
-        layout,
-        data: vec![Item::default(); layout.size()],
-    };
+    let mut wrapped = Grid::new(layout);
     for coord in grid.layout.iter() {
         wrapped[coord] = grid[coord];
     }
