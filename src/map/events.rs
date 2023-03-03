@@ -12,4 +12,9 @@ pub enum MapEvent {
         presence: Entity,
         position: HexCoord,
     },
+    PresenceRemoved {
+        map: Entity,
+        presence: Entity,
+        position: HexCoord,
+    },
 }

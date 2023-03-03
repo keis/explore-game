@@ -7,6 +7,7 @@ use crate::{
         coord_to_vec3, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence,
         MoveMapPresence, Offset, PathFinder, PathGuided,
     },
+    material::TerrainMaterial,
     party::{spawn_party, Group, JoinGroup, Party},
     slide::{Slide, SlideEvent},
     State,
@@ -197,7 +198,7 @@ pub fn handle_resume_move(
 
 pub fn handle_make_camp(
     mut commands: Commands,
-    mut spawn_camp_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
+    mut spawn_camp_params: ParamSet<(Res<MainAssets>, ResMut<Assets<TerrainMaterial>>)>,
     mut events: EventReader<GameAction>,
     map_query: Query<(Entity, &GameMap)>,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
@@ -223,7 +224,7 @@ pub fn handle_make_camp(
             return;
         }
 
-        info!("Spawning camp at {:?}", position);
+        info!("Spawning camp at {}", position);
         party.supplies -= 1;
         let entity = spawn_camp(
             &mut commands,
@@ -255,29 +256,20 @@ pub fn handle_break_camp(
     camp_query: Query<(Entity, &Camp, &Group)>,
 ) {
     for event in events.iter() {
-        if let GameAction::BreakCamp(e) = event {
-            if let Ok((mut party, presence)) = party_query.get_mut(*e) {
-                let (map_entity, map) = map_query
-                    .get_mut(presence.map)
-                    .expect("references valid map");
-
-                let position = presence.position;
-                if let Some((camp_entity, camp, group)) =
-                    camp_query.iter_many(map.presence(position)).next()
-                {
-                    if !group.members.is_empty() {
-                        info!("Camp is not empty");
-                        continue;
-                    }
-                    info!("Depawning camp at {:?}", position);
-                    party.supplies += camp.supplies + 1;
-                    commands.add(DespawnPresence {
-                        map: map_entity,
-                        presence: camp_entity,
-                    });
-                }
-            }
+        let GameAction::BreakCamp(e) = event else { continue };
+        let Ok((mut party, presence)) = party_query.get_mut(*e) else { continue };
+        let Ok((map_entity, map)) = map_query.get_mut(presence.map) else { continue };
+        let Some((camp_entity, camp, group)) = camp_query.iter_many(map.presence(presence.position)).next() else { continue };
+        if !group.members.is_empty() {
+            info!("Camp is not empty");
+            continue;
         }
+        info!("Depawning camp at {}", presence.position);
+        party.supplies += camp.supplies + 1;
+        commands.add(DespawnPresence {
+            map: map_entity,
+            presence: camp_entity,
+        });
     }
 }
 

@@ -22,7 +22,7 @@ pub fn update_zone_visibility(
     for (position, mut fog) in zone_query.iter_mut() {
         let visible = view_query
             .iter()
-            .any(|(presence, view_radius)| position.0.distance(presence.position) <= view_radius.0);
+            .any(|(presence, view_radius)| position.0.distance(presence.position) < view_radius.0);
 
         if visible != fog.visible {
             fog.visible = visible;
@@ -45,6 +45,22 @@ pub fn update_terrain_visibility(
             fog.explored = parent_fog.explored;
 
             visibility.is_visible = fog.explored;
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn update_presence_fog(
+    zone_query: Query<(&MapPosition, &Fog), (Changed<Fog>, Without<MapPresence>)>,
+    map_query: Query<&GameMap>,
+    mut presence_query: Query<&mut Fog, With<MapPresence>>,
+) {
+    let Ok(map) = map_query.get_single() else { return };
+    for (position, zone_fog) in &zone_query {
+        let mut presence_iter = presence_query.iter_many_mut(map.presence(position.0));
+        while let Some(mut fog) = presence_iter.fetch_next() {
+            fog.visible = zone_fog.visible;
+            fog.explored = zone_fog.explored;
         }
     }
 }

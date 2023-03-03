@@ -8,6 +8,7 @@ use crate::{
     camp::Camp,
     character::Character,
     input::{Action, ActionState},
+    map::MapEvent,
     party::Group,
 };
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
@@ -98,11 +99,16 @@ fn spawn_camp_display(
 #[allow(clippy::type_complexity)]
 pub fn run_if_any_camp_changed(
     camp_query: Query<Entity, Or<(Changed<Camp>, Changed<Group>)>>,
+    mut map_events: EventReader<MapEvent>,
 ) -> ShouldRun {
-    if !camp_query.is_empty() {
-        ShouldRun::Yes
-    } else {
+    let removed_event_count = map_events
+        .iter()
+        .filter(|e| matches!(e, MapEvent::PresenceRemoved { .. }))
+        .count();
+    if camp_query.is_empty() && removed_event_count == 0 {
         ShouldRun::No
+    } else {
+        ShouldRun::Yes
     }
 }
 
