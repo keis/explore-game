@@ -5,13 +5,13 @@ use bevy::{
 };
 use expl_hexgrid::{
     layout::{HexagonalGridLayout, SquareGridLayout},
-    Grid,
+    spiral, Grid, GridLayout, HexCoord,
 };
 use expl_wfc::{
     tile::extract_tiles, tile::standard_tile_transforms, util::wrap_grid, util::LoadGrid,
     Generator, Seed, Template,
 };
-use rand::Rng;
+use rand::{seq::SliceRandom, Rng};
 use std::fs::File;
 use std::io;
 
@@ -30,7 +30,7 @@ fn random_in_circle<R: Rng>(rng: &mut R, radius: f32) -> Vec2 {
     Vec2::new(sqrtr * angle.cos(), sqrtr * angle.sin())
 }
 
-fn random_fill() -> Vec<(Vec2, f32)> {
+fn random_fill(fixed: Vec<(Vec2, f32)>) -> Vec<(Vec2, f32)> {
     // Pretty stupid algorithm that simply tries a few random positions and returns whatever didn't
     // overlap
     let mut rng = rand::thread_rng();
@@ -38,8 +38,9 @@ fn random_fill() -> Vec<(Vec2, f32)> {
     for _ in 0..16 {
         let newpos = random_in_circle(&mut rng, 0.8);
         let newradius = rng.gen_range(0.18f32..0.22);
-        if !result
+        if !fixed
             .iter()
+            .chain(result.iter())
             .any(|(pos, radius)| pos.distance(newpos) < radius + newradius)
         {
             result.push((newpos, newradius));
@@ -60,20 +61,36 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
 
     while generator.step().is_some() {}
     info!("Generated map!");
-    let terrain = generator.export()?;
+    let terrain: Grid<SquareGridLayout, Terrain> = generator.export()?;
     let mut rng = rand::thread_rng();
+    let portalcoord = spiral(
+        terrain.layout.center() + *HexCoord::NEIGHBOUR_OFFSETS.choose(&mut rng).unwrap() * 3,
+    )
+    .find(|&c| {
+        terrain
+            .get(c)
+            .map_or(false, |&terrain| terrain != Terrain::Ocean)
+    })
+    .ok_or("could not place portal")?;
+
     Ok(Grid::with_data(
         terrain.layout,
-        terrain.iter().map(|(_coord, &terrain)| match terrain {
+        terrain.iter().map(|(coord, &terrain)| match terrain {
             Terrain::Forest => ZonePrototype {
                 terrain,
-                random_fill: random_fill(),
+                random_fill: if coord == portalcoord {
+                    random_fill(vec![(Vec2::ZERO, 0.3)])
+                } else {
+                    random_fill(vec![])
+                },
                 crystals: rng.gen_range(0..8) == 0,
+                portal: coord == portalcoord,
             },
             _ => ZonePrototype {
                 terrain,
                 random_fill: Vec::new(),
                 crystals: false,
+                portal: coord == portalcoord,
             },
         }),
     ))
