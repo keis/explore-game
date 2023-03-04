@@ -21,4 +21,6 @@ pub struct MainAssets {
     pub pine_mesh: Handle<Mesh>,
     #[asset(path = "models/crystals.stl")]
     pub crystals_mesh: Handle<Mesh>,
+    #[asset(path = "models/portal.stl")]
+    pub portal_mesh: Handle<Mesh>,
 }

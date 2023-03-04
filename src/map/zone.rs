@@ -59,6 +59,9 @@ pub struct ZoneDecorationCrystals;
 #[derive(Component)]
 pub struct ZoneDecorationTree;
 
+#[derive(Component)]
+pub struct ZoneDecorationPortal;
+
 #[derive(Component, Copy, Clone, Debug, Default)]
 pub struct Zone {
     pub terrain: Terrain,
@@ -74,6 +77,7 @@ pub struct ZonePrototype {
     pub terrain: Terrain,
     pub random_fill: Vec<(Vec2, f32)>,
     pub crystals: bool,
+    pub portal: bool,
 }
 
 #[derive(Bundle, Default)]
@@ -127,6 +131,7 @@ pub fn spawn_zone(
         terrain,
         random_fill,
         crystals,
+        portal,
     }: &ZonePrototype,
 ) -> Entity {
     let material = zone_material(&params.p0(), *terrain);
@@ -148,6 +153,25 @@ pub fn spawn_zone(
         .with_children(|parent| match terrain {
             Terrain::Forest => {
                 let mut filliter = random_fill.iter();
+                if *portal {
+                    parent.spawn((
+                        Fog::default(),
+                        ZoneDecorationPortal,
+                        MaterialMeshBundle {
+                            mesh: params.p0().portal_mesh.clone(),
+                            material: params.p3().add(TerrainMaterial {
+                                color: Color::rgb(0.4, 0.42, 0.4),
+                                visible: 0,
+                                explored: 0,
+                            }),
+                            visibility: Visibility { is_visible: false },
+                            transform: Transform::from_translation(Vec3::ZERO)
+                                .with_scale(Vec3::splat(0.3))
+                                .with_rotation(Quat::from_rotation_y(10.0)),
+                            ..default()
+                        },
+                    ));
+                }
                 if *crystals {
                     let (pos, scale) = filliter.next().unwrap();
                     parent.spawn((
