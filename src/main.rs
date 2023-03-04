@@ -9,7 +9,7 @@ use explore_game::{
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     camp::update_camp_view_radius,
-    character::{reset_movement_points, spawn_character},
+    character::{reset_movement_points, CharacterBundle},
     combat,
     enemy::{move_enemy, spawn_enemy},
     indicator::update_indicator,
@@ -199,9 +199,15 @@ fn spawn_scene(
                 .map_or(false, |proto| proto.terrain != Terrain::Ocean)
         })
         .unwrap();
-    let character1 = spawn_character(&mut commands, String::from("Alice"));
-    let character2 = spawn_character(&mut commands, String::from("Bob"));
-    let character3 = spawn_character(&mut commands, String::from("Carol"));
+    let character1 = commands
+        .spawn(CharacterBundle::new(String::from("Alice")))
+        .id();
+    let character2 = commands
+        .spawn(CharacterBundle::new(String::from("Bob")))
+        .id();
+    let character3 = commands
+        .spawn(CharacterBundle::new(String::from("Carol")))
+        .id();
     let alpha_group = commands
         .spawn(PartyBundle::new(
             &mut params.p0(),
