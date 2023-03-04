@@ -1,6 +1,6 @@
 use crate::{
     assets::MainAssets,
-    camp::{spawn_camp, Camp},
+    camp::{Camp, CampBundle},
     character::Movement,
     crystals::CrystalDeposit,
     map::{
@@ -222,18 +222,20 @@ pub fn handle_make_camp(
 
         info!("Spawning camp at {}", position);
         party.supplies -= 1;
-        let entity = spawn_camp(
-            &mut commands,
-            &mut spawn_camp_params,
-            position,
-            Camp {
-                name: String::from("New camp"),
-                supplies: party.supplies,
-                crystals: party.crystals,
-            },
-        );
+        let entity = commands
+            .spawn(CampBundle::new(
+                &mut spawn_camp_params,
+                position,
+                Camp {
+                    name: String::from("New camp"),
+                    supplies: party.supplies,
+                    crystals: party.crystals,
+                },
+            ))
+            .add_members(&group.members)
+            .id();
+
         commands.entity(map_entity).add_presence(entity, position);
-        commands.entity(entity).add_members(&group.members);
     }
 }
 

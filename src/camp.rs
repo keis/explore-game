@@ -23,17 +23,19 @@ pub struct CampBundle {
     pub offset: Offset,
     pub view_radius: ViewRadius,
     pub fog: Fog,
+    pub material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
 }
 
-pub fn spawn_camp(
-    commands: &mut Commands,
-    params: &mut ParamSet<(Res<MainAssets>, ResMut<Assets<TerrainMaterial>>)>,
-    position: HexCoord,
-    camp: Camp,
-) -> Entity {
-    commands
-        .spawn((
-            MaterialMeshBundle {
+impl CampBundle {
+    pub fn new(
+        params: &mut ParamSet<(Res<MainAssets>, ResMut<Assets<TerrainMaterial>>)>,
+        position: HexCoord,
+        camp: Camp,
+    ) -> Self {
+        Self {
+            camp,
+            view_radius: ViewRadius(VIEW_RADIUS),
+            material_mesh_bundle: MaterialMeshBundle {
                 mesh: params.p0().tent_mesh.clone(),
                 material: params.p1().add(TerrainMaterial {
                     color: Color::rgb(0.631, 0.596, 0.165),
@@ -45,13 +47,9 @@ pub fn spawn_camp(
                     .with_scale(Vec3::splat(0.5)),
                 ..default()
             },
-            CampBundle {
-                camp,
-                view_radius: ViewRadius(VIEW_RADIUS),
-                ..default()
-            },
-        ))
-        .id()
+            ..default()
+        }
+    }
 }
 
 #[allow(clippy::type_complexity)]
