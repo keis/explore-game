@@ -2,7 +2,7 @@ use crate::{
     assets::MainAssets,
     character::Movement,
     indicator::Indicator,
-    map::{coord_to_vec3, DespawnPresence, HexCoord, MapPresence, Offset, PathGuided, ViewRadius},
+    map::{coord_to_vec3, HexCoord, MapCommandsExt, MapPresence, Offset, PathGuided, ViewRadius},
     slide::Slide,
     VIEW_RADIUS,
 };
@@ -105,10 +105,7 @@ pub fn despawn_empty_party(
 ) {
     for (entity, group, presence) in &party_query {
         if group.members.is_empty() {
-            commands.add(DespawnPresence {
-                map: presence.map,
-                presence: entity,
-            });
+            commands.entity(presence.map).despawn_presence(entity);
         }
     }
 }

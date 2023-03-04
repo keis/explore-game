@@ -4,8 +4,8 @@ use crate::{
     character::Movement,
     crystals::CrystalDeposit,
     map::{
-        coord_to_vec3, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence,
-        MoveMapPresence, Offset, PathFinder, PathGuided,
+        coord_to_vec3, GameMap, HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder,
+        PathGuided,
     },
     material::TerrainMaterial,
     party::{spawn_party, Group, JoinGroup, Party},
@@ -141,11 +141,7 @@ pub fn handle_slide_stopped(
         let GameAction::Move(e, next) = last_action else { continue };
         let Ok((presence, optional)) = presence_query.get_mut(e) else { continue };
 
-        commands.add(MoveMapPresence {
-            map: presence.map,
-            presence: e,
-            position: next,
-        });
+        commands.entity(presence.map).move_presence(e, next);
 
         if let Some((party_movement, mut pathguided)) = optional {
             pathguided.advance();
@@ -236,11 +232,7 @@ pub fn handle_make_camp(
                 crystals: party.crystals,
             },
         );
-        commands.add(AddMapPresence {
-            map: map_entity,
-            presence: entity,
-            position,
-        });
+        commands.entity(map_entity).add_presence(entity, position);
         commands.add(JoinGroup {
             group: entity,
             members: group.members.clone(),
@@ -266,10 +258,7 @@ pub fn handle_break_camp(
         }
         info!("Depawning camp at {}", presence.position);
         party.supplies += camp.supplies + 1;
-        commands.add(DespawnPresence {
-            map: map_entity,
-            presence: camp_entity,
-        });
+        commands.entity(map_entity).despawn_presence(camp_entity);
     }
 }
 
@@ -317,11 +306,9 @@ pub fn handle_create_party_from_camp(
             "New Party".to_string(),
             new_supplies,
         );
-        commands.add(AddMapPresence {
-            map: presence.map,
-            presence: new_party,
-            position: presence.position,
-        });
+        commands
+            .entity(presence.map)
+            .add_presence(new_party, presence.position);
         commands.add(JoinGroup {
             group: new_party,
             members: characters.clone(),
@@ -356,11 +343,9 @@ pub fn handle_split_party(
             "New Party".to_string(),
             new_supplies,
         );
-        commands.add(AddMapPresence {
-            map: presence.map,
-            presence: new_party,
-            position: presence.position,
-        });
+        commands
+            .entity(presence.map)
+            .add_presence(new_party, presence.position);
         commands.add(JoinGroup {
             group: new_party,
             members: characters.clone(),

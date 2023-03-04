@@ -18,7 +18,7 @@ mod position;
 mod presence;
 mod zone;
 
-pub use commands::{AddMapPresence, DespawnPresence, MoveMapPresence};
+pub use commands::MapCommandsExt;
 pub use events::MapEvent;
 pub use expl_hexgrid::HexCoord;
 pub use fog::Fog;

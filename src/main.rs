@@ -16,8 +16,8 @@ use explore_game::{
     input::InputPlugin,
     interface::InterfacePlugin,
     map::{
-        spawn_game_map_from_prototype, spawn_zone, start_map_generation, AddMapPresence, GameMap,
-        GenerateMapTask, HexAssets, HexCoord, MapEvent, MapPlugin, MapPresence, MapSeed, Terrain,
+        spawn_game_map_from_prototype, spawn_zone, start_map_generation, GameMap, GenerateMapTask,
+        HexAssets, HexCoord, MapCommandsExt, MapEvent, MapPlugin, MapPresence, MapSeed, Terrain,
     },
     material::{TerrainMaterial, TerrainMaterialPlugin, ZoneMaterial, ZoneMaterialPlugin},
     party::{derive_party_movement, despawn_empty_party, spawn_party, JoinGroup},
@@ -207,11 +207,7 @@ fn spawn_scene(
         String::from("Alpha Group"),
         1,
     );
-    commands.add(AddMapPresence {
-        map,
-        presence: alpha_group,
-        position: groupcoord,
-    });
+    commands.entity(map).add_presence(alpha_group, groupcoord);
     let character1 = spawn_character(&mut commands, String::from("Alice"));
     let character2 = spawn_character(&mut commands, String::from("Bob"));
     let character3 = spawn_character(&mut commands, String::from("Carol"));
@@ -228,11 +224,7 @@ fn spawn_scene(
         })
         .unwrap();
     let enemy = spawn_enemy(&mut commands, &mut params.p2(), enemycoord);
-    commands.add(AddMapPresence {
-        map,
-        presence: enemy,
-        position: enemycoord,
-    });
+    commands.entity(map).add_presence(enemy, enemycoord);
 }
 
 fn spawn_light(mut commands: Commands) {
