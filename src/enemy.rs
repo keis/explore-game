@@ -19,17 +19,20 @@ pub struct EnemyBundle {
     pub slide: Slide,
     pub attack: Attack,
     pub health: Health,
+    pub pbr_bundle: PbrBundle,
 }
 
-pub fn spawn_enemy(
-    commands: &mut Commands,
-    params: &mut ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
-    position: HexCoord,
-) -> Entity {
-    let offset = Vec3::ZERO;
-    commands
-        .spawn((
-            PbrBundle {
+impl EnemyBundle {
+    pub fn new(
+        params: &mut ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
+        position: HexCoord,
+    ) -> Self {
+        let offset = Vec3::ZERO;
+        Self {
+            view_radius: ViewRadius(3),
+            attack: Attack(1..10),
+            health: Health(20),
+            pbr_bundle: PbrBundle {
                 mesh: params.p0().blob_mesh.clone(),
                 material: params
                     .p1()
@@ -38,14 +41,9 @@ pub fn spawn_enemy(
                 visibility: Visibility { is_visible: false },
                 ..default()
             },
-            EnemyBundle {
-                view_radius: ViewRadius(3),
-                attack: Attack(1..10),
-                health: Health(20),
-                ..default()
-            },
-        ))
-        .id()
+            ..default()
+        }
+    }
 }
 
 #[derive(SystemParam)]

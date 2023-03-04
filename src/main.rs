@@ -11,7 +11,7 @@ use explore_game::{
     camp::update_camp_view_radius,
     character::{reset_movement_points, CharacterBundle},
     combat,
-    enemy::{move_enemy, spawn_enemy},
+    enemy::{move_enemy, EnemyBundle},
     indicator::update_indicator,
     input::InputPlugin,
     interface::InterfacePlugin,
@@ -226,7 +226,9 @@ fn spawn_scene(
                 .map_or(false, |proto| proto.terrain != Terrain::Ocean)
         })
         .unwrap();
-    let enemy = spawn_enemy(&mut commands, &mut params.p2(), enemycoord);
+    let enemy = commands
+        .spawn(EnemyBundle::new(&mut params.p2(), enemycoord))
+        .id();
     commands.entity(map).add_presence(enemy, enemycoord);
 }
 
