@@ -2,7 +2,7 @@ use crate::{
     character::Character,
     enemy::Enemy,
     map::{GameMap, HexCoord, MapEvent},
-    party::{Group, GroupMember, RemoveMembers},
+    party::{Group, GroupCommandsExt, GroupMember},
 };
 use bevy::prelude::*;
 use core::{ops::Range, time::Duration};
@@ -98,10 +98,7 @@ pub fn despawn_no_health(
         if health.0 == 0 {
             info!("{:?} is dead", entity);
             if let Some(member) = maybe_member {
-                commands.add(RemoveMembers {
-                    group: member.group,
-                    members: SmallVec::from_slice(&[entity]),
-                });
+                commands.entity(member.group).remove_members(&[entity]);
             }
             commands.entity(entity).despawn();
         }

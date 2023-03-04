@@ -8,7 +8,7 @@ use crate::{
         PathGuided,
     },
     material::TerrainMaterial,
-    party::{spawn_party, Group, JoinGroup, Party},
+    party::{spawn_party, Group, GroupCommandsExt, Party},
     slide::{Slide, SlideEvent},
     State,
 };
@@ -233,10 +233,7 @@ pub fn handle_make_camp(
             },
         );
         commands.entity(map_entity).add_presence(entity, position);
-        commands.add(JoinGroup {
-            group: entity,
-            members: group.members.clone(),
-        });
+        commands.entity(entity).add_members(&group.members);
     }
 }
 
@@ -276,10 +273,7 @@ pub fn handle_enter_camp(
         party.supplies = 0;
         camp.crystals += party.crystals;
         party.crystals = 0;
-        commands.add(JoinGroup {
-            group: *camp_entity,
-            members: group.members.clone(),
-        });
+        commands.entity(*camp_entity).add_members(&group.members);
     }
 }
 
@@ -309,10 +303,7 @@ pub fn handle_create_party_from_camp(
         commands
             .entity(presence.map)
             .add_presence(new_party, presence.position);
-        commands.add(JoinGroup {
-            group: new_party,
-            members: characters.clone(),
-        });
+        commands.entity(new_party).add_members(characters);
     }
 }
 
@@ -346,10 +337,7 @@ pub fn handle_split_party(
         commands
             .entity(presence.map)
             .add_presence(new_party, presence.position);
-        commands.add(JoinGroup {
-            group: new_party,
-            members: characters.clone(),
-        });
+        commands.entity(new_party).add_members(characters);
     }
 }
 
@@ -383,10 +371,7 @@ pub fn handle_merge_party(
         let (mut party, _, _) = party_query.get_mut(*target).unwrap();
         party.supplies += supplies;
         party.crystals += crystals;
-        commands.add(JoinGroup {
-            group: *target,
-            members: characters,
-        });
+        commands.entity(*target).add_members(&characters);
     }
 }
 
