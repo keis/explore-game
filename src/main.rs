@@ -20,7 +20,7 @@ use explore_game::{
         HexAssets, HexCoord, MapCommandsExt, MapEvent, MapPlugin, MapPresence, MapSeed, Terrain,
     },
     material::{TerrainMaterial, TerrainMaterialPlugin, ZoneMaterial, ZoneMaterialPlugin},
-    party::{derive_party_movement, despawn_empty_party, spawn_party, GroupCommandsExt},
+    party::{derive_party_movement, despawn_empty_party, GroupCommandsExt, PartyBundle},
     slide::{slide, SlideEvent},
     turn::Turn,
     State,
@@ -199,20 +199,19 @@ fn spawn_scene(
                 .map_or(false, |proto| proto.terrain != Terrain::Ocean)
         })
         .unwrap();
-    let alpha_group = spawn_party(
-        &mut commands,
-        &mut params.p0(),
-        groupcoord,
-        String::from("Alpha Group"),
-        1,
-    );
-    commands.entity(map).add_presence(alpha_group, groupcoord);
     let character1 = spawn_character(&mut commands, String::from("Alice"));
     let character2 = spawn_character(&mut commands, String::from("Bob"));
     let character3 = spawn_character(&mut commands, String::from("Carol"));
-    commands
-        .entity(alpha_group)
-        .add_members(&[character1, character2, character3]);
+    let alpha_group = commands
+        .spawn(PartyBundle::new(
+            &mut params.p0(),
+            groupcoord,
+            String::from("Alpha Group"),
+            1,
+        ))
+        .add_members(&[character1, character2, character3])
+        .id();
+    commands.entity(map).add_presence(alpha_group, groupcoord);
 
     let enemycoord = spiral(prototype.layout.center() + HexCoord::new(2, 3))
         .find(|&c| {

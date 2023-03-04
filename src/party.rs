@@ -31,6 +31,35 @@ pub struct PartyBundle {
     pub view_radius: ViewRadius,
     pub path_guided: PathGuided,
     pub slide: Slide,
+    pub pbr_bundle: PbrBundle,
+}
+
+impl PartyBundle {
+    pub fn new(
+        params: &mut ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
+        position: HexCoord,
+        name: String,
+        supplies: u32,
+    ) -> Self {
+        let offset = Vec3::new(0.0, 1.0, 0.0);
+        Self {
+            party: Party {
+                name,
+                supplies,
+                ..default()
+            },
+            group: Group::default(),
+            offset: Offset(offset),
+            view_radius: ViewRadius(VIEW_RADIUS),
+            pbr_bundle: PbrBundle {
+                mesh: params.p0().indicator_mesh.clone(),
+                material: params.p1().add(Color::rgb(0.165, 0.631, 0.596).into()),
+                transform: Transform::from_translation(coord_to_vec3(position) + offset),
+                ..default()
+            },
+            ..default()
+        }
+    }
 }
 
 #[derive(Component, Default)]
@@ -154,37 +183,6 @@ pub fn derive_party_movement(
             .min()
             .unwrap_or(0);
     }
-}
-
-pub fn spawn_party(
-    commands: &mut Commands,
-    params: &mut ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
-    position: HexCoord,
-    name: String,
-    supplies: u32,
-) -> Entity {
-    let offset = Vec3::new(0.0, 1.0, 0.0);
-    commands
-        .spawn((
-            PbrBundle {
-                mesh: params.p0().indicator_mesh.clone(),
-                material: params.p1().add(Color::rgb(0.165, 0.631, 0.596).into()),
-                transform: Transform::from_translation(coord_to_vec3(position) + offset),
-                ..default()
-            },
-            PartyBundle {
-                party: Party {
-                    name,
-                    supplies,
-                    ..default()
-                },
-                group: Group::default(),
-                offset: Offset(offset),
-                view_radius: ViewRadius(VIEW_RADIUS),
-                ..default()
-            },
-        ))
-        .id()
 }
 
 #[cfg(test)]

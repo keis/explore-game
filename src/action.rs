@@ -8,7 +8,7 @@ use crate::{
         PathGuided,
     },
     material::TerrainMaterial,
-    party::{spawn_party, Group, GroupCommandsExt, Party},
+    party::{Group, GroupCommandsExt, Party, PartyBundle},
     slide::{Slide, SlideEvent},
     State,
 };
@@ -293,17 +293,19 @@ pub fn handle_create_party_from_camp(
         } else {
             0
         };
-        let new_party = spawn_party(
-            &mut commands,
-            &mut spawn_party_params,
-            presence.position,
-            "New Party".to_string(),
-            new_supplies,
-        );
+        let new_party = commands
+            .spawn(PartyBundle::new(
+                &mut spawn_party_params,
+                presence.position,
+                "New Party".to_string(),
+                new_supplies,
+            ))
+            .add_members(characters)
+            .id();
+
         commands
             .entity(presence.map)
             .add_presence(new_party, presence.position);
-        commands.entity(new_party).add_members(characters);
     }
 }
 
@@ -327,17 +329,18 @@ pub fn handle_split_party(
         } else {
             0
         };
-        let new_party = spawn_party(
-            &mut commands,
-            &mut spawn_party_params,
-            presence.position,
-            "New Party".to_string(),
-            new_supplies,
-        );
+        let new_party = commands
+            .spawn(PartyBundle::new(
+                &mut spawn_party_params,
+                presence.position,
+                "New Party".to_string(),
+                new_supplies,
+            ))
+            .add_members(characters)
+            .id();
         commands
             .entity(presence.map)
             .add_presence(new_party, presence.position);
-        commands.entity(new_party).add_members(characters);
     }
 }
 
