@@ -222,20 +222,21 @@ pub fn handle_make_camp(
 
         info!("Spawning camp at {}", position);
         party.supplies -= 1;
-        let entity = commands
-            .spawn(CampBundle::new(
-                &mut spawn_camp_params,
-                position,
-                Camp {
-                    name: String::from("New camp"),
-                    supplies: party.supplies,
-                    crystals: party.crystals,
-                },
-            ))
-            .add_members(&group.members)
-            .id();
-
-        commands.entity(map_entity).add_presence(entity, position);
+        commands
+            .entity(map_entity)
+            .with_presence(position, |location| {
+                location
+                    .spawn(CampBundle::new(
+                        &mut spawn_camp_params,
+                        position,
+                        Camp {
+                            name: String::from("New camp"),
+                            supplies: party.supplies,
+                            crystals: party.crystals,
+                        },
+                    ))
+                    .add_members(&group.members);
+            });
     }
 }
 
@@ -295,19 +296,18 @@ pub fn handle_create_party_from_camp(
         } else {
             0
         };
-        let new_party = commands
-            .spawn(PartyBundle::new(
-                &mut spawn_party_params,
-                presence.position,
-                "New Party".to_string(),
-                new_supplies,
-            ))
-            .add_members(characters)
-            .id();
-
         commands
             .entity(presence.map)
-            .add_presence(new_party, presence.position);
+            .with_presence(presence.position, |location| {
+                location
+                    .spawn(PartyBundle::new(
+                        &mut spawn_party_params,
+                        presence.position,
+                        "New Party".to_string(),
+                        new_supplies,
+                    ))
+                    .add_members(characters);
+            });
     }
 }
 
@@ -331,18 +331,18 @@ pub fn handle_split_party(
         } else {
             0
         };
-        let new_party = commands
-            .spawn(PartyBundle::new(
-                &mut spawn_party_params,
-                presence.position,
-                "New Party".to_string(),
-                new_supplies,
-            ))
-            .add_members(characters)
-            .id();
         commands
             .entity(presence.map)
-            .add_presence(new_party, presence.position);
+            .with_presence(presence.position, |location| {
+                location
+                    .spawn(PartyBundle::new(
+                        &mut spawn_party_params,
+                        presence.position,
+                        "New Party".to_string(),
+                        new_supplies,
+                    ))
+                    .add_members(characters);
+            });
     }
 }
 

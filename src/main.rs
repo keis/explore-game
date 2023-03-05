@@ -208,16 +208,16 @@ fn spawn_scene(
     let character3 = commands
         .spawn(CharacterBundle::new(String::from("Carol")))
         .id();
-    let alpha_group = commands
-        .spawn(PartyBundle::new(
-            &mut params.p0(),
-            groupcoord,
-            String::from("Alpha Group"),
-            1,
-        ))
-        .add_members(&[character1, character2, character3])
-        .id();
-    commands.entity(map).add_presence(alpha_group, groupcoord);
+    commands.entity(map).with_presence(groupcoord, |location| {
+        location
+            .spawn(PartyBundle::new(
+                &mut params.p0(),
+                groupcoord,
+                String::from("Alpha Group"),
+                1,
+            ))
+            .add_members(&[character1, character2, character3]);
+    });
 
     let enemycoord = spiral(prototype.layout.center() + HexCoord::new(2, 3))
         .find(|&c| {
@@ -226,10 +226,9 @@ fn spawn_scene(
                 .map_or(false, |proto| proto.terrain != Terrain::Ocean)
         })
         .unwrap();
-    let enemy = commands
-        .spawn(EnemyBundle::new(&mut params.p2(), enemycoord))
-        .id();
-    commands.entity(map).add_presence(enemy, enemycoord);
+    commands.entity(map).with_presence(enemycoord, |location| {
+        location.spawn(EnemyBundle::new(&mut params.p2(), enemycoord));
+    });
 }
 
 fn spawn_light(mut commands: Commands) {
