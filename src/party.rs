@@ -2,12 +2,12 @@ use crate::{
     assets::MainAssets,
     character::Movement,
     indicator::Indicator,
-    map::{coord_to_vec3, DespawnPresence, HexCoord, MapPresence, Offset, PathGuided, ViewRadius},
+    map::{coord_to_vec3, HexCoord, MapCommandsExt, MapPresence, Offset, PathGuided, ViewRadius},
     slide::Slide,
     VIEW_RADIUS,
 };
 
-use bevy::ecs::system::Command;
+use bevy::ecs::system::{Command, EntityCommands};
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
 use smallvec::SmallVec;
@@ -31,6 +31,35 @@ pub struct PartyBundle {
     pub view_radius: ViewRadius,
     pub path_guided: PathGuided,
     pub slide: Slide,
+    pub pbr_bundle: PbrBundle,
+}
+
+impl PartyBundle {
+    pub fn new(
+        params: &mut ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
+        position: HexCoord,
+        name: String,
+        supplies: u32,
+    ) -> Self {
+        let offset = Vec3::new(0.0, 1.0, 0.0);
+        Self {
+            party: Party {
+                name,
+                supplies,
+                ..default()
+            },
+            group: Group::default(),
+            offset: Offset(offset),
+            view_radius: ViewRadius(VIEW_RADIUS),
+            pbr_bundle: PbrBundle {
+                mesh: params.p0().indicator_mesh.clone(),
+                material: params.p1().add(Color::rgb(0.165, 0.631, 0.596).into()),
+                transform: Transform::from_translation(coord_to_vec3(position) + offset),
+                ..default()
+            },
+            ..default()
+        }
+    }
 }
 
 #[derive(Component, Default)]
@@ -43,17 +72,49 @@ pub struct GroupMember {
     pub group: Entity,
 }
 
-pub struct JoinGroup {
-    pub group: Entity,
-    pub members: SmallVec<[Entity; 8]>,
+struct AddMembers {
+    group: Entity,
+    members: SmallVec<[Entity; 8]>,
 }
 
-pub struct RemoveMembers {
-    pub group: Entity,
-    pub members: SmallVec<[Entity; 8]>,
+struct RemoveMembers {
+    group: Entity,
+    members: SmallVec<[Entity; 8]>,
 }
 
-impl Command for JoinGroup {
+pub trait GroupCommandsExt {
+    fn add_members(&mut self, members: &[Entity]) -> &mut Self;
+    fn remove_members(&mut self, members: &[Entity]) -> &mut Self;
+    fn join_group(&mut self, group: Entity) -> &mut Self;
+}
+
+impl<'w, 's, 'a> GroupCommandsExt for EntityCommands<'w, 's, 'a> {
+    fn add_members(&mut self, members: &[Entity]) -> &mut Self {
+        let group = self.id();
+        self.commands().add(AddMembers {
+            group,
+            members: SmallVec::from(members),
+        });
+        self
+    }
+
+    fn remove_members(&mut self, members: &[Entity]) -> &mut Self {
+        let group = self.id();
+        self.commands().add(RemoveMembers {
+            group,
+            members: SmallVec::from(members),
+        });
+        self
+    }
+
+    fn join_group(&mut self, group: Entity) -> &mut Self {
+        let members = SmallVec::from_slice(&[self.id()]);
+        self.commands().add(AddMembers { group, members });
+        self
+    }
+}
+
+impl Command for AddMembers {
     fn write(mut self, world: &mut World) {
         let mut old = HashSet::new();
         for &member in &self.members {
@@ -105,10 +166,7 @@ pub fn despawn_empty_party(
 ) {
     for (entity, group, presence) in &party_query {
         if group.members.is_empty() {
-            commands.add(DespawnPresence {
-                map: presence.map,
-                presence: entity,
-            });
+            commands.entity(presence.map).despawn_presence(entity);
         }
     }
 }
@@ -127,40 +185,9 @@ pub fn derive_party_movement(
     }
 }
 
-pub fn spawn_party(
-    commands: &mut Commands,
-    params: &mut ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
-    position: HexCoord,
-    name: String,
-    supplies: u32,
-) -> Entity {
-    let offset = Vec3::new(0.0, 1.0, 0.0);
-    commands
-        .spawn((
-            PbrBundle {
-                mesh: params.p0().indicator_mesh.clone(),
-                material: params.p1().add(Color::rgb(0.165, 0.631, 0.596).into()),
-                transform: Transform::from_translation(coord_to_vec3(position) + offset),
-                ..default()
-            },
-            PartyBundle {
-                party: Party {
-                    name,
-                    supplies,
-                    ..default()
-                },
-                group: Group::default(),
-                offset: Offset(offset),
-                view_radius: ViewRadius(VIEW_RADIUS),
-                ..default()
-            },
-        ))
-        .id()
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{derive_party_movement, Group, GroupMember, JoinGroup, Movement, Party};
+    use super::{derive_party_movement, AddMembers, Group, GroupMember, Movement, Party};
     use bevy::{ecs::system::Command, prelude::*};
     use rstest::*;
     use smallvec::SmallVec;
@@ -174,11 +201,11 @@ mod tests {
             .spawn((Party::default(), Group::default(), Movement::default()))
             .id();
         let member_entity = app.world.spawn(Movement { points: 2 }).id();
-        let joingroup = JoinGroup {
+        let addmembers = AddMembers {
             group: party_entity,
             members: SmallVec::from_slice(&[member_entity]),
         };
-        joingroup.write(&mut app.world);
+        addmembers.write(&mut app.world);
         app
     }
 
@@ -205,11 +232,11 @@ mod tests {
             .single(&app.world);
 
         let new_group_entity = app.world.spawn(Group::default()).id();
-        let joingroup = JoinGroup {
+        let addmembers = AddMembers {
             group: new_group_entity,
             members: SmallVec::from_slice(&[member_entity]),
         };
-        joingroup.write(&mut app.world);
+        addmembers.write(&mut app.world);
 
         let group = app
             .world

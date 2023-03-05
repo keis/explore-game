@@ -1,10 +1,97 @@
 use super::{GameMap, HexCoord, MapEvent, MapPresence};
-use bevy::{ecs::system::Command, prelude::*};
+use bevy::{
+    ecs::system::{Command, EntityCommands},
+    prelude::*,
+};
+use smallvec::SmallVec;
 
-pub struct MoveMapPresence {
+struct AddMapPresence {
+    pub map: Entity,
+    pub presence: SmallVec<[Entity; 8]>,
+    pub position: HexCoord,
+}
+
+struct MoveMapPresence {
     pub map: Entity,
     pub presence: Entity,
     pub position: HexCoord,
+}
+
+struct DespawnPresence {
+    pub map: Entity,
+    pub presence: Entity,
+}
+
+pub struct PresenceBuilder<'w, 's, 'a> {
+    commands: &'a mut Commands<'w, 's>,
+    add_map_presence: AddMapPresence,
+}
+
+pub trait MapCommandsExt {
+    fn add_presence(&mut self, presence: Entity, position: HexCoord) -> &mut Self;
+    fn move_presence(&mut self, presence: Entity, position: HexCoord) -> &mut Self;
+    fn with_presence(
+        &mut self,
+        position: HexCoord,
+        f: impl FnOnce(&mut PresenceBuilder),
+    ) -> &mut Self;
+    fn despawn_presence(&mut self, presence: Entity) -> &mut Self;
+}
+
+impl<'w, 's, 'a> PresenceBuilder<'w, 's, 'a> {
+    pub fn spawn(&mut self, bundle: impl Bundle) -> EntityCommands<'w, 's, '_> {
+        let e = self.commands.spawn(bundle);
+        self.add_map_presence.presence.push(e.id());
+        e
+    }
+}
+
+impl<'w, 's, 'a> MapCommandsExt for EntityCommands<'w, 's, 'a> {
+    fn add_presence(&mut self, presence: Entity, position: HexCoord) -> &mut Self {
+        let map = self.id();
+        self.commands().add(AddMapPresence {
+            map,
+            presence: SmallVec::from_slice(&[presence]),
+            position,
+        });
+        self
+    }
+
+    fn move_presence(&mut self, presence: Entity, position: HexCoord) -> &mut Self {
+        let map = self.id();
+        self.commands().add(MoveMapPresence {
+            map,
+            presence,
+            position,
+        });
+        self
+    }
+
+    fn with_presence(
+        &mut self,
+        position: HexCoord,
+        spawn_presence: impl FnOnce(&mut PresenceBuilder),
+    ) -> &mut Self {
+        let map = self.id();
+        let mut builder = PresenceBuilder {
+            commands: self.commands(),
+            add_map_presence: AddMapPresence {
+                map,
+                position,
+                presence: SmallVec::default(),
+            },
+        };
+        spawn_presence(&mut builder);
+        let add_map_presence = builder.add_map_presence;
+        self.commands().add(add_map_presence);
+        self
+    }
+
+    fn despawn_presence(&mut self, presence: Entity) -> &mut Self {
+        let map = self.id();
+        self.commands().add(DespawnPresence { map, presence });
+        self
+    }
 }
 
 impl Command for MoveMapPresence {
@@ -33,42 +120,33 @@ impl Command for MoveMapPresence {
     }
 }
 
-pub struct AddMapPresence {
-    pub map: Entity,
-    pub presence: Entity,
-    pub position: HexCoord,
-}
-
 impl Command for AddMapPresence {
     fn write(self, world: &mut World) {
-        // TODO: How to handle the case where presence is already on map? Convert into move?
-        if let Some(mut map) = world.entity_mut(self.map).get_mut::<GameMap>() {
-            map.add_presence(self.position, self.presence);
-        }
+        for presence in self.presence {
+            // TODO: How to handle the case where presence is already on map? Convert into move?
+            if let Some(mut map) = world.entity_mut(self.map).get_mut::<GameMap>() {
+                map.add_presence(self.position, presence);
+            }
 
-        let mut presence_entity = world.entity_mut(self.presence);
-        if let Some(mut presence) = presence_entity.get_mut::<MapPresence>() {
-            presence.position = self.position;
-        } else {
-            presence_entity.insert(MapPresence {
-                map: self.map,
-                position: self.position,
-            });
-        }
+            let mut presence_entity = world.entity_mut(presence);
+            if let Some(mut presence) = presence_entity.get_mut::<MapPresence>() {
+                presence.position = self.position;
+            } else {
+                presence_entity.insert(MapPresence {
+                    map: self.map,
+                    position: self.position,
+                });
+            }
 
-        if let Some(mut events) = world.get_resource_mut::<Events<MapEvent>>() {
-            events.send(MapEvent::PresenceAdded {
-                map: self.map,
-                presence: self.presence,
-                position: self.position,
-            });
+            if let Some(mut events) = world.get_resource_mut::<Events<MapEvent>>() {
+                events.send(MapEvent::PresenceAdded {
+                    map: self.map,
+                    presence,
+                    position: self.position,
+                });
+            }
         }
     }
-}
-
-pub struct DespawnPresence {
-    pub map: Entity,
-    pub presence: Entity,
 }
 
 impl Command for DespawnPresence {

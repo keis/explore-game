@@ -9,24 +9,23 @@ use explore_game::{
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     camp::update_camp_view_radius,
-    character::{reset_movement_points, spawn_character},
+    character::{reset_movement_points, CharacterBundle},
     combat,
-    enemy::{move_enemy, spawn_enemy},
+    enemy::{move_enemy, EnemyBundle},
     indicator::update_indicator,
     input::InputPlugin,
     interface::InterfacePlugin,
     map::{
-        spawn_game_map_from_prototype, spawn_zone, start_map_generation, AddMapPresence, GameMap,
-        GenerateMapTask, HexAssets, HexCoord, MapEvent, MapPlugin, MapPresence, MapSeed, Terrain,
+        spawn_game_map_from_prototype, spawn_zone, start_map_generation, GameMap, GenerateMapTask,
+        HexAssets, HexCoord, MapCommandsExt, MapEvent, MapPlugin, MapPresence, MapSeed, Terrain,
     },
     material::{TerrainMaterial, TerrainMaterialPlugin, ZoneMaterial, ZoneMaterialPlugin},
-    party::{derive_party_movement, despawn_empty_party, spawn_party, JoinGroup},
+    party::{derive_party_movement, despawn_empty_party, GroupCommandsExt, PartyBundle},
     slide::{slide, SlideEvent},
     turn::Turn,
     State,
 };
 use futures_lite::future;
-use smallvec::SmallVec;
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
 pub const ASPECT_RATIO: f32 = 16.0 / 9.0;
@@ -200,24 +199,24 @@ fn spawn_scene(
                 .map_or(false, |proto| proto.terrain != Terrain::Ocean)
         })
         .unwrap();
-    let alpha_group = spawn_party(
-        &mut commands,
-        &mut params.p0(),
-        groupcoord,
-        String::from("Alpha Group"),
-        1,
-    );
-    commands.add(AddMapPresence {
-        map,
-        presence: alpha_group,
-        position: groupcoord,
-    });
-    let character1 = spawn_character(&mut commands, String::from("Alice"));
-    let character2 = spawn_character(&mut commands, String::from("Bob"));
-    let character3 = spawn_character(&mut commands, String::from("Carol"));
-    commands.add(JoinGroup {
-        group: alpha_group,
-        members: SmallVec::from_slice(&[character1, character2, character3]),
+    let character1 = commands
+        .spawn(CharacterBundle::new(String::from("Alice")))
+        .id();
+    let character2 = commands
+        .spawn(CharacterBundle::new(String::from("Bob")))
+        .id();
+    let character3 = commands
+        .spawn(CharacterBundle::new(String::from("Carol")))
+        .id();
+    commands.entity(map).with_presence(groupcoord, |location| {
+        location
+            .spawn(PartyBundle::new(
+                &mut params.p0(),
+                groupcoord,
+                String::from("Alpha Group"),
+                1,
+            ))
+            .add_members(&[character1, character2, character3]);
     });
 
     let enemycoord = spiral(prototype.layout.center() + HexCoord::new(2, 3))
@@ -227,11 +226,8 @@ fn spawn_scene(
                 .map_or(false, |proto| proto.terrain != Terrain::Ocean)
         })
         .unwrap();
-    let enemy = spawn_enemy(&mut commands, &mut params.p2(), enemycoord);
-    commands.add(AddMapPresence {
-        map,
-        presence: enemy,
-        position: enemycoord,
+    commands.entity(map).with_presence(enemycoord, |location| {
+        location.spawn(EnemyBundle::new(&mut params.p2(), enemycoord));
     });
 }
 

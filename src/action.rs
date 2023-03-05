@@ -1,14 +1,14 @@
 use crate::{
     assets::MainAssets,
-    camp::{spawn_camp, Camp},
+    camp::{Camp, CampBundle},
     character::Movement,
     crystals::CrystalDeposit,
     map::{
-        coord_to_vec3, AddMapPresence, DespawnPresence, GameMap, HexCoord, MapPresence,
-        MoveMapPresence, Offset, PathFinder, PathGuided,
+        coord_to_vec3, GameMap, HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder,
+        PathGuided,
     },
     material::TerrainMaterial,
-    party::{spawn_party, Group, JoinGroup, Party},
+    party::{Group, GroupCommandsExt, Party, PartyBundle},
     slide::{Slide, SlideEvent},
     State,
 };
@@ -141,11 +141,7 @@ pub fn handle_slide_stopped(
         let GameAction::Move(e, next) = last_action else { continue };
         let Ok((presence, optional)) = presence_query.get_mut(e) else { continue };
 
-        commands.add(MoveMapPresence {
-            map: presence.map,
-            presence: e,
-            position: next,
-        });
+        commands.entity(presence.map).move_presence(e, next);
 
         if let Some((party_movement, mut pathguided)) = optional {
             pathguided.advance();
@@ -226,25 +222,21 @@ pub fn handle_make_camp(
 
         info!("Spawning camp at {}", position);
         party.supplies -= 1;
-        let entity = spawn_camp(
-            &mut commands,
-            &mut spawn_camp_params,
-            position,
-            Camp {
-                name: String::from("New camp"),
-                supplies: party.supplies,
-                crystals: party.crystals,
-            },
-        );
-        commands.add(AddMapPresence {
-            map: map_entity,
-            presence: entity,
-            position,
-        });
-        commands.add(JoinGroup {
-            group: entity,
-            members: group.members.clone(),
-        });
+        commands
+            .entity(map_entity)
+            .with_presence(position, |location| {
+                location
+                    .spawn(CampBundle::new(
+                        &mut spawn_camp_params,
+                        position,
+                        Camp {
+                            name: String::from("New camp"),
+                            supplies: party.supplies,
+                            crystals: party.crystals,
+                        },
+                    ))
+                    .add_members(&group.members);
+            });
     }
 }
 
@@ -266,10 +258,7 @@ pub fn handle_break_camp(
         }
         info!("Depawning camp at {}", presence.position);
         party.supplies += camp.supplies + 1;
-        commands.add(DespawnPresence {
-            map: map_entity,
-            presence: camp_entity,
-        });
+        commands.entity(map_entity).despawn_presence(camp_entity);
     }
 }
 
@@ -287,10 +276,7 @@ pub fn handle_enter_camp(
         party.supplies = 0;
         camp.crystals += party.crystals;
         party.crystals = 0;
-        commands.add(JoinGroup {
-            group: *camp_entity,
-            members: group.members.clone(),
-        });
+        commands.entity(*camp_entity).add_members(&group.members);
     }
 }
 
@@ -310,22 +296,18 @@ pub fn handle_create_party_from_camp(
         } else {
             0
         };
-        let new_party = spawn_party(
-            &mut commands,
-            &mut spawn_party_params,
-            presence.position,
-            "New Party".to_string(),
-            new_supplies,
-        );
-        commands.add(AddMapPresence {
-            map: presence.map,
-            presence: new_party,
-            position: presence.position,
-        });
-        commands.add(JoinGroup {
-            group: new_party,
-            members: characters.clone(),
-        });
+        commands
+            .entity(presence.map)
+            .with_presence(presence.position, |location| {
+                location
+                    .spawn(PartyBundle::new(
+                        &mut spawn_party_params,
+                        presence.position,
+                        "New Party".to_string(),
+                        new_supplies,
+                    ))
+                    .add_members(characters);
+            });
     }
 }
 
@@ -349,22 +331,18 @@ pub fn handle_split_party(
         } else {
             0
         };
-        let new_party = spawn_party(
-            &mut commands,
-            &mut spawn_party_params,
-            presence.position,
-            "New Party".to_string(),
-            new_supplies,
-        );
-        commands.add(AddMapPresence {
-            map: presence.map,
-            presence: new_party,
-            position: presence.position,
-        });
-        commands.add(JoinGroup {
-            group: new_party,
-            members: characters.clone(),
-        });
+        commands
+            .entity(presence.map)
+            .with_presence(presence.position, |location| {
+                location
+                    .spawn(PartyBundle::new(
+                        &mut spawn_party_params,
+                        presence.position,
+                        "New Party".to_string(),
+                        new_supplies,
+                    ))
+                    .add_members(characters);
+            });
     }
 }
 
@@ -398,10 +376,7 @@ pub fn handle_merge_party(
         let (mut party, _, _) = party_query.get_mut(*target).unwrap();
         party.supplies += supplies;
         party.crystals += crystals;
-        commands.add(JoinGroup {
-            group: *target,
-            members: characters,
-        });
+        commands.entity(*target).add_members(&characters);
     }
 }
 

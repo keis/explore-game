@@ -19,6 +19,18 @@ pub struct CharacterBundle {
     pub health: Health,
 }
 
+impl CharacterBundle {
+    pub fn new(name: String) -> Self {
+        Self {
+            character: Character { name },
+            movement: Movement { points: 2 },
+            attack: Attack(0..8),
+            health: Health(10),
+            ..default()
+        }
+    }
+}
+
 #[derive(Component, Default, Debug)]
 pub struct Movement {
     pub points: u32,
@@ -30,16 +42,4 @@ pub fn reset_movement_points(turn: Res<Turn>, mut movement_query: Query<&mut Mov
             movement.points = 2;
         }
     }
-}
-
-pub fn spawn_character(commands: &mut Commands, name: String) -> Entity {
-    commands
-        .spawn(CharacterBundle {
-            character: Character { name },
-            movement: Movement { points: 2 },
-            attack: Attack(0..8),
-            health: Health(10),
-            ..default()
-        })
-        .id()
 }
