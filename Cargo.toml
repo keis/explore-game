@@ -6,6 +6,7 @@ default-members = [".", "crates/*"]
 name = "explore_game"
 version = "0.1.0"
 edition = "2021"
+license = "ISC"
 
 [profile.dev]
 opt-level = 1

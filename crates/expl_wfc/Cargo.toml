@@ -2,6 +2,7 @@
 name = "expl_wfc"
 version = "0.1.0"
 edition = "2021"
+license = "ISC"
 
 [lib]
 bench = false
