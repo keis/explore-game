@@ -60,6 +60,18 @@ impl From<Hexagon> for Mesh {
         mesh
     }
 }
+
+#[derive(Resource)]
+pub struct HexAssets {
+    pub mesh: Handle<Mesh>,
+}
+
+pub fn insert_hex_assets(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
+    commands.insert_resource(HexAssets {
+        mesh: meshes.add(Mesh::from(Hexagon { radius: 1.0 })),
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use super::{coord_to_vec3, HexCoord, HEX_RADIUS_RATIO};

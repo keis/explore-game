@@ -16,8 +16,8 @@ use explore_game::{
     input::InputPlugin,
     interface::InterfacePlugin,
     map::{
-        spawn_game_map_from_prototype, spawn_zone, start_map_generation, GameMap, GenerateMapTask,
-        HexCoord, MapCommandsExt, MapEvent, MapPlugin, MapPresence, MapSeed, Terrain, ZoneParams,
+        spawn_game_map_from_prototype, spawn_zone, start_map_generation, GenerateMapTask, HexCoord,
+        MapCommandsExt, MapPlugin, MapSeed, Terrain, ZoneParams,
     },
     material::{TerrainMaterialPlugin, ZoneMaterialPlugin},
     party::{
@@ -94,7 +94,6 @@ fn main() {
         .add_system_set(
             SystemSet::on_update(State::Running)
                 .with_system(spawn_scene)
-                .with_system(log_moves)
                 .with_system(update_indicator)
                 .with_system(reset_movement_points)
                 .with_system(derive_party_movement)
@@ -108,30 +107,6 @@ fn main() {
                 .with_system(slide),
         )
         .run();
-}
-
-fn log_moves(
-    mut map_events: EventReader<MapEvent>,
-    presence_query: Query<&MapPresence>,
-    map_query: Query<&GameMap>,
-) {
-    for event in map_events.iter() {
-        if let MapEvent::PresenceMoved {
-            presence: entity,
-            position,
-            ..
-        } = event
-        {
-            info!("{:?} moved to {}", entity, position);
-            if let Ok(presence) = presence_query.get(*entity) {
-                if let Ok(map) = map_query.get(presence.map) {
-                    for other in map.presence(presence.position).filter(|e| *e != entity) {
-                        info!("{:?} is here", other);
-                    }
-                }
-            }
-        }
-    }
 }
 
 fn spawn_camera(mut commands: Commands) {
