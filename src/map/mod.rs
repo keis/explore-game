@@ -2,6 +2,7 @@ use crate::State;
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 
 mod commands;
+mod decoration;
 mod events;
 mod fog;
 mod gamemap;
