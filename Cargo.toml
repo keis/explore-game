@@ -28,7 +28,7 @@ rand = "0.8.5"
 smallvec = "1.6"
 splines = { version = "4.2.0", features = ["glam"] }
 futures-lite = "1.12.0"
-clap = {version = "4.1.6", features = ["derive"] }
+clap = {version = "4.1.8", features = ["derive"] }
 interpolation = "0.2.0"
 
 [dev-dependencies]
