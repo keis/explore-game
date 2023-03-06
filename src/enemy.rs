@@ -22,21 +22,18 @@ pub struct EnemyBundle {
     pub pbr_bundle: PbrBundle,
 }
 
+pub type EnemyParams<'w> = (Res<'w, MainAssets>, ResMut<'w, Assets<StandardMaterial>>);
+
 impl EnemyBundle {
-    pub fn new(
-        params: &mut ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
-        position: HexCoord,
-    ) -> Self {
+    pub fn new((main_assets, standard_materials): &mut EnemyParams, position: HexCoord) -> Self {
         let offset = Vec3::ZERO;
         Self {
             view_radius: ViewRadius(3),
             attack: Attack(1..10),
             health: Health(20),
             pbr_bundle: PbrBundle {
-                mesh: params.p0().blob_mesh.clone(),
-                material: params
-                    .p1()
-                    .add(Color::rgba(0.749, 0.584, 0.901, 0.666).into()),
+                mesh: main_assets.blob_mesh.clone(),
+                material: standard_materials.add(Color::rgba(0.749, 0.584, 0.901, 0.666).into()),
                 transform: Transform::from_translation(coord_to_vec3(position) + offset),
                 visibility: Visibility { is_visible: false },
                 ..default()

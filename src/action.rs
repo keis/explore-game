@@ -1,14 +1,12 @@
 use crate::{
-    assets::MainAssets,
-    camp::{Camp, CampBundle},
+    camp::{Camp, CampBundle, CampParams},
     character::Movement,
     crystals::CrystalDeposit,
     map::{
         coord_to_vec3, GameMap, HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder,
         PathGuided,
     },
-    material::TerrainMaterial,
-    party::{Group, GroupCommandsExt, Party, PartyBundle},
+    party::{Group, GroupCommandsExt, Party, PartyBundle, PartyParams},
     slide::{Slide, SlideEvent},
     State,
 };
@@ -194,7 +192,7 @@ pub fn handle_resume_move(
 
 pub fn handle_make_camp(
     mut commands: Commands,
-    mut spawn_camp_params: ParamSet<(Res<MainAssets>, ResMut<Assets<TerrainMaterial>>)>,
+    mut spawn_camp_params: CampParams,
     mut events: EventReader<GameAction>,
     map_query: Query<(Entity, &GameMap)>,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
@@ -282,7 +280,7 @@ pub fn handle_enter_camp(
 
 pub fn handle_create_party_from_camp(
     mut commands: Commands,
-    mut spawn_party_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
+    mut spawn_party_params: PartyParams,
     mut events: EventReader<GameAction>,
     mut camp_query: Query<(&mut Camp, &MapPresence)>,
 ) {
@@ -313,7 +311,7 @@ pub fn handle_create_party_from_camp(
 
 pub fn handle_split_party(
     mut commands: Commands,
-    mut spawn_party_params: ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
+    mut spawn_party_params: PartyParams,
     mut events: EventReader<GameAction>,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
 ) {

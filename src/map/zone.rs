@@ -117,15 +117,17 @@ fn zone_material(assets: &Res<MainAssets>, terrain: Terrain) -> ZoneMaterial {
     }
 }
 
+pub type ZoneParams<'w> = (
+    Res<'w, MainAssets>,
+    Res<'w, HexAssets>,
+    ResMut<'w, Assets<ZoneMaterial>>,
+    ResMut<'w, Assets<TerrainMaterial>>,
+);
+
 #[allow(clippy::type_complexity)]
 pub fn spawn_zone(
     commands: &mut Commands,
-    params: &mut ParamSet<(
-        Res<MainAssets>,
-        Res<HexAssets>,
-        ResMut<Assets<ZoneMaterial>>,
-        ResMut<Assets<TerrainMaterial>>,
-    )>,
+    (main_assets, hex_assets, zone_materials, terrain_materials): &mut ZoneParams,
     position: HexCoord,
     ZonePrototype {
         terrain,
@@ -134,7 +136,7 @@ pub fn spawn_zone(
         portal,
     }: &ZonePrototype,
 ) -> Entity {
-    let material = zone_material(&params.p0(), *terrain);
+    let material = zone_material(main_assets, *terrain);
     let zone_entity = commands
         .spawn((
             ZoneBundle {
@@ -143,8 +145,8 @@ pub fn spawn_zone(
                 ..default()
             },
             MaterialMeshBundle {
-                mesh: params.p1().mesh.clone(),
-                material: params.p2().add(material),
+                mesh: hex_assets.mesh.clone(),
+                material: zone_materials.add(material),
                 transform: Transform::from_translation(coord_to_vec3(position))
                     .with_rotation(Quat::from_rotation_y((90f32).to_radians())),
                 ..default()
@@ -158,8 +160,8 @@ pub fn spawn_zone(
                         Fog::default(),
                         ZoneDecorationPortal,
                         MaterialMeshBundle {
-                            mesh: params.p0().portal_mesh.clone(),
-                            material: params.p3().add(TerrainMaterial {
+                            mesh: main_assets.portal_mesh.clone(),
+                            material: terrain_materials.add(TerrainMaterial {
                                 color: Color::rgb(0.4, 0.42, 0.4),
                                 visible: 0,
                                 explored: 0,
@@ -178,8 +180,8 @@ pub fn spawn_zone(
                         Fog::default(),
                         ZoneDecorationCrystals,
                         MaterialMeshBundle {
-                            mesh: params.p0().crystals_mesh.clone(),
-                            material: params.p3().add(TerrainMaterial {
+                            mesh: main_assets.crystals_mesh.clone(),
+                            material: terrain_materials.add(TerrainMaterial {
                                 color: Color::rgba(0.7, 0.4, 0.4, 0.777),
                                 visible: 0,
                                 explored: 0,
@@ -197,8 +199,8 @@ pub fn spawn_zone(
                         Fog::default(),
                         ZoneDecorationTree,
                         MaterialMeshBundle {
-                            mesh: params.p0().pine_mesh.clone(),
-                            material: params.p3().add(TerrainMaterial {
+                            mesh: main_assets.pine_mesh.clone(),
+                            material: terrain_materials.add(TerrainMaterial {
                                 color: Color::rgb(0.2, 0.7, 0.3),
                                 visible: 0,
                                 explored: 0,
