@@ -26,9 +26,11 @@ pub struct CampBundle {
     pub material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
 }
 
+pub type CampParams<'w> = (Res<'w, MainAssets>, ResMut<'w, Assets<TerrainMaterial>>);
+
 impl CampBundle {
     pub fn new(
-        params: &mut ParamSet<(Res<MainAssets>, ResMut<Assets<TerrainMaterial>>)>,
+        (main_assets, terrain_materials): &mut CampParams,
         position: HexCoord,
         camp: Camp,
     ) -> Self {
@@ -36,8 +38,8 @@ impl CampBundle {
             camp,
             view_radius: ViewRadius(VIEW_RADIUS),
             material_mesh_bundle: MaterialMeshBundle {
-                mesh: params.p0().tent_mesh.clone(),
-                material: params.p1().add(TerrainMaterial {
+                mesh: main_assets.tent_mesh.clone(),
+                material: terrain_materials.add(TerrainMaterial {
                     color: Color::rgb(0.631, 0.596, 0.165),
                     visible: 1,
                     explored: 1,

@@ -34,9 +34,11 @@ pub struct PartyBundle {
     pub pbr_bundle: PbrBundle,
 }
 
+pub type PartyParams<'w> = (Res<'w, MainAssets>, ResMut<'w, Assets<StandardMaterial>>);
+
 impl PartyBundle {
     pub fn new(
-        params: &mut ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
+        (main_assets, standard_materials): &mut PartyParams,
         position: HexCoord,
         name: String,
         supplies: u32,
@@ -52,8 +54,8 @@ impl PartyBundle {
             offset: Offset(offset),
             view_radius: ViewRadius(VIEW_RADIUS),
             pbr_bundle: PbrBundle {
-                mesh: params.p0().indicator_mesh.clone(),
-                material: params.p1().add(Color::rgb(0.165, 0.631, 0.596).into()),
+                mesh: main_assets.indicator_mesh.clone(),
+                material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
                 transform: Transform::from_translation(coord_to_vec3(position) + offset),
                 ..default()
             },

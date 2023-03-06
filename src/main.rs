@@ -11,16 +11,18 @@ use explore_game::{
     camp::update_camp_view_radius,
     character::{reset_movement_points, CharacterBundle},
     combat,
-    enemy::{move_enemy, EnemyBundle},
+    enemy::{move_enemy, EnemyBundle, EnemyParams},
     indicator::update_indicator,
     input::InputPlugin,
     interface::InterfacePlugin,
     map::{
         spawn_game_map_from_prototype, spawn_zone, start_map_generation, GameMap, GenerateMapTask,
-        HexAssets, HexCoord, MapCommandsExt, MapEvent, MapPlugin, MapPresence, MapSeed, Terrain,
+        HexCoord, MapCommandsExt, MapEvent, MapPlugin, MapPresence, MapSeed, Terrain, ZoneParams,
     },
-    material::{TerrainMaterial, TerrainMaterialPlugin, ZoneMaterial, ZoneMaterialPlugin},
-    party::{derive_party_movement, despawn_empty_party, GroupCommandsExt, PartyBundle},
+    material::{TerrainMaterialPlugin, ZoneMaterialPlugin},
+    party::{
+        derive_party_movement, despawn_empty_party, GroupCommandsExt, PartyBundle, PartyParams,
+    },
     slide::{slide, SlideEvent},
     turn::Turn,
     State,
@@ -154,19 +156,7 @@ fn spawn_camera(mut commands: Commands) {
 #[allow(clippy::type_complexity)]
 fn spawn_scene(
     mut commands: Commands,
-    mut params: ParamSet<(
-        // spawn_party params
-        ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
-        // spawn_zone params
-        ParamSet<(
-            Res<MainAssets>,
-            Res<HexAssets>,
-            ResMut<Assets<ZoneMaterial>>,
-            ResMut<Assets<TerrainMaterial>>,
-        )>,
-        // spawn_enemy params
-        ParamSet<(Res<MainAssets>, ResMut<Assets<StandardMaterial>>)>,
-    )>,
+    mut params: ParamSet<(PartyParams, ZoneParams, EnemyParams)>,
     mut generate_map_task: Query<(Entity, &mut GenerateMapTask)>,
 ) {
     if generate_map_task.is_empty() {

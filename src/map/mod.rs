@@ -28,7 +28,7 @@ pub use pathdisplay::PathDisplay;
 pub use pathguided::PathGuided;
 pub use position::MapPosition;
 pub use presence::{MapPresence, Offset, ViewRadius};
-pub use zone::{spawn_zone, Terrain, Zone, ZoneBundle, ZonePrototype};
+pub use zone::{spawn_zone, Terrain, Zone, ZoneBundle, ZoneParams, ZonePrototype};
 
 #[derive(Component)]
 pub struct GameMap {
