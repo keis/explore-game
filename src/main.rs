@@ -2,32 +2,27 @@ use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
 use bevy_mod_picking::PickingCameraBundle;
 use clap::Parser;
-use expl_hexgrid::{spiral, GridLayout};
 use expl_wfc::{Seed, SeedType};
 use explore_game::{
     action::ActionPlugin,
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     camp::update_camp_view_radius,
-    character::{reset_movement_points, CharacterBundle},
+    character::reset_movement_points,
     combat,
-    enemy::{move_enemy, EnemyBundle, EnemyParams},
+    enemy::move_enemy,
     indicator::update_indicator,
     input::InputPlugin,
     interface::InterfacePlugin,
-    map::{
-        spawn_game_map_from_prototype, spawn_zone, start_map_generation, GenerateMapTask, HexCoord,
-        MapCommandsExt, MapPlugin, MapSeed, Terrain, ZoneParams,
-    },
+    light,
+    map::{start_map_generation, MapPlugin, MapSeed},
     material::{TerrainMaterialPlugin, ZoneMaterialPlugin},
-    party::{
-        derive_party_movement, despawn_empty_party, GroupCommandsExt, PartyBundle, PartyParams,
-    },
+    party::{derive_party_movement, despawn_empty_party},
+    scene,
     slide::{slide, SlideEvent},
     turn::Turn,
     State,
 };
-use futures_lite::future;
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
 pub const ASPECT_RATIO: f32 = 16.0 / 9.0;
@@ -82,7 +77,7 @@ fn main() {
         .add_plugin(TerrainMaterialPlugin)
         .add_plugin(ActionPlugin)
         .add_startup_system(spawn_camera)
-        .add_startup_system(spawn_light)
+        .add_startup_system(light::spawn_light)
         .add_startup_system(start_map_generation)
         .add_event::<SlideEvent>()
         .add_state(State::AssetLoading)
@@ -93,7 +88,7 @@ fn main() {
         )
         .add_system_set(
             SystemSet::on_update(State::Running)
-                .with_system(spawn_scene)
+                .with_system(scene::spawn_scene)
                 .with_system(update_indicator)
                 .with_system(reset_movement_points)
                 .with_system(derive_party_movement)
@@ -126,88 +121,4 @@ fn spawn_camera(mut commands: Commands) {
         CameraControl::default(),
         PickingCameraBundle::default(),
     ));
-}
-
-#[allow(clippy::type_complexity)]
-fn spawn_scene(
-    mut commands: Commands,
-    mut params: ParamSet<(PartyParams, ZoneParams, EnemyParams)>,
-    mut generate_map_task: Query<(Entity, &mut GenerateMapTask)>,
-) {
-    if generate_map_task.is_empty() {
-        return;
-    }
-    let (task_entity, mut task) = generate_map_task.single_mut();
-    let prototype = match future::block_on(future::poll_once(&mut task.0)) {
-        Some(Ok(result)) => {
-            commands.entity(task_entity).despawn();
-            result
-        }
-        Some(Err(e)) => {
-            error!("something went wrong: {}", e);
-            commands.entity(task_entity).despawn();
-            return;
-        }
-        None => return,
-    };
-
-    let map = spawn_game_map_from_prototype(
-        &mut commands,
-        &prototype,
-        |commands, position, zoneproto| spawn_zone(commands, &mut params.p1(), position, zoneproto),
-    );
-
-    let groupcoord = spiral(prototype.layout.center())
-        .find(|&c| {
-            prototype
-                .get(c)
-                .map_or(false, |proto| proto.terrain != Terrain::Ocean)
-        })
-        .unwrap();
-    let character1 = commands
-        .spawn(CharacterBundle::new(String::from("Alice")))
-        .id();
-    let character2 = commands
-        .spawn(CharacterBundle::new(String::from("Bob")))
-        .id();
-    let character3 = commands
-        .spawn(CharacterBundle::new(String::from("Carol")))
-        .id();
-    commands.entity(map).with_presence(groupcoord, |location| {
-        location
-            .spawn(PartyBundle::new(
-                &mut params.p0(),
-                groupcoord,
-                String::from("Alpha Group"),
-                1,
-            ))
-            .add_members(&[character1, character2, character3]);
-    });
-
-    let enemycoord = spiral(prototype.layout.center() + HexCoord::new(2, 3))
-        .find(|&c| {
-            prototype
-                .get(c)
-                .map_or(false, |proto| proto.terrain != Terrain::Ocean)
-        })
-        .unwrap();
-    commands.entity(map).with_presence(enemycoord, |location| {
-        location.spawn(EnemyBundle::new(&mut params.p2(), enemycoord));
-    });
-}
-
-fn spawn_light(mut commands: Commands) {
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            illuminance: 14_000.0,
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform {
-            translation: Vec3::new(0.0, 10.0, 0.0),
-            rotation: Quat::from_rotation_x(-std::f32::consts::FRAC_PI_3),
-            ..default()
-        },
-        ..default()
-    });
 }

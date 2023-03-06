@@ -9,10 +9,12 @@ pub mod enemy;
 pub mod indicator;
 pub mod input;
 pub mod interface;
+pub mod light;
 pub mod map;
 pub mod material;
 pub mod party;
 pub mod path;
+pub mod scene;
 pub mod slide;
 pub mod turn;
 
