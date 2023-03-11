@@ -1655,6 +1655,8 @@ dependencies = [
  "expl_hexgrid",
  "expl_wfc",
  "futures-lite",
+ "glam",
+ "hexasphere",
  "interpolation",
  "itertools",
  "leafwing-input-manager",
