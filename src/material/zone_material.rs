@@ -27,11 +27,29 @@ pub struct ZoneMaterial {
     pub explored: u32,
     #[uniform(4)]
     pub hover: u32,
+    #[uniform(4)]
+    pub height: f32,
+    #[uniform(4)]
+    pub outer_ne: f32,
+    #[uniform(4)]
+    pub outer_e: f32,
+    #[uniform(4)]
+    pub outer_se: f32,
+    #[uniform(4)]
+    pub outer_sw: f32,
+    #[uniform(4)]
+    pub outer_w: f32,
+    #[uniform(4)]
+    pub outer_nw: f32,
 }
 
 impl Material for ZoneMaterial {
     fn fragment_shader() -> ShaderRef {
         "zone_material.wgsl".into()
+    }
+
+    fn vertex_shader() -> ShaderRef {
+        "zone_material_vertex.wgsl".into()
     }
 }
 

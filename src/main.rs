@@ -69,6 +69,7 @@ fn main() {
                 }),
         )
         .add_plugin(bevy_stl::StlPlugin)
+        .add_plugin(noisy_bevy::NoisyShaderPlugin)
         .add_plugin(CameraControlPlugin)
         .add_plugin(InputPlugin)
         .add_plugin(InterfacePlugin)
