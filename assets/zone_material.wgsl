@@ -11,6 +11,7 @@ struct UniformData {
     visible: u32,
     explored: u32,
     hover: u32,
+    height: f32,
 }
 
 @group(1) @binding(0)
@@ -39,18 +40,14 @@ fn fragment(
         modulo(world_position.z * 0.3, 1.0)
     );
     var base_color = textureSample(terrain_texture, terrain_texture_sampler, world_uv);
+    base_color = mix(base_color, vec4<f32>(1.0, 1.0, 1.0, 1.0), clamp(world_position.y - 0.3, 0.0, 1.0) * 2.0);
     var cloud_uv = vec2<f32>(
         modulo(uv.x + cos(globals.time * 0.01), 1.0),
         modulo(uv.y + sin(globals.time * 0.01), 1.0)
     );
     var cloud_color = textureSample(cloud_texture, cloud_texture_sampler, cloud_uv);
     if uniform_data.visible == 0u {
-        base_color = vec4<f32>(
-            mix(base_color[0], cloud_color[0], cloud_color[3] * 0.7),
-            mix(base_color[1], cloud_color[1], cloud_color[3] * 0.7),
-            mix(base_color[2], cloud_color[2], cloud_color[3] * 0.7),
-            1.0
-        );
+        base_color = mix(base_color, vec4<f32>(cloud_color.xyz, 1.0), cloud_color[3] * 0.7);
     }
 
     if uniform_data.explored == 0u {
@@ -60,12 +57,7 @@ fn fragment(
     if uniform_data.hover == 1u {
         var d = length(uv - 0.5);
         var c = smoothstep(0.3, 0.5, d) * 0.7;
-        base_color = vec4<f32>(
-            mix(base_color[0], 0.863, c),
-            mix(base_color[1], 0.969, c),
-            mix(base_color[2], 0.710, c),
-            1.0
-        );
+        base_color = mix(base_color, vec4<f32>(0.863, 0.969, 0.710, 1.0), c);
     }
 
     var pbr_input: PbrInput = pbr_input_new();

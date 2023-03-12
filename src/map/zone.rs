@@ -1,11 +1,18 @@
-use super::{coord_to_vec3, Fog, GameMap, HexAssets, HexCoord, MapEvent, MapPosition, MapPresence};
+use super::{
+    coord_to_vec3,
+    decoration::{
+        ZoneDecorationCrystals, ZoneDecorationCrystalsBundle, ZoneDecorationPortalBundle,
+        ZoneDecorationTree, ZoneDecorationTreeBundle,
+    },
+    Fog, GameMap, HexAssets, HexCoord, MapEvent, MapPosition, MapPresence,
+};
 use crate::{
     assets::MainAssets,
     camp::Camp,
     crystals::CrystalDeposit,
     material::{TerrainMaterial, ZoneMaterial},
 };
-use bevy::prelude::*;
+use bevy::{pbr::NotShadowCaster, prelude::*};
 use rand::{
     distributions::{Distribution, Standard},
     Rng,
@@ -53,15 +60,6 @@ impl TryFrom<char> for Terrain {
     }
 }
 
-#[derive(Component)]
-pub struct ZoneDecorationCrystals;
-
-#[derive(Component)]
-pub struct ZoneDecorationTree;
-
-#[derive(Component)]
-pub struct ZoneDecorationPortal;
-
 #[derive(Component, Copy, Clone, Debug, Default)]
 pub struct Zone {
     pub terrain: Terrain,
@@ -73,11 +71,14 @@ impl Zone {
     }
 }
 
+#[derive(Default)]
 pub struct ZonePrototype {
     pub terrain: Terrain,
     pub random_fill: Vec<(Vec2, f32)>,
     pub crystals: bool,
     pub portal: bool,
+    pub height_amp: f32,
+    pub outer_amp: [f32; 6],
 }
 
 #[derive(Bundle, Default)]
@@ -89,31 +90,27 @@ pub struct ZoneBundle {
     pub hover: bevy_mod_picking::Hover,
     pub no_deselect: bevy_mod_picking::NoDeselect,
     pub interaction: Interaction,
+    pub not_shadow_caster: NotShadowCaster,
 }
 
-fn zone_material(assets: &Res<MainAssets>, terrain: Terrain) -> ZoneMaterial {
-    match terrain {
-        Terrain::Ocean => ZoneMaterial {
-            cloud_texture: Some(assets.cloud_texture.clone()),
-            terrain_texture: Some(assets.ocean_texture.clone()),
-            visible: 0,
-            explored: 0,
-            hover: 0,
-        },
-        Terrain::Mountain => ZoneMaterial {
-            cloud_texture: Some(assets.cloud_texture.clone()),
-            terrain_texture: Some(assets.mountain_texture.clone()),
-            visible: 0,
-            explored: 0,
-            hover: 0,
-        },
-        Terrain::Forest => ZoneMaterial {
-            cloud_texture: Some(assets.cloud_texture.clone()),
-            terrain_texture: Some(assets.forest_texture.clone()),
-            visible: 0,
-            explored: 0,
-            hover: 0,
-        },
+fn zone_material(assets: &Res<MainAssets>, prototype: &ZonePrototype) -> ZoneMaterial {
+    let terrain_texture = match prototype.terrain {
+        Terrain::Ocean => Some(assets.ocean_texture.clone()),
+        Terrain::Mountain => Some(assets.mountain_texture.clone()),
+        Terrain::Forest => Some(assets.forest_texture.clone()),
+    };
+
+    ZoneMaterial {
+        cloud_texture: Some(assets.cloud_texture.clone()),
+        terrain_texture,
+        height: prototype.height_amp,
+        outer_ne: prototype.outer_amp[3],
+        outer_e: prototype.outer_amp[4],
+        outer_se: prototype.outer_amp[5],
+        outer_sw: prototype.outer_amp[0],
+        outer_w: prototype.outer_amp[1],
+        outer_nw: prototype.outer_amp[2],
+        ..default()
     }
 }
 
@@ -129,19 +126,16 @@ pub fn spawn_zone(
     commands: &mut Commands,
     (main_assets, hex_assets, zone_materials, terrain_materials): &mut ZoneParams,
     position: HexCoord,
-    ZonePrototype {
-        terrain,
-        random_fill,
-        crystals,
-        portal,
-    }: &ZonePrototype,
+    prototype: &ZonePrototype,
 ) -> Entity {
-    let material = zone_material(main_assets, *terrain);
+    let material = zone_material(main_assets, prototype);
     let zone_entity = commands
         .spawn((
             ZoneBundle {
                 position: MapPosition(position),
-                zone: Zone { terrain: *terrain },
+                zone: Zone {
+                    terrain: prototype.terrain,
+                },
                 ..default()
             },
             MaterialMeshBundle {
@@ -152,73 +146,47 @@ pub fn spawn_zone(
                 ..default()
             },
         ))
-        .with_children(|parent| match terrain {
+        .with_children(|parent| match prototype.terrain {
             Terrain::Forest => {
-                let mut filliter = random_fill.iter();
-                if *portal {
-                    parent.spawn((
-                        Fog::default(),
-                        ZoneDecorationPortal,
-                        MaterialMeshBundle {
-                            mesh: main_assets.portal_mesh.clone(),
-                            material: terrain_materials.add(TerrainMaterial {
-                                color: Color::rgb(0.4, 0.42, 0.4),
-                                visible: 0,
-                                explored: 0,
-                            }),
-                            visibility: Visibility { is_visible: false },
-                            transform: Transform::from_translation(Vec3::ZERO)
-                                .with_scale(Vec3::splat(0.3))
-                                .with_rotation(Quat::from_rotation_y(10.0)),
-                            ..default()
-                        },
+                let mut filliter = prototype.random_fill.iter();
+                if prototype.portal {
+                    parent.spawn(ZoneDecorationPortalBundle::new(
+                        main_assets,
+                        terrain_materials,
                     ));
                 }
-                if *crystals {
+                if prototype.crystals {
                     let (pos, scale) = filliter.next().unwrap();
-                    parent.spawn((
-                        Fog::default(),
-                        ZoneDecorationCrystals,
-                        MaterialMeshBundle {
-                            mesh: main_assets.crystals_mesh.clone(),
-                            material: terrain_materials.add(TerrainMaterial {
-                                color: Color::rgba(0.7, 0.4, 0.4, 0.777),
-                                visible: 0,
-                                explored: 0,
-                            }),
-                            visibility: Visibility { is_visible: false },
-                            transform: Transform::from_translation(Vec3::new(pos.x, 0.0, pos.y))
-                                .with_scale(Vec3::splat(scale * 0.3)),
-                            ..default()
-                        },
+                    parent.spawn(ZoneDecorationCrystalsBundle::new(
+                        main_assets,
+                        terrain_materials,
+                        *pos,
+                        *scale,
                     ));
                 }
 
                 for (pos, scale) in filliter {
-                    parent.spawn((
-                        Fog::default(),
-                        ZoneDecorationTree,
-                        MaterialMeshBundle {
-                            mesh: main_assets.pine_mesh.clone(),
-                            material: terrain_materials.add(TerrainMaterial {
-                                color: Color::rgb(0.2, 0.7, 0.3),
-                                visible: 0,
-                                explored: 0,
-                            }),
-                            visibility: Visibility { is_visible: false },
-                            transform: Transform::from_translation(Vec3::new(pos.x, 0.0, pos.y))
-                                .with_scale(Vec3::splat(scale * 0.5)),
-                            ..default()
-                        },
+                    parent.spawn(ZoneDecorationTreeBundle::new(
+                        main_assets,
+                        terrain_materials,
+                        *pos,
+                        *scale,
                     ));
                 }
             }
-            Terrain::Mountain => {}
+            Terrain::Mountain => {
+                if prototype.portal {
+                    parent.spawn(ZoneDecorationPortalBundle::new(
+                        main_assets,
+                        terrain_materials,
+                    ));
+                }
+            }
             _ => {}
         })
         .id();
 
-    if *crystals {
+    if prototype.crystals {
         commands
             .entity(zone_entity)
             .insert(CrystalDeposit { amount: 20 });

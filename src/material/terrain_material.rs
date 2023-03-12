@@ -11,7 +11,7 @@ impl Plugin for TerrainMaterialPlugin {
     }
 }
 
-#[derive(AsBindGroup, TypeUuid, Clone)]
+#[derive(AsBindGroup, TypeUuid, Clone, Default)]
 #[uuid = "f3c06773-d878-40b4-8f00-f39b82513c81"]
 pub struct TerrainMaterial {
     #[uniform(0)]

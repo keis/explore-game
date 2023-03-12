@@ -1506,6 +1506,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "212d0f5754cb6769937f4501cc0e67f4f4483c8d2c3e1e922ee9edbe4ab4c7c0"
 
 [[package]]
+name = "disjoint-hash-set"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25f329577683c11ed8ca39e000e632f42032f29686c2e0e9ce29071954d5bc13"
+
+[[package]]
 name = "dispatch"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1623,6 +1629,7 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 name = "expl_hexgrid"
 version = "0.1.0"
 dependencies = [
+ "disjoint-hash-set",
  "glam",
  "itertools",
 ]
@@ -1655,9 +1662,12 @@ dependencies = [
  "expl_hexgrid",
  "expl_wfc",
  "futures-lite",
+ "glam",
+ "hexasphere",
  "interpolation",
  "itertools",
  "leafwing-input-manager",
+ "noisy_bevy",
  "pathfinding",
  "rand",
  "rstest",
@@ -2576,6 +2586,15 @@ dependencies = [
  "cfg-if",
  "libc",
  "memoffset 0.6.5",
+]
+
+[[package]]
+name = "noisy_bevy"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e087b597ef1b21694afc6bf1f35c9396eeeffeb8a0809a3314b2d6387441274"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]

@@ -67,13 +67,13 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
         terrain.layout.center() + *HexCoord::NEIGHBOUR_OFFSETS.choose(&mut rng).unwrap() * 3,
     )
     .find(|&c| {
-        terrain
-            .get(c)
-            .map_or(false, |&terrain| terrain != Terrain::Ocean)
+        terrain.get(c).map_or(false, |&terrain| {
+            terrain != Terrain::Ocean && terrain != Terrain::Mountain
+        })
     })
     .ok_or("could not place portal")?;
 
-    Ok(Grid::with_data(
+    let mut prototype = Grid::with_data(
         terrain.layout,
         terrain.iter().map(|(coord, &terrain)| match terrain {
             Terrain::Forest => ZonePrototype {
@@ -85,15 +85,41 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
                 },
                 crystals: rng.gen_range(0..8) == 0,
                 portal: coord == portalcoord,
+                height_amp: 0.1,
+                ..default()
+            },
+            Terrain::Mountain => ZonePrototype {
+                terrain,
+                portal: coord == portalcoord,
+                height_amp: 0.5,
+                ..default()
             },
             _ => ZonePrototype {
                 terrain,
-                random_fill: Vec::new(),
-                crystals: false,
-                portal: coord == portalcoord,
+                ..default()
             },
         }),
-    ))
+    );
+    let layout = prototype.layout;
+    for coord in layout.iter() {
+        let neighbour_amp: Vec<_> = coord
+            .neighbours()
+            .map(|neighbour| {
+                prototype
+                    .get(neighbour)
+                    .map(|proto| proto.height_amp)
+                    .unwrap_or(0.0)
+            })
+            .collect();
+        let mut zone = &mut prototype[coord];
+        for i in 0..=5 {
+            zone.outer_amp[i] = zone
+                .height_amp
+                .min(neighbour_amp[i])
+                .min(neighbour_amp[(i + 1) % 6]);
+        }
+    }
+    Ok(prototype)
 }
 
 pub fn start_map_generation(mut commands: Commands, seed_res: Res<MapSeed>) {
