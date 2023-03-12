@@ -67,9 +67,9 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
         terrain.layout.center() + *HexCoord::NEIGHBOUR_OFFSETS.choose(&mut rng).unwrap() * 3,
     )
     .find(|&c| {
-        terrain
-            .get(c)
-            .map_or(false, |&terrain| terrain != Terrain::Ocean)
+        terrain.get(c).map_or(false, |&terrain| {
+            terrain != Terrain::Ocean && terrain != Terrain::Mountain
+        })
     })
     .ok_or("could not place portal")?;
 

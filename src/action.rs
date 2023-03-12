@@ -4,7 +4,7 @@ use crate::{
     crystals::CrystalDeposit,
     map::{
         coord_to_vec3, GameMap, HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder,
-        PathGuided,
+        PathGuided, Terrain, Zone,
     },
     party::{Group, GroupCommandsExt, Party, PartyBundle, PartyParams},
     slide::{Slide, SlideEvent},
@@ -195,6 +195,7 @@ pub fn handle_make_camp(
     mut spawn_camp_params: CampParams,
     mut events: EventReader<GameAction>,
     map_query: Query<(Entity, &GameMap)>,
+    zone_query: Query<&Zone>,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
     camp_query: Query<&Camp>,
 ) {
@@ -202,6 +203,12 @@ pub fn handle_make_camp(
         let GameAction::MakeCamp(party_entity) = event else { continue };
         let Ok((mut party, group, presence)) = party_query.get_mut(*party_entity) else { continue };
         let Ok((map_entity, map)) = map_query.get(presence.map) else { continue };
+        let Some(zone) = map.get(presence.position).and_then(|&e| zone_query.get(e).ok()) else { continue };
+
+        if zone.terrain == Terrain::Mountain {
+            info!("Can't camp here");
+            return;
+        }
 
         let position = presence.position;
         if camp_query
