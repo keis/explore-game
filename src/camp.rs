@@ -43,6 +43,7 @@ impl CampBundle {
                     color: Color::rgb(0.631, 0.596, 0.165),
                     visible: true,
                     explored: true,
+                    ..default()
                 }),
                 transform: Transform::from_translation(coord_to_vec3(position))
                     .with_rotation(Quat::from_rotation_y(1.0))

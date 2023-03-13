@@ -9,8 +9,10 @@ pub struct MainAssets {
     pub mountain_texture: Handle<Image>,
     #[asset(path = "textures/ocean_inner.png")]
     pub ocean_texture: Handle<Image>,
-    #[asset(path = "textures/conifer_forest_inner.png")]
+    #[asset(path = "textures/forest.png")]
     pub forest_texture: Handle<Image>,
+    #[asset(path = "textures/grass.png")]
+    pub grass_texture: Handle<Image>,
     #[asset(path = "models/indicator.obj")]
     pub indicator_mesh: Handle<Mesh>,
     #[asset(path = "models/tent.obj")]

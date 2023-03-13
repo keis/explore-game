@@ -97,7 +97,7 @@ fn zone_material(assets: &Res<MainAssets>, prototype: &ZonePrototype) -> ZoneMat
     let terrain_texture = match prototype.terrain {
         Terrain::Ocean => Some(assets.ocean_texture.clone()),
         Terrain::Mountain => Some(assets.mountain_texture.clone()),
-        Terrain::Forest => Some(assets.forest_texture.clone()),
+        Terrain::Forest => Some(assets.grass_texture.clone()),
     };
 
     ZoneMaterial {
