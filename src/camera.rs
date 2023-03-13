@@ -112,7 +112,7 @@ fn camera_control(
 
     if action_state.pressed(Action::PanCamera) {
         let camera_pan = action_state.axis_pair(Action::PanCameraMotion).unwrap();
-        delta += Vec3::new(camera_pan.y(), 0.0, -camera_pan.x()) * control.mouse_sensitivity;
+        delta += Vec3::new(-camera_pan.x(), 0.0, -camera_pan.y()) * control.mouse_sensitivity;
     }
 
     if transform.translation.x < bounds.position.x {
