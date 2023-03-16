@@ -44,7 +44,11 @@ pub fn update_terrain_visibility(
             fog.visible = parent_fog.visible;
             fog.explored = parent_fog.explored;
 
-            visibility.is_visible = fog.explored;
+            *visibility = if fog.explored {
+                Visibility::Inherited
+            } else {
+                Visibility::Hidden
+            };
         }
     }
 }
@@ -81,12 +85,20 @@ pub fn update_enemy_visibility(
         let mut enemy_query = enemy_params.p0();
         let mut enemy_iter = enemy_query.iter_many_mut(map.presence(position.0));
         while let Some(mut visibility) = enemy_iter.fetch_next() {
-            visibility.is_visible = fog.visible;
+            *visibility = if fog.visible {
+                Visibility::Inherited
+            } else {
+                Visibility::Hidden
+            };
         }
     }
     // Update enemies that had their location changed
     for (presence, mut visibility) in &mut enemy_params.p1() {
         let Some(fog) = map.get(presence.position).and_then(|&e| any_zone_query.get(e).ok()) else { continue };
-        visibility.is_visible = fog.visible;
+        *visibility = if fog.visible {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        };
     }
 }

@@ -10,7 +10,6 @@ use crate::{
     slide::{Slide, SlideEvent},
     State,
 };
-use bevy::ecs::schedule::ShouldRun;
 use bevy::prelude::*;
 use smallvec::SmallVec;
 use std::collections::VecDeque;
@@ -36,27 +35,25 @@ impl Plugin for ActionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<GameAction>()
             .insert_resource(GameActionQueue::default())
-            .add_system_set(
-                SystemSet::on_update(State::Running)
-                    .with_system(trigger_action)
-                    .with_system(handle_move)
-                    .with_system(handle_enemy_move)
-                    .with_system(handle_slide_stopped)
-                    .with_system(handle_move_to)
-                    .with_system(handle_resume_move)
-                    .with_system(handle_make_camp)
-                    .with_system(handle_break_camp)
-                    .with_system(handle_enter_camp)
-                    .with_system(handle_create_party_from_camp)
-                    .with_system(handle_split_party)
-                    .with_system(handle_merge_party)
-                    .with_system(handle_collect_crystals),
+            .add_systems(
+                (
+                    trigger_action,
+                    handle_move,
+                    handle_enemy_move,
+                    handle_slide_stopped,
+                    handle_move_to,
+                    handle_resume_move,
+                    handle_make_camp,
+                    handle_break_camp,
+                    handle_enter_camp,
+                    handle_create_party_from_camp,
+                    handle_split_party,
+                    handle_merge_party,
+                    handle_collect_crystals,
+                )
+                    .in_set(OnUpdate(State::Running)),
             )
-            .add_system_set(
-                SystemSet::new()
-                    .with_run_criteria(run_on_save)
-                    .with_system(handle_save),
-            );
+            .add_system(handle_save.run_if(run_on_save));
     }
 }
 
@@ -91,7 +88,7 @@ pub fn handle_move(
     mut member_movement_query: Query<&mut Movement, Without<Party>>,
     mut queue: ResMut<GameActionQueue>,
 ) {
-    for event in events.iter() {
+    for event in &mut events {
         let GameAction::Move(e, next) = event else { continue };
         let Ok((group, mut movement, mut slide, transform, offset)) = party_query.get_mut(*e) else { continue };
 
@@ -115,7 +112,7 @@ fn handle_enemy_move(
     mut events: EventReader<GameAction>,
     mut enemy_query: Query<(&mut Slide, &Transform, &Offset), Without<Party>>,
 ) {
-    for event in events.iter() {
+    for event in &mut events {
         let GameAction::Move(e, next) = event else { continue };
         let Ok((mut slide, transform, offset)) = enemy_query.get_mut(*e) else { continue };
 
@@ -131,7 +128,7 @@ pub fn handle_slide_stopped(
     mut queue: ResMut<GameActionQueue>,
     mut presence_query: Query<(&MapPresence, Option<(&Movement, &mut PathGuided)>)>,
 ) {
-    for _ in events.iter() {
+    for _ in &mut events {
         let Some(last_action) = queue.current.take() else {
             warn!("Slide finished for some unknown action");
             continue
@@ -159,7 +156,7 @@ pub fn handle_move_to(
     mut presence_query: Query<(&MapPresence, &Movement, &mut PathGuided)>,
     path_finder: PathFinder,
 ) {
-    for event in events.iter() {
+    for event in &mut events {
         let GameAction::MoveTo(e, goal) = event else { continue };
         let Ok((presence, party_movement, mut pathguided)) = presence_query.get_mut(*e) else { continue };
 
@@ -179,7 +176,7 @@ pub fn handle_resume_move(
     mut queue: ResMut<GameActionQueue>,
     path_guided_query: Query<&PathGuided>,
 ) {
-    for event in events.iter() {
+    for event in &mut events {
         let GameAction::ResumeMove(e) = event else { continue };
         let Ok(pathguided) = path_guided_query.get(*e) else { continue };
 
@@ -199,7 +196,7 @@ pub fn handle_make_camp(
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
     camp_query: Query<&Camp>,
 ) {
-    for event in events.iter() {
+    for event in &mut events {
         let GameAction::MakeCamp(party_entity) = event else { continue };
         let Ok((mut party, group, presence)) = party_query.get_mut(*party_entity) else { continue };
         let Ok((map_entity, map)) = map_query.get(presence.map) else { continue };
@@ -252,7 +249,7 @@ pub fn handle_break_camp(
     mut map_query: Query<(Entity, &GameMap)>,
     camp_query: Query<(Entity, &Camp, &Group)>,
 ) {
-    for event in events.iter() {
+    for event in &mut events {
         let GameAction::BreakCamp(e) = event else { continue };
         let Ok((mut party, presence)) = party_query.get_mut(*e) else { continue };
         let Ok((map_entity, map)) = map_query.get_mut(presence.map) else { continue };
@@ -273,7 +270,7 @@ pub fn handle_enter_camp(
     mut party_query: Query<(&mut Party, &Group)>,
     mut camp_query: Query<&mut Camp>,
 ) {
-    for event in events.iter() {
+    for event in &mut events {
         let GameAction::EnterCamp(party_entity, camp_entity) = event else { continue };
         let Ok((mut party, group)) = party_query.get_mut(*party_entity) else { continue };
         let Ok(mut camp) = camp_query.get_mut(*camp_entity) else { continue };
@@ -291,7 +288,7 @@ pub fn handle_create_party_from_camp(
     mut events: EventReader<GameAction>,
     mut camp_query: Query<(&mut Camp, &MapPresence)>,
 ) {
-    for event in events.iter() {
+    for event in &mut events {
         let GameAction::CreatePartyFromCamp(camp_entity, characters) = event else { continue };
         info!("Creating party at camp {:?} {:?}", camp_entity, characters);
         let (mut camp, presence) = camp_query.get_mut(*camp_entity).unwrap();
@@ -322,7 +319,7 @@ pub fn handle_split_party(
     mut events: EventReader<GameAction>,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
 ) {
-    for event in events.iter() {
+    for event in &mut events {
         let GameAction::SplitParty(party_entity, characters) = event else { continue };
 
         let (mut party, group, presence) = party_query.get_mut(*party_entity).unwrap();
@@ -356,7 +353,7 @@ pub fn handle_merge_party(
     mut events: EventReader<GameAction>,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
 ) {
-    for event in events.iter() {
+    for event in &mut events {
         let GameAction::MergeParty(parties) = event else { continue };
         let [target, rest @ ..] = parties.as_slice() else { continue };
         let target_position = party_query
@@ -391,7 +388,7 @@ pub fn handle_collect_crystals(
     map_query: Query<&GameMap>,
     mut crystal_deposit_query: Query<&mut CrystalDeposit>,
 ) {
-    for event in events.iter() {
+    for event in &mut events {
         let GameAction::CollectCrystals(party_entity) = event else { continue };
         let Ok((mut party, presence)) = party_query.get_mut(*party_entity) else { continue };
         let Ok(map) = map_query.get(presence.map) else { continue };
@@ -406,13 +403,13 @@ pub fn handle_collect_crystals(
     }
 }
 
-fn run_on_save(mut events: EventReader<GameAction>) -> ShouldRun {
-    for event in events.iter() {
+fn run_on_save(mut events: EventReader<GameAction>) -> bool {
+    for event in &mut events {
         if let GameAction::Save() = event {
-            return ShouldRun::Yes;
+            return true;
         }
     }
-    ShouldRun::No
+    false
 }
 
 pub fn handle_save(_world: &mut World) {

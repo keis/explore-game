@@ -47,14 +47,13 @@ fn main() {
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
-                    window: WindowDescriptor {
-                        width: height * ASPECT_RATIO,
-                        height,
+                    primary_window: Some(Window {
+                        resolution: (height * ASPECT_RATIO, height).into(),
                         title: "Explore Game".to_string(),
                         present_mode: PresentMode::Fifo,
                         resizable: false,
                         ..default()
-                    },
+                    }),
                     ..default()
                 })
                 // See https://github.com/Leafwing-Studios/leafwing-input-manager/issues/285
@@ -68,6 +67,7 @@ fn main() {
                     ..default()
                 }),
         )
+        .add_state::<State>()
         .add_plugin(bevy_obj::ObjPlugin)
         .add_plugin(noisy_bevy::NoisyShaderPlugin)
         .add_plugin(CameraControlPlugin)
@@ -81,26 +81,24 @@ fn main() {
         .add_startup_system(light::spawn_light)
         .add_startup_system(start_map_generation)
         .add_event::<SlideEvent>()
-        .add_state(State::AssetLoading)
-        .add_loading_state(
-            LoadingState::new(State::AssetLoading)
-                .continue_to_state(State::Running)
-                .with_collection::<MainAssets>(),
-        )
-        .add_system_set(
-            SystemSet::on_update(State::Running)
-                .with_system(scene::spawn_scene)
-                .with_system(update_indicator)
-                .with_system(reset_movement_points)
-                .with_system(derive_party_movement)
-                .with_system(despawn_empty_party)
-                .with_system(move_enemy)
-                .with_system(update_camp_view_radius)
-                .with_system(combat::initiate_combat)
-                .with_system(combat::combat_round)
-                .with_system(combat::despawn_no_health.after(combat::combat_round))
-                .with_system(combat::finish_combat.after(combat::despawn_no_health))
-                .with_system(slide),
+        .add_loading_state(LoadingState::new(State::AssetLoading).continue_to_state(State::Running))
+        .add_collection_to_loading_state::<_, MainAssets>(State::AssetLoading)
+        .add_systems(
+            (
+                scene::spawn_scene,
+                update_indicator,
+                reset_movement_points,
+                derive_party_movement,
+                despawn_empty_party,
+                move_enemy,
+                update_camp_view_radius,
+                combat::initiate_combat,
+                combat::combat_round,
+                combat::despawn_no_health.after(combat::combat_round),
+                combat::finish_combat.after(combat::despawn_no_health),
+                slide,
+            )
+                .in_set(OnUpdate(State::Running)),
         )
         .run();
 }

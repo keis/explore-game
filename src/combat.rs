@@ -32,7 +32,7 @@ pub fn initiate_combat(
     foe_query: Query<Entity, With<Enemy>>,
 ) {
     let Ok(map) = map_query.get_single() else { return };
-    for event in map_events.iter() {
+    for event in &mut map_events {
         let MapEvent::PresenceMoved { position, .. } = event else { continue };
         let friends: SmallVec<[Entity; 8]> = friend_query
             .iter_many(map.presence(*position))

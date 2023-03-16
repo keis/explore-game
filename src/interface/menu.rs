@@ -61,7 +61,7 @@ pub fn spawn_menu(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     ..default()
                 },
                 background_color: BACKGROUND.into(),
-                visibility: Visibility { is_visible: false },
+                visibility: Visibility::Hidden,
                 ..default()
             },
             MenuLayer,
@@ -96,12 +96,12 @@ pub fn handle_toggle_main_menu(
         let mut menu_layer_visibility = menu_layer_query.single_mut();
         let mut shell_visibility = shell_query.single_mut();
 
-        if menu_layer_visibility.is_visible {
-            menu_layer_visibility.is_visible = false;
-            shell_visibility.is_visible = true;
+        if *menu_layer_visibility == Visibility::Inherited {
+            *menu_layer_visibility = Visibility::Hidden;
+            *shell_visibility = Visibility::Inherited;
         } else {
-            menu_layer_visibility.is_visible = true;
-            shell_visibility.is_visible = false;
+            *menu_layer_visibility = Visibility::Inherited;
+            *shell_visibility = Visibility::Hidden;
         }
     }
 }

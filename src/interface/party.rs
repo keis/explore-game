@@ -9,7 +9,7 @@ use crate::{
     input::{Action, ActionState},
     party::{Group, Party},
 };
-use bevy::{ecs::schedule::ShouldRun, prelude::*};
+use bevy::prelude::*;
 use bevy_mod_picking::Selection;
 
 #[derive(Component)]
@@ -122,12 +122,8 @@ fn spawn_party_display(
 #[allow(clippy::type_complexity)]
 pub fn run_if_any_party_changed(
     party_query: Query<Entity, Or<(Changed<Party>, Changed<Group>)>>,
-) -> ShouldRun {
-    if !party_query.is_empty() {
-        ShouldRun::Yes
-    } else {
-        ShouldRun::No
-    }
+) -> bool {
+    !party_query.is_empty()
 }
 
 pub fn update_party_list(
@@ -145,7 +141,7 @@ pub fn update_party_list(
         {
             continue;
         }
-        commands.get_or_spawn(party_list).add_children(|parent| {
+        commands.get_or_spawn(party_list).with_children(|parent| {
             spawn_party_display(parent, entity, party, party_movement, group, &assets);
         });
     }

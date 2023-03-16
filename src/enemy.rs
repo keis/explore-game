@@ -35,7 +35,7 @@ impl EnemyBundle {
                 mesh: main_assets.blob_mesh.clone(),
                 material: standard_materials.add(Color::rgba(0.749, 0.584, 0.901, 0.666).into()),
                 transform: Transform::from_translation(coord_to_vec3(position) + offset),
-                visibility: Visibility { is_visible: false },
+                visibility: Visibility::Hidden,
                 ..default()
             },
             ..default()
