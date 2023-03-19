@@ -15,7 +15,7 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-bevy_asset_loader = "0.14.1"
+bevy_asset_loader = "0.15.0"
 bevy_mod_picking = "0.11"
 bevy = { version = "0.9", features = ["dynamic", "wayland"] }
 expl_hexgrid = { path = "crates/expl_hexgrid" }
