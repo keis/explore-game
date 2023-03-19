@@ -11,16 +11,16 @@ pub struct MainAssets {
     pub ocean_texture: Handle<Image>,
     #[asset(path = "textures/conifer_forest_inner.png")]
     pub forest_texture: Handle<Image>,
-    #[asset(path = "models/indicator.stl")]
+    #[asset(path = "models/indicator.obj")]
     pub indicator_mesh: Handle<Mesh>,
-    #[asset(path = "models/tent.stl")]
+    #[asset(path = "models/tent.obj")]
     pub tent_mesh: Handle<Mesh>,
-    #[asset(path = "models/blob.stl")]
+    #[asset(path = "models/blob.obj")]
     pub blob_mesh: Handle<Mesh>,
-    #[asset(path = "models/pine.stl")]
+    #[asset(path = "models/pine.obj")]
     pub pine_mesh: Handle<Mesh>,
-    #[asset(path = "models/crystals.stl")]
+    #[asset(path = "models/crystals.obj")]
     pub crystals_mesh: Handle<Mesh>,
-    #[asset(path = "models/portal.stl")]
+    #[asset(path = "models/portal.obj")]
     pub portal_mesh: Handle<Mesh>,
 }

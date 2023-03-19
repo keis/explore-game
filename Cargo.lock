@@ -596,6 +596,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_obj"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e4debeed864b621ce409b6a5273c80ab9a33106289d1f0beca374a3aaea1b0cc"
+dependencies = [
+ "anyhow",
+ "bevy_app",
+ "bevy_asset",
+ "bevy_math",
+ "bevy_render",
+ "bevy_utils",
+ "obj-rs",
+ "thiserror",
+]
+
+[[package]]
 name = "bevy_pbr"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -755,18 +771,6 @@ dependencies = [
  "fixedbitset",
  "guillotiere",
  "rectangle-pack",
- "thiserror",
-]
-
-[[package]]
-name = "bevy_stl"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41bbe52df44e4cc63c5f68cf5a462eb50b28ee3db00667409801f0296ae6dacb"
-dependencies = [
- "anyhow",
- "bevy",
- "stl_io",
  "thiserror",
 ]
 
@@ -1657,7 +1661,7 @@ dependencies = [
  "bevy",
  "bevy_asset_loader",
  "bevy_mod_picking",
- "bevy_stl",
+ "bevy_obj",
  "clap 4.1.8",
  "expl_hexgrid",
  "expl_wfc",
@@ -1710,15 +1714,6 @@ checksum = "a8a2db397cb1c8772f31494cb8917e48cd1e64f0fa7efac59fbd741a0a8ce841"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
-]
-
-[[package]]
-name = "float-cmp"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1267f4ac4f343772758f7b1bdcbe767c218bbab93bb432acbf5162bbf85a6c4"
-dependencies = [
- "num-traits",
 ]
 
 [[package]]
@@ -2717,6 +2712,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "obj-rs"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c90a2f645433dba5c609451d3fa847282b0f23ee8d8fa75491a946af53cb1db4"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
 name = "objc"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3454,16 +3458,6 @@ name = "stdweb-internal-runtime"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "213701ba3370744dcd1a12960caa4843b3d68b4d1c0a5d575e0d65b2ee9d16c0"
-
-[[package]]
-name = "stl_io"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c68e41108b3ec269d885cc56af66cd15f1392f68d2ae461df86d7d3285f065d"
-dependencies = [
- "byteorder",
- "float-cmp",
-]
 
 [[package]]
 name = "strsim"
