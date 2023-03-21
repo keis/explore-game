@@ -19,7 +19,7 @@ serde = { version = "1.0.155", features = ["derive"] }
 [dev-dependencies]
 clap = { version = "4.1.8", features = ["derive"] }
 criterion = "0.4.0"
-rstest = { version = "0.16.0", default-features = false }
+rstest = { version = "0.17.0", default-features = false }
 
 [[bench]]
 name = "generate"

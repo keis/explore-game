@@ -35,4 +35,4 @@ noisy_bevy = "0.2"
 bevy_obj = "0.9.1"
 
 [dev-dependencies]
-rstest = { version = "0.16.0", default-features = false }
+rstest = { version = "0.17.0", default-features = false }
