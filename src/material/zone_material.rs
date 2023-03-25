@@ -14,6 +14,7 @@ impl Plugin for ZoneMaterialPlugin {
 
 #[derive(AsBindGroup, TypeUuid, Clone, Default)]
 #[uuid = "05f50382-7218-4860-8c4c-06dbd66694db"]
+#[uniform(4, ZoneMaterialUniform)]
 pub struct ZoneMaterial {
     #[texture(0)]
     #[sampler(1)]
@@ -21,26 +22,47 @@ pub struct ZoneMaterial {
     #[texture(2)]
     #[sampler(3)]
     pub cloud_texture: Option<Handle<Image>>,
-    #[uniform(4)]
-    pub visible: u32,
-    #[uniform(4)]
-    pub explored: u32,
-    #[uniform(4)]
-    pub hover: u32,
-    #[uniform(4)]
+    pub visible: bool,
+    pub explored: bool,
+    pub hover: bool,
     pub height: f32,
-    #[uniform(4)]
     pub outer_ne: f32,
-    #[uniform(4)]
     pub outer_e: f32,
-    #[uniform(4)]
     pub outer_se: f32,
-    #[uniform(4)]
     pub outer_sw: f32,
-    #[uniform(4)]
     pub outer_w: f32,
-    #[uniform(4)]
     pub outer_nw: f32,
+}
+
+#[derive(Clone, Default, ShaderType)]
+pub struct ZoneMaterialUniform {
+    pub visible: u32,
+    pub explored: u32,
+    pub hover: u32,
+    pub height: f32,
+    pub outer_ne: f32,
+    pub outer_e: f32,
+    pub outer_se: f32,
+    pub outer_sw: f32,
+    pub outer_w: f32,
+    pub outer_nw: f32,
+}
+
+impl From<&ZoneMaterial> for ZoneMaterialUniform {
+    fn from(zone_material: &ZoneMaterial) -> Self {
+        Self {
+            visible: zone_material.visible as u32,
+            explored: zone_material.explored as u32,
+            hover: zone_material.hover as u32,
+            height: zone_material.height,
+            outer_ne: zone_material.outer_ne,
+            outer_e: zone_material.outer_e,
+            outer_se: zone_material.outer_se,
+            outer_sw: zone_material.outer_sw,
+            outer_w: zone_material.outer_w,
+            outer_nw: zone_material.outer_nw,
+        }
+    }
 }
 
 impl Material for ZoneMaterial {
@@ -60,8 +82,8 @@ fn apply_to_material(
 ) {
     for (fog, hover, handle) in &zone_query {
         let Some(mut material) = zone_materials.get_mut(handle) else { continue };
-        material.visible = fog.visible as u32;
-        material.explored = fog.explored as u32;
-        material.hover = hover.hovered() as u32;
+        material.visible = fog.visible;
+        material.explored = fog.explored;
+        material.hover = hover.hovered();
     }
 }
