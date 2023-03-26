@@ -9,13 +9,13 @@ struct UniformData {
     visible: u32,
     explored: u32,
     hover: u32,
-    height: f32,
-    outer_ne: f32,
-    outer_e: f32,
-    outer_se: f32,
-    outer_sw: f32,
-    outer_w: f32,
-    outer_nw: f32
+    height_amp: f32,
+    outer_amp_ne: f32,
+    outer_amp_e: f32,
+    outer_amp_se: f32,
+    outer_amp_sw: f32,
+    outer_amp_w: f32,
+    outer_amp_nw: f32
 }
 
 @group(1) @binding(4)
@@ -55,27 +55,32 @@ fn height_at(position: vec2<f32>, world_position: vec2<f32>) -> f32 {
     var da = length(abs(position) - vec2<f32>(0.5, 0.8660254));
     var db = length(abs(position) - vec2<f32>(1.0, 0.0));
     if dc < 0.7 {
-        amp = uniform_data.height;
-        base = uniform_data.height;
+        if uniform_data.explored == 1u {
+            amp = uniform_data.height_amp;
+            base = uniform_data.height_amp;
+        } else {
+            amp = 0.0;
+            base = 0.0;
+        }
     } else if da < db {
         if position.x > 0.0 {
             if position.y > 0.0 {
-                amp = uniform_data.outer_se;
+                amp = uniform_data.outer_amp_se;
             } else {
-                amp = uniform_data.outer_ne;
+                amp = uniform_data.outer_amp_ne;
             }
         } else {
             if position.y > 0.0 {
-                amp = uniform_data.outer_sw;
+                amp = uniform_data.outer_amp_sw;
             } else {
-                amp = uniform_data.outer_nw;
+                amp = uniform_data.outer_amp_nw;
             }
         }
     } else {
         if position.x > 0.0 {
-            amp = uniform_data.outer_e;
+            amp = uniform_data.outer_amp_e;
         } else {
-            amp = uniform_data.outer_w;
+            amp = uniform_data.outer_amp_w;
         }
     }
 

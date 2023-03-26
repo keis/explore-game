@@ -25,13 +25,9 @@ pub struct ZoneMaterial {
     pub visible: bool,
     pub explored: bool,
     pub hover: bool,
-    pub height: f32,
-    pub outer_ne: f32,
-    pub outer_e: f32,
-    pub outer_se: f32,
-    pub outer_sw: f32,
-    pub outer_w: f32,
-    pub outer_nw: f32,
+    pub height_amp: f32,
+    pub outer_amp: [f32; 6],
+    pub outer_visible: [bool; 6],
 }
 
 #[derive(Clone, Default, ShaderType)]
@@ -39,13 +35,13 @@ pub struct ZoneMaterialUniform {
     pub visible: u32,
     pub explored: u32,
     pub hover: u32,
-    pub height: f32,
-    pub outer_ne: f32,
-    pub outer_e: f32,
-    pub outer_se: f32,
-    pub outer_sw: f32,
-    pub outer_w: f32,
-    pub outer_nw: f32,
+    pub height_amp: f32,
+    pub outer_amp_ne: f32,
+    pub outer_amp_e: f32,
+    pub outer_amp_se: f32,
+    pub outer_amp_sw: f32,
+    pub outer_amp_w: f32,
+    pub outer_amp_nw: f32,
 }
 
 impl From<&ZoneMaterial> for ZoneMaterialUniform {
@@ -54,13 +50,24 @@ impl From<&ZoneMaterial> for ZoneMaterialUniform {
             visible: zone_material.visible as u32,
             explored: zone_material.explored as u32,
             hover: zone_material.hover as u32,
-            height: zone_material.height,
-            outer_ne: zone_material.outer_ne,
-            outer_e: zone_material.outer_e,
-            outer_se: zone_material.outer_se,
-            outer_sw: zone_material.outer_sw,
-            outer_w: zone_material.outer_w,
-            outer_nw: zone_material.outer_nw,
+            height_amp: zone_material.height_amp,
+            // Offsets because the mesh is rotated to be a "pointy hexagon"
+            outer_amp_ne: zone_material.amp_for(3),
+            outer_amp_e: zone_material.amp_for(4),
+            outer_amp_se: zone_material.amp_for(5),
+            outer_amp_sw: zone_material.amp_for(0),
+            outer_amp_w: zone_material.amp_for(1),
+            outer_amp_nw: zone_material.amp_for(2),
+        }
+    }
+}
+
+impl ZoneMaterial {
+    fn amp_for(&self, idx: usize) -> f32 {
+        if self.outer_visible[idx] {
+            self.outer_amp[idx]
+        } else {
+            0.0
         }
     }
 }
