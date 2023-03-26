@@ -1,5 +1,5 @@
 use crate::State;
-use bevy::{ecs::schedule::ShouldRun, prelude::*};
+use bevy::prelude::*;
 
 mod commands;
 mod decoration;
@@ -32,12 +32,8 @@ pub use zone::{spawn_zone, Terrain, Zone, ZoneBundle, ZoneParams, ZonePrototype}
 #[derive(Resource)]
 pub struct Damaged(bool);
 
-fn run_if_damaged(damaged: Res<Damaged>) -> ShouldRun {
-    if damaged.0 {
-        ShouldRun::Yes
-    } else {
-        ShouldRun::No
-    }
+fn run_if_damaged(damaged: Res<Damaged>) -> bool {
+    damaged.0
 }
 
 fn damage(mut entered_event: EventReader<MapEvent>, mut damaged: ResMut<Damaged>) {
@@ -52,23 +48,21 @@ impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Damaged(true))
             .add_startup_system(hex::insert_hex_assets)
-            .add_system_set(
-                SystemSet::new()
-                    .with_run_criteria(run_if_damaged)
-                    .with_system(presence::update_zone_visibility),
+            .add_system(presence::update_zone_visibility.run_if(run_if_damaged))
+            .add_systems(
+                (
+                    log_moves,
+                    pathdisplay::update_path_display,
+                    presence::update_terrain_visibility,
+                    presence::update_presence_fog,
+                    presence::update_enemy_visibility,
+                    zone::despawn_empty_crystal_deposit,
+                    zone::hide_decorations_behind_camp,
+                    zone::show_decorations_behind_camp,
+                )
+                    .in_set(OnUpdate(State::Running)),
             )
-            .add_system_set(
-                SystemSet::on_update(State::Running)
-                    .with_system(log_moves)
-                    .with_system(pathdisplay::update_path_display)
-                    .with_system(presence::update_terrain_visibility)
-                    .with_system(presence::update_presence_fog)
-                    .with_system(presence::update_enemy_visibility)
-                    .with_system(zone::despawn_empty_crystal_deposit)
-                    .with_system(zone::hide_decorations_behind_camp)
-                    .with_system(zone::show_decorations_behind_camp),
-            )
-            .add_system_to_stage(CoreStage::PostUpdate, damage)
+            .add_system(damage.in_base_set(CoreSet::PostUpdate))
             .add_event::<MapEvent>();
     }
 }
@@ -78,7 +72,7 @@ fn log_moves(
     presence_query: Query<&MapPresence>,
     map_query: Query<&GameMap>,
 ) {
-    for event in map_events.iter() {
+    for event in &mut map_events {
         if let MapEvent::PresenceMoved {
             presence: entity,
             position,

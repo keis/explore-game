@@ -222,7 +222,7 @@ pub fn hide_decorations_behind_camp(
         let mut decoration_iter = decoration_query.iter_many_mut(children);
         while let Some((mut visibility, transform)) = decoration_iter.fetch_next() {
             if transform.translation.distance(Vec3::ZERO) < 0.3 {
-                visibility.is_visible = false;
+                *visibility = Visibility::Hidden;
             }
         }
     }
@@ -236,7 +236,7 @@ pub fn show_decorations_behind_camp(
     mut decoration_query: Query<&mut Visibility, With<ZoneDecorationTree>>,
 ) {
     let Ok(map) = map_query.get_single() else { return };
-    for event in events.iter() {
+    for event in &mut events {
         let MapEvent::PresenceRemoved { position, .. } = event else { continue };
         if camp_query
             .iter_many(map.presence(*position))
@@ -248,7 +248,7 @@ pub fn show_decorations_behind_camp(
         let Some(children) = map.get(*position).and_then(|&e| zone_query.get(e).ok()) else { continue };
         let mut decoration_iter = decoration_query.iter_many_mut(children);
         while let Some(mut visibility) = decoration_iter.fetch_next() {
-            visibility.is_visible = true;
+            *visibility = Visibility::Inherited;
         }
     }
 }

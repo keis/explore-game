@@ -3,18 +3,23 @@ use crate::{
     map::{coord_to_vec3, HexCoord},
     State,
 };
-use bevy::{prelude::*, window::CursorGrabMode};
+use bevy::{
+    prelude::*,
+    window::{CursorGrabMode, PrimaryWindow},
+};
 
 pub struct CameraControlPlugin;
 
 impl Plugin for CameraControlPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(
-            SystemSet::on_update(State::Running)
-                .with_system(camera_control.before(camera_movement))
-                .with_system(camera_target.before(camera_movement))
-                .with_system(cursor_grab)
-                .with_system(camera_movement),
+        app.add_systems(
+            (
+                camera_control.before(camera_movement),
+                camera_target.before(camera_movement),
+                cursor_grab,
+                camera_movement,
+            )
+                .in_set(OnUpdate(State::Running)),
         );
     }
 }
@@ -163,18 +168,21 @@ fn camera_movement(time: Res<Time>, mut camera_query: Query<(&mut Transform, &mu
     control.velocity *= 1.0 - 4.0 * time.delta_seconds();
 }
 
-fn cursor_grab(mut windows: ResMut<Windows>, action_state_query: Query<&ActionState<Action>>) {
-    let action_state = action_state_query.single();
-    if let Some(window) = windows.get_primary_mut() {
-        if action_state.just_pressed(Action::PanCamera) {
-            window.set_cursor_grab_mode(CursorGrabMode::Locked);
-            window.set_cursor_visibility(false);
-        }
+fn cursor_grab(
+    mut window_query: Query<&mut Window, With<PrimaryWindow>>,
+    action_state_query: Query<&ActionState<Action>>,
+) {
+    let Ok(action_state) = action_state_query.get_single() else { return };
+    let Ok(mut window) = window_query.get_single_mut() else { return };
 
-        if action_state.just_released(Action::PanCamera) {
-            window.set_cursor_grab_mode(CursorGrabMode::None);
-            window.set_cursor_visibility(true);
-        }
+    if action_state.just_pressed(Action::PanCamera) {
+        window.cursor.grab_mode = CursorGrabMode::Locked;
+        window.cursor.visible = false;
+    }
+
+    if action_state.just_released(Action::PanCamera) {
+        window.cursor.grab_mode = CursorGrabMode::None;
+        window.cursor.visible = true;
     }
 }
 
@@ -189,9 +197,11 @@ mod tests {
 
     fn init_bare_app() -> App {
         let mut app = App::new();
-        app.add_system(camera_control.before(camera_movement));
-        app.add_system(camera_target.before(camera_movement));
-        app.add_system(camera_movement);
+        app.add_systems((
+            camera_control.before(camera_movement),
+            camera_target.before(camera_movement),
+            camera_movement,
+        ));
 
         let mut time = Time::default();
         time.update();

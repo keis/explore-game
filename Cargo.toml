@@ -15,24 +15,24 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-bevy_asset_loader = "0.14.1"
-bevy_mod_picking = "0.11"
-bevy = { version = "0.9", features = ["dynamic", "wayland"] }
+bevy_asset_loader = "0.15"
+bevy_mod_picking = { version = "0.12" }
+bevy_obj = "0.10.0"
+bevy = { version = "0.10", features = ["wayland", "dynamic_linking"] }
+clap = {version = "4.1.8", features = ["derive"] }
 expl_hexgrid = { path = "crates/expl_hexgrid" }
 expl_wfc = { path = "crates/expl_wfc" }
+futures-lite = "1.12.0"
+glam = "0.23.0"
+hexasphere = "8.0.0"
+interpolation = "0.2.0"
 itertools = "0.10.5"
-leafwing-input-manager = "0.8.0"
+leafwing-input-manager = "0.9"
+noisy_bevy = "0.3"
 pathfinding = "4.2.1"
 rand = "0.8.5"
 smallvec = "1.6"
-splines = { version = "4.2.0", features = ["glam"] }
-futures-lite = "1.12.0"
-clap = {version = "4.1.8", features = ["derive"] }
-interpolation = "0.2.0"
-hexasphere = "8.0.0"
-glam = "0.22.0"
-noisy_bevy = "0.2"
-bevy_obj = "0.9.1"
+splines = { git = "https://github.com/phaazon/splines.git", branch = "dependabot/cargo/master/glam-gte-0.10-and-lt-0.24", version = "4.2.0", features = ["glam"] }
 
 [dev-dependencies]
 rstest = { version = "0.17.0", default-features = false }

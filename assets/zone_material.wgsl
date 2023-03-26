@@ -1,10 +1,13 @@
 #import bevy_pbr::mesh_view_bindings
+#import bevy_pbr::pbr_bindings
 #import bevy_pbr::mesh_bindings
-#import bevy_pbr::pbr_types
+
 #import bevy_pbr::utils
 #import bevy_pbr::clustered_forward
 #import bevy_pbr::lighting
+#import bevy_pbr::pbr_ambient
 #import bevy_pbr::shadows
+#import bevy_pbr::fog
 #import bevy_pbr::pbr_functions
 
 struct UniformData {
@@ -61,7 +64,9 @@ fn fragment(
     }
 
     var pbr_input: PbrInput = pbr_input_new();
+
     pbr_input.material.base_color = base_color;
+
     pbr_input.frag_coord = position;
     pbr_input.world_position = world_position;
     pbr_input.world_normal = world_normal;

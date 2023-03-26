@@ -19,13 +19,13 @@ impl Plugin for InputPlugin {
         app.add_plugins(DefaultPickingPlugins)
             .add_plugin(InputManagerPlugin::<Action>::default())
             .add_startup_system(spawn_input_manager)
-            .add_system(handle_deselect)
-            .add_system(handle_select_next)
-            .add_system_to_stage(
-                CoreStage::PreUpdate,
-                magic_cancel.after(InputManagerSystem::ManualControl),
+            .add_systems((handle_deselect, handle_select_next))
+            .add_system(
+                magic_cancel
+                    .after(InputManagerSystem::ManualControl)
+                    .in_base_set(CoreSet::PreUpdate),
             )
-            .add_system_to_stage(CoreStage::PostUpdate, handle_picking_events);
+            .add_system(handle_picking_events.in_base_set(CoreSet::PostUpdate));
     }
 }
 
@@ -74,7 +74,7 @@ fn magic_cancel(
     // Close menu
     if action_state.just_pressed(Action::Cancel) {
         if let Ok(menu_layer_visibility) = menu_layer_query.get_single() {
-            if menu_layer_visibility.is_visible {
+            if *menu_layer_visibility == Visibility::Inherited {
                 action_state.set_action_data(Action::ToggleMainMenu, actiondata);
                 return;
             }
@@ -165,7 +165,7 @@ fn handle_picking_events(
     presence_query: Query<(Entity, &Selection), (With<PathGuided>, With<MapPresence>)>,
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
-    for event in events.iter() {
+    for event in &mut events {
         let PickingEvent::Clicked(e) = event else { continue };
         let Ok(zone_position) = zone_query.get(*e) else { continue };
         for (entity, _) in presence_query.iter().filter(|(_, s)| s.selected()) {

@@ -105,7 +105,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         color: Color::WHITE,
                     },
                 )
-                .with_text_alignment(TextAlignment::TOP_CENTER)
+                .with_text_alignment(TextAlignment::Center)
                 .with_style(Style {
                     align_self: AlignSelf::FlexEnd,
                     position_type: PositionType::Absolute,
@@ -220,7 +220,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                                 color: Color::WHITE,
                             },
                         )
-                        .with_text_alignment(TextAlignment::CENTER)
+                        .with_text_alignment(TextAlignment::Center)
                         .with_style(Style { ..default() }),
                     ));
                 });
@@ -240,7 +240,7 @@ pub fn update_zone_text(
     zone_query: Query<&MapPosition, With<Zone>>,
     mut events: EventReader<PickingEvent>,
 ) {
-    for event in events.iter() {
+    for event in &mut events {
         if let PickingEvent::Hover(HoverEvent::JustEntered(e)) = event {
             if let Ok(zone_position) = zone_query.get(*e) {
                 for mut text in &mut zone_text_query {

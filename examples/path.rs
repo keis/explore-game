@@ -3,27 +3,23 @@ use bevy::{
     prelude::*,
     window::PresentMode,
 };
-use splines::{Spline, Interpolation, Key};
 use explore_game::path::{path_mesh, Path};
+use splines::{Interpolation, Key, Spline};
 
 fn main() {
     let mut app = App::new();
 
     app.insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
-        .add_plugins(
-            DefaultPlugins
-                .set(WindowPlugin {
-                    window: WindowDescriptor {
-                        width: 800.0,
-                        height: 600.0,
-                        title: "Example".to_string(),
-                        present_mode: PresentMode::Fifo,
-                        resizable: false,
-                        ..default()
-                    },
-                    ..default()
-                })
-        )
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                resolution: (800.0, 600.0).into(),
+                title: "Example".to_string(),
+                present_mode: PresentMode::Fifo,
+                resizable: false,
+                ..default()
+            }),
+            ..default()
+        }))
         .add_plugin(WireframePlugin)
         .add_startup_system(setup);
 
@@ -36,7 +32,10 @@ fn setup(
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane { size: 5.0 })),
+        mesh: meshes.add(Mesh::from(shape::Plane {
+            size: 5.0,
+            subdivisions: 1,
+        })),
         material: standard_materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
         ..default()
     });
@@ -45,7 +44,11 @@ fn setup(
         PbrBundle {
             mesh: meshes.add(path_mesh(Path {
                 spline: Spline::from_vec(vec![
-                    Key::new(0.0, Vec3::new(0.0, 0.0, 0.0), Interpolation::Bezier(Vec3::new(-2.0, 0.0, 0.5))),
+                    Key::new(
+                        0.0,
+                        Vec3::new(0.0, 0.0, 0.0),
+                        Interpolation::Bezier(Vec3::new(-2.0, 0.0, 0.5)),
+                    ),
                     Key::new(1.0, Vec3::new(4.0, 0.0, 2.0), Interpolation::default()),
                 ]),
                 steps: 40,
@@ -55,14 +58,18 @@ fn setup(
             transform: Transform::from_translation(Vec3::new(-2.0, 0.5, 0.0)),
             ..default()
         },
-        Wireframe
+        Wireframe,
     ));
 
     commands.spawn((
         PbrBundle {
             mesh: meshes.add(path_mesh(Path {
                 spline: Spline::from_vec(vec![
-                    Key::new(0.0, Vec3::new(0.0, 0.0, 0.0), Interpolation::Bezier(Vec3::new(0.0, 0.0, 1.0))),
+                    Key::new(
+                        0.0,
+                        Vec3::new(0.0, 0.0, 0.0),
+                        Interpolation::Bezier(Vec3::new(0.0, 0.0, 1.0)),
+                    ),
                     Key::new(1.0, Vec3::new(1.0, 0.0, 1.0), Interpolation::default()),
                 ]),
                 steps: 8,
@@ -72,7 +79,7 @@ fn setup(
             transform: Transform::from_translation(Vec3::new(2.0, 0.5, 0.0)),
             ..default()
         },
-        Wireframe
+        Wireframe,
     ));
 
     commands.spawn(DirectionalLightBundle {

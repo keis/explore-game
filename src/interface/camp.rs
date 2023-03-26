@@ -11,7 +11,7 @@ use crate::{
     map::MapEvent,
     party::Group,
 };
-use bevy::{ecs::schedule::ShouldRun, prelude::*};
+use bevy::prelude::*;
 use bevy_mod_picking::Selection;
 
 #[derive(Component)]
@@ -100,16 +100,12 @@ fn spawn_camp_display(
 pub fn run_if_any_camp_changed(
     camp_query: Query<Entity, Or<(Changed<Camp>, Changed<Group>)>>,
     mut map_events: EventReader<MapEvent>,
-) -> ShouldRun {
+) -> bool {
     let removed_event_count = map_events
         .iter()
         .filter(|e| matches!(e, MapEvent::PresenceRemoved { .. }))
         .count();
-    if camp_query.is_empty() && removed_event_count == 0 {
-        ShouldRun::No
-    } else {
-        ShouldRun::Yes
-    }
+    !(camp_query.is_empty() && removed_event_count == 0)
 }
 
 pub fn update_camp_list(
@@ -127,7 +123,7 @@ pub fn update_camp_list(
         {
             continue;
         }
-        commands.get_or_spawn(camp_list).add_children(|parent| {
+        commands.get_or_spawn(camp_list).with_children(|parent| {
             spawn_camp_display(parent, entity, camp, &assets);
         });
     }

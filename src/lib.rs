@@ -18,10 +18,13 @@ pub mod scene;
 pub mod slide;
 pub mod turn;
 
+use bevy::prelude::*;
+
 pub const VIEW_RADIUS: u32 = 3;
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, States, Default)]
 pub enum State {
+    #[default]
     AssetLoading,
     Running,
 }

@@ -41,8 +41,8 @@ impl CampBundle {
                 mesh: main_assets.tent_mesh.clone(),
                 material: terrain_materials.add(TerrainMaterial {
                     color: Color::rgb(0.631, 0.596, 0.165),
-                    visible: 1,
-                    explored: 1,
+                    visible: true,
+                    explored: true,
                 }),
                 transform: Transform::from_translation(coord_to_vec3(position))
                     .with_rotation(Quat::from_rotation_y(1.0))

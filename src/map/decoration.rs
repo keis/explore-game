@@ -28,7 +28,7 @@ impl ZoneDecorationCrystalsBundle {
                     color: Color::rgba(0.7, 0.4, 0.4, 0.777),
                     ..default()
                 }),
-                visibility: Visibility { is_visible: false },
+                visibility: Visibility::Hidden,
                 transform: Transform::from_translation(Vec3::new(pos.x, 0.0, pos.y))
                     .with_scale(Vec3::splat(scale * 0.3)),
                 ..default()
@@ -63,7 +63,7 @@ impl ZoneDecorationTreeBundle {
                     color: Color::rgb(0.2, 0.7, 0.3),
                     ..default()
                 }),
-                visibility: Visibility { is_visible: false },
+                visibility: Visibility::Hidden,
                 transform: Transform::from_translation(Vec3::new(pos.x, 0.0, pos.y))
                     .with_scale(Vec3::splat(scale * 0.5)),
                 ..default()
@@ -96,7 +96,7 @@ impl ZoneDecorationPortalBundle {
                     color: Color::rgb(0.4, 0.42, 0.4),
                     ..default()
                 }),
-                visibility: Visibility { is_visible: false },
+                visibility: Visibility::Hidden,
                 transform: Transform::from_translation(Vec3::ZERO)
                     .with_scale(Vec3::splat(0.3))
                     .with_rotation(Quat::from_rotation_y(10.0)),
