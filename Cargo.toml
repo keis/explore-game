@@ -19,7 +19,7 @@ bevy_asset_loader = "0.15"
 bevy_mod_picking = { version = "0.12" }
 bevy_obj = "0.10.0"
 bevy = { version = "0.10", features = ["wayland", "dynamic_linking"] }
-clap = {version = "4.1.8", features = ["derive"] }
+clap = {version = "4.1.13", features = ["derive"] }
 expl_hexgrid = { path = "crates/expl_hexgrid" }
 expl_wfc = { path = "crates/expl_wfc" }
 futures-lite = "1.12.0"
