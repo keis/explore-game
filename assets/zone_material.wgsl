@@ -10,6 +10,12 @@
 #import bevy_pbr::fog
 #import bevy_pbr::pbr_functions
 
+struct FragmentInput {
+    @builtin(front_facing) is_front: bool,
+    @builtin(position) frag_coord: vec4<f32>,
+    #import bevy_pbr::mesh_vertex_output
+};
+
 struct UniformData {
     visible: u32,
     explored: u32,
@@ -33,48 +39,47 @@ fn modulo(a: f32, n: f32) -> f32 {
 }
 
 @fragment
-fn fragment(
-    @builtin(front_facing) is_front: bool,
-    @builtin(position) position: vec4<f32>,
-    #import bevy_pbr::mesh_vertex_output
-) -> @location(0) vec4<f32> {
+fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
+    var output_color = vec4<f32>(1.0, 1.0, 1.0, 1.0);
+#ifdef VERTEX_COLORS
+    output_color = output_color * in.color
+#endif
     var world_uv = vec2<f32>(
-        modulo(world_position.x * 0.3, 1.0),
-        modulo(world_position.z * 0.3, 1.0)
+        modulo(in.world_position.x * 0.3, 1.0),
+        modulo(in.world_position.z * 0.3, 1.0)
     );
-    var base_color = textureSample(terrain_texture, terrain_texture_sampler, world_uv);
-    base_color = mix(base_color, vec4<f32>(1.0, 1.0, 1.0, 1.0), clamp(world_position.y - 0.3, 0.0, 1.0) * 2.0);
+    output_color = output_color * textureSample(terrain_texture, terrain_texture_sampler, world_uv);
+    output_color = mix(output_color, vec4<f32>(1.0, 1.0, 1.0, 1.0), clamp(in.world_position.y - 0.3, 0.0, 1.0) * 2.0);
     var cloud_uv = vec2<f32>(
-        modulo(uv.x + cos(globals.time * 0.01), 1.0),
-        modulo(uv.y + sin(globals.time * 0.01), 1.0)
+        modulo(world_uv.x + cos(globals.time * 0.01), 1.0),
+        modulo(world_uv.y + sin(globals.time * 0.01), 1.0)
     );
     var cloud_color = textureSample(cloud_texture, cloud_texture_sampler, cloud_uv);
     if uniform_data.visible == 0u {
-        base_color = mix(base_color, vec4<f32>(cloud_color.xyz, 1.0), cloud_color[3] * 0.7);
+        output_color = mix(output_color, vec4<f32>(cloud_color.xyz, 1.0), cloud_color[3] * 0.7);
     }
 
     if uniform_data.explored == 0u {
-        base_color = vec4<f32>(0.005, 0.005, 0.01, 1.0);
+        output_color = vec4<f32>(0.005, 0.005, 0.01, 1.0);
     }
 
     if uniform_data.hover == 1u {
-        var d = length(uv - 0.5);
+        var d = length(in.uv - 0.5);
         var c = smoothstep(0.3, 0.5, d) * 0.7;
-        base_color = mix(base_color, vec4<f32>(0.863, 0.969, 0.710, 1.0), c);
+        output_color = mix(output_color, vec4<f32>(0.863, 0.969, 0.710, 1.0), c);
     }
 
     var pbr_input: PbrInput = pbr_input_new();
 
-    pbr_input.material.base_color = base_color;
+    pbr_input.material.base_color = output_color;
 
-    pbr_input.frag_coord = position;
-    pbr_input.world_position = world_position;
-    pbr_input.world_normal = world_normal;
+    pbr_input.frag_coord = in.frag_coord;
+    pbr_input.world_position = in.world_position;
     pbr_input.is_orthographic = view.projection[3].w == 1.0;
     pbr_input.world_normal = prepare_world_normal(
-        world_normal,
+        in.world_normal,
         (pbr_input.material.flags & STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0u,
-        is_front
+        in.is_front
     );
     pbr_input.N = apply_normal_mapping(
         pbr_input.material.flags,
@@ -86,7 +91,13 @@ fn fragment(
         #endif
         world_uv,
     );
-    pbr_input.V = calculate_view(world_position, pbr_input.is_orthographic);
+    pbr_input.V = calculate_view(in.world_position, pbr_input.is_orthographic);
+    pbr_input.flags = mesh.flags;
 
-    return tone_mapping(pbr(pbr_input));
+    output_color = pbr(pbr_input);
+
+#ifdef TONEMAP_IN_SHADER
+    output_color = tone_mapping(output_color);
+#endif
+    return output_color;
 }
