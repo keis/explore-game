@@ -26,7 +26,9 @@ pub struct ZoneMaterial {
     pub explored: bool,
     pub hover: bool,
     pub height_amp: f32,
+    pub height_base: f32,
     pub outer_amp: [f32; 6],
+    pub outer_base: [f32; 6],
     pub outer_visible: [bool; 6],
 }
 
@@ -36,12 +38,19 @@ pub struct ZoneMaterialUniform {
     pub explored: u32,
     pub hover: u32,
     pub height_amp: f32,
+    pub height_base: f32,
     pub outer_amp_ne: f32,
     pub outer_amp_e: f32,
     pub outer_amp_se: f32,
     pub outer_amp_sw: f32,
     pub outer_amp_w: f32,
     pub outer_amp_nw: f32,
+    pub outer_base_ne: f32,
+    pub outer_base_e: f32,
+    pub outer_base_se: f32,
+    pub outer_base_sw: f32,
+    pub outer_base_w: f32,
+    pub outer_base_nw: f32,
 }
 
 impl From<&ZoneMaterial> for ZoneMaterialUniform {
@@ -51,6 +60,7 @@ impl From<&ZoneMaterial> for ZoneMaterialUniform {
             explored: zone_material.explored as u32,
             hover: zone_material.hover as u32,
             height_amp: zone_material.height_amp,
+            height_base: zone_material.height_base,
             // Offsets because the mesh is rotated to be a "pointy hexagon"
             outer_amp_ne: zone_material.amp_for(3),
             outer_amp_e: zone_material.amp_for(4),
@@ -58,6 +68,12 @@ impl From<&ZoneMaterial> for ZoneMaterialUniform {
             outer_amp_sw: zone_material.amp_for(0),
             outer_amp_w: zone_material.amp_for(1),
             outer_amp_nw: zone_material.amp_for(2),
+            outer_base_ne: zone_material.base_for(3),
+            outer_base_e: zone_material.base_for(4),
+            outer_base_se: zone_material.base_for(5),
+            outer_base_sw: zone_material.base_for(0),
+            outer_base_w: zone_material.base_for(1),
+            outer_base_nw: zone_material.base_for(2),
         }
     }
 }
@@ -66,6 +82,14 @@ impl ZoneMaterial {
     fn amp_for(&self, idx: usize) -> f32 {
         if self.outer_visible[idx] {
             self.outer_amp[idx]
+        } else {
+            0.0
+        }
+    }
+
+    fn base_for(&self, idx: usize) -> f32 {
+        if self.outer_visible[idx] {
+            self.outer_base[idx]
         } else {
             0.0
         }

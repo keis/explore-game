@@ -86,16 +86,20 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
                 crystals: rng.gen_range(0..8) == 0,
                 portal: coord == portalcoord,
                 height_amp: 0.1,
+                height_base: 0.0,
                 ..default()
             },
             Terrain::Mountain => ZonePrototype {
                 terrain,
                 portal: coord == portalcoord,
                 height_amp: 0.5,
+                height_base: 0.1,
                 ..default()
             },
-            _ => ZonePrototype {
+            Terrain::Ocean => ZonePrototype {
                 terrain,
+                height_amp: -0.2,
+                height_base: -0.5,
                 ..default()
             },
         }),
@@ -111,12 +115,48 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
                     .unwrap_or(0.0)
             })
             .collect();
+        let neighbour_base: Vec<_> = coord
+            .neighbours()
+            .map(|neighbour| {
+                prototype
+                    .get(neighbour)
+                    .map(|proto| proto.height_base)
+                    .unwrap_or(0.0)
+            })
+            .collect();
         let mut zone = &mut prototype[coord];
         for i in 0..=5 {
-            zone.outer_amp[i] = zone
+            let min_amp = zone
                 .height_amp
                 .min(neighbour_amp[i])
                 .min(neighbour_amp[(i + 1) % 6]);
+            let max_amp = zone
+                .height_amp
+                .max(neighbour_amp[i])
+                .max(neighbour_amp[(i + 1) % 6]);
+            zone.outer_amp[i] = if min_amp < 0.0 && max_amp < 0.0 {
+                max_amp
+            } else if min_amp < 0.0 {
+                0.0
+            } else {
+                min_amp
+            };
+
+            let min_base = zone
+                .height_base
+                .min(neighbour_base[i])
+                .min(neighbour_base[(i + 1) % 6]);
+            let max_base = zone
+                .height_base
+                .max(neighbour_base[i])
+                .max(neighbour_base[(i + 1) % 6]);
+            zone.outer_base[i] = if min_base < 0.0 && max_base < 0.0 {
+                max_base
+            } else if min_base < 0.0 {
+                0.0
+            } else {
+                min_base
+            };
         }
     }
     Ok(prototype)

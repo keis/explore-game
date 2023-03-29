@@ -78,7 +78,9 @@ pub struct ZonePrototype {
     pub crystals: bool,
     pub portal: bool,
     pub height_amp: f32,
+    pub height_base: f32,
     pub outer_amp: [f32; 6],
+    pub outer_base: [f32; 6],
 }
 
 #[derive(Bundle, Default)]
@@ -104,7 +106,9 @@ fn zone_material(assets: &Res<MainAssets>, prototype: &ZonePrototype) -> ZoneMat
         cloud_texture: Some(assets.cloud_texture.clone()),
         terrain_texture,
         height_amp: prototype.height_amp,
+        height_base: prototype.height_base,
         outer_amp: prototype.outer_amp,
+        outer_base: prototype.outer_base,
         ..default()
     }
 }
@@ -138,12 +142,13 @@ pub type ZoneParams<'w> = (
     Res<'w, HexAssets>,
     ResMut<'w, Assets<ZoneMaterial>>,
     ResMut<'w, Assets<TerrainMaterial>>,
+    ResMut<'w, Assets<StandardMaterial>>,
 );
 
 #[allow(clippy::type_complexity)]
 pub fn spawn_zone(
     commands: &mut Commands,
-    (main_assets, hex_assets, zone_materials, terrain_materials): &mut ZoneParams,
+    (main_assets, hex_assets, zone_materials, terrain_materials, standard_materials): &mut ZoneParams,
     position: HexCoord,
     prototype: &ZonePrototype,
 ) -> Entity {
@@ -193,15 +198,19 @@ pub fn spawn_zone(
                     ));
                 }
             }
-            Terrain::Mountain => {
-                if prototype.portal {
-                    parent.spawn(ZoneDecorationPortalBundle::new(
-                        main_assets,
-                        terrain_materials,
-                    ));
-                }
+            Terrain::Mountain => {}
+            Terrain::Ocean => {
+                parent.spawn((
+                    Fog::default(),
+                    NotShadowCaster,
+                    MaterialMeshBundle {
+                        mesh: hex_assets.mesh.clone(),
+                        material: standard_materials.add(Color::rgba(0.1, 0.1, 0.8, 0.4).into()),
+                        transform: Transform::from_translation(Vec3::new(0.0, -0.1, 0.0)),
+                        ..default()
+                    },
+                ));
             }
-            _ => {}
         })
         .id();
 
