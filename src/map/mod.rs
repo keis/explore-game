@@ -59,6 +59,7 @@ impl Plugin for MapPlugin {
                     zone::despawn_empty_crystal_deposit,
                     zone::hide_decorations_behind_camp,
                     zone::show_decorations_behind_camp,
+                    zone::update_outer_visible,
                 )
                     .in_set(OnUpdate(State::Running)),
             )

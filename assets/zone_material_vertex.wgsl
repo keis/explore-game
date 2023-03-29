@@ -9,13 +9,20 @@ struct UniformData {
     visible: u32,
     explored: u32,
     hover: u32,
-    height: f32,
-    outer_ne: f32,
-    outer_e: f32,
-    outer_se: f32,
-    outer_sw: f32,
-    outer_w: f32,
-    outer_nw: f32
+    height_amp: f32,
+    height_base: f32,
+    outer_amp_ne: f32,
+    outer_amp_e: f32,
+    outer_amp_se: f32,
+    outer_amp_sw: f32,
+    outer_amp_w: f32,
+    outer_amp_nw: f32,
+    outer_base_ne: f32,
+    outer_base_e: f32,
+    outer_base_se: f32,
+    outer_base_sw: f32,
+    outer_base_w: f32,
+    outer_base_nw: f32
 }
 
 @group(1) @binding(4)
@@ -50,36 +57,47 @@ struct VertexOutput {
 
 fn height_at(position: vec2<f32>, world_position: vec2<f32>) -> f32 {
     var amp: f32;
-    var base = 0.1;
+    var base: f32;
     var dc = length(position);
     var da = length(abs(position) - vec2<f32>(0.5, 0.8660254));
     var db = length(abs(position) - vec2<f32>(1.0, 0.0));
     if dc < 0.7 {
-        amp = uniform_data.height;
-        base = uniform_data.height;
+        if uniform_data.explored == 1u {
+            amp = uniform_data.height_amp;
+            base = uniform_data.height_base;
+        } else {
+            amp = 0.0;
+            base = 0.0;
+        }
     } else if da < db {
         if position.x > 0.0 {
             if position.y > 0.0 {
-                amp = uniform_data.outer_se;
+                amp = uniform_data.outer_amp_se;
+                base = uniform_data.outer_base_se;
             } else {
-                amp = uniform_data.outer_ne;
+                amp = uniform_data.outer_amp_ne;
+                base = uniform_data.outer_base_ne;
             }
         } else {
             if position.y > 0.0 {
-                amp = uniform_data.outer_sw;
+                amp = uniform_data.outer_amp_sw;
+                base = uniform_data.outer_base_sw;
             } else {
-                amp = uniform_data.outer_nw;
+                amp = uniform_data.outer_amp_nw;
+                base = uniform_data.outer_base_nw;
             }
         }
     } else {
         if position.x > 0.0 {
-            amp = uniform_data.outer_e;
+            amp = uniform_data.outer_amp_e;
+            base = uniform_data.outer_base_e;
         } else {
-            amp = uniform_data.outer_w;
+            amp = uniform_data.outer_amp_w;
+            base = uniform_data.outer_base_w;
         }
     }
 
-    return (base + simplex_noise_2d(world_position)) * amp;
+    return base + (simplex_noise_2d(world_position)) * amp;
 }
 
 @vertex

@@ -78,7 +78,9 @@ pub struct ZonePrototype {
     pub crystals: bool,
     pub portal: bool,
     pub height_amp: f32,
+    pub height_base: f32,
     pub outer_amp: [f32; 6],
+    pub outer_base: [f32; 6],
 }
 
 #[derive(Bundle, Default)]
@@ -97,20 +99,41 @@ fn zone_material(assets: &Res<MainAssets>, prototype: &ZonePrototype) -> ZoneMat
     let terrain_texture = match prototype.terrain {
         Terrain::Ocean => Some(assets.ocean_texture.clone()),
         Terrain::Mountain => Some(assets.mountain_texture.clone()),
-        Terrain::Forest => Some(assets.forest_texture.clone()),
+        Terrain::Forest => Some(assets.grass_texture.clone()),
     };
 
     ZoneMaterial {
         cloud_texture: Some(assets.cloud_texture.clone()),
         terrain_texture,
-        height: prototype.height_amp,
-        outer_ne: prototype.outer_amp[3],
-        outer_e: prototype.outer_amp[4],
-        outer_se: prototype.outer_amp[5],
-        outer_sw: prototype.outer_amp[0],
-        outer_w: prototype.outer_amp[1],
-        outer_nw: prototype.outer_amp[2],
+        height_amp: prototype.height_amp,
+        height_base: prototype.height_base,
+        outer_amp: prototype.outer_amp,
+        outer_base: prototype.outer_base,
         ..default()
+    }
+}
+
+pub fn update_outer_visible(
+    mut zone_materials: ResMut<Assets<ZoneMaterial>>,
+    changed_zone_query: Query<(&Fog, &MapPosition, &Handle<ZoneMaterial>), Changed<Fog>>,
+    zone_query: Query<(&Fog, &Handle<ZoneMaterial>)>,
+    map_query: Query<&GameMap>,
+) {
+    let Ok(map) = map_query.get_single() else { return };
+    for (fog, position, handle) in &changed_zone_query {
+        let Some(mut material) = zone_materials.get_mut(handle) else { continue };
+        if fog.explored {
+            material.outer_visible = [true; 6];
+            for (idx, coord) in position.0.neighbours().enumerate() {
+                let Some((neighbour_fog, neighbour_handle)) = map.get(coord).and_then(|&e| zone_query.get(e).ok()) else { continue };
+                if neighbour_fog.explored {
+                    continue;
+                }
+                let Some(mut neighbour_material) = zone_materials.get_mut(neighbour_handle) else { continue };
+                neighbour_material.outer_visible[(idx + 2) % 6] = true;
+                neighbour_material.outer_visible[(idx + 3) % 6] = true;
+            }
+        }
     }
 }
 
@@ -119,12 +142,13 @@ pub type ZoneParams<'w> = (
     Res<'w, HexAssets>,
     ResMut<'w, Assets<ZoneMaterial>>,
     ResMut<'w, Assets<TerrainMaterial>>,
+    ResMut<'w, Assets<StandardMaterial>>,
 );
 
 #[allow(clippy::type_complexity)]
 pub fn spawn_zone(
     commands: &mut Commands,
-    (main_assets, hex_assets, zone_materials, terrain_materials): &mut ZoneParams,
+    (main_assets, hex_assets, zone_materials, terrain_materials, standard_materials): &mut ZoneParams,
     position: HexCoord,
     prototype: &ZonePrototype,
 ) -> Entity {
@@ -174,15 +198,19 @@ pub fn spawn_zone(
                     ));
                 }
             }
-            Terrain::Mountain => {
-                if prototype.portal {
-                    parent.spawn(ZoneDecorationPortalBundle::new(
-                        main_assets,
-                        terrain_materials,
-                    ));
-                }
+            Terrain::Mountain => {}
+            Terrain::Ocean => {
+                parent.spawn((
+                    Fog::default(),
+                    NotShadowCaster,
+                    MaterialMeshBundle {
+                        mesh: hex_assets.mesh.clone(),
+                        material: standard_materials.add(Color::rgba(0.1, 0.1, 0.8, 0.4).into()),
+                        transform: Transform::from_translation(Vec3::new(0.0, -0.1, 0.0)),
+                        ..default()
+                    },
+                ));
             }
-            _ => {}
         })
         .id();
 

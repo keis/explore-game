@@ -22,7 +22,15 @@ struct UniformData {
 }
 
 @group(1) @binding(0)
+var terrain_texture: texture_2d<f32>;
+@group(1) @binding(1)
+var terrain_texture_sampler: sampler;
+@group(1) @binding(2)
 var<uniform> uniform_data: UniformData;
+
+fn modulo(a: f32, n: f32) -> f32 {
+    return a - n * floor(a / n);
+}
 
 @fragment
 fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
@@ -30,14 +38,15 @@ fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
 #ifdef VERTEX_COLORS
     output_color = output_color * in.color
 #endif
+    var world_uv = vec2<f32>(
+        modulo(in.world_position.x * 0.5 + floor(in.world_position.y * 5.0) * 0.1, 1.0),
+        modulo(in.world_position.z * 0.5 + floor(in.world_position.y * 5.0) * 0.1, 1.0)
+    );
+    var texture_color = textureSample(terrain_texture, terrain_texture_sampler, world_uv);
+    output_color *= texture_color;
 
     if uniform_data.visible == 0u && uniform_data.explored == 1u {
-        output_color = vec4<f32>(
-            0.2,
-            0.2,
-            0.2,
-            1.0
-        );
+        output_color = mix(output_color, vec4<f32>(0.2, 0.2, 0.2, 1.0), 0.7);
     }
 
     var pbr_input: PbrInput = pbr_input_new();

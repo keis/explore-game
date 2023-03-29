@@ -60,7 +60,7 @@ impl ZoneDecorationTreeBundle {
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: main_assets.pine_mesh.clone(),
                 material: terrain_materials.add(TerrainMaterial {
-                    color: Color::rgb(0.2, 0.7, 0.3),
+                    texture: Some(main_assets.forest_texture.clone()),
                     ..default()
                 }),
                 visibility: Visibility::Hidden,
