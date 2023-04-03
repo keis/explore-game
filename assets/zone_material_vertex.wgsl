@@ -97,7 +97,8 @@ fn height_at(position: vec2<f32>, world_position: vec2<f32>) -> f32 {
         }
     }
 
-    return base + (simplex_noise_2d(world_position)) * amp;
+    var noise = (1.0 + simplex_noise_2d(world_position)) / 2.0;
+    return base + noise * amp;
 }
 
 @vertex

@@ -1,3 +1,4 @@
+use crate::map::{HeightQuery, Offset};
 use bevy::prelude::*;
 use interpolation::Ease;
 
@@ -25,18 +26,20 @@ pub enum SlideEvent {
 }
 
 pub fn slide(
-    mut slide_query: Query<(&mut Transform, &mut Slide)>,
+    mut slide_query: Query<(&mut Transform, &mut Slide, &Offset)>,
+    height_query: HeightQuery,
     mut events: EventWriter<SlideEvent>,
     time: Res<Time>,
 ) {
-    for (mut transform, mut slide) in slide_query.iter_mut() {
+    for (mut transform, mut slide, offset) in slide_query.iter_mut() {
         if slide.progress == 1.0 {
             continue;
         }
         slide.progress = (slide.progress + time.delta_seconds() * SLIDE_SPEED).clamp(0.0, 1.0);
-        transform.translation = slide
+        let position = slide
             .start
             .lerp(slide.end, slide.progress.quadratic_in_out());
+        transform.translation = height_query.adjust(position) + offset.0;
         if slide.progress == 1.0 {
             events.send(SlideEvent::Stopped);
         }
