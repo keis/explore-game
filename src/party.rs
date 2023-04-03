@@ -1,7 +1,5 @@
 use crate::{
-    assets::MainAssets,
     character::Movement,
-    indicator::Indicator,
     map::{HeightQuery, HexCoord, MapCommandsExt, MapPresence, Offset, PathGuided, ViewRadius},
     slide::Slide,
     VIEW_RADIUS,
@@ -9,6 +7,7 @@ use crate::{
 
 use bevy::ecs::system::{Command, EntityCommands};
 use bevy::prelude::*;
+use bevy_mod_outline::{OutlineBundle, OutlineVolume};
 use bevy_mod_picking::PickableBundle;
 use smallvec::SmallVec;
 use std::collections::HashSet;
@@ -26,28 +25,28 @@ pub struct PartyBundle {
     pub group: Group,
     pub movement: Movement,
     pub pickable_bundle: PickableBundle,
-    pub indicator: Indicator,
     pub offset: Offset,
     pub view_radius: ViewRadius,
     pub path_guided: PathGuided,
     pub slide: Slide,
     pub pbr_bundle: PbrBundle,
+    pub outline_bundle: OutlineBundle,
 }
 
 pub type PartyParams<'w, 's> = (
-    Res<'w, MainAssets>,
+    ResMut<'w, Assets<Mesh>>,
     ResMut<'w, Assets<StandardMaterial>>,
     HeightQuery<'w, 's>,
 );
 
 impl PartyBundle {
     pub fn new(
-        (main_assets, standard_materials, height_query): &mut PartyParams,
+        (meshes, standard_materials, height_query): &mut PartyParams,
         position: HexCoord,
         name: String,
         supplies: u32,
     ) -> Self {
-        let offset = Vec3::new(0.0, 1.0, 0.0);
+        let offset = Vec3::new(0.0, 0.1, 0.0);
         Self {
             party: Party {
                 name,
@@ -58,11 +57,19 @@ impl PartyBundle {
             offset: Offset(offset),
             view_radius: ViewRadius(VIEW_RADIUS),
             pbr_bundle: PbrBundle {
-                mesh: main_assets.indicator_mesh.clone(),
+                mesh: meshes.add(Mesh::from(shape::Cube { size: 0.2 })),
                 material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
                 transform: Transform::from_translation(
                     height_query.adjust(position.into()) + offset,
                 ),
+                ..default()
+            },
+            outline_bundle: OutlineBundle {
+                outline: OutlineVolume {
+                    visible: true,
+                    width: 2.0,
+                    colour: Color::rgb(0.155, 0.621, 0.586),
+                },
                 ..default()
             },
             ..default()

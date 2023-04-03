@@ -1,5 +1,6 @@
 use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
+use bevy_mod_outline::OutlinePlugin;
 use bevy_mod_picking::PickingCameraBundle;
 use clap::Parser;
 use expl_wfc::{Seed, SeedType};
@@ -11,7 +12,6 @@ use explore_game::{
     character::reset_movement_points,
     combat,
     enemy::move_enemy,
-    indicator::update_indicator,
     input::InputPlugin,
     interface::InterfacePlugin,
     light,
@@ -78,6 +78,7 @@ fn main() {
         .add_plugin(TerrainMaterialPlugin)
         .add_plugin(WaterMaterialPlugin)
         .add_plugin(ActionPlugin)
+        .add_plugin(OutlinePlugin)
         .add_startup_system(spawn_camera)
         .add_startup_system(light::spawn_light)
         .add_startup_system(start_map_generation)
@@ -89,7 +90,6 @@ fn main() {
                 scene::spawn_map,
                 scene::spawn_party,
                 scene::spawn_enemy,
-                update_indicator,
                 reset_movement_points,
                 derive_party_movement,
                 despawn_empty_party,
