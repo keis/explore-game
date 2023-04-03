@@ -1,8 +1,11 @@
-use glam::IVec3;
+use glam::{IVec3, Vec3};
 use std::{
     fmt,
     ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
 };
+
+// sqrt(3)
+const SQRT3: f32 = 1.732_050_8;
 
 /// Represents a position on a hexagonal grid with axial coordinates
 /// https://www.redblobgames.com/grids/hexagons/#coordinates
@@ -25,6 +28,24 @@ impl HexCoord {
 
     pub const fn new(q: i32, r: i32) -> Self {
         HexCoord { q, r }
+    }
+
+    pub fn new_round(q: f32, r: f32) -> Self {
+        let qround = q.round();
+        let qrem = q - qround;
+        let rround = r.round();
+        let rrem = r - rround;
+        if qrem.abs() >= rrem.abs() {
+            Self {
+                q: (qround + (qrem + 0.5 * rrem).round()) as i32,
+                r: rround as i32,
+            }
+        } else {
+            Self {
+                q: qround as i32,
+                r: (rround + (rrem + 0.5 * qrem).round()) as i32,
+            }
+        }
     }
 
     /// Compute the S component of the equivalent cube coordinate
@@ -135,10 +156,29 @@ impl TryFrom<IVec3> for HexCoord {
     }
 }
 
+impl From<HexCoord> for Vec3 {
+    fn from(coord: HexCoord) -> Vec3 {
+        Self::new(
+            ((coord.q as f32) + 0.5 * coord.r as f32) * SQRT3,
+            0.0,
+            coord.r as f32 * 1.5,
+        )
+    }
+}
+
+impl From<Vec3> for HexCoord {
+    fn from(vec: Vec3) -> HexCoord {
+        Self::new_round(
+            (SQRT3 / 3.0) * vec.x - (1.0 / 3.0) * vec.z,
+            (2.0 / 3.0) * vec.z,
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::HexCoord;
-    use glam::IVec3;
+    use super::{HexCoord, SQRT3};
+    use glam::{IVec3, Vec3};
 
     #[test]
     fn distance_to_neighbours() {
@@ -166,5 +206,35 @@ mod tests {
     fn from_ivec3() {
         let coord: Result<HexCoord, _> = IVec3::new(2, -3, 1).try_into();
         assert_eq!(coord, Ok(HexCoord { q: 2, r: -3 }));
+    }
+
+    #[test]
+    fn vec3_from_coord() {
+        assert_eq!(Vec3::from(HexCoord::ZERO), Vec3::ZERO);
+        assert_eq!(Vec3::from(HexCoord::new(1, 0)), Vec3::new(SQRT3, 0.0, 0.0));
+        assert_eq!(
+            Vec3::from(HexCoord::new(2, 0)),
+            Vec3::new(2.0 * SQRT3, 0.0, 0.0)
+        );
+        assert_eq!(
+            Vec3::from(HexCoord::new(0, 1)),
+            Vec3::new(0.5 * SQRT3, 0.0, 1.5)
+        );
+        assert_eq!(
+            Vec3::from(HexCoord::new(1, 1)),
+            Vec3::new(1.5 * SQRT3, 0.0, 1.5)
+        );
+    }
+
+    #[test]
+    fn convert_2d_point() {
+        let coord = HexCoord::new(7, 9);
+        let vec: Vec3 = coord.into();
+        assert_eq!(coord, HexCoord::from(vec));
+        assert_eq!(coord, HexCoord::from(vec + Vec3::new(0.1, 0.0, 0.1)));
+        assert_eq!(
+            HexCoord::new(8, 9),
+            HexCoord::from(vec + Vec3::new(1.0, 0.0, 0.0))
+        );
     }
 }

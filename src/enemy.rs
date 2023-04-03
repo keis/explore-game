@@ -2,7 +2,7 @@ use crate::{
     action::{GameAction, GameActionQueue},
     assets::MainAssets,
     combat::{Attack, Health},
-    map::{coord_to_vec3, HexCoord, MapPresence, Offset, PathFinder, ViewRadius},
+    map::{HexCoord, MapPresence, Offset, PathFinder, ViewRadius},
     slide::Slide,
     turn::Turn,
 };
@@ -34,7 +34,7 @@ impl EnemyBundle {
             pbr_bundle: PbrBundle {
                 mesh: main_assets.blob_mesh.clone(),
                 material: standard_materials.add(Color::rgba(0.749, 0.584, 0.901, 0.666).into()),
-                transform: Transform::from_translation(coord_to_vec3(position) + offset),
+                transform: Transform::from_translation(Vec3::from(position) + offset),
                 visibility: Visibility::Hidden,
                 ..default()
             },

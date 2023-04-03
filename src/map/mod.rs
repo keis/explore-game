@@ -21,7 +21,7 @@ pub use expl_hexgrid::HexCoord;
 pub use fog::Fog;
 pub use gamemap::{spawn_game_map_from_prototype, GameMap};
 pub use generator::{start_map_generation, GenerateMapTask, MapPrototype, MapSeed};
-pub use hex::{coord_to_vec3, HexAssets};
+pub use hex::HexAssets;
 pub use pathdisplay::PathDisplay;
 pub use pathfinder::PathFinder;
 pub use pathguided::PathGuided;

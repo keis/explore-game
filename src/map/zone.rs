@@ -1,5 +1,4 @@
 use super::{
-    coord_to_vec3,
     decoration::{
         ZoneDecorationCrystals, ZoneDecorationCrystalsBundle, ZoneDecorationPortalBundle,
         ZoneDecorationTree, ZoneDecorationTreeBundle,
@@ -165,7 +164,7 @@ pub fn spawn_zone(
             MaterialMeshBundle {
                 mesh: hex_assets.mesh.clone(),
                 material: zone_materials.add(material),
-                transform: Transform::from_translation(coord_to_vec3(position))
+                transform: Transform::from_translation(position.into())
                     .with_rotation(Quat::from_rotation_y((90f32).to_radians())),
                 ..default()
             },

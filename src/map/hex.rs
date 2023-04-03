@@ -2,23 +2,10 @@ use bevy::{prelude::*, render::mesh::Indices, render::mesh::PrimitiveTopology};
 use glam::Vec3A;
 use hexasphere::{interpolation, BaseShape, Subdivided, Triangle};
 use std::iter;
-pub const HEX_RADIUS_RATIO: f32 = 0.866_025_4;
-pub const HEX_RADIUS: f32 = 1.0;
-
-use super::HexCoord;
 
 pub struct Hexagon {
     pub radius: f32,
     pub subdivisions: usize,
-}
-
-pub fn coord_to_vec3(coord: HexCoord) -> Vec3 {
-    let (outer, inner) = (HEX_RADIUS, HEX_RADIUS * HEX_RADIUS_RATIO);
-    Vec3::new(
-        ((coord.q as f32) + 0.5 * coord.r as f32) * inner * 2.0,
-        0.0,
-        coord.r as f32 * outer * 1.5,
-    )
 }
 
 impl From<Hexagon> for Mesh {
@@ -126,29 +113,7 @@ mod consts {
 
 #[cfg(test)]
 mod tests {
-    use super::{coord_to_vec3, HexCoord, SubdividedHexagon, HEX_RADIUS_RATIO};
-    use bevy::prelude::*;
-
-    #[test]
-    fn coord_as_vec3() {
-        assert_eq!(coord_to_vec3(HexCoord::ZERO), Vec3::ZERO);
-        assert_eq!(
-            coord_to_vec3(HexCoord::new(1, 0)),
-            Vec3::new(2.0 * HEX_RADIUS_RATIO, 0.0, 0.0)
-        );
-        assert_eq!(
-            coord_to_vec3(HexCoord::new(2, 0)),
-            Vec3::new(4.0 * HEX_RADIUS_RATIO, 0.0, 0.0)
-        );
-        assert_eq!(
-            coord_to_vec3(HexCoord::new(0, 1)),
-            Vec3::new(HEX_RADIUS_RATIO, 0.0, 1.5)
-        );
-        assert_eq!(
-            coord_to_vec3(HexCoord::new(1, 1)),
-            Vec3::new(3.0 * HEX_RADIUS_RATIO, 0.0, 1.5)
-        );
-    }
+    use super::SubdividedHexagon;
 
     #[test]
     fn base_hexagon() {
