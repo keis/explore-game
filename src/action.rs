@@ -3,8 +3,8 @@ use crate::{
     character::Movement,
     crystals::CrystalDeposit,
     map::{
-        coord_to_vec3, GameMap, HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder,
-        PathGuided, Terrain, Zone,
+        GameMap, HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder, PathGuided, Terrain,
+        Zone,
     },
     party::{Group, GroupCommandsExt, Party, PartyBundle, PartyParams},
     slide::{Slide, SlideEvent},
@@ -103,7 +103,7 @@ pub fn handle_move(
             movement.points -= 1;
         }
         slide.start = transform.translation;
-        slide.end = coord_to_vec3(*next) + offset.0;
+        slide.end = Vec3::from(*next) + offset.0;
         slide.progress = 0.0;
     }
 }
@@ -117,7 +117,7 @@ fn handle_enemy_move(
         let Ok((mut slide, transform, offset)) = enemy_query.get_mut(*e) else { continue };
 
         slide.start = transform.translation;
-        slide.end = coord_to_vec3(*next) + offset.0;
+        slide.end = Vec3::from(*next) + offset.0;
         slide.progress = 0.0;
     }
 }

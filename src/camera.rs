@@ -1,6 +1,6 @@
 use crate::{
     input::{Action, ActionState},
-    map::{coord_to_vec3, HexCoord},
+    map::HexCoord,
     State,
 };
 use bevy::{
@@ -68,7 +68,7 @@ impl CameraTarget {
 
     pub fn from_hexcoord(coord: HexCoord) -> Self {
         Self {
-            translation: coord_to_vec3(coord) + Self::OFFSET,
+            translation: Vec3::from(coord) + Self::OFFSET,
         }
     }
 }

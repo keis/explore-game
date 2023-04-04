@@ -2,7 +2,7 @@ use crate::{
     assets::MainAssets,
     character::Movement,
     indicator::Indicator,
-    map::{coord_to_vec3, HexCoord, MapCommandsExt, MapPresence, Offset, PathGuided, ViewRadius},
+    map::{HexCoord, MapCommandsExt, MapPresence, Offset, PathGuided, ViewRadius},
     slide::Slide,
     VIEW_RADIUS,
 };
@@ -56,7 +56,7 @@ impl PartyBundle {
             pbr_bundle: PbrBundle {
                 mesh: main_assets.indicator_mesh.clone(),
                 material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
-                transform: Transform::from_translation(coord_to_vec3(position) + offset),
+                transform: Transform::from_translation(Vec3::from(position) + offset),
                 ..default()
             },
             ..default()

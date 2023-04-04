@@ -1,6 +1,6 @@
 use crate::{
     assets::MainAssets,
-    map::{coord_to_vec3, Fog, HexCoord, Offset, ViewRadius},
+    map::{Fog, HexCoord, Offset, ViewRadius},
     material::TerrainMaterial,
     party::Group,
     VIEW_RADIUS,
@@ -45,7 +45,7 @@ impl CampBundle {
                     explored: true,
                     ..default()
                 }),
-                transform: Transform::from_translation(coord_to_vec3(position))
+                transform: Transform::from_translation(position.into())
                     .with_rotation(Quat::from_rotation_y(1.0))
                     .with_scale(Vec3::splat(0.5)),
                 ..default()
