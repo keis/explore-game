@@ -91,12 +91,12 @@ mod consts {
 
     pub static INITIAL_POINTS: [Vec3A; 7] = [
         Vec3A::new(0.0, 0.0, 0.0),
-        Vec3A::new(1.0, 0.0, 0.0),
-        Vec3A::new(0.5, 0.0, -HEX_RADIUS_RATIO),
-        Vec3A::new(-0.5, 0.0, -HEX_RADIUS_RATIO),
-        Vec3A::new(-1.0, 0.0, 0.0),
-        Vec3A::new(-0.5, 0.0, HEX_RADIUS_RATIO),
-        Vec3A::new(0.5, 0.0, HEX_RADIUS_RATIO),
+        Vec3A::new(-HEX_RADIUS_RATIO, 0.0, 0.5),
+        Vec3A::new(0.0, 0.0, 1.0),
+        Vec3A::new(HEX_RADIUS_RATIO, 0.0, 0.5),
+        Vec3A::new(HEX_RADIUS_RATIO, 0.0, -0.5),
+        Vec3A::new(0.0, 0.0, -1.0),
+        Vec3A::new(-HEX_RADIUS_RATIO, 0.0, -0.5),
     ];
 
     pub const TRIANGLES: [Triangle; 6] = [

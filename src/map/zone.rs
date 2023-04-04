@@ -164,8 +164,7 @@ pub fn spawn_zone(
             MaterialMeshBundle {
                 mesh: hex_assets.mesh.clone(),
                 material: zone_materials.add(material),
-                transform: Transform::from_translation(position.into())
-                    .with_rotation(Quat::from_rotation_y((90f32).to_radians())),
+                transform: Transform::from_translation(position.into()),
                 ..default()
             },
         ))
