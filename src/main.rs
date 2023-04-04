@@ -85,7 +85,9 @@ fn main() {
         .add_collection_to_loading_state::<_, MainAssets>(State::AssetLoading)
         .add_systems(
             (
-                scene::spawn_scene,
+                scene::spawn_map,
+                scene::spawn_party,
+                scene::spawn_enemy,
                 update_indicator,
                 reset_movement_points,
                 derive_party_movement,

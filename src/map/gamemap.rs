@@ -19,6 +19,10 @@ impl GameMap {
         }
     }
 
+    pub fn layout(&self) -> SquareGridLayout {
+        self.tiles.layout
+    }
+
     pub fn set(&mut self, position: HexCoord, entity: Entity) {
         self.tiles.set(position, entity)
     }
