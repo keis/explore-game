@@ -3,7 +3,7 @@ use super::{
         ZoneDecorationCrystals, ZoneDecorationCrystalsBundle, ZoneDecorationPortalBundle,
         ZoneDecorationTree, ZoneDecorationTreeBundle,
     },
-    Fog, GameMap, HexAssets, HexCoord, MapEvent, MapPosition, MapPresence,
+    Fog, GameMap, Height, HexAssets, HexCoord, MapEvent, MapPosition, MapPresence,
 };
 use crate::{
     assets::MainAssets,
@@ -12,6 +12,7 @@ use crate::{
     material::{TerrainMaterial, ZoneMaterial},
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
+use glam::Vec3Swizzles;
 use rand::{
     distributions::{Distribution, Standard},
     Rng,
@@ -85,6 +86,7 @@ pub struct ZonePrototype {
 #[derive(Bundle, Default)]
 pub struct ZoneBundle {
     pub zone: Zone,
+    pub height: Height,
     pub fog: Fog,
     pub position: MapPosition,
     pub pickable_mesh: bevy_mod_picking::PickableMesh,
@@ -152,20 +154,27 @@ pub fn spawn_zone(
     prototype: &ZonePrototype,
 ) -> Entity {
     let material = zone_material(main_assets, prototype);
+    let zone = Zone {
+        terrain: prototype.terrain,
+    };
+    let height = Height {
+        height_amp: prototype.height_amp,
+        height_base: prototype.height_base,
+        outer_amp: prototype.outer_amp,
+        outer_base: prototype.outer_base,
+    };
     let zone_entity = commands
         .spawn((
             ZoneBundle {
                 position: MapPosition(position),
-                zone: Zone {
-                    terrain: prototype.terrain,
-                },
+                zone,
+                height,
                 ..default()
             },
             MaterialMeshBundle {
                 mesh: hex_assets.mesh.clone(),
                 material: zone_materials.add(material),
-                transform: Transform::from_translation(position.into())
-                    .with_rotation(Quat::from_rotation_y((90f32).to_radians())),
+                transform: Transform::from_translation(position.into()),
                 ..default()
             },
         ))
@@ -176,6 +185,11 @@ pub fn spawn_zone(
                     parent.spawn(ZoneDecorationPortalBundle::new(
                         main_assets,
                         terrain_materials,
+                        Vec3::new(
+                            0.0,
+                            height.height_at(Vec2::ZERO, Vec3::from(position).xz()),
+                            0.0,
+                        ),
                     ));
                 }
                 if prototype.crystals {
@@ -183,7 +197,11 @@ pub fn spawn_zone(
                     parent.spawn(ZoneDecorationCrystalsBundle::new(
                         main_assets,
                         terrain_materials,
-                        *pos,
+                        Vec3::new(
+                            pos.x,
+                            height.height_at(*pos, Vec3::from(position).xz() + *pos),
+                            pos.y,
+                        ),
                         *scale,
                     ));
                 }
@@ -192,7 +210,11 @@ pub fn spawn_zone(
                     parent.spawn(ZoneDecorationTreeBundle::new(
                         main_assets,
                         terrain_materials,
-                        *pos,
+                        Vec3::new(
+                            pos.x,
+                            height.height_at(*pos, Vec3::from(position).xz() + *pos),
+                            pos.y,
+                        ),
                         *scale,
                     ));
                 }

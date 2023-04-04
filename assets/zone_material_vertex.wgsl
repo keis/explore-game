@@ -11,18 +11,18 @@ struct UniformData {
     hover: u32,
     height_amp: f32,
     height_base: f32,
-    outer_amp_ne: f32,
-    outer_amp_e: f32,
     outer_amp_se: f32,
+    outer_amp_s: f32,
     outer_amp_sw: f32,
-    outer_amp_w: f32,
     outer_amp_nw: f32,
-    outer_base_ne: f32,
-    outer_base_e: f32,
+    outer_amp_n: f32,
+    outer_amp_ne: f32,
     outer_base_se: f32,
+    outer_base_s: f32,
     outer_base_sw: f32,
-    outer_base_w: f32,
-    outer_base_nw: f32
+    outer_base_nw: f32,
+    outer_base_n: f32,
+    outer_base_ne: f32,
 }
 
 @group(1) @binding(4)
@@ -59,8 +59,8 @@ fn height_at(position: vec2<f32>, world_position: vec2<f32>) -> f32 {
     var amp: f32;
     var base: f32;
     var dc = length(position);
-    var da = length(abs(position) - vec2<f32>(0.5, 0.8660254));
-    var db = length(abs(position) - vec2<f32>(1.0, 0.0));
+    var da = length(abs(position) - vec2<f32>(0.8660254, 0.5));
+    var db = length(abs(position) - vec2<f32>(0.0, 1.0));
     if dc < 0.7 {
         if uniform_data.explored == 1u {
             amp = uniform_data.height_amp;
@@ -88,16 +88,17 @@ fn height_at(position: vec2<f32>, world_position: vec2<f32>) -> f32 {
             }
         }
     } else {
-        if position.x > 0.0 {
-            amp = uniform_data.outer_amp_e;
-            base = uniform_data.outer_base_e;
+        if position.y > 0.0 {
+            amp = uniform_data.outer_amp_s;
+            base = uniform_data.outer_base_s;
         } else {
-            amp = uniform_data.outer_amp_w;
-            base = uniform_data.outer_base_w;
+            amp = uniform_data.outer_amp_n;
+            base = uniform_data.outer_base_n;
         }
     }
 
-    return base + (simplex_noise_2d(world_position)) * amp;
+    var noise = (1.0 + simplex_noise_2d(world_position)) / 2.0;
+    return base + noise * amp;
 }
 
 @vertex

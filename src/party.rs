@@ -2,7 +2,7 @@ use crate::{
     assets::MainAssets,
     character::Movement,
     indicator::Indicator,
-    map::{HexCoord, MapCommandsExt, MapPresence, Offset, PathGuided, ViewRadius},
+    map::{HeightQuery, HexCoord, MapCommandsExt, MapPresence, Offset, PathGuided, ViewRadius},
     slide::Slide,
     VIEW_RADIUS,
 };
@@ -34,11 +34,15 @@ pub struct PartyBundle {
     pub pbr_bundle: PbrBundle,
 }
 
-pub type PartyParams<'w> = (Res<'w, MainAssets>, ResMut<'w, Assets<StandardMaterial>>);
+pub type PartyParams<'w, 's> = (
+    Res<'w, MainAssets>,
+    ResMut<'w, Assets<StandardMaterial>>,
+    HeightQuery<'w, 's>,
+);
 
 impl PartyBundle {
     pub fn new(
-        (main_assets, standard_materials): &mut PartyParams,
+        (main_assets, standard_materials, height_query): &mut PartyParams,
         position: HexCoord,
         name: String,
         supplies: u32,
@@ -56,7 +60,9 @@ impl PartyBundle {
             pbr_bundle: PbrBundle {
                 mesh: main_assets.indicator_mesh.clone(),
                 material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
-                transform: Transform::from_translation(Vec3::from(position) + offset),
+                transform: Transform::from_translation(
+                    height_query.adjust(position.into()) + offset,
+                ),
                 ..default()
             },
             ..default()

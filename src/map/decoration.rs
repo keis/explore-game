@@ -16,7 +16,7 @@ impl ZoneDecorationCrystalsBundle {
     pub fn new(
         main_assets: &Res<MainAssets>,
         terrain_materials: &mut ResMut<Assets<TerrainMaterial>>,
-        pos: Vec2,
+        translation: Vec3,
         scale: f32,
     ) -> Self {
         Self {
@@ -29,7 +29,7 @@ impl ZoneDecorationCrystalsBundle {
                     ..default()
                 }),
                 visibility: Visibility::Hidden,
-                transform: Transform::from_translation(Vec3::new(pos.x, 0.0, pos.y))
+                transform: Transform::from_translation(translation)
                     .with_scale(Vec3::splat(scale * 0.3)),
                 ..default()
             },
@@ -51,7 +51,7 @@ impl ZoneDecorationTreeBundle {
     pub fn new(
         main_assets: &Res<MainAssets>,
         terrain_materials: &mut ResMut<Assets<TerrainMaterial>>,
-        pos: Vec2,
+        translation: Vec3,
         scale: f32,
     ) -> Self {
         Self {
@@ -64,7 +64,7 @@ impl ZoneDecorationTreeBundle {
                     ..default()
                 }),
                 visibility: Visibility::Hidden,
-                transform: Transform::from_translation(Vec3::new(pos.x, 0.0, pos.y))
+                transform: Transform::from_translation(translation)
                     .with_scale(Vec3::splat(scale * 0.5)),
                 ..default()
             },
@@ -86,6 +86,7 @@ impl ZoneDecorationPortalBundle {
     pub fn new(
         main_assets: &Res<MainAssets>,
         terrain_materials: &mut ResMut<Assets<TerrainMaterial>>,
+        translation: Vec3,
     ) -> Self {
         Self {
             fog: Fog::default(),
@@ -97,7 +98,7 @@ impl ZoneDecorationPortalBundle {
                     ..default()
                 }),
                 visibility: Visibility::Hidden,
-                transform: Transform::from_translation(Vec3::ZERO)
+                transform: Transform::from_translation(translation)
                     .with_scale(Vec3::splat(0.3))
                     .with_rotation(Quat::from_rotation_y(10.0)),
                 ..default()
