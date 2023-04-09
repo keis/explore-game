@@ -16,7 +16,7 @@ use explore_game::{
     interface::InterfacePlugin,
     light,
     map::{start_map_generation, MapPlugin, MapSeed},
-    material::{TerrainMaterialPlugin, ZoneMaterialPlugin},
+    material::{TerrainMaterialPlugin, WaterMaterialPlugin, ZoneMaterialPlugin},
     party::{derive_party_movement, despawn_empty_party},
     scene,
     slide::{slide, SlideEvent},
@@ -76,6 +76,7 @@ fn main() {
         .add_plugin(MapPlugin)
         .add_plugin(ZoneMaterialPlugin)
         .add_plugin(TerrainMaterialPlugin)
+        .add_plugin(WaterMaterialPlugin)
         .add_plugin(ActionPlugin)
         .add_startup_system(spawn_camera)
         .add_startup_system(light::spawn_light)

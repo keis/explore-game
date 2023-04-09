@@ -9,7 +9,7 @@ use crate::{
     assets::MainAssets,
     camp::Camp,
     crystals::CrystalDeposit,
-    material::{TerrainMaterial, ZoneMaterial},
+    material::{TerrainMaterial, WaterMaterial, ZoneMaterial},
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
 use glam::Vec3Swizzles;
@@ -143,13 +143,13 @@ pub type ZoneParams<'w> = (
     Res<'w, HexAssets>,
     ResMut<'w, Assets<ZoneMaterial>>,
     ResMut<'w, Assets<TerrainMaterial>>,
-    ResMut<'w, Assets<StandardMaterial>>,
+    ResMut<'w, Assets<WaterMaterial>>,
 );
 
 #[allow(clippy::type_complexity)]
 pub fn spawn_zone(
     commands: &mut Commands,
-    (main_assets, hex_assets, zone_materials, terrain_materials, standard_materials): &mut ZoneParams,
+    (main_assets, hex_assets, zone_materials, terrain_materials, water_materials): &mut ZoneParams,
     position: HexCoord,
     prototype: &ZonePrototype,
 ) -> Entity {
@@ -226,7 +226,9 @@ pub fn spawn_zone(
                     NotShadowCaster,
                     MaterialMeshBundle {
                         mesh: hex_assets.mesh.clone(),
-                        material: standard_materials.add(Color::rgba(0.1, 0.1, 0.8, 0.4).into()),
+                        material: water_materials.add(WaterMaterial {
+                            color: Color::rgba(0.1, 0.1, 0.8, 0.4),
+                        }),
                         transform: Transform::from_translation(Vec3::new(0.0, -0.1, 0.0)),
                         ..default()
                     },
