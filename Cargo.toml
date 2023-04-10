@@ -22,7 +22,7 @@ bevy = { version = "0.10", features = ["wayland", "dynamic_linking"] }
 clap = {version = "4.2.1", features = ["derive"] }
 expl_hexgrid = { path = "crates/expl_hexgrid" }
 expl_wfc = { path = "crates/expl_wfc" }
-futures-lite = "1.12.0"
+futures-lite = "1.13.0"
 glam = "0.23.0"
 hexasphere = "8.0.0"
 interpolation = "0.2.0"
