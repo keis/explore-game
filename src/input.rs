@@ -3,9 +3,9 @@
 use crate::{
     action::{GameAction, GameActionQueue},
     camera::{CameraControl, CameraTarget},
-    character::Movement,
     interface::MenuLayer,
     map::{MapPosition, MapPresence, PathGuided, Zone},
+    selection::NextSelectionQuery,
 };
 use bevy::prelude::*;
 use bevy_mod_picking::{DefaultPickingPlugins, PickingEvent, Selection};
@@ -105,48 +105,20 @@ fn handle_deselect(
     }
 }
 
-fn _find_next(
-    party_query: &Query<(Entity, &mut Selection, &MapPresence, Option<&Movement>)>,
-) -> Option<Entity> {
-    let mut selected = None;
-    for (entity, selection, _, m) in party_query.iter() {
-        if selection.selected() {
-            selected = Some(entity);
-        } else if let Some(movement) = m {
-            if selected.is_some() && movement.points > 0 {
-                return Some(entity);
-            }
-        }
-    }
-
-    for (entity, _, _, m) in party_query.iter() {
-        if selected == Some(entity) {
-            break;
-        }
-        if let Some(movement) = m {
-            if movement.points > 0 {
-                if selected == Some(entity) {
-                    return None;
-                }
-                return Some(entity);
-            }
-        }
-    }
-
-    None
-}
-
 fn handle_select_next(
     mut commands: Commands,
     action_state_query: Query<&ActionState<Action>>,
-    mut party_query: Query<(Entity, &mut Selection, &MapPresence, Option<&Movement>)>,
+    mut selection_param_set: ParamSet<(
+        NextSelectionQuery,
+        Query<(Entity, &mut Selection, &MapPresence)>,
+    )>,
     camera_query: Query<Entity, With<CameraControl>>,
 ) {
     let action_state = action_state_query.single();
     let camera_entity = camera_query.single();
     if action_state.just_pressed(Action::SelectNext) {
-        let Some(next) = _find_next(&party_query) else { return };
-        for (entity, mut selection, presence, _) in party_query.iter_mut() {
+        let Some(next) = selection_param_set.p0().get() else { return };
+        for (entity, mut selection, presence) in &mut selection_param_set.p1() {
             if entity == next {
                 selection.set_selected(true);
                 commands
@@ -171,5 +143,80 @@ fn handle_picking_events(
         for (entity, _) in presence_query.iter().filter(|(_, s)| s.selected()) {
             game_action_queue.add(GameAction::MoveTo(entity, zone_position.0));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{handle_select_next, Action, ActionState, CameraControl, MapPresence, Selection};
+    use crate::{character::Movement, map::tests::spawn_game_map};
+    use bevy::prelude::*;
+    use rstest::*;
+
+    #[fixture]
+    pub fn app() -> App {
+        let mut app = App::new();
+        let map_entity = spawn_game_map(&mut app);
+        app.world.spawn(ActionState::<Action>::default());
+        app.world.spawn(CameraControl::default());
+        app.world.spawn((
+            MapPresence {
+                map: map_entity,
+                position: (1, 1).into(),
+            },
+            Selection::default(),
+            Movement { points: 2 },
+        ));
+        app.world.spawn((
+            MapPresence {
+                map: map_entity,
+                position: (2, 0).into(),
+            },
+            Selection::default(),
+            Movement { points: 2 },
+        ));
+        app
+    }
+
+    pub fn get_selected_entities(app: &mut App) -> Vec<Entity> {
+        app.world
+            .query::<(Entity, &Selection)>()
+            .iter(&app.world)
+            .filter(|(_, s)| s.selected())
+            .map(|(e, _)| e)
+            .collect()
+    }
+
+    pub fn press_select_next(app: &mut App) {
+        app.world
+            .query::<&mut ActionState<Action>>()
+            .single_mut(&mut app.world)
+            .press(Action::SelectNext);
+    }
+
+    #[rstest]
+    pub fn select_next(mut app: App) {
+        app.add_system(handle_select_next);
+
+        press_select_next(&mut app);
+        app.update();
+
+        let selected1 = get_selected_entities(&mut app);
+
+        press_select_next(&mut app);
+        app.update();
+
+        let selected2 = get_selected_entities(&mut app);
+
+        press_select_next(&mut app);
+        app.update();
+
+        let selected3 = get_selected_entities(&mut app);
+
+        assert_eq!(selected1.len(), 1);
+        assert_eq!(selected2.len(), 1);
+        assert_eq!(selected3.len(), 1);
+        assert_ne!(selected1[0], selected2[0]);
+        assert_eq!(selected1[0], selected3[0]);
     }
 }

@@ -95,15 +95,13 @@ fn log_moves(
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{GameMap, Terrain, Zone};
     use bevy::prelude::*;
     use expl_hexgrid::layout::SquareGridLayout;
     use rstest::*;
 
-    #[fixture]
-    pub fn app() -> App {
-        let mut app = App::new();
+    pub fn spawn_game_map(app: &mut App) -> Entity {
         let tiles = app
             .world
             .spawn_batch(vec![
@@ -136,13 +134,21 @@ mod tests {
                 },
             ])
             .collect();
-        app.world.spawn(GameMap::new(
-            SquareGridLayout {
-                width: 3,
-                height: 3,
-            },
-            tiles,
-        ));
+        app.world
+            .spawn(GameMap::new(
+                SquareGridLayout {
+                    width: 3,
+                    height: 3,
+                },
+                tiles,
+            ))
+            .id()
+    }
+
+    #[fixture]
+    pub fn app() -> App {
+        let mut app = App::new();
+        spawn_game_map(&mut app);
         app
     }
 }
