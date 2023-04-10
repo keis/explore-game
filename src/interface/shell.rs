@@ -7,16 +7,12 @@ use super::{
     InterfaceAssets,
 };
 use crate::{
-    action::GameAction,
-    camp::Camp,
-    character::Character,
-    map::{GameMap, MapPosition, MapPresence, Zone},
-    party::{Group, Party},
+    input::{Action, ActionState},
+    map::{MapPosition, Zone},
     turn::Turn,
 };
 use bevy::{prelude::*, ui::FocusPolicy};
-use bevy_mod_picking::{HoverEvent, PickingEvent, Selection};
-use smallvec::SmallVec;
+use bevy_mod_picking::{HoverEvent, PickingEvent};
 
 #[derive(Component)]
 pub struct Shell;
@@ -31,25 +27,7 @@ pub struct TurnButton;
 pub struct TurnText;
 
 #[derive(Component)]
-pub struct MoveButton;
-
-#[derive(Component)]
-pub struct CampButton;
-
-#[derive(Component)]
-pub struct BreakCampButton;
-
-#[derive(Component)]
-pub struct CreatePartyButton;
-
-#[derive(Component)]
-pub struct SplitPartyButton;
-
-#[derive(Component)]
-pub struct MergePartyButton;
-
-#[derive(Component)]
-pub struct CollectCrystalsButton;
+pub struct ActionButton(Action);
 
 fn spawn_toolbar_icon(
     parent: &mut ChildBuilder,
@@ -147,49 +125,49 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     spawn_toolbar_icon(
                         parent,
                         &assets,
-                        MoveButton,
+                        ActionButton(Action::ResumeMove),
                         assets.arrow_icon.clone(),
-                        "Continue movement",
+                        "Resume move",
                     );
                     spawn_toolbar_icon(
                         parent,
                         &assets,
-                        CampButton,
+                        ActionButton(Action::Camp),
                         assets.campfire_icon.clone(),
                         "Make/Enter camp",
                     );
                     spawn_toolbar_icon(
                         parent,
                         &assets,
-                        BreakCampButton,
+                        ActionButton(Action::BreakCamp),
                         assets.cancel_icon.clone(),
                         "Break camp",
                     );
                     spawn_toolbar_icon(
                         parent,
                         &assets,
-                        CreatePartyButton,
+                        ActionButton(Action::CreateParty),
                         assets.knapsack_icon.clone(),
                         "Create party",
                     );
                     spawn_toolbar_icon(
                         parent,
                         &assets,
-                        SplitPartyButton,
+                        ActionButton(Action::SplitParty),
                         assets.back_forth_icon.clone(),
                         "Split selected from party",
                     );
                     spawn_toolbar_icon(
                         parent,
                         &assets,
-                        MergePartyButton,
+                        ActionButton(Action::MergeParty),
                         assets.contract_icon.clone(),
                         "Merge selected parties",
                     );
                     spawn_toolbar_icon(
                         parent,
                         &assets,
-                        CollectCrystalsButton,
+                        ActionButton(Action::CollectCrystals),
                         assets.crystals_icon.clone(),
                         "Collect crystals",
                     );
@@ -251,16 +229,12 @@ pub fn update_zone_text(
     }
 }
 
-pub fn handle_move_button_interaction(
-    interaction_query: Query<&Interaction, (With<MoveButton>, Changed<Interaction>)>,
-    party_query: Query<(Entity, &Selection), With<Party>>,
-    mut game_action_event: EventWriter<GameAction>,
+pub fn handle_action_button_interaction(
+    interaction_query: Query<(&ActionButton, &Interaction), Changed<Interaction>>,
+    mut action_state: ResMut<ActionState<Action>>,
 ) {
-    if let Ok(Interaction::Clicked) = interaction_query.get_single() {
-        for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
-            game_action_event.send(GameAction::ResumeMove(entity));
-        }
-    }
+    let Ok((ActionButton(action), Interaction::Clicked)) = interaction_query.get_single() else { return };
+    action_state.press(*action);
 }
 
 pub fn handle_turn_button_interaction(
@@ -269,102 +243,5 @@ pub fn handle_turn_button_interaction(
 ) {
     if let Ok(Interaction::Clicked) = interaction_query.get_single() {
         turn.number += 1;
-    }
-}
-
-pub fn handle_camp_button_interaction(
-    interaction_query: Query<&Interaction, (With<CampButton>, Changed<Interaction>)>,
-    party_query: Query<(Entity, &MapPresence, &Selection), With<Party>>,
-    map_query: Query<&GameMap>,
-    camp_query: Query<Entity, With<Camp>>,
-    mut game_action_event: EventWriter<GameAction>,
-) {
-    if let Ok(Interaction::Clicked) = interaction_query.get_single() {
-        for (entity, presence, _) in party_query.iter().filter(|(_, _, s)| s.selected()) {
-            let Ok(map) = map_query.get(presence.map) else { continue };
-            if let Some(camp_entity) = camp_query.iter_many(map.presence(presence.position)).next()
-            {
-                game_action_event.send(GameAction::EnterCamp(entity, camp_entity));
-            } else {
-                game_action_event.send(GameAction::MakeCamp(entity));
-            }
-        }
-    }
-}
-
-pub fn handle_break_camp_button_interaction(
-    interaction_query: Query<&Interaction, (With<BreakCampButton>, Changed<Interaction>)>,
-    party_query: Query<(Entity, &Selection), With<Party>>,
-    mut game_action_event: EventWriter<GameAction>,
-) {
-    if let Ok(Interaction::Clicked) = interaction_query.get_single() {
-        for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
-            game_action_event.send(GameAction::BreakCamp(entity));
-        }
-    }
-}
-
-pub fn handle_create_party_button_interaction(
-    interaction_query: Query<&Interaction, (With<CreatePartyButton>, Changed<Interaction>)>,
-    camp_query: Query<(Entity, &Group, &Selection), With<Camp>>,
-    character_query: Query<(Entity, &Selection), With<Character>>,
-    mut game_action_event: EventWriter<GameAction>,
-) {
-    let Ok(Interaction::Clicked) = interaction_query.get_single() else { return };
-    for (entity, group, _) in camp_query.iter().filter(|(_, _, s)| s.selected()) {
-        let selected: SmallVec<[Entity; 8]> = character_query
-            .iter_many(&group.members)
-            .filter(|(_, s)| s.selected())
-            .map(|(e, _)| e)
-            .collect();
-        if !selected.is_empty() {
-            game_action_event.send(GameAction::CreatePartyFromCamp(entity, selected));
-        }
-    }
-}
-
-pub fn handle_split_party_button_interaction(
-    interaction_query: Query<&Interaction, (With<SplitPartyButton>, Changed<Interaction>)>,
-    party_query: Query<(Entity, &Group, &Selection), With<Party>>,
-    character_query: Query<(Entity, &Selection), With<Character>>,
-    mut game_action_event: EventWriter<GameAction>,
-) {
-    let Ok(Interaction::Clicked) = interaction_query.get_single() else { return };
-    for (entity, group, _) in party_query.iter().filter(|(_, _, s)| s.selected()) {
-        let selected: SmallVec<[Entity; 8]> = character_query
-            .iter_many(&group.members)
-            .filter(|(_, s)| s.selected())
-            .map(|(e, _)| e)
-            .collect();
-        if !selected.is_empty() {
-            game_action_event.send(GameAction::SplitParty(entity, selected));
-        }
-    }
-}
-
-pub fn handle_merge_party_button_interaction(
-    interaction_query: Query<&Interaction, (With<MergePartyButton>, Changed<Interaction>)>,
-    party_query: Query<(Entity, &Selection), With<Party>>,
-    mut game_action_event: EventWriter<GameAction>,
-) {
-    let Ok(Interaction::Clicked) = interaction_query.get_single() else { return };
-    let selected_parties: SmallVec<[Entity; 8]> = party_query
-        .iter()
-        .filter(|(_, s)| s.selected())
-        .map(|(e, _)| e)
-        .collect();
-    if !selected_parties.is_empty() {
-        game_action_event.send(GameAction::MergeParty(selected_parties));
-    }
-}
-
-pub fn handle_collect_crystals_button_interaction(
-    interaction_query: Query<&Interaction, (With<CollectCrystalsButton>, Changed<Interaction>)>,
-    party_query: Query<(Entity, &Selection), With<Party>>,
-    mut game_action_event: EventWriter<GameAction>,
-) {
-    let Ok(Interaction::Clicked) = interaction_query.get_single() else { return };
-    for (party, _) in party_query.iter().filter(|(_, s)| s.selected()) {
-        game_action_event.send(GameAction::CollectCrystals(party));
     }
 }

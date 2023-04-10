@@ -87,11 +87,10 @@ pub fn spawn_menu(mut commands: Commands, assets: Res<InterfaceAssets>) {
 }
 
 pub fn handle_toggle_main_menu(
-    action_state_query: Query<&ActionState<Action>>,
+    action_state: Res<ActionState<Action>>,
     mut menu_layer_query: Query<&mut Visibility, With<MenuLayer>>,
     mut shell_query: Query<&mut Visibility, (With<Shell>, Without<MenuLayer>)>,
 ) {
-    let action_state = action_state_query.single();
     if action_state.just_pressed(Action::ToggleMainMenu) {
         let mut menu_layer_visibility = menu_layer_query.single_mut();
         let mut shell_visibility = shell_query.single_mut();

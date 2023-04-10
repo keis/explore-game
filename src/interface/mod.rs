@@ -9,7 +9,7 @@ mod color;
 mod databinding;
 mod menu;
 mod party;
-mod shell;
+pub mod shell;
 mod stat;
 mod tooltip;
 
@@ -51,14 +51,8 @@ impl Plugin for InterfacePlugin {
             (
                 shell::update_turn_text,
                 shell::update_zone_text,
-                shell::handle_move_button_interaction,
+                shell::handle_action_button_interaction,
                 shell::handle_turn_button_interaction,
-                shell::handle_camp_button_interaction,
-                shell::handle_break_camp_button_interaction,
-                shell::handle_create_party_button_interaction,
-                shell::handle_split_party_button_interaction,
-                shell::handle_merge_party_button_interaction,
-                shell::handle_collect_crystals_button_interaction,
                 tooltip::show_tooltip_on_hover,
             )
                 .in_set(OnUpdate(State::Running)),

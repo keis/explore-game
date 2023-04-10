@@ -178,6 +178,8 @@ pub fn handle_resume_move(
 ) {
     for event in &mut events {
         let GameAction::ResumeMove(e) = event else { continue };
+        queue.current.take();
+
         let Ok(pathguided) = path_guided_query.get(*e) else { continue };
 
         if let Some(next) = pathguided.next() {
@@ -191,6 +193,7 @@ pub fn handle_make_camp(
     mut commands: Commands,
     mut spawn_camp_params: CampParams,
     mut events: EventReader<GameAction>,
+    mut queue: ResMut<GameActionQueue>,
     map_query: Query<(Entity, &GameMap)>,
     zone_query: Query<&Zone>,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
@@ -198,6 +201,8 @@ pub fn handle_make_camp(
 ) {
     for event in &mut events {
         let GameAction::MakeCamp(party_entity) = event else { continue };
+        queue.current.take();
+
         let Ok((mut party, group, presence)) = party_query.get_mut(*party_entity) else { continue };
         let Ok((map_entity, map)) = map_query.get(presence.map) else { continue };
         let Some(zone) = map.get(presence.position).and_then(|&e| zone_query.get(e).ok()) else { continue };
@@ -245,12 +250,15 @@ pub fn handle_make_camp(
 pub fn handle_break_camp(
     mut commands: Commands,
     mut events: EventReader<GameAction>,
+    mut queue: ResMut<GameActionQueue>,
     mut party_query: Query<(&mut Party, &MapPresence)>,
     mut map_query: Query<(Entity, &GameMap)>,
     camp_query: Query<(Entity, &Camp, &Group)>,
 ) {
     for event in &mut events {
         let GameAction::BreakCamp(e) = event else { continue };
+        queue.current.take();
+
         let Ok((mut party, presence)) = party_query.get_mut(*e) else { continue };
         let Ok((map_entity, map)) = map_query.get_mut(presence.map) else { continue };
         let Some((camp_entity, camp, group)) = camp_query.iter_many(map.presence(presence.position)).next() else { continue };
@@ -267,11 +275,14 @@ pub fn handle_break_camp(
 pub fn handle_enter_camp(
     mut commands: Commands,
     mut events: EventReader<GameAction>,
+    mut queue: ResMut<GameActionQueue>,
     mut party_query: Query<(&mut Party, &Group)>,
     mut camp_query: Query<&mut Camp>,
 ) {
     for event in &mut events {
         let GameAction::EnterCamp(party_entity, camp_entity) = event else { continue };
+        queue.current.take();
+
         let Ok((mut party, group)) = party_query.get_mut(*party_entity) else { continue };
         let Ok(mut camp) = camp_query.get_mut(*camp_entity) else { continue };
         camp.supplies += party.supplies;
@@ -286,10 +297,13 @@ pub fn handle_create_party_from_camp(
     mut commands: Commands,
     mut spawn_party_params: PartyParams,
     mut events: EventReader<GameAction>,
+    mut queue: ResMut<GameActionQueue>,
     mut camp_query: Query<(&mut Camp, &MapPresence)>,
 ) {
     for event in &mut events {
         let GameAction::CreatePartyFromCamp(camp_entity, characters) = event else { continue };
+        queue.current.take();
+
         info!("Creating party at camp {:?} {:?}", camp_entity, characters);
         let (mut camp, presence) = camp_query.get_mut(*camp_entity).unwrap();
         let new_supplies = if camp.supplies > 0 {
@@ -317,10 +331,12 @@ pub fn handle_split_party(
     mut commands: Commands,
     mut spawn_party_params: PartyParams,
     mut events: EventReader<GameAction>,
+    mut queue: ResMut<GameActionQueue>,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
 ) {
     for event in &mut events {
         let GameAction::SplitParty(party_entity, characters) = event else { continue };
+        queue.current.take();
 
         let (mut party, group, presence) = party_query.get_mut(*party_entity).unwrap();
         if group.members.len() == characters.len() {
@@ -351,10 +367,13 @@ pub fn handle_split_party(
 pub fn handle_merge_party(
     mut commands: Commands,
     mut events: EventReader<GameAction>,
+    mut queue: ResMut<GameActionQueue>,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
 ) {
     for event in &mut events {
         let GameAction::MergeParty(parties) = event else { continue };
+        queue.current.take();
+
         let [target, rest @ ..] = parties.as_slice() else { continue };
         let target_position = party_query
             .get(*target)
@@ -384,12 +403,15 @@ pub fn handle_merge_party(
 
 pub fn handle_collect_crystals(
     mut events: EventReader<GameAction>,
+    mut queue: ResMut<GameActionQueue>,
     mut party_query: Query<(&mut Party, &MapPresence)>,
     map_query: Query<&GameMap>,
     mut crystal_deposit_query: Query<&mut CrystalDeposit>,
 ) {
     for event in &mut events {
         let GameAction::CollectCrystals(party_entity) = event else { continue };
+        queue.current.take();
+
         let Ok((mut party, presence)) = party_query.get_mut(*party_entity) else { continue };
         let Ok(map) = map_query.get(presence.map) else { continue };
         let Some(mut crystal_deposit) = map

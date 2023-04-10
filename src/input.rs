@@ -3,14 +3,19 @@
 use crate::{
     action::{GameAction, GameActionQueue},
     camera::{CameraControl, CameraTarget},
+    camp::Camp,
+    character::Character,
     interface::MenuLayer,
-    map::{MapPosition, MapPresence, PathGuided, Zone},
+    map::{GameMap, MapPosition, MapPresence, PathGuided, Zone},
+    party::{Group, Party},
     selection::NextSelectionQuery,
+    State,
 };
 use bevy::prelude::*;
 use bevy_mod_picking::{DefaultPickingPlugins, PickingEvent, Selection};
 use leafwing_input_manager::plugin::InputManagerSystem;
-pub use leafwing_input_manager::prelude::*;
+pub use leafwing_input_manager::{common_conditions::action_just_pressed, prelude::*};
+use smallvec::SmallVec;
 
 pub struct InputPlugin;
 
@@ -18,11 +23,27 @@ impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPickingPlugins)
             .add_plugin(InputManagerPlugin::<Action>::default())
-            .add_startup_system(spawn_input_manager)
-            .add_systems((handle_deselect, handle_select_next))
+            .init_resource::<ActionState<Action>>()
+            .insert_resource(input_map())
+            .add_systems(
+                (
+                    handle_deselect.run_if(action_just_pressed(Action::Deselect)),
+                    handle_select_next.run_if(action_just_pressed(Action::SelectNext)),
+                    handle_resume_move.run_if(action_just_pressed(Action::ResumeMove)),
+                    handle_camp.run_if(action_just_pressed(Action::Camp)),
+                    handle_break_camp.run_if(action_just_pressed(Action::BreakCamp)),
+                    handle_create_party.run_if(action_just_pressed(Action::CreateParty)),
+                    handle_split_party.run_if(action_just_pressed(Action::SplitParty)),
+                    handle_merge_party.run_if(action_just_pressed(Action::MergeParty)),
+                    handle_collect_crystals.run_if(action_just_pressed(Action::CollectCrystals)),
+                )
+                    .after(InputManagerSystem::ManualControl)
+                    .in_set(OnUpdate(State::Running)),
+            )
             .add_system(
                 magic_cancel
                     .after(InputManagerSystem::ManualControl)
+                    .run_if(action_just_pressed(Action::Cancel))
                     .in_base_set(CoreSet::PreUpdate),
             )
             .add_system(handle_picking_events.in_base_set(CoreSet::PostUpdate));
@@ -31,53 +52,54 @@ impl Plugin for InputPlugin {
 
 #[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum Action {
+    BreakCamp,
+    Camp,
+    Cancel,
+    CollectCrystals,
+    CreateParty,
+    Deselect,
+    MergeParty,
+    MultiSelect,
     PanCamera,
-    PanCameraMotion,
-    PanCameraUp,
     PanCameraDown,
     PanCameraLeft,
+    PanCameraMotion,
     PanCameraRight,
-    ZoomCamera,
-    MultiSelect,
-    Cancel,
-    ToggleMainMenu,
-    Deselect,
+    PanCameraUp,
+    ResumeMove,
     SelectNext,
+    SplitParty,
+    ToggleMainMenu,
+    ZoomCamera,
 }
 
-fn spawn_input_manager(mut commands: Commands) {
-    commands.spawn(InputManagerBundle {
-        action_state: ActionState::default(),
-        input_map: InputMap::default()
-            .insert(KeyCode::Up, Action::PanCameraUp)
-            .insert(KeyCode::Down, Action::PanCameraDown)
-            .insert(KeyCode::Left, Action::PanCameraLeft)
-            .insert(KeyCode::Right, Action::PanCameraRight)
-            .insert(KeyCode::LControl, Action::MultiSelect)
-            .insert(KeyCode::Escape, Action::Cancel)
-            .insert(KeyCode::Space, Action::SelectNext)
-            .insert(SingleAxis::mouse_wheel_y(), Action::ZoomCamera)
-            .insert(MouseButton::Right, Action::PanCamera)
-            .insert(DualAxis::mouse_motion(), Action::PanCameraMotion)
-            .build(),
-    });
+fn input_map() -> InputMap<Action> {
+    InputMap::default()
+        .insert(KeyCode::Up, Action::PanCameraUp)
+        .insert(KeyCode::Down, Action::PanCameraDown)
+        .insert(KeyCode::Left, Action::PanCameraLeft)
+        .insert(KeyCode::Right, Action::PanCameraRight)
+        .insert(KeyCode::LControl, Action::MultiSelect)
+        .insert(KeyCode::Escape, Action::Cancel)
+        .insert(KeyCode::Space, Action::SelectNext)
+        .insert(SingleAxis::mouse_wheel_y(), Action::ZoomCamera)
+        .insert(MouseButton::Right, Action::PanCamera)
+        .insert(DualAxis::mouse_motion(), Action::PanCameraMotion)
+        .build()
 }
 
 fn magic_cancel(
-    mut action_state_query: Query<&mut ActionState<Action>>,
+    mut action_state: ResMut<ActionState<Action>>,
     menu_layer_query: Query<&Visibility, With<MenuLayer>>,
     selection_query: Query<&Selection>,
 ) {
-    let mut action_state = action_state_query.single_mut();
     let actiondata = action_state.action_data(Action::Cancel).clone();
 
     // Close menu
-    if action_state.just_pressed(Action::Cancel) {
-        if let Ok(menu_layer_visibility) = menu_layer_query.get_single() {
-            if *menu_layer_visibility == Visibility::Inherited {
-                action_state.set_action_data(Action::ToggleMainMenu, actiondata);
-                return;
-            }
+    if let Ok(menu_layer_visibility) = menu_layer_query.get_single() {
+        if *menu_layer_visibility == Visibility::Inherited {
+            action_state.set_action_data(Action::ToggleMainMenu, actiondata);
+            return;
         }
     }
 
@@ -91,42 +113,32 @@ fn magic_cancel(
     action_state.set_action_data(Action::ToggleMainMenu, actiondata);
 }
 
-fn handle_deselect(
-    action_state_query: Query<&ActionState<Action>>,
-    mut selection_query: Query<&mut Selection>,
-) {
-    let action_state = action_state_query.single();
-    if action_state.just_pressed(Action::Deselect) {
-        for mut selection in selection_query.iter_mut() {
-            if selection.selected() {
-                selection.set_selected(false);
-            }
+fn handle_deselect(mut selection_query: Query<&mut Selection>) {
+    for mut selection in selection_query.iter_mut() {
+        if selection.selected() {
+            selection.set_selected(false);
         }
     }
 }
 
 fn handle_select_next(
     mut commands: Commands,
-    action_state_query: Query<&ActionState<Action>>,
     mut selection_param_set: ParamSet<(
         NextSelectionQuery,
         Query<(Entity, &mut Selection, &MapPresence)>,
     )>,
     camera_query: Query<Entity, With<CameraControl>>,
 ) {
-    let action_state = action_state_query.single();
     let camera_entity = camera_query.single();
-    if action_state.just_pressed(Action::SelectNext) {
-        let Some(next) = selection_param_set.p0().get() else { return };
-        for (entity, mut selection, presence) in &mut selection_param_set.p1() {
-            if entity == next {
-                selection.set_selected(true);
-                commands
-                    .entity(camera_entity)
-                    .insert(CameraTarget::from_hexcoord(presence.position));
-            } else if selection.selected() {
-                selection.set_selected(false);
-            }
+    let Some(next) = selection_param_set.p0().get() else { return };
+    for (entity, mut selection, presence) in &mut selection_param_set.p1() {
+        if entity == next {
+            selection.set_selected(true);
+            commands
+                .entity(camera_entity)
+                .insert(CameraTarget::from_hexcoord(presence.position));
+        } else if selection.selected() {
+            selection.set_selected(false);
         }
     }
 }
@@ -146,6 +158,98 @@ fn handle_picking_events(
     }
 }
 
+pub fn handle_resume_move(
+    party_query: Query<(Entity, &Selection), With<Party>>,
+    mut game_action_queue: ResMut<GameActionQueue>,
+) {
+    for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
+        game_action_queue.add(GameAction::ResumeMove(entity));
+    }
+}
+
+pub fn handle_camp(
+    party_query: Query<(Entity, &MapPresence, &Selection), With<Party>>,
+    map_query: Query<&GameMap>,
+    camp_query: Query<Entity, With<Camp>>,
+    mut game_action_queue: ResMut<GameActionQueue>,
+) {
+    info!("handle camp");
+    for (entity, presence, _) in party_query.iter().filter(|(_, _, s)| s.selected()) {
+        let Ok(map) = map_query.get(presence.map) else { continue };
+        if let Some(camp_entity) = camp_query.iter_many(map.presence(presence.position)).next() {
+            game_action_queue.add(GameAction::EnterCamp(entity, camp_entity));
+        } else {
+            game_action_queue.add(GameAction::MakeCamp(entity));
+        }
+    }
+}
+
+pub fn handle_break_camp(
+    party_query: Query<(Entity, &Selection), With<Party>>,
+    mut game_action_queue: ResMut<GameActionQueue>,
+) {
+    for (entity, _) in party_query.iter().filter(|(_, s)| s.selected()) {
+        game_action_queue.add(GameAction::BreakCamp(entity));
+    }
+}
+
+pub fn handle_create_party(
+    camp_query: Query<(Entity, &Group, &Selection), With<Camp>>,
+    character_query: Query<(Entity, &Selection), With<Character>>,
+    mut game_action_queue: ResMut<GameActionQueue>,
+) {
+    for (entity, group, _) in camp_query.iter().filter(|(_, _, s)| s.selected()) {
+        let selected: SmallVec<[Entity; 8]> = character_query
+            .iter_many(&group.members)
+            .filter(|(_, s)| s.selected())
+            .map(|(e, _)| e)
+            .collect();
+        if !selected.is_empty() {
+            game_action_queue.add(GameAction::CreatePartyFromCamp(entity, selected));
+        }
+    }
+}
+
+pub fn handle_split_party(
+    party_query: Query<(Entity, &Group, &Selection), With<Party>>,
+    character_query: Query<(Entity, &Selection), With<Character>>,
+    mut game_action_queue: ResMut<GameActionQueue>,
+) {
+    for (entity, group, _) in party_query.iter().filter(|(_, _, s)| s.selected()) {
+        let selected: SmallVec<[Entity; 8]> = character_query
+            .iter_many(&group.members)
+            .filter(|(_, s)| s.selected())
+            .map(|(e, _)| e)
+            .collect();
+        if !selected.is_empty() {
+            game_action_queue.add(GameAction::SplitParty(entity, selected));
+        }
+    }
+}
+
+pub fn handle_merge_party(
+    party_query: Query<(Entity, &Selection), With<Party>>,
+    mut game_action_queue: ResMut<GameActionQueue>,
+) {
+    let selected_parties: SmallVec<[Entity; 8]> = party_query
+        .iter()
+        .filter(|(_, s)| s.selected())
+        .map(|(e, _)| e)
+        .collect();
+    if !selected_parties.is_empty() {
+        game_action_queue.add(GameAction::MergeParty(selected_parties));
+    }
+}
+
+pub fn handle_collect_crystals(
+    party_query: Query<(Entity, &Selection), With<Party>>,
+    mut game_action_queue: ResMut<GameActionQueue>,
+) {
+    for (party, _) in party_query.iter().filter(|(_, s)| s.selected()) {
+        game_action_queue.add(GameAction::CollectCrystals(party));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{handle_select_next, Action, ActionState, CameraControl, MapPresence, Selection};
@@ -157,7 +261,7 @@ mod tests {
     pub fn app() -> App {
         let mut app = App::new();
         let map_entity = spawn_game_map(&mut app);
-        app.world.spawn(ActionState::<Action>::default());
+        app.insert_resource(ActionState::<Action>::default());
         app.world.spawn(CameraControl::default());
         app.world.spawn((
             MapPresence {
@@ -189,8 +293,7 @@ mod tests {
 
     pub fn press_select_next(app: &mut App) {
         app.world
-            .query::<&mut ActionState<Action>>()
-            .single_mut(&mut app.world)
+            .resource_mut::<ActionState<Action>>()
             .press(Action::SelectNext);
     }
 
