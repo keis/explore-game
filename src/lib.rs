@@ -15,6 +15,7 @@ pub mod material;
 pub mod party;
 pub mod path;
 pub mod scene;
+pub mod selection;
 pub mod slide;
 pub mod turn;
 

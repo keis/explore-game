@@ -188,11 +188,10 @@ pub fn update_character_health(
 }
 
 pub fn handle_character_display_interaction(
-    action_state_query: Query<&ActionState<Action>>,
+    action_state: Res<ActionState<Action>>,
     interaction_query: Query<(&Interaction, &CharacterDisplay), Changed<Interaction>>,
     mut selection_query: Query<(Entity, &mut Selection), With<Character>>,
 ) {
-    let action_state = action_state_query.single();
     if let Ok((Interaction::Clicked, display)) = interaction_query.get_single() {
         if let Ok((entity, mut selection)) = selection_query.get_mut(display.character) {
             if action_state.pressed(Action::MultiSelect) {

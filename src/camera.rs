@@ -76,10 +76,9 @@ impl CameraTarget {
 fn camera_control(
     time: Res<Time>,
     mut camera_query: Query<(&Transform, &CameraBounds, &mut CameraControl)>,
-    action_state_query: Query<&ActionState<Action>>,
+    action_state: Res<ActionState<Action>>,
 ) {
     let (transform, bounds, mut control) = camera_query.single_mut();
-    let action_state = action_state_query.single();
     let acceleration = control.acceleration;
     let mut delta = Vec3::ZERO;
 
@@ -170,9 +169,8 @@ fn camera_movement(time: Res<Time>, mut camera_query: Query<(&mut Transform, &mu
 
 fn cursor_grab(
     mut window_query: Query<&mut Window, With<PrimaryWindow>>,
-    action_state_query: Query<&ActionState<Action>>,
+    action_state: Res<ActionState<Action>>,
 ) {
-    let Ok(action_state) = action_state_query.get_single() else { return };
     let Ok(mut window) = window_query.get_single_mut() else { return };
 
     if action_state.just_pressed(Action::PanCamera) {
@@ -211,7 +209,7 @@ mod tests {
         let last_update = time.last_update().unwrap();
         time.update_with_instant(last_update + Duration::from_millis(10));
 
-        app.world.spawn(ActionState::<Action>::default());
+        app.insert_resource(ActionState::<Action>::default());
 
         app
     }
@@ -261,11 +259,9 @@ mod tests {
             ))
             .id();
 
-        let mut action_state = app
-            .world
-            .query::<&mut ActionState<Action>>()
-            .single_mut(&mut app.world);
-        action_state.press(Action::PanCameraRight);
+        app.world
+            .resource_mut::<ActionState<Action>>()
+            .press(Action::PanCameraRight);
 
         app.update();
 
@@ -288,11 +284,9 @@ mod tests {
             ))
             .id();
 
-        let mut action_state = app
-            .world
-            .query::<&mut ActionState<Action>>()
-            .single_mut(&mut app.world);
-        action_state.press(Action::PanCameraRight);
+        app.world
+            .resource_mut::<ActionState<Action>>()
+            .press(Action::PanCameraRight);
 
         app.update();
 
