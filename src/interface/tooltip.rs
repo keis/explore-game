@@ -7,10 +7,17 @@ pub struct Tooltip;
 #[derive(Component)]
 pub struct TooltipTarget;
 
+pub enum TooltipPosition {
+    Above,
+    Below,
+}
+
 pub fn spawn_tooltip(
     parent: &mut ChildBuilder,
     assets: &Res<InterfaceAssets>,
-    tooltip: impl Into<String>,
+    position: TooltipPosition,
+    tooltip_text: impl Into<String>,
+    keybind_text: Option<impl Into<String>>,
 ) {
     parent
         .spawn((
@@ -19,25 +26,54 @@ pub fn spawn_tooltip(
                 background_color: NORMAL.into(),
                 style: Style {
                     position_type: PositionType::Absolute,
-                    position: UiRect {
-                        top: Val::Px(40.0),
-                        ..default()
+                    position: match position {
+                        TooltipPosition::Above => UiRect {
+                            bottom: Val::Px(60.0),
+                            ..default()
+                        },
+                        TooltipPosition::Below => UiRect {
+                            top: Val::Px(40.0),
+                            ..default()
+                        },
                     },
                     display: Display::None,
+                    padding: UiRect::all(Val::Px(4.0)),
                     ..default()
                 },
                 ..default()
             },
         ))
         .with_children(|parent| {
-            parent.spawn(TextBundle::from_section(
-                tooltip,
-                TextStyle {
-                    font: assets.font.clone(),
-                    font_size: 20.0,
-                    color: Color::WHITE,
-                },
-            ));
+            parent.spawn(
+                TextBundle::from_section(
+                    tooltip_text,
+                    TextStyle {
+                        font: assets.font.clone(),
+                        font_size: 20.0,
+                        color: Color::WHITE,
+                    },
+                )
+                .with_style(Style {
+                    margin: UiRect::all(Val::Px(2.0)),
+                    ..default()
+                }),
+            );
+            if let Some(text) = keybind_text {
+                parent.spawn(
+                    TextBundle::from_section(
+                        text,
+                        TextStyle {
+                            font: assets.font.clone(),
+                            font_size: 20.0,
+                            color: Color::GREEN,
+                        },
+                    )
+                    .with_style(Style {
+                        margin: UiRect::all(Val::Px(2.0)),
+                        ..default()
+                    }),
+                );
+            }
         });
 }
 
