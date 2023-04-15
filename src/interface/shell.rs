@@ -3,7 +3,7 @@ use super::{
     character::CharacterListBundle,
     color::NORMAL,
     party::PartyListBundle,
-    tooltip::{spawn_tooltip, TooltipTarget},
+    tooltip::{spawn_tooltip, TooltipPosition, TooltipTarget},
     InterfaceAssets,
 };
 use crate::{
@@ -34,7 +34,8 @@ fn spawn_toolbar_icon(
     assets: &Res<InterfaceAssets>,
     tag: impl Component,
     image: Handle<Image>,
-    tooltip: impl Into<String>,
+    tooltip_text: impl Into<String>,
+    keybind_text: Option<impl Into<String>>,
 ) {
     parent
         .spawn((
@@ -55,7 +56,13 @@ fn spawn_toolbar_icon(
                 focus_policy: FocusPolicy::Pass,
                 ..default()
             });
-            spawn_tooltip(parent, assets, tooltip)
+            spawn_tooltip(
+                parent,
+                assets,
+                TooltipPosition::Below,
+                tooltip_text,
+                keybind_text,
+            )
         });
 }
 
@@ -128,6 +135,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         ActionButton(Action::ResumeMove),
                         assets.arrow_icon.clone(),
                         "Resume move",
+                        Some("<M>"),
                     );
                     spawn_toolbar_icon(
                         parent,
@@ -135,6 +143,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         ActionButton(Action::Camp),
                         assets.campfire_icon.clone(),
                         "Make/Enter camp",
+                        Some("<C>"),
                     );
                     spawn_toolbar_icon(
                         parent,
@@ -142,6 +151,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         ActionButton(Action::BreakCamp),
                         assets.cancel_icon.clone(),
                         "Break camp",
+                        None::<&str>,
                     );
                     spawn_toolbar_icon(
                         parent,
@@ -149,6 +159,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         ActionButton(Action::CreateParty),
                         assets.knapsack_icon.clone(),
                         "Create party",
+                        None::<&str>,
                     );
                     spawn_toolbar_icon(
                         parent,
@@ -156,6 +167,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         ActionButton(Action::SplitParty),
                         assets.back_forth_icon.clone(),
                         "Split selected from party",
+                        None::<&str>,
                     );
                     spawn_toolbar_icon(
                         parent,
@@ -163,6 +175,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         ActionButton(Action::MergeParty),
                         assets.contract_icon.clone(),
                         "Merge selected parties",
+                        None::<&str>,
                     );
                     spawn_toolbar_icon(
                         parent,
@@ -170,10 +183,12 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         ActionButton(Action::CollectCrystals),
                         assets.crystals_icon.clone(),
                         "Collect crystals",
+                        None::<&str>,
                     );
                 });
             parent
                 .spawn((
+                    TooltipTarget,
                     ButtonBundle {
                         style: Style {
                             size: Size::new(Val::Px(200.0), Val::Px(60.0)),
@@ -185,6 +200,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         background_color: Color::rgb(0.4, 0.9, 0.4).into(),
                         ..default()
                     },
+                    ActionButton(Action::NextTurn),
                     TurnButton,
                 ))
                 .with_children(|parent| {
@@ -201,6 +217,13 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         .with_text_alignment(TextAlignment::Center)
                         .with_style(Style { ..default() }),
                     ));
+                    spawn_tooltip(
+                        parent,
+                        &assets,
+                        TooltipPosition::Above,
+                        "Next turn",
+                        Some("<Return>"),
+                    );
                 });
         });
 }
@@ -235,13 +258,4 @@ pub fn handle_action_button_interaction(
 ) {
     let Ok((ActionButton(action), Interaction::Clicked)) = interaction_query.get_single() else { return };
     action_state.press(*action);
-}
-
-pub fn handle_turn_button_interaction(
-    interaction_query: Query<&Interaction, (With<TurnButton>, Changed<Interaction>)>,
-    mut turn: ResMut<Turn>,
-) {
-    if let Ok(Interaction::Clicked) = interaction_query.get_single() {
-        turn.number += 1;
-    }
 }

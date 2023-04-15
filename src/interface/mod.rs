@@ -1,4 +1,7 @@
-use crate::State;
+use crate::{
+    input::{action_just_pressed, Action, InputManagerSystem},
+    State,
+};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
@@ -9,7 +12,7 @@ mod color;
 mod databinding;
 mod menu;
 mod party;
-pub mod shell;
+mod shell;
 mod stat;
 mod tooltip;
 
@@ -51,18 +54,20 @@ impl Plugin for InterfacePlugin {
             (
                 shell::update_turn_text,
                 shell::update_zone_text,
-                shell::handle_action_button_interaction,
-                shell::handle_turn_button_interaction,
                 tooltip::show_tooltip_on_hover,
             )
                 .in_set(OnUpdate(State::Running)),
         )
+        .add_system(
+            shell::handle_action_button_interaction.in_set(InputManagerSystem::ManualControl),
+        )
         .add_systems(
             (
-                menu::handle_toggle_main_menu,
+                menu::handle_toggle_main_menu.run_if(action_just_pressed(Action::ToggleMainMenu)),
                 menu::handle_save,
                 menu::handle_quit,
             )
+                .after(InputManagerSystem::ManualControl)
                 .in_set(OnUpdate(State::Running)),
         );
     }
