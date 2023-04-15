@@ -1,7 +1,6 @@
 use super::color::{BACKGROUND, MENU, NORMAL};
 use super::{shell::Shell, InterfaceAssets};
 use crate::action::GameAction;
-use crate::input::{Action, ActionState};
 use bevy::prelude::*;
 
 #[derive(Component)]
@@ -87,21 +86,18 @@ pub fn spawn_menu(mut commands: Commands, assets: Res<InterfaceAssets>) {
 }
 
 pub fn handle_toggle_main_menu(
-    action_state: Res<ActionState<Action>>,
     mut menu_layer_query: Query<&mut Visibility, With<MenuLayer>>,
     mut shell_query: Query<&mut Visibility, (With<Shell>, Without<MenuLayer>)>,
 ) {
-    if action_state.just_pressed(Action::ToggleMainMenu) {
-        let mut menu_layer_visibility = menu_layer_query.single_mut();
-        let mut shell_visibility = shell_query.single_mut();
+    let mut menu_layer_visibility = menu_layer_query.single_mut();
+    let mut shell_visibility = shell_query.single_mut();
 
-        if *menu_layer_visibility == Visibility::Inherited {
-            *menu_layer_visibility = Visibility::Hidden;
-            *shell_visibility = Visibility::Inherited;
-        } else {
-            *menu_layer_visibility = Visibility::Inherited;
-            *shell_visibility = Visibility::Hidden;
-        }
+    if *menu_layer_visibility == Visibility::Inherited {
+        *menu_layer_visibility = Visibility::Hidden;
+        *shell_visibility = Visibility::Inherited;
+    } else {
+        *menu_layer_visibility = Visibility::Inherited;
+        *shell_visibility = Visibility::Hidden;
     }
 }
 

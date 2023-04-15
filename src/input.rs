@@ -9,13 +9,16 @@ use crate::{
     map::{GameMap, MapPosition, MapPresence, PathGuided, Zone},
     party::{Group, Party},
     selection::NextSelectionQuery,
+    turn::Turn,
     State,
 };
 use bevy::prelude::*;
 use bevy_mod_picking::{DefaultPickingPlugins, PickingEvent, Selection};
-use leafwing_input_manager::plugin::InputManagerSystem;
-pub use leafwing_input_manager::{common_conditions::action_just_pressed, prelude::*};
 use smallvec::SmallVec;
+
+pub use leafwing_input_manager::{
+    common_conditions::action_just_pressed, plugin::InputManagerSystem, prelude::*,
+};
 
 pub struct InputPlugin;
 
@@ -36,15 +39,15 @@ impl Plugin for InputPlugin {
                     handle_split_party.run_if(action_just_pressed(Action::SplitParty)),
                     handle_merge_party.run_if(action_just_pressed(Action::MergeParty)),
                     handle_collect_crystals.run_if(action_just_pressed(Action::CollectCrystals)),
+                    handle_next_turn.run_if(action_just_pressed(Action::NextTurn)),
                 )
                     .after(InputManagerSystem::ManualControl)
                     .in_set(OnUpdate(State::Running)),
             )
             .add_system(
                 magic_cancel
-                    .after(InputManagerSystem::ManualControl)
-                    .run_if(action_just_pressed(Action::Cancel))
-                    .in_base_set(CoreSet::PreUpdate),
+                    .in_set(InputManagerSystem::ManualControl)
+                    .run_if(action_just_pressed(Action::Cancel)),
             )
             .add_system(handle_picking_events.in_base_set(CoreSet::PostUpdate));
     }
@@ -60,6 +63,7 @@ pub enum Action {
     Deselect,
     MergeParty,
     MultiSelect,
+    NextTurn,
     PanCamera,
     PanCameraDown,
     PanCameraLeft,
@@ -248,6 +252,10 @@ pub fn handle_collect_crystals(
     for (party, _) in party_query.iter().filter(|(_, s)| s.selected()) {
         game_action_queue.add(GameAction::CollectCrystals(party));
     }
+}
+
+pub fn handle_next_turn(mut turn: ResMut<Turn>) {
+    turn.number += 1;
 }
 
 #[cfg(test)]

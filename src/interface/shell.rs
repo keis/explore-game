@@ -185,6 +185,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         background_color: Color::rgb(0.4, 0.9, 0.4).into(),
                         ..default()
                     },
+                    ActionButton(Action::NextTurn),
                     TurnButton,
                 ))
                 .with_children(|parent| {
@@ -235,13 +236,4 @@ pub fn handle_action_button_interaction(
 ) {
     let Ok((ActionButton(action), Interaction::Clicked)) = interaction_query.get_single() else { return };
     action_state.press(*action);
-}
-
-pub fn handle_turn_button_interaction(
-    interaction_query: Query<&Interaction, (With<TurnButton>, Changed<Interaction>)>,
-    mut turn: ResMut<Turn>,
-) {
-    if let Ok(Interaction::Clicked) = interaction_query.get_single() {
-        turn.number += 1;
-    }
 }
