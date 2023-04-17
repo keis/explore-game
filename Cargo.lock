@@ -98,6 +98,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ahash"
+version = "0.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c99f64d1e06488f620f932677e24bc6e2897582980441ae90a671415bd7ec2f"
+dependencies = [
+ "cfg-if",
+ "getrandom",
+ "once_cell",
+ "version_check",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "0.7.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -736,18 +748,17 @@ dependencies = [
 
 [[package]]
 name = "bevy_obj"
-version = "0.10.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b43a6124a4796f3dd0614353103f29d59d496c24870f138005c0f0d882346c0"
+checksum = "b46071421fa142bb865a9c3ff3bfdcf20647ecefd6417f957e7220682dfff0c4"
 dependencies = [
  "anyhow",
  "bevy_app",
  "bevy_asset",
- "bevy_math",
  "bevy_render",
  "bevy_utils",
- "obj-rs",
  "thiserror",
+ "tobj",
 ]
 
 [[package]]
@@ -1020,7 +1031,7 @@ version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0a88ebbca55d360d72e9fe78df0d22e25cd419933c9559e79dae2757f7c4d066"
 dependencies = [
- "ahash",
+ "ahash 0.7.6",
  "bevy_utils_proc_macros",
  "getrandom",
  "hashbrown",
@@ -2108,7 +2119,7 @@ version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
 dependencies = [
- "ahash",
+ "ahash 0.7.6",
  "serde",
 ]
 
@@ -2813,15 +2824,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.107",
-]
-
-[[package]]
-name = "obj-rs"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c90a2f645433dba5c609451d3fa847282b0f23ee8d8fa75491a946af53cb1db4"
-dependencies = [
- "num-traits",
 ]
 
 [[package]]
@@ -3646,6 +3648,15 @@ name = "tinyvec_macros"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
+
+[[package]]
+name = "tobj"
+version = "3.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57381207291289bad19de63acd3fbf5948ff99b2868116c367b7224c37d55f90"
+dependencies = [
+ "ahash 0.8.3",
+]
 
 [[package]]
 name = "toml_datetime"
