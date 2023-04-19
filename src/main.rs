@@ -10,7 +10,7 @@ use explore_game::{
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     camp::update_camp_view_radius,
     character::reset_movement_points,
-    combat,
+    combat::CombatPlugin,
     enemy::move_enemy,
     input::InputPlugin,
     interface::InterfacePlugin,
@@ -79,6 +79,7 @@ fn main() {
         .add_plugin(WaterMaterialPlugin)
         .add_plugin(ActionPlugin)
         .add_plugin(OutlinePlugin)
+        .add_plugin(CombatPlugin)
         .add_startup_system(spawn_camera)
         .add_startup_system(light::spawn_light)
         .add_startup_system(start_map_generation)
@@ -95,10 +96,6 @@ fn main() {
                 despawn_empty_party,
                 move_enemy,
                 update_camp_view_radius,
-                combat::initiate_combat,
-                combat::combat_round,
-                combat::despawn_no_health.after(combat::combat_round),
-                combat::finish_combat.after(combat::despawn_no_health),
                 slide,
             )
                 .in_set(OnUpdate(State::Running)),

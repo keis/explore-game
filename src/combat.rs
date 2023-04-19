@@ -3,11 +3,28 @@ use crate::{
     enemy::Enemy,
     map::{GameMap, HexCoord, MapEvent},
     party::{Group, GroupCommandsExt, GroupMember},
+    State,
 };
 use bevy::prelude::*;
 use core::{ops::Range, time::Duration};
 use rand::Rng;
 use smallvec::SmallVec;
+
+pub struct CombatPlugin;
+
+impl Plugin for CombatPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(
+            (
+                initiate_combat,
+                combat_round,
+                despawn_no_health.after(combat_round),
+                finish_combat.after(despawn_no_health),
+            )
+                .in_set(OnUpdate(State::Running)),
+        );
+    }
+}
 
 #[derive(Component)]
 pub struct Combat {
