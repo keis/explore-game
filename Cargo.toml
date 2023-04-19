@@ -34,6 +34,7 @@ rand = "0.8.5"
 smallvec = "1.6"
 splines = { git = "https://github.com/phaazon/splines.git", branch = "dependabot/cargo/master/glam-gte-0.10-and-lt-0.25", version = "4.2.0", features = ["glam"] }
 bevy_mod_outline = "0.4.0"
+bevy_sprite3d = "2.4.0"
 
 [dev-dependencies]
 rstest = { version = "0.17.0", default-features = false }

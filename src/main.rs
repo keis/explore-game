@@ -2,6 +2,7 @@ use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
 use bevy_mod_outline::OutlinePlugin;
 use bevy_mod_picking::PickingCameraBundle;
+use bevy_sprite3d::Sprite3dPlugin;
 use clap::Parser;
 use expl_wfc::{Seed, SeedType};
 use explore_game::{
@@ -80,6 +81,7 @@ fn main() {
         .add_plugin(ActionPlugin)
         .add_plugin(OutlinePlugin)
         .add_plugin(CombatPlugin)
+        .add_plugin(Sprite3dPlugin)
         .add_startup_system(spawn_camera)
         .add_startup_system(light::spawn_light)
         .add_startup_system(start_map_generation)
