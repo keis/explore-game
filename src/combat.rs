@@ -1,4 +1,5 @@
 use crate::{
+    action::{follow_path, ActionSet},
     assets::MainAssets,
     character::Character,
     enemy::Enemy,
@@ -16,15 +17,21 @@ pub struct CombatPlugin;
 
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            (
-                initiate_combat,
-                combat_round,
-                despawn_no_health.after(combat_round),
-                finish_combat.after(despawn_no_health),
+        app.add_event::<CombatEvent>()
+            .add_system(
+                initiate_combat
+                    .before(follow_path)
+                    .in_base_set(ActionSet::PostApply)
+                    .run_if(on_event::<MapEvent>()),
             )
-                .in_set(OnUpdate(State::Running)),
-        );
+            .add_systems(
+                (
+                    combat_round,
+                    despawn_no_health.after(combat_round),
+                    finish_combat.after(despawn_no_health),
+                )
+                    .in_set(OnUpdate(State::Running)),
+            );
     }
 }
 
@@ -77,9 +84,15 @@ pub struct Health(pub u16);
 #[derive(Component, Default)]
 pub struct Attack(pub Range<u16>);
 
+pub enum CombatEvent {
+    Initiate,
+}
+
+#[allow(clippy::too_many_arguments)]
 pub fn initiate_combat(
     mut commands: Commands,
     mut map_events: EventReader<MapEvent>,
+    mut combat_events: EventWriter<CombatEvent>,
     mut combat_params: CombatParams,
     map_query: Query<&GameMap>,
     friend_query: Query<&Group>,
@@ -101,6 +114,7 @@ pub fn initiate_combat(
                 friends,
                 foes,
             ));
+            combat_events.send(CombatEvent::Initiate);
         }
     }
 }
