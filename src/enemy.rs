@@ -2,11 +2,12 @@ use crate::{
     action::{GameAction, GameActionQueue},
     assets::MainAssets,
     combat::{Attack, Health},
-    map::{HexCoord, MapPresence, Offset, PathFinder, ViewRadius},
+    map::{HeightQuery, HexCoord, MapPresence, Offset, PathFinder, ViewRadius},
     slide::Slide,
     turn::Turn,
 };
 use bevy::{ecs::system::SystemParam, prelude::*};
+use bevy_mod_outline::{OutlineBundle, OutlineVolume};
 
 #[derive(Component, Default)]
 pub struct Enemy;
@@ -20,22 +21,42 @@ pub struct EnemyBundle {
     pub attack: Attack,
     pub health: Health,
     pub pbr_bundle: PbrBundle,
+    pub outline_bundle: OutlineBundle,
 }
 
-pub type EnemyParams<'w> = (Res<'w, MainAssets>, ResMut<'w, Assets<StandardMaterial>>);
+pub type EnemyParams<'w, 's> = (
+    Res<'w, MainAssets>,
+    ResMut<'w, Assets<StandardMaterial>>,
+    HeightQuery<'w, 's>,
+);
 
 impl EnemyBundle {
-    pub fn new((main_assets, standard_materials): &mut EnemyParams, position: HexCoord) -> Self {
-        let offset = Vec3::ZERO;
+    pub fn new(
+        (main_assets, standard_materials, height_query): &mut EnemyParams,
+        position: HexCoord,
+    ) -> Self {
+        let offset = Vec3::new(0.0, 0.05, 0.0);
         Self {
+            offset: Offset(offset),
             view_radius: ViewRadius(3),
             attack: Attack(1..10),
             health: Health(20),
             pbr_bundle: PbrBundle {
                 mesh: main_assets.blob_mesh.clone(),
                 material: standard_materials.add(Color::rgba(0.749, 0.584, 0.901, 0.666).into()),
-                transform: Transform::from_translation(Vec3::from(position) + offset),
+                transform: Transform::from_translation(
+                    height_query.adjust(position.into()) + offset,
+                )
+                .with_scale(Vec3::splat(0.5)),
                 visibility: Visibility::Hidden,
+                ..default()
+            },
+            outline_bundle: OutlineBundle {
+                outline: OutlineVolume {
+                    visible: true,
+                    width: 2.0,
+                    colour: Color::rgb(0.739, 0.574, 0.891),
+                },
                 ..default()
             },
             ..default()
