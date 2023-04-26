@@ -62,7 +62,7 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
     while generator.step().is_some() {}
     info!("Generated map!");
     let terrain: Grid<SquareGridLayout, Terrain> = generator.export()?;
-    let mut rng = rand::thread_rng();
+    let mut rng = generator.rand();
     let portalcoord = spiral(
         terrain.layout.center() + *HexCoord::NEIGHBOUR_OFFSETS.choose(&mut rng).unwrap() * 3,
     )
