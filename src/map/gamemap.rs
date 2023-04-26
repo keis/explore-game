@@ -59,23 +59,23 @@ impl GameMap {
     }
 }
 
-pub fn spawn_game_map_from_prototype<F>(
+pub fn game_map_from_prototype<F>(
     commands: &mut Commands,
     prototype: &MapPrototype,
     mut spawn_tile: F,
-) -> Entity
+) -> GameMap
 where
     F: FnMut(&mut Commands, HexCoord, &ZonePrototype) -> Entity,
 {
-    let gamemap = GameMap {
+    GameMap {
         tiles: Grid::with_data(
-            prototype.layout,
+            prototype.tiles.layout,
             prototype
+                .tiles
                 .iter()
                 .map(|(coord, zoneproto)| spawn_tile(commands, coord, zoneproto)),
         ),
-        presence: Grid::new(prototype.layout),
+        presence: Grid::new(prototype.tiles.layout),
         void: HashSet::new(),
-    };
-    commands.spawn(gamemap).id()
+    }
 }

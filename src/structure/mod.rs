@@ -1,8 +1,10 @@
 use bevy::prelude::*;
 
 mod camp;
+mod portal;
 
 pub use camp::{Camp, CampBundle, CampParams};
+pub use portal::{Portal, PortalBundle, PortalParams};
 
 pub struct StructurePlugin;
 

@@ -15,7 +15,10 @@ use rand::{seq::SliceRandom, Rng};
 use std::fs::File;
 use std::io;
 
-pub type MapPrototype = Grid<SquareGridLayout, ZonePrototype>;
+pub struct MapPrototype {
+    pub tiles: Grid<SquareGridLayout, ZonePrototype>,
+    pub portal_position: HexCoord,
+}
 
 #[derive(Component)]
 pub struct GenerateMapTask(pub Task<Result<MapPrototype, &'static str>>);
@@ -63,7 +66,7 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
     info!("Generated map!");
     let terrain: Grid<SquareGridLayout, Terrain> = generator.export()?;
     let mut rng = generator.rand();
-    let portalcoord = spiral(
+    let portal_position = spiral(
         terrain.layout.center() + *HexCoord::NEIGHBOUR_OFFSETS.choose(&mut rng).unwrap() * 3,
     )
     .find(|&c| {
@@ -78,20 +81,18 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
         terrain.iter().map(|(coord, &terrain)| match terrain {
             Terrain::Forest => ZonePrototype {
                 terrain,
-                random_fill: if coord == portalcoord {
+                random_fill: if coord == portal_position {
                     random_fill(vec![(Vec2::ZERO, 0.3)])
                 } else {
                     random_fill(vec![])
                 },
                 crystals: rng.gen_range(0..8) == 0,
-                portal: coord == portalcoord,
                 height_amp: 0.1,
                 height_base: 0.0,
                 ..default()
             },
             Terrain::Mountain => ZonePrototype {
                 terrain,
-                portal: coord == portalcoord,
                 height_amp: 0.5,
                 height_base: 0.1,
                 ..default()
@@ -159,7 +160,10 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
             };
         }
     }
-    Ok(prototype)
+    Ok(MapPrototype {
+        tiles: prototype,
+        portal_position,
+    })
 }
 
 pub fn start_map_generation(mut commands: Commands, seed_res: Res<MapSeed>) {

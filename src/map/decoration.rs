@@ -71,38 +71,3 @@ impl ZoneDecorationTreeBundle {
         }
     }
 }
-
-#[derive(Component)]
-pub struct ZoneDecorationPortal;
-
-#[derive(Bundle)]
-pub struct ZoneDecorationPortalBundle {
-    fog: Fog,
-    zone_decoration_portal: ZoneDecorationPortal,
-    material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
-}
-
-impl ZoneDecorationPortalBundle {
-    pub fn new(
-        main_assets: &Res<MainAssets>,
-        terrain_materials: &mut ResMut<Assets<TerrainMaterial>>,
-        translation: Vec3,
-    ) -> Self {
-        Self {
-            fog: Fog::default(),
-            zone_decoration_portal: ZoneDecorationPortal,
-            material_mesh_bundle: MaterialMeshBundle {
-                mesh: main_assets.portal_mesh.clone(),
-                material: terrain_materials.add(TerrainMaterial {
-                    color: Color::rgb(0.4, 0.42, 0.4),
-                    ..default()
-                }),
-                visibility: Visibility::Hidden,
-                transform: Transform::from_translation(translation)
-                    .with_scale(Vec3::splat(0.3))
-                    .with_rotation(Quat::from_rotation_y(10.0)),
-                ..default()
-            },
-        }
-    }
-}
