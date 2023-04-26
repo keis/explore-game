@@ -5,11 +5,11 @@ use super::{
     InterfaceAssets,
 };
 use crate::{
-    camp::Camp,
     character::Character,
     input::{Action, ActionState},
     map::MapEvent,
     party::Group,
+    structure::Camp,
 };
 use bevy::prelude::*;
 use bevy_mod_picking::Selection;

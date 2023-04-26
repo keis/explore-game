@@ -3,12 +3,12 @@
 use crate::{
     action::{GameAction, GameActionQueue},
     camera::{CameraControl, CameraTarget},
-    camp::Camp,
     character::Character,
     interface::MenuLayer,
     map::{GameMap, MapPosition, MapPresence, PathGuided, Zone},
     party::{Group, Party},
     selection::NextSelectionQuery,
+    structure::Camp,
     turn::Turn,
     State,
 };

@@ -8,7 +8,6 @@ use explore_game::{
     action::ActionPlugin,
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
-    camp::update_camp_view_radius,
     character::reset_movement_points,
     combat::CombatPlugin,
     enemy::move_enemy,
@@ -20,6 +19,7 @@ use explore_game::{
     party::{derive_party_movement, despawn_empty_party},
     scene,
     slide::{slide, SlideEvent},
+    structure::StructurePlugin,
     turn::Turn,
     State,
 };
@@ -79,6 +79,7 @@ fn main() {
         .add_plugin(ActionPlugin)
         .add_plugin(OutlinePlugin)
         .add_plugin(CombatPlugin)
+        .add_plugin(StructurePlugin)
         .add_startup_system(spawn_camera)
         .add_startup_system(light::spawn_light)
         .add_startup_system(start_map_generation)
@@ -94,7 +95,6 @@ fn main() {
                 derive_party_movement,
                 despawn_empty_party,
                 move_enemy,
-                update_camp_view_radius,
                 slide,
             )
                 .in_set(OnUpdate(State::Running)),

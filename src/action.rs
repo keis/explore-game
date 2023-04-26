@@ -1,5 +1,4 @@
 use crate::{
-    camp::{Camp, CampBundle, CampParams},
     character::Movement,
     combat::CombatEvent,
     crystals::CrystalDeposit,
@@ -9,6 +8,7 @@ use crate::{
     },
     party::{Group, GroupCommandsExt, Party, PartyBundle, PartyParams},
     slide::{Slide, SlideEvent},
+    structure::{Camp, CampBundle, CampParams},
 };
 use bevy::prelude::*;
 use smallvec::SmallVec;

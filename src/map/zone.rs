@@ -7,9 +7,9 @@ use super::{
 };
 use crate::{
     assets::MainAssets,
-    camp::Camp,
     crystals::CrystalDeposit,
     material::{TerrainMaterial, WaterMaterial, ZoneMaterial},
+    structure::Camp,
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
 use glam::Vec3Swizzles;
