@@ -185,6 +185,14 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         "Collect crystals",
                         None::<&str>,
                     );
+                    spawn_toolbar_icon(
+                        parent,
+                        &assets,
+                        ActionButton(Action::OpenPortal),
+                        assets.portal_icon.clone(),
+                        "Open portal",
+                        None::<&str>,
+                    );
                 });
             parent
                 .spawn((

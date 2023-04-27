@@ -8,7 +8,7 @@ use crate::{
     },
     party::{Group, GroupCommandsExt, Party, PartyBundle, PartyParams},
     slide::{Slide, SlideEvent},
-    structure::{Camp, CampBundle, CampParams},
+    structure::{Camp, CampBundle, CampParams, Portal},
 };
 use bevy::prelude::*;
 use smallvec::SmallVec;
@@ -26,6 +26,7 @@ pub enum GameAction {
     MergeParty(SmallVec<[Entity; 8]>),
     CreatePartyFromCamp(Entity, SmallVec<[Entity; 8]>),
     CollectCrystals(Entity),
+    OpenPortal(Entity),
     Save(),
 }
 
@@ -64,6 +65,7 @@ impl Plugin for ActionPlugin {
                     handle_split_party.run_if(has_current_action),
                     handle_merge_party.run_if(has_current_action),
                     handle_collect_crystals.run_if(has_current_action),
+                    handle_open_portal.run_if(has_current_action),
                 )
                     .after(advance_action_queue)
                     .in_base_set(ActionSet::Apply),
@@ -451,6 +453,24 @@ pub fn handle_collect_crystals(
         };
 
     party.crystals += crystal_deposit.take() as u32
+}
+
+pub fn handle_open_portal(
+    queue: ResMut<GameActionQueue>,
+    party_query: Query<&MapPresence, With<Party>>,
+    map_query: Query<&GameMap>,
+    mut portal_query: Query<&mut Portal>,
+) {
+    let Some(GameAction::OpenPortal(party_entity)) = queue.current else { return };
+
+    let Ok(presence) = party_query.get(party_entity) else { return };
+    let Ok(map) = map_query.get(presence.map) else { return };
+    let mut portal_iter = portal_query.iter_many_mut(map.presence(presence.position));
+    let Some(mut portal) = portal_iter.fetch_next() else { return };
+
+    if !portal.open {
+        portal.open = true;
+    }
 }
 
 fn run_on_save(queue: Res<GameActionQueue>) -> bool {

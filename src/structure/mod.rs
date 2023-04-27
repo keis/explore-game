@@ -10,6 +10,6 @@ pub struct StructurePlugin;
 
 impl Plugin for StructurePlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(camp::update_camp_view_radius);
+        app.add_systems((camp::update_camp_view_radius, portal::update_portal_effect));
     }
 }
