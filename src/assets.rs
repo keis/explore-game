@@ -25,4 +25,6 @@ pub struct MainAssets {
     pub crystals_mesh: Handle<Mesh>,
     #[asset(path = "models/portal.obj")]
     pub portal_mesh: Handle<Mesh>,
+    #[asset(path = "icons/swords-emblem.png")]
+    pub swords_emblem_icon: Handle<Image>,
 }

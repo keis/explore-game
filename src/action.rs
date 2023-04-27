@@ -1,6 +1,7 @@
 use crate::{
     camp::{Camp, CampBundle, CampParams},
     character::Movement,
+    combat::CombatEvent,
     crystals::CrystalDeposit,
     map::{
         GameMap, HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder, PathGuided, Terrain,
@@ -8,7 +9,6 @@ use crate::{
     },
     party::{Group, GroupCommandsExt, Party, PartyBundle, PartyParams},
     slide::{Slide, SlideEvent},
-    State,
 };
 use bevy::prelude::*;
 use smallvec::SmallVec;
@@ -31,10 +31,26 @@ pub enum GameAction {
 
 pub struct ActionPlugin;
 
+#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
+#[system_set(base)]
+pub enum ActionSet {
+    Apply,
+    CommandFlush,
+    PostApply,
+}
+
 impl Plugin for ActionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<GameAction>()
             .insert_resource(GameActionQueue::default())
+            .configure_sets(
+                (
+                    ActionSet::Apply,
+                    ActionSet::CommandFlush,
+                    ActionSet::PostApply,
+                )
+                    .chain(),
+            )
             .add_systems(
                 (
                     handle_move.run_if(has_current_action),
@@ -49,16 +65,22 @@ impl Plugin for ActionPlugin {
                     handle_merge_party.run_if(has_current_action),
                     handle_collect_crystals.run_if(has_current_action),
                 )
-                    .after(trigger_next_action)
-                    .in_set(OnUpdate(State::Running)),
+                    .after(advance_action_queue)
+                    .in_base_set(ActionSet::Apply),
             )
-            .add_systems(
-                (
-                    trigger_next_action.run_if(ready_for_next_action),
-                    handle_slide_stopped,
-                )
-                    .in_set(OnUpdate(State::Running)),
-            )
+            .add_systems((
+                apply_system_buffers.in_base_set(ActionSet::CommandFlush),
+                advance_action_queue.run_if(ready_for_next_action),
+                handle_slide_stopped
+                    .in_base_set(ActionSet::Apply)
+                    .run_if(on_event::<SlideEvent>())
+                    .after(advance_action_queue)
+                    .after(handle_move),
+                follow_path
+                    .run_if(has_current_action)
+                    // Create new set after post apply to trigger follow up actions?
+                    .in_base_set(ActionSet::PostApply),
+            ))
             .add_system(handle_save.run_if(run_on_save));
     }
 }
@@ -91,14 +113,17 @@ impl GameActionQueue {
         self.waiting = true;
     }
 
-    pub fn done(&mut self) -> Option<GameAction> {
+    pub fn done(&mut self) {
         self.waiting = false;
-        self.current.take()
+    }
+
+    pub fn cancel(&mut self) {
+        self.current = None;
     }
 }
 
-pub fn trigger_next_action(mut game_action_queue: ResMut<GameActionQueue>) {
-    game_action_queue.start_next()
+pub fn advance_action_queue(mut game_action_queue: ResMut<GameActionQueue>) {
+    game_action_queue.start_next();
 }
 
 pub fn has_current_action(game_action_queue: Res<GameActionQueue>) -> bool {
@@ -106,7 +131,8 @@ pub fn has_current_action(game_action_queue: Res<GameActionQueue>) -> bool {
 }
 
 pub fn ready_for_next_action(game_action_queue: Res<GameActionQueue>) -> bool {
-    !game_action_queue.is_waiting() && game_action_queue.has_next()
+    !game_action_queue.is_waiting()
+        && (game_action_queue.current.is_some() || game_action_queue.has_next())
 }
 
 pub fn handle_move(
@@ -121,7 +147,7 @@ pub fn handle_move(
 
     if movement.points == 0 {
         warn!("tried to move without movement points");
-        queue.done();
+        queue.cancel();
         return;
     }
 
@@ -130,6 +156,7 @@ pub fn handle_move(
     while let Some(mut movement) = iter.fetch_next() {
         movement.points -= 1;
     }
+
     slide.start = transform.translation;
     slide.end = Vec3::from(next) + offset.0;
     slide.progress = 0.0;
@@ -155,27 +182,35 @@ pub fn handle_slide_stopped(
     mut commands: Commands,
     mut events: EventReader<SlideEvent>,
     mut queue: ResMut<GameActionQueue>,
-    mut presence_query: Query<(&MapPresence, Option<(&Movement, &mut PathGuided)>)>,
+    presence_query: Query<&MapPresence>,
 ) {
     for _ in &mut events {
-        info!("Slide stopped");
-        let Some(last_action) = queue.done() else {
-            warn!("Slide finished for some unknown action");
-            continue
-        };
-        let GameAction::Move(e, next) = last_action else { continue };
-        let Ok((presence, optional)) = presence_query.get_mut(e) else { continue };
+        let Some(GameAction::Move(e, next)) = queue.current else { return };
+        queue.done();
+        let Ok(presence) = presence_query.get(e) else { continue };
 
         commands.entity(presence.map).move_presence(e, next);
+    }
+}
 
-        if let Some((party_movement, mut pathguided)) = optional {
-            pathguided.advance();
-            // Keep moving if a path is set
-            if party_movement.points > 0 {
-                if let Some(next) = pathguided.next() {
-                    queue.add(GameAction::Move(e, *next));
-                }
-            }
+pub fn follow_path(
+    mut queue: ResMut<GameActionQueue>,
+    mut combat_events: EventReader<CombatEvent>,
+    mut path_guided_query: Query<(&Movement, &mut PathGuided)>,
+) {
+    let Some(GameAction::Move(e, ..)) = queue.current else { return };
+    let Ok((party_movement, mut pathguided)) = path_guided_query.get_mut(e) else { return };
+
+    pathguided.advance();
+
+    if combat_events.iter().count() > 0 {
+        return;
+    }
+
+    // Keep moving if a path is set
+    if party_movement.points > 0 {
+        if let Some(next) = pathguided.next() {
+            queue.add(GameAction::Move(e, *next));
         }
     }
 }
@@ -206,7 +241,6 @@ pub fn handle_resume_move(
     let Ok(pathguided) = path_guided_query.get(e) else { return };
 
     if let Some(next) = pathguided.next() {
-        info!("Resuming move!");
         queue.add(GameAction::Move(e, *next));
     }
 }

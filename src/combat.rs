@@ -1,13 +1,39 @@
 use crate::{
+    action::{follow_path, ActionSet},
+    assets::MainAssets,
     character::Character,
     enemy::Enemy,
     map::{GameMap, HexCoord, MapEvent},
     party::{Group, GroupCommandsExt, GroupMember},
+    State,
 };
 use bevy::prelude::*;
+use bevy_sprite3d::{Sprite3d, Sprite3dBundle, Sprite3dParams};
 use core::{ops::Range, time::Duration};
 use rand::Rng;
 use smallvec::SmallVec;
+
+pub struct CombatPlugin;
+
+impl Plugin for CombatPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_event::<CombatEvent>()
+            .add_system(
+                initiate_combat
+                    .before(follow_path)
+                    .in_base_set(ActionSet::PostApply)
+                    .run_if(on_event::<MapEvent>()),
+            )
+            .add_systems(
+                (
+                    combat_round,
+                    despawn_no_health.after(combat_round),
+                    finish_combat.after(despawn_no_health),
+                )
+                    .in_set(OnUpdate(State::Running)),
+            );
+    }
+}
 
 #[derive(Component)]
 pub struct Combat {
@@ -17,15 +43,57 @@ pub struct Combat {
     foes: SmallVec<[Entity; 8]>,
 }
 
+#[derive(Bundle)]
+pub struct CombatBundle {
+    pub combat: Combat,
+    pub sprite3d: Sprite3dBundle,
+}
+
+pub type CombatParams<'w, 's> = (Res<'w, MainAssets>, Sprite3dParams<'w, 's>);
+
+impl CombatBundle {
+    pub fn new(
+        (main_assets, sprite_params): &mut CombatParams,
+        position: HexCoord,
+        friends: SmallVec<[Entity; 8]>,
+        foes: SmallVec<[Entity; 8]>,
+    ) -> Self {
+        Self {
+            combat: Combat {
+                position,
+                timer: Timer::new(Duration::from_secs(1), TimerMode::Repeating),
+                friends,
+                foes,
+            },
+            sprite3d: Sprite3d {
+                image: main_assets.swords_emblem_icon.clone(),
+                pixels_per_metre: 400.0,
+                transform: Transform::from_translation(
+                    Vec3::from(position) + Vec3::new(0.0, 1.0, 0.0),
+                ),
+                ..default()
+            }
+            .bundle(sprite_params),
+        }
+    }
+}
+
 #[derive(Component, Default)]
 pub struct Health(pub u16);
 
 #[derive(Component, Default)]
 pub struct Attack(pub Range<u16>);
 
+pub enum CombatEvent {
+    Initiate,
+}
+
+#[allow(clippy::too_many_arguments)]
 pub fn initiate_combat(
     mut commands: Commands,
     mut map_events: EventReader<MapEvent>,
+    mut combat_events: EventWriter<CombatEvent>,
+    mut combat_params: CombatParams,
     map_query: Query<&GameMap>,
     friend_query: Query<&Group>,
     character_query: Query<Entity, With<Character>>,
@@ -40,12 +108,13 @@ pub fn initiate_combat(
             .collect();
         let foes: SmallVec<[Entity; 8]> = foe_query.iter_many(map.presence(*position)).collect();
         if !friends.is_empty() && !foes.is_empty() {
-            commands.spawn(Combat {
-                position: *position,
-                timer: Timer::new(Duration::from_secs(1), TimerMode::Repeating),
+            commands.spawn(CombatBundle::new(
+                &mut combat_params,
+                *position,
                 friends,
                 foes,
-            });
+            ));
+            combat_events.send(CombatEvent::Initiate);
         }
     }
 }

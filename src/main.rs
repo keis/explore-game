@@ -1,6 +1,8 @@
 use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
+use bevy_mod_outline::OutlinePlugin;
 use bevy_mod_picking::PickingCameraBundle;
+use bevy_sprite3d::Sprite3dPlugin;
 use clap::Parser;
 use expl_wfc::{Seed, SeedType};
 use explore_game::{
@@ -9,9 +11,8 @@ use explore_game::{
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     camp::update_camp_view_radius,
     character::reset_movement_points,
-    combat,
+    combat::CombatPlugin,
     enemy::move_enemy,
-    indicator::update_indicator,
     input::InputPlugin,
     interface::InterfacePlugin,
     light,
@@ -78,6 +79,9 @@ fn main() {
         .add_plugin(TerrainMaterialPlugin)
         .add_plugin(WaterMaterialPlugin)
         .add_plugin(ActionPlugin)
+        .add_plugin(OutlinePlugin)
+        .add_plugin(CombatPlugin)
+        .add_plugin(Sprite3dPlugin)
         .add_startup_system(spawn_camera)
         .add_startup_system(light::spawn_light)
         .add_startup_system(start_map_generation)
@@ -89,16 +93,11 @@ fn main() {
                 scene::spawn_map,
                 scene::spawn_party,
                 scene::spawn_enemy,
-                update_indicator,
                 reset_movement_points,
                 derive_party_movement,
                 despawn_empty_party,
                 move_enemy,
                 update_camp_view_radius,
-                combat::initiate_combat,
-                combat::combat_round,
-                combat::despawn_no_health.after(combat::combat_round),
-                combat::finish_combat.after(combat::despawn_no_health),
                 slide,
             )
                 .in_set(OnUpdate(State::Running)),

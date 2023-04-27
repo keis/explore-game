@@ -728,6 +728,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_mod_outline"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd68f243f1bf93317dc126ef3a7ffe0fb00ba8cd17306a726eeb0d92986edb66"
+dependencies = [
+ "bevy",
+ "bitfield",
+ "interpolation",
+ "thiserror",
+]
+
+[[package]]
 name = "bevy_mod_picking"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -926,6 +938,15 @@ dependencies = [
  "guillotiere",
  "rectangle-pack",
  "thiserror",
+]
+
+[[package]]
+name = "bevy_sprite3d"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f873dd5be1022006f78f57cefb939e5f6bd106fda335da6170abb974e20ce28"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]
@@ -1137,6 +1158,12 @@ name = "bit-vec"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "349f9b6a179ed607305526ca489b34ad0a41aed5f7980fa90eb03160b69598fb"
+
+[[package]]
+name = "bitfield"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d7e60934ceec538daadb9d8432424ed043a904d8e0243f3c6446bce549a46ac"
 
 [[package]]
 name = "bitflags"
@@ -1796,8 +1823,10 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_asset_loader",
+ "bevy_mod_outline",
  "bevy_mod_picking",
  "bevy_obj",
+ "bevy_sprite3d",
  "clap 4.2.1",
  "expl_hexgrid",
  "expl_wfc",

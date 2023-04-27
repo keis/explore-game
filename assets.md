@@ -3,6 +3,7 @@
   - assets/icons/bottom-right-3d-arrow.png
   - assets/icons/campfire.png
   - assets/icons/knapsack.png
+  - assets/icons/swords-emblem.png
 * By sbed under CC-BY 3.0 (https://opengameart.org/content/95-game-icons)
   - assets/icons/cancel.png
 * By Delapouite under CC-BY 3.0 (https://delapouite.com/)
