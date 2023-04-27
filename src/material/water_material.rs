@@ -31,7 +31,7 @@ impl From<&WaterMaterial> for WaterMaterialUniform {
 
 impl Material for WaterMaterial {
     fn fragment_shader() -> ShaderRef {
-        "water_material.wgsl".into()
+        "materials/water_fragment.wgsl".into()
     }
 
     fn alpha_mode(&self) -> AlphaMode {

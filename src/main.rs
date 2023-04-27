@@ -2,7 +2,6 @@ use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
 use bevy_mod_outline::OutlinePlugin;
 use bevy_mod_picking::PickingCameraBundle;
-use bevy_sprite3d::Sprite3dPlugin;
 use clap::Parser;
 use expl_wfc::{Seed, SeedType};
 use explore_game::{
@@ -17,7 +16,7 @@ use explore_game::{
     interface::InterfacePlugin,
     light,
     map::{start_map_generation, MapPlugin, MapSeed},
-    material::{TerrainMaterialPlugin, WaterMaterialPlugin, ZoneMaterialPlugin},
+    material::MaterialPlugins,
     party::{derive_party_movement, despawn_empty_party},
     scene,
     slide::{slide, SlideEvent},
@@ -68,20 +67,18 @@ fn main() {
                     ..default()
                 }),
         )
+        .add_plugins(MaterialPlugins)
         .add_state::<State>()
         .add_plugin(bevy_obj::ObjPlugin)
         .add_plugin(noisy_bevy::NoisyShaderPlugin)
+        .add_plugin(bevy_sprite3d::Sprite3dPlugin)
         .add_plugin(CameraControlPlugin)
         .add_plugin(InputPlugin)
         .add_plugin(InterfacePlugin)
         .add_plugin(MapPlugin)
-        .add_plugin(ZoneMaterialPlugin)
-        .add_plugin(TerrainMaterialPlugin)
-        .add_plugin(WaterMaterialPlugin)
         .add_plugin(ActionPlugin)
         .add_plugin(OutlinePlugin)
         .add_plugin(CombatPlugin)
-        .add_plugin(Sprite3dPlugin)
         .add_startup_system(spawn_camera)
         .add_startup_system(light::spawn_light)
         .add_startup_system(start_map_generation)

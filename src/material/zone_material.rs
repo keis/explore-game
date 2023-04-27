@@ -97,11 +97,11 @@ impl ZoneMaterial {
 
 impl Material for ZoneMaterial {
     fn fragment_shader() -> ShaderRef {
-        "zone_material.wgsl".into()
+        "materials/zone_fragment.wgsl".into()
     }
 
     fn vertex_shader() -> ShaderRef {
-        "zone_material_vertex.wgsl".into()
+        "materials/zone_vertex.wgsl".into()
     }
 }
 
