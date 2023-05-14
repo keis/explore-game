@@ -7,11 +7,10 @@ use super::{
 use crate::{
     character::Character,
     combat::{Attack, Health},
-    input::{Action, ActionState},
+    input::{Action, ActionState, Selection},
     party::Group,
 };
 use bevy::prelude::*;
-use bevy_mod_picking::Selection;
 
 #[derive(Component)]
 pub struct CharacterList;
@@ -124,7 +123,7 @@ pub fn update_character_list(
 
     let characters = party_query
         .iter()
-        .filter(|(_, selection)| selection.selected())
+        .filter(|(_, selection)| selection.is_selected)
         .flat_map(|(group, _)| group.members.iter());
     for (entity, character, attack, health) in character_query.iter_many(characters) {
         if !character_display_query
@@ -141,7 +140,7 @@ pub fn update_character_list(
 
     let characters: Vec<&Entity> = party_query
         .iter()
-        .filter(|(_, selection)| selection.selected())
+        .filter(|(_, selection)| selection.is_selected)
         .flat_map(|(party, _)| party.members.iter())
         .collect();
     for (display_entity, display) in character_display_query.iter() {
@@ -151,7 +150,7 @@ pub fn update_character_list(
         {
             commands.entity(display_entity).despawn_recursive();
             if let Ok(mut character_selection) = selection_query.get_mut(display.character) {
-                character_selection.set_selected(false);
+                character_selection.is_selected = false;
             }
         }
     }
@@ -165,7 +164,7 @@ pub fn update_character_selection(
     for (selection, bindings) in &selection_query {
         let mut character_display_iter = character_display_query.iter_many_mut(bindings);
         while let Some(mut background_color) = character_display_iter.fetch_next() {
-            *background_color = if selection.selected() {
+            *background_color = if selection.is_selected {
                 SELECTED
             } else {
                 NORMAL
@@ -195,11 +194,11 @@ pub fn handle_character_display_interaction(
     if let Ok((Interaction::Clicked, display)) = interaction_query.get_single() {
         if let Ok((entity, mut selection)) = selection_query.get_mut(display.character) {
             if action_state.pressed(Action::MultiSelect) {
-                let selected = selection.selected();
-                selection.set_selected(!selected);
+                let selected = selection.is_selected;
+                selection.is_selected = !selected;
             } else {
                 for (e, mut selection) in selection_query.iter_mut() {
-                    selection.set_selected(e == entity)
+                    selection.is_selected = e == entity;
                 }
             }
         }

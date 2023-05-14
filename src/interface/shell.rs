@@ -12,7 +12,6 @@ use crate::{
     turn::Turn,
 };
 use bevy::{prelude::*, ui::FocusPolicy};
-use bevy_mod_picking::{HoverEvent, PickingEvent};
 
 #[derive(Component)]
 pub struct Shell;
@@ -75,6 +74,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     justify_content: JustifyContent::SpaceBetween,
                     ..default()
                 },
+                focus_policy: FocusPolicy::Pass,
                 ..default()
             },
             Shell,
@@ -244,18 +244,17 @@ pub fn update_turn_text(mut turn_text_query: Query<&mut Text, With<TurnText>>, t
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn update_zone_text(
     mut zone_text_query: Query<&mut Text, With<ZoneText>>,
-    zone_query: Query<&MapPosition, With<Zone>>,
-    mut events: EventReader<PickingEvent>,
+    zone_query: Query<(&MapPosition, &Interaction), (With<Zone>, Changed<Interaction>)>,
 ) {
-    for event in &mut events {
-        if let PickingEvent::Hover(HoverEvent::JustEntered(e)) = event {
-            if let Ok(zone_position) = zone_query.get(*e) {
-                for mut text in &mut zone_text_query {
-                    text.sections[0].value = format!("{:?}", zone_position.0);
-                }
-            }
+    for (zone_position, _) in zone_query
+        .iter()
+        .filter(|(_, interaction)| **interaction == Interaction::Hovered)
+    {
+        for mut text in &mut zone_text_query {
+            text.sections[0].value = format!("{:?}", zone_position.0);
         }
     }
 }

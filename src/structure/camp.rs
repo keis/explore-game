@@ -1,12 +1,12 @@
 use crate::{
     assets::MainAssets,
+    input::SelectionBundle,
     map::{Fog, HexCoord, Offset, ViewRadius},
     material::TerrainMaterial,
     party::Group,
     VIEW_RADIUS,
 };
 use bevy::prelude::*;
-use bevy_mod_picking::PickableBundle;
 
 #[derive(Component, Debug, Default)]
 pub struct Camp {
@@ -19,7 +19,7 @@ pub struct Camp {
 pub struct CampBundle {
     pub camp: Camp,
     pub group: Group,
-    pub pickable_bundle: PickableBundle,
+    pub selection: SelectionBundle,
     pub offset: Offset,
     pub view_radius: ViewRadius,
     pub fog: Fog,

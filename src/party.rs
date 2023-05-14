@@ -1,5 +1,6 @@
 use crate::{
     character::Movement,
+    input::SelectionBundle,
     map::{HeightQuery, HexCoord, MapCommandsExt, MapPresence, Offset, PathGuided, ViewRadius},
     slide::Slide,
     VIEW_RADIUS,
@@ -8,7 +9,6 @@ use crate::{
 use bevy::ecs::system::{Command, EntityCommands};
 use bevy::prelude::*;
 use bevy_mod_outline::{OutlineBundle, OutlineVolume};
-use bevy_mod_picking::PickableBundle;
 use smallvec::SmallVec;
 use std::collections::HashSet;
 
@@ -24,7 +24,7 @@ pub struct PartyBundle {
     pub party: Party,
     pub group: Group,
     pub movement: Movement,
-    pub pickable_bundle: PickableBundle,
+    pub selection_bundle: SelectionBundle,
     pub offset: Offset,
     pub view_radius: ViewRadius,
     pub path_guided: PathGuided,

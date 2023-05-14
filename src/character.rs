@@ -1,9 +1,9 @@
 use crate::{
     combat::{Attack, Health},
+    input::Selection,
     turn::Turn,
 };
 use bevy::prelude::*;
-use bevy_mod_picking::Selection;
 
 #[derive(Component, Debug, Default)]
 pub struct Character {
