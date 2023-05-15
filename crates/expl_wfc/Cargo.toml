@@ -14,7 +14,7 @@ expl_hexgrid = { path = "../expl_hexgrid" }
 fixedbitset = "0.4.2"
 rand = "0.8.5"
 rand_xoshiro = "0.6.0"
-serde = { version = "1.0.160", features = ["derive"] }
+serde = { version = "1.0.163", features = ["derive"] }
 
 [dev-dependencies]
 clap = { version = "4.2.1", features = ["derive"] }
