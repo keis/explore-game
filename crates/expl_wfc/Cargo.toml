@@ -17,7 +17,7 @@ rand_xoshiro = "0.6.0"
 serde = { version = "1.0.163", features = ["derive"] }
 
 [dev-dependencies]
-clap = { version = "4.2.1", features = ["derive"] }
+clap = { version = "4.2.7", features = ["derive"] }
 criterion = "0.4.0"
 rstest = { version = "0.17.0", default-features = false }
 
