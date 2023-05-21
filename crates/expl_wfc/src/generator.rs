@@ -6,6 +6,7 @@ use super::{
 };
 use expl_hexgrid::{Grid, GridLayout, HexCoord};
 use fixedbitset::FixedBitSet;
+use rand::RngCore;
 use std::cmp::Reverse;
 use std::hash::Hash;
 
@@ -61,6 +62,10 @@ where
             rejected: Some(Vec::new()),
             rand: seed.into(),
         })
+    }
+
+    pub fn rand(self) -> impl RngCore {
+        self.rand
     }
 
     pub fn alternatives(&self, coord: HexCoord) -> FixedBitSet {

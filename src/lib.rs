@@ -1,7 +1,6 @@
 pub mod action;
 pub mod assets;
 pub mod camera;
-pub mod camp;
 pub mod character;
 pub mod combat;
 pub mod crystals;
@@ -16,6 +15,7 @@ pub mod path;
 pub mod scene;
 pub mod selection;
 pub mod slide;
+pub mod structure;
 pub mod turn;
 
 use bevy::prelude::*;

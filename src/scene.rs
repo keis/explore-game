@@ -2,18 +2,20 @@ use crate::{
     character::CharacterBundle,
     enemy::{EnemyBundle, EnemyParams},
     map::{
-        spawn_game_map_from_prototype, spawn_zone, GameMap, GenerateMapTask, HexCoord,
+        game_map_from_prototype, spawn_zone, GameMap, GenerateMapTask, Height, HexCoord,
         MapCommandsExt, Terrain, Zone, ZoneParams,
     },
     party::{GroupCommandsExt, PartyBundle, PartyParams},
+    structure::{PortalBundle, PortalParams},
 };
 use bevy::prelude::*;
 use expl_hexgrid::{spiral, GridLayout};
 use futures_lite::future;
+use glam::Vec3Swizzles;
 
 pub fn spawn_map(
     mut commands: Commands,
-    mut zone_params: ZoneParams,
+    mut param_set: ParamSet<(ZoneParams, PortalParams)>,
     mut generate_map_task: Query<(Entity, &mut GenerateMapTask)>,
 ) {
     if generate_map_task.is_empty() {
@@ -32,12 +34,29 @@ pub fn spawn_map(
         }
         None => return,
     };
-
-    spawn_game_map_from_prototype(
+    let game_map = game_map_from_prototype(
         &mut commands,
         &prototype,
-        |commands, position, zoneproto| spawn_zone(commands, &mut zone_params, position, zoneproto),
+        |commands, position, zoneproto| {
+            spawn_zone(commands, &mut param_set.p0(), position, zoneproto)
+        },
     );
+    commands
+        .spawn(game_map)
+        .with_presence(prototype.portal_position, |location| {
+            let zone_prototype = prototype.tiles.get(prototype.portal_position).unwrap();
+            let height = Height {
+                height_amp: zone_prototype.height_amp,
+                height_base: zone_prototype.height_base,
+                outer_amp: zone_prototype.outer_amp,
+                outer_base: zone_prototype.outer_base,
+            };
+            location.spawn(PortalBundle::new(
+                &mut param_set.p1(),
+                prototype.portal_position,
+                height.height_at(Vec2::ZERO, Vec3::from(prototype.portal_position).xz()),
+            ));
+        });
 }
 
 pub fn spawn_party(

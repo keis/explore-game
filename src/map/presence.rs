@@ -57,14 +57,18 @@ pub fn update_terrain_visibility(
 pub fn update_presence_fog(
     zone_query: Query<(&MapPosition, &Fog), (Changed<Fog>, Without<MapPresence>)>,
     map_query: Query<&GameMap>,
-    mut presence_query: Query<&mut Fog, With<MapPresence>>,
+    mut presence_query: Query<(&mut Fog, &mut Visibility), With<MapPresence>>,
 ) {
     let Ok(map) = map_query.get_single() else { return };
     for (position, zone_fog) in &zone_query {
         let mut presence_iter = presence_query.iter_many_mut(map.presence(position.0));
-        while let Some(mut fog) = presence_iter.fetch_next() {
+        while let Some((mut fog, mut visibility)) = presence_iter.fetch_next() {
             fog.visible = zone_fog.visible;
             fog.explored = zone_fog.explored;
+
+            if fog.explored {
+                *visibility = Visibility::Inherited;
+            }
         }
     }
 }

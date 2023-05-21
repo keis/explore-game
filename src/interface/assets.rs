@@ -27,4 +27,6 @@ pub struct InterfaceAssets {
     pub heart_shield_icon: Handle<Image>,
     #[asset(path = "icons/minerals.png")]
     pub crystals_icon: Handle<Image>,
+    #[asset(path = "icons/portal.png")]
+    pub portal_icon: Handle<Image>,
 }

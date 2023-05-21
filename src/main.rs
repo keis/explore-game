@@ -2,14 +2,12 @@ use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
 use bevy_mod_outline::OutlinePlugin;
 use bevy_mod_picking::PickingCameraBundle;
-use bevy_sprite3d::Sprite3dPlugin;
 use clap::Parser;
 use expl_wfc::{Seed, SeedType};
 use explore_game::{
     action::ActionPlugin,
     assets::MainAssets,
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
-    camp::update_camp_view_radius,
     character::reset_movement_points,
     combat::CombatPlugin,
     enemy::move_enemy,
@@ -17,10 +15,11 @@ use explore_game::{
     interface::InterfacePlugin,
     light,
     map::{start_map_generation, MapPlugin, MapSeed},
-    material::{TerrainMaterialPlugin, WaterMaterialPlugin, ZoneMaterialPlugin},
+    material::MaterialPlugins,
     party::{derive_party_movement, despawn_empty_party},
     scene,
     slide::{slide, SlideEvent},
+    structure::StructurePlugin,
     turn::Turn,
     State,
 };
@@ -68,20 +67,19 @@ fn main() {
                     ..default()
                 }),
         )
+        .add_plugins(MaterialPlugins)
         .add_state::<State>()
         .add_plugin(bevy_obj::ObjPlugin)
         .add_plugin(noisy_bevy::NoisyShaderPlugin)
+        .add_plugin(bevy_sprite3d::Sprite3dPlugin)
         .add_plugin(CameraControlPlugin)
         .add_plugin(InputPlugin)
         .add_plugin(InterfacePlugin)
         .add_plugin(MapPlugin)
-        .add_plugin(ZoneMaterialPlugin)
-        .add_plugin(TerrainMaterialPlugin)
-        .add_plugin(WaterMaterialPlugin)
         .add_plugin(ActionPlugin)
         .add_plugin(OutlinePlugin)
         .add_plugin(CombatPlugin)
-        .add_plugin(Sprite3dPlugin)
+        .add_plugin(StructurePlugin)
         .add_startup_system(spawn_camera)
         .add_startup_system(light::spawn_light)
         .add_startup_system(start_map_generation)
@@ -97,7 +95,6 @@ fn main() {
                 derive_party_movement,
                 despawn_empty_party,
                 move_enemy,
-                update_camp_view_radius,
                 slide,
             )
                 .in_set(OnUpdate(State::Running)),

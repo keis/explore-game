@@ -20,7 +20,7 @@ pub use commands::MapCommandsExt;
 pub use events::MapEvent;
 pub use expl_hexgrid::HexCoord;
 pub use fog::Fog;
-pub use gamemap::{spawn_game_map_from_prototype, GameMap};
+pub use gamemap::{game_map_from_prototype, GameMap};
 pub use generator::{start_map_generation, GenerateMapTask, MapPrototype, MapSeed};
 pub use height::{Height, HeightQuery};
 pub use hex::HexAssets;

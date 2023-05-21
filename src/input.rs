@@ -3,12 +3,12 @@
 use crate::{
     action::{GameAction, GameActionQueue},
     camera::{CameraControl, CameraTarget},
-    camp::Camp,
     character::Character,
     interface::MenuLayer,
     map::{GameMap, MapPosition, MapPresence, PathGuided, Zone},
     party::{Group, Party},
     selection::NextSelectionQuery,
+    structure::Camp,
     turn::Turn,
     State,
 };
@@ -39,6 +39,7 @@ impl Plugin for InputPlugin {
                     handle_split_party.run_if(action_just_pressed(Action::SplitParty)),
                     handle_merge_party.run_if(action_just_pressed(Action::MergeParty)),
                     handle_collect_crystals.run_if(action_just_pressed(Action::CollectCrystals)),
+                    handle_open_portal.run_if(action_just_pressed(Action::OpenPortal)),
                     handle_next_turn.run_if(action_just_pressed(Action::NextTurn)),
                 )
                     .after(InputManagerSystem::ManualControl)
@@ -64,6 +65,7 @@ pub enum Action {
     MergeParty,
     MultiSelect,
     NextTurn,
+    OpenPortal,
     PanCamera,
     PanCameraDown,
     PanCameraLeft,
@@ -254,6 +256,15 @@ pub fn handle_collect_crystals(
 ) {
     for (party, _) in party_query.iter().filter(|(_, s)| s.selected()) {
         game_action_queue.add(GameAction::CollectCrystals(party));
+    }
+}
+
+pub fn handle_open_portal(
+    party_query: Query<(Entity, &Selection), With<Party>>,
+    mut game_action_queue: ResMut<GameActionQueue>,
+) {
+    for (party, _) in party_query.iter().filter(|(_, s)| s.selected()) {
+        game_action_queue.add(GameAction::OpenPortal(party));
     }
 }
 

@@ -1,15 +1,15 @@
 use super::{
     decoration::{
-        ZoneDecorationCrystals, ZoneDecorationCrystalsBundle, ZoneDecorationPortalBundle,
-        ZoneDecorationTree, ZoneDecorationTreeBundle,
+        ZoneDecorationCrystals, ZoneDecorationCrystalsBundle, ZoneDecorationTree,
+        ZoneDecorationTreeBundle,
     },
     Fog, GameMap, Height, HexAssets, HexCoord, MapEvent, MapPosition, MapPresence,
 };
 use crate::{
     assets::MainAssets,
-    camp::Camp,
     crystals::CrystalDeposit,
     material::{TerrainMaterial, WaterMaterial, ZoneMaterial},
+    structure::Camp,
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
 use glam::Vec3Swizzles;
@@ -76,7 +76,6 @@ pub struct ZonePrototype {
     pub terrain: Terrain,
     pub random_fill: Vec<(Vec2, f32)>,
     pub crystals: bool,
-    pub portal: bool,
     pub height_amp: f32,
     pub height_base: f32,
     pub outer_amp: [f32; 6],
@@ -181,17 +180,6 @@ pub fn spawn_zone(
         .with_children(|parent| match prototype.terrain {
             Terrain::Forest => {
                 let mut filliter = prototype.random_fill.iter();
-                if prototype.portal {
-                    parent.spawn(ZoneDecorationPortalBundle::new(
-                        main_assets,
-                        terrain_materials,
-                        Vec3::new(
-                            0.0,
-                            height.height_at(Vec2::ZERO, Vec3::from(position).xz()),
-                            0.0,
-                        ),
-                    ));
-                }
                 if prototype.crystals {
                     let (pos, scale) = filliter.next().unwrap();
                     parent.spawn(ZoneDecorationCrystalsBundle::new(

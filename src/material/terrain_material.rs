@@ -42,7 +42,7 @@ impl From<&TerrainMaterial> for TerrainMaterialUniform {
 
 impl Material for TerrainMaterial {
     fn fragment_shader() -> ShaderRef {
-        "terrain_material.wgsl".into()
+        "materials/terrain_fragment.wgsl".into()
     }
 }
 
