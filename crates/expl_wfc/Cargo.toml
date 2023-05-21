@@ -19,6 +19,7 @@ serde = { version = "1.0.163", features = ["derive"] }
 [dev-dependencies]
 clap = { version = "4.3.0", features = ["derive"] }
 criterion = "0.4.0"
+pprof = { version = "0.11.1", features = ["flamegraph", "criterion"] }
 rstest = { version = "0.17.0", default-features = false }
 
 [[bench]]
