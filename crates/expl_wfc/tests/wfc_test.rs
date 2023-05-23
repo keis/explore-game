@@ -34,7 +34,7 @@ fn verify_generator_invariants(generator: &Generator<HexagonalGridLayout, char>)
             Cell::Alternatives(num_alts, _) => {
                 if num_alts < generator.template.available_tiles() {
                     assert_ne!(
-                        generator.queue.iter().find(|qc| **qc == coord),
+                        generator.pending.iter().find(|(qc, _)| **qc == coord),
                         None,
                         "expected to find {:?} in queue",
                         coord,
