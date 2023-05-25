@@ -8,5 +8,5 @@ license = "ISC"
 
 [dependencies]
 disjoint-hash-set = "1.0.0"
-glam = ">=0.22, <0.24"
+glam = ">=0.22, <0.25"
 itertools = "0.10.5"
