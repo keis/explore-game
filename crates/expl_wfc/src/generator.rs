@@ -7,16 +7,16 @@ use super::{
 use expl_hexgrid::{Grid, GridLayout, HexCoord};
 use fixedbitset::FixedBitSet;
 use rand::RngCore;
-use std::cmp::Reverse;
-use std::hash::Hash;
+use std::{cmp::Reverse, collections::HashMap, hash::Hash};
 
 /// Generator is the state of the iterative process for generating a map using WFC
 pub struct Generator<'a, Layout: GridLayout, Item> {
     pub template: &'a Template<Item>,
     pub grid: Grid<Layout, Cell>,
     pub collapsed: Vec<(HexCoord, TileId, Vec<TileId>)>, // Coordinate, selected tile, rejected tiles
-    pub queue: Vec<HexCoord>,
+    pub pending: HashMap<HexCoord, usize>,
     pub rejected: Option<Vec<TileId>>,
+    next: Option<HexCoord>,
     rand: rand_xoshiro::Xoshiro256PlusPlus,
 }
 
@@ -38,7 +38,8 @@ where
             template,
             grid,
             collapsed,
-            queue: vec![layout.center()],
+            pending: HashMap::new(),
+            next: Some(layout.center()),
             rejected: Some(Vec::new()),
             rand: seed.into(),
         }
@@ -58,7 +59,8 @@ where
             template,
             grid,
             collapsed,
-            queue: vec![layout.center()],
+            pending: HashMap::new(),
+            next: Some(layout.center()),
             rejected: Some(Vec::new()),
             rand: seed.into(),
         })
@@ -87,8 +89,8 @@ where
             let neighbour = coord + *offset;
             if let Some(neighbour_cell) = self.grid.get_mut(neighbour) {
                 neighbour_cell.retain(compatible);
-                if let Cell::Alternatives(_, _) = neighbour_cell {
-                    self.queue.push(neighbour);
+                if let Cell::Alternatives(num_alts, _) = neighbour_cell {
+                    self.pending.insert(neighbour, *num_alts);
                 }
             }
         }
@@ -102,38 +104,38 @@ where
         for tile in &last_rejected {
             alternatives.set(*tile, false);
         }
+        self.pending.insert(last_coord, alternatives.count_ones(..));
         self.grid[last_coord] = Cell::empty(self.template.available_tiles());
         self.grid[last_coord].set_alternatives(alternatives);
         for neighbour in last_coord.neighbours() {
             if let Some(Cell::Alternatives(_, _)) = self.grid.get(neighbour) {
                 let alternatives = self.alternatives(neighbour);
-                self.grid[neighbour].set_alternatives(alternatives)
+                self.pending.insert(neighbour, alternatives.count_ones(..));
+                self.grid[neighbour].set_alternatives(alternatives);
             }
         }
         // Because self.rejected refers to the cell at `last_coord` it is important this is the
-        // next cell that gets collapsed. This could probably be done in some better way.
+        // next cell that gets collapsed.
         self.rejected = Some(last_rejected);
-        self.queue.push(last_coord);
+        self.next = Some(last_coord);
     }
 
     pub fn step(&mut self) -> Option<()> {
-        let coord = self.queue.pop()?;
-        self.grid[coord].collapse(&mut self.rand);
-        if let Cell::Collapsed(tile) = self.grid[coord] {
+        let coord = self.next?;
+        if let Some(tile) = self.grid[coord].select(&mut self.rand) {
+            self.grid[coord].collapse(tile);
             let rejected = self.rejected.replace(Vec::new()).unwrap();
             assert!(tile <= self.template.available_tiles());
             assert!(!rejected.contains(&tile));
             self.collapsed.push((coord, tile, rejected));
             self.propagate(coord, tile);
-            self.queue.sort_by_key(|e| match self.grid[*e] {
-                Cell::Collapsed(tile) => {
-                    panic!("Collapsed cell in queue {:?} {:?}", e, tile,);
-                }
-                Cell::Alternatives(num_alts, _) => (Reverse(num_alts), e.q, e.r),
-            });
-            self.queue.dedup();
+            self.pending.remove(&coord);
+            self.next = self
+                .pending
+                .iter()
+                .max_by_key(|(coord, score)| (Reverse(*score), coord.q, coord.r))
+                .map(|(coord, _)| *coord);
         } else {
-            self.queue.push(coord);
             self.rewind();
         }
         Some(())

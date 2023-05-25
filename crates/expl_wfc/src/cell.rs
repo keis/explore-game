@@ -15,16 +15,21 @@ impl Cell {
         Self::Alternatives(num_alts, alts)
     }
 
-    pub fn collapse<R: Rng + ?Sized>(&mut self, rng: &mut R) {
+    pub fn select<R: Rng + ?Sized>(&self, rng: &mut R) -> Option<TileId> {
         if let Cell::Alternatives(num_alts, alts) = self {
             if *num_alts == 0usize {
-                return;
+                return None;
             }
             let choice = rng.gen_range(0..*num_alts);
             if let Some(tile_id) = alts.ones().nth(choice).map(|i| i as TileId) {
-                *self = Cell::Collapsed(tile_id);
+                return Some(tile_id);
             }
         }
+        None
+    }
+
+    pub fn collapse(&mut self, tile_id: TileId) {
+        *self = Cell::Collapsed(tile_id);
     }
 
     pub fn set_alternatives(&mut self, alternatives: FixedBitSet) {
