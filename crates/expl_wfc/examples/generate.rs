@@ -9,18 +9,17 @@ use expl_wfc::{
     util::{wrap_grid, DumpGrid, DumpGridWith, LoadGrid},
     Generator, Seed, SeedType, Template,
 };
-use explore_game::map::Terrain;
 use std::fs::File;
 use std::io;
 
-fn sample_map() -> Result<Grid<HexagonalGridLayout, Terrain>, &'static str> {
+fn sample_grid() -> Result<Grid<HexagonalGridLayout, char>, &'static str> {
     let mut file =
-        io::BufReader::new(File::open("assets/maps/test.txt").map_err(|_| "failed to open file")?);
-    Grid::<HexagonalGridLayout, Terrain>::load(&mut file)
+        io::BufReader::new(File::open("res/test.txt").map_err(|_| "failed to open file")?);
+    Grid::<HexagonalGridLayout, char>::load(&mut file).map_err(|_| "infallible")
 }
 
-fn sample_template() -> Template<Terrain> {
-    let input = sample_map().unwrap();
+fn sample_template() -> Template<char> {
+    let input = sample_grid().unwrap();
     let wrapped_input = wrap_grid(input);
     let transforms = standard_tile_transforms();
     Template::from_tiles(extract_tiles(&wrapped_input, &transforms))
@@ -54,12 +53,12 @@ struct SquareArgs {
 }
 
 fn generate_map<Layout>(
-    template: &Template<Terrain>,
-    generator: &mut Generator<Layout, Terrain>,
+    template: &Template<char>,
+    generator: &mut Generator<Layout, char>,
     verbose: bool,
 ) where
     Layout: GridLayout,
-    Grid<Layout, Terrain>: DumpGrid,
+    Grid<Layout, char>: DumpGrid,
     Grid<Layout, Cell>: DumpGridWith<Item = Cell>,
 {
     while generator.step().is_some() {
@@ -90,7 +89,7 @@ fn main() -> Result<(), &'static str> {
                 .seed
                 .unwrap_or_else(|| Seed::new(SeedType::Hexagonal(params.radius)));
             println!("Generating map with seed {}", seed);
-            let mut generator: Generator<HexagonalGridLayout, Terrain> =
+            let mut generator: Generator<HexagonalGridLayout, char> =
                 Generator::new_with_seed(&template, seed)?;
             generate_map(&template, &mut generator, args.verbose);
             Ok(())
@@ -100,7 +99,7 @@ fn main() -> Result<(), &'static str> {
                 .seed
                 .unwrap_or_else(|| Seed::new(SeedType::Square(params.width, params.height)));
             println!("Generating map with seed {}", seed);
-            let mut generator: Generator<SquareGridLayout, Terrain> =
+            let mut generator: Generator<SquareGridLayout, char> =
                 Generator::new_with_seed(&template, seed)?;
             generate_map(&template, &mut generator, args.verbose);
             Ok(())
