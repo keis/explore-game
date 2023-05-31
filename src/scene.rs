@@ -2,8 +2,8 @@ use crate::{
     character::CharacterBundle,
     enemy::{EnemyBundle, EnemyParams},
     map::{
-        game_map_from_prototype, spawn_zone, GameMap, GenerateMapTask, Height, HexCoord,
-        MapCommandsExt, Terrain, Zone, ZoneParams,
+        spawn_zone, zone_layer_from_prototype, GenerateMapTask, Height, HexCoord, MapCommandsExt,
+        PresenceLayer, Terrain, Zone, ZoneLayer, ZoneParams,
     },
     party::{GroupCommandsExt, PartyBundle, PartyParams},
     structure::{PortalBundle, PortalParams},
@@ -34,7 +34,7 @@ pub fn spawn_map(
         }
         None => return,
     };
-    let game_map = game_map_from_prototype(
+    let zone_layer = zone_layer_from_prototype(
         &mut commands,
         &prototype,
         |commands, position, zoneproto| {
@@ -42,7 +42,7 @@ pub fn spawn_map(
         },
     );
     commands
-        .spawn(game_map)
+        .spawn((zone_layer, PresenceLayer::new(prototype.tiles.layout)))
         .with_presence(prototype.portal_position, |location| {
             let zone_prototype = prototype.tiles.get(prototype.portal_position).unwrap();
             let height = Height {
@@ -62,7 +62,7 @@ pub fn spawn_map(
 pub fn spawn_party(
     mut commands: Commands,
     mut party_params: PartyParams,
-    map_query: Query<(Entity, &GameMap), Added<GameMap>>,
+    map_query: Query<(Entity, &ZoneLayer), Added<ZoneLayer>>,
     zone_query: Query<&Zone>,
 ) {
     let Ok((map_entity, map)) = map_query.get_single() else { return };
@@ -99,7 +99,7 @@ pub fn spawn_party(
 pub fn spawn_enemy(
     mut commands: Commands,
     mut enemy_params: EnemyParams,
-    map_query: Query<(Entity, &GameMap), Added<GameMap>>,
+    map_query: Query<(Entity, &ZoneLayer), Added<ZoneLayer>>,
     zone_query: Query<&Zone>,
 ) {
     let Ok((map_entity, map)) = map_query.get_single() else { return };

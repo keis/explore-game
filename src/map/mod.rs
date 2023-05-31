@@ -5,7 +5,6 @@ mod commands;
 mod decoration;
 mod events;
 mod fog;
-mod gamemap;
 mod generator;
 mod height;
 mod hex;
@@ -20,7 +19,6 @@ pub use commands::MapCommandsExt;
 pub use events::MapEvent;
 pub use expl_hexgrid::HexCoord;
 pub use fog::Fog;
-pub use gamemap::{game_map_from_prototype, GameMap};
 pub use generator::{start_map_generation, GenerateMapTask, MapPrototype, MapSeed};
 pub use height::{Height, HeightQuery};
 pub use hex::HexAssets;
@@ -28,8 +26,11 @@ pub use pathdisplay::PathDisplay;
 pub use pathfinder::PathFinder;
 pub use pathguided::PathGuided;
 pub use position::MapPosition;
-pub use presence::{MapPresence, Offset, ViewRadius};
-pub use zone::{spawn_zone, Terrain, Zone, ZoneBundle, ZoneParams, ZonePrototype};
+pub use presence::{MapPresence, Offset, PresenceLayer, ViewRadius};
+pub use zone::{
+    spawn_zone, zone_layer_from_prototype, Terrain, Zone, ZoneBundle, ZoneLayer, ZoneParams,
+    ZonePrototype,
+};
 
 #[derive(Resource)]
 pub struct Damaged(bool);
@@ -73,7 +74,7 @@ impl Plugin for MapPlugin {
 fn log_moves(
     mut map_events: EventReader<MapEvent>,
     presence_query: Query<&MapPresence>,
-    map_query: Query<&GameMap>,
+    presence_layer_query: Query<&PresenceLayer>,
 ) {
     for event in &mut map_events {
         if let MapEvent::PresenceMoved {
@@ -84,8 +85,11 @@ fn log_moves(
         {
             info!("{:?} moved to {}", entity, position);
             if let Ok(presence) = presence_query.get(*entity) {
-                if let Ok(map) = map_query.get(presence.map) {
-                    for other in map.presence(presence.position).filter(|e| *e != entity) {
+                if let Ok(presence_layer) = presence_layer_query.get(presence.map) {
+                    for other in presence_layer
+                        .presence(presence.position)
+                        .filter(|e| *e != entity)
+                    {
                         info!("{:?} is here", other);
                     }
                 }
@@ -96,7 +100,7 @@ fn log_moves(
 
 #[cfg(test)]
 pub mod tests {
-    use super::{GameMap, Terrain, Zone};
+    use super::{Terrain, Zone, ZoneLayer};
     use bevy::prelude::*;
     use expl_hexgrid::layout::SquareGridLayout;
     use rstest::*;
@@ -135,7 +139,7 @@ pub mod tests {
             ])
             .collect();
         app.world
-            .spawn(GameMap::new(
+            .spawn(ZoneLayer::new(
                 SquareGridLayout {
                     width: 3,
                     height: 3,

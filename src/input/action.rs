@@ -4,7 +4,7 @@ use crate::{
     camera::{CameraControl, CameraTarget},
     character::Character,
     interface::MenuLayer,
-    map::{GameMap, MapPresence},
+    map::{MapPresence, PresenceLayer},
     party::{Group, Party},
     structure::Camp,
     turn::Turn,
@@ -97,13 +97,16 @@ pub fn handle_select_next(
 
 pub fn handle_camp(
     party_query: Query<(Entity, &MapPresence, &Selection), With<Party>>,
-    map_query: Query<&GameMap>,
+    map_query: Query<&PresenceLayer>,
     camp_query: Query<Entity, With<Camp>>,
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
     for (entity, presence, _) in party_query.iter().filter(|(_, _, s)| s.is_selected) {
-        let Ok(map) = map_query.get(presence.map) else { continue };
-        if let Some(camp_entity) = camp_query.iter_many(map.presence(presence.position)).next() {
+        let Ok(presence_layer) = map_query.get(presence.map) else { continue };
+        if let Some(camp_entity) = camp_query
+            .iter_many(presence_layer.presence(presence.position))
+            .next()
+        {
             game_action_queue.add(GameAction::EnterCamp(entity, camp_entity));
         } else {
             game_action_queue.add(GameAction::MakeCamp(entity));

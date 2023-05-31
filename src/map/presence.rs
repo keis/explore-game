@@ -1,6 +1,8 @@
-use super::{Damaged, Fog, GameMap, HexCoord, MapPosition, Zone};
+use super::{Damaged, Fog, HexCoord, MapPosition, Zone, ZoneLayer};
 use crate::enemy::Enemy;
 use bevy::prelude::*;
+use expl_hexgrid::{layout::SquareGridLayout, Grid};
+use std::collections::hash_set::HashSet;
 
 #[derive(Component, Debug)]
 pub struct MapPresence {
@@ -13,6 +15,48 @@ pub struct Offset(pub Vec3);
 
 #[derive(Component, Default)]
 pub struct ViewRadius(pub u32);
+
+#[derive(Component)]
+pub struct PresenceLayer {
+    presence: Grid<SquareGridLayout, HashSet<Entity>>,
+    void: HashSet<Entity>,
+}
+
+impl PresenceLayer {
+    pub fn new(layout: SquareGridLayout) -> Self {
+        PresenceLayer {
+            presence: Grid::new(layout),
+            void: HashSet::new(),
+        }
+    }
+
+    pub fn presence(&self, position: HexCoord) -> impl Iterator<Item = &Entity> {
+        self.presence
+            .get(position)
+            .map_or_else(|| self.void.iter(), |presence| presence.iter())
+    }
+
+    pub fn add_presence(&mut self, position: HexCoord, entity: Entity) {
+        if let Some(presence) = self.presence.get_mut(position) {
+            presence.insert(entity);
+        }
+    }
+
+    pub fn remove_presence(&mut self, position: HexCoord, entity: Entity) {
+        if let Some(presence) = self.presence.get_mut(position) {
+            presence.remove(&entity);
+        }
+    }
+
+    pub fn move_presence(&mut self, entity: Entity, origin: HexCoord, destination: HexCoord) {
+        if let Some(o) = self.presence.get_mut(origin) {
+            o.remove(&entity);
+        }
+        if let Some(d) = self.presence.get_mut(destination) {
+            d.insert(entity);
+        }
+    }
+}
 
 pub fn update_zone_visibility(
     view_query: Query<(&MapPresence, &ViewRadius), Without<Enemy>>,
@@ -56,12 +100,12 @@ pub fn update_terrain_visibility(
 #[allow(clippy::type_complexity)]
 pub fn update_presence_fog(
     zone_query: Query<(&MapPosition, &Fog), (Changed<Fog>, Without<MapPresence>)>,
-    map_query: Query<&GameMap>,
+    map_query: Query<&PresenceLayer>,
     mut presence_query: Query<(&mut Fog, &mut Visibility), With<MapPresence>>,
 ) {
-    let Ok(map) = map_query.get_single() else { return };
+    let Ok(presence_layer) = map_query.get_single() else { return };
     for (position, zone_fog) in &zone_query {
-        let mut presence_iter = presence_query.iter_many_mut(map.presence(position.0));
+        let mut presence_iter = presence_query.iter_many_mut(presence_layer.presence(position.0));
         while let Some((mut fog, mut visibility)) = presence_iter.fetch_next() {
             fog.visible = zone_fog.visible;
             fog.explored = zone_fog.explored;
@@ -75,7 +119,7 @@ pub fn update_presence_fog(
 
 #[allow(clippy::type_complexity)]
 pub fn update_enemy_visibility(
-    map_query: Query<&GameMap>,
+    map_query: Query<(&ZoneLayer, &PresenceLayer)>,
     mut enemy_params: ParamSet<(
         Query<&mut Visibility, With<Enemy>>,
         Query<(&MapPresence, &mut Visibility), (With<Enemy>, Changed<MapPresence>)>,
@@ -83,11 +127,11 @@ pub fn update_enemy_visibility(
     changed_zone_query: Query<(&MapPosition, &Fog), Changed<Fog>>,
     any_zone_query: Query<&Fog>,
 ) {
-    let Ok(map) = map_query.get_single() else { return };
+    let Ok((zone_layer, presence_layer)) = map_query.get_single() else { return };
     // Update enemies at locations that had their fog status changed
     for (position, fog) in &changed_zone_query {
         let mut enemy_query = enemy_params.p0();
-        let mut enemy_iter = enemy_query.iter_many_mut(map.presence(position.0));
+        let mut enemy_iter = enemy_query.iter_many_mut(presence_layer.presence(position.0));
         while let Some(mut visibility) = enemy_iter.fetch_next() {
             *visibility = if fog.visible {
                 Visibility::Inherited
@@ -98,7 +142,7 @@ pub fn update_enemy_visibility(
     }
     // Update enemies that had their location changed
     for (presence, mut visibility) in &mut enemy_params.p1() {
-        let Some(fog) = map.get(presence.position).and_then(|&e| any_zone_query.get(e).ok()) else { continue };
+        let Some(fog) = zone_layer.get(presence.position).and_then(|&e| any_zone_query.get(e).ok()) else { continue };
         *visibility = if fog.visible {
             Visibility::Inherited
         } else {

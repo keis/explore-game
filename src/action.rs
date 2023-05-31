@@ -3,8 +3,8 @@ use crate::{
     combat::CombatEvent,
     crystals::CrystalDeposit,
     map::{
-        GameMap, HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder, PathGuided, Terrain,
-        Zone,
+        HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder, PathGuided, PresenceLayer,
+        Terrain, Zone, ZoneLayer,
     },
     party::{Group, GroupCommandsExt, Party, PartyBundle, PartyParams},
     slide::{Slide, SlideEvent},
@@ -251,7 +251,7 @@ pub fn handle_make_camp(
     queue: ResMut<GameActionQueue>,
     mut commands: Commands,
     mut spawn_camp_params: CampParams,
-    map_query: Query<(Entity, &GameMap)>,
+    map_query: Query<(Entity, &ZoneLayer, &PresenceLayer)>,
     zone_query: Query<&Zone>,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
     camp_query: Query<&Camp>,
@@ -259,8 +259,8 @@ pub fn handle_make_camp(
     let Some(GameAction::MakeCamp(party_entity)) = queue.current else { return };
 
     let Ok((mut party, group, presence)) = party_query.get_mut(party_entity) else { return };
-    let Ok((map_entity, map)) = map_query.get(presence.map) else { return };
-    let Some(zone) = map.get(presence.position).and_then(|&e| zone_query.get(e).ok()) else { return };
+    let Ok((map_entity, zone_layer, presence_layer)) = map_query.get(presence.map) else { return };
+    let Some(zone) = zone_layer.get(presence.position).and_then(|&e| zone_query.get(e).ok()) else { return };
 
     if zone.terrain == Terrain::Mountain {
         info!("Can't camp here");
@@ -269,7 +269,7 @@ pub fn handle_make_camp(
 
     let position = presence.position;
     if camp_query
-        .iter_many(map.presence(position))
+        .iter_many(presence_layer.presence(position))
         .next()
         .is_some()
     {
@@ -305,14 +305,14 @@ pub fn handle_break_camp(
     mut commands: Commands,
     queue: ResMut<GameActionQueue>,
     mut party_query: Query<(&mut Party, &MapPresence)>,
-    mut map_query: Query<(Entity, &GameMap)>,
+    mut map_query: Query<(Entity, &PresenceLayer)>,
     camp_query: Query<(Entity, &Camp, &Group)>,
 ) {
     let Some(GameAction::BreakCamp(e)) = queue.current else { return };
 
     let Ok((mut party, presence)) = party_query.get_mut(e) else { return };
-    let Ok((map_entity, map)) = map_query.get_mut(presence.map) else { return };
-    let Some((camp_entity, camp, group)) = camp_query.iter_many(map.presence(presence.position)).next() else { return };
+    let Ok((map_entity, presence_layer)) = map_query.get_mut(presence.map) else { return };
+    let Some((camp_entity, camp, group)) = camp_query.iter_many(presence_layer.presence(presence.position)).next() else { return };
     if !group.members.is_empty() {
         info!("Camp is not empty");
         return;
@@ -438,14 +438,14 @@ pub fn handle_merge_party(
 pub fn handle_collect_crystals(
     queue: ResMut<GameActionQueue>,
     mut party_query: Query<(&mut Party, &MapPresence)>,
-    map_query: Query<&GameMap>,
+    map_query: Query<&ZoneLayer>,
     mut crystal_deposit_query: Query<&mut CrystalDeposit>,
 ) {
     let Some(GameAction::CollectCrystals(party_entity)) = queue.current else { return };
 
     let Ok((mut party, presence)) = party_query.get_mut(party_entity) else { return };
-    let Ok(map) = map_query.get(presence.map) else { return };
-    let Some(mut crystal_deposit) = map
+    let Ok(zone_layer) = map_query.get(presence.map) else { return };
+    let Some(mut crystal_deposit) = zone_layer
         .get(presence.position)
         .and_then(|&e| crystal_deposit_query.get_mut(e).ok()) else {
             info!("No crystal deposit here");
@@ -458,14 +458,14 @@ pub fn handle_collect_crystals(
 pub fn handle_open_portal(
     queue: ResMut<GameActionQueue>,
     party_query: Query<&MapPresence, With<Party>>,
-    map_query: Query<&GameMap>,
+    map_query: Query<&PresenceLayer>,
     mut portal_query: Query<&mut Portal>,
 ) {
     let Some(GameAction::OpenPortal(party_entity)) = queue.current else { return };
 
     let Ok(presence) = party_query.get(party_entity) else { return };
-    let Ok(map) = map_query.get(presence.map) else { return };
-    let mut portal_iter = portal_query.iter_many_mut(map.presence(presence.position));
+    let Ok(presence_layer) = map_query.get(presence.map) else { return };
+    let mut portal_iter = portal_query.iter_many_mut(presence_layer.presence(presence.position));
     let Some(mut portal) = portal_iter.fetch_next() else { return };
 
     if !portal.open {
