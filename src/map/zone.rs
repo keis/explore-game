@@ -3,7 +3,8 @@ use super::{
         ZoneDecorationCrystals, ZoneDecorationCrystalsBundle, ZoneDecorationTree,
         ZoneDecorationTreeBundle,
     },
-    Fog, GameMap, Height, HexAssets, HexCoord, MapEvent, MapPosition, MapPresence,
+    Fog, Height, HexAssets, HexCoord, MapEvent, MapPosition, MapPresence, MapPrototype,
+    PresenceLayer,
 };
 use crate::{
     assets::MainAssets,
@@ -13,6 +14,7 @@ use crate::{
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
 use bevy_mod_picking::prelude::{Pickable, RaycastPickTarget};
+use expl_hexgrid::{layout::SquareGridLayout, Grid};
 use glam::Vec3Swizzles;
 use rand::{
     distributions::{Distribution, Standard},
@@ -95,6 +97,50 @@ pub struct ZoneBundle {
     pub not_shadow_caster: NotShadowCaster,
 }
 
+#[derive(Component)]
+pub struct ZoneLayer {
+    tiles: Grid<SquareGridLayout, Entity>,
+}
+
+impl ZoneLayer {
+    pub fn new(layout: SquareGridLayout, tiles: Vec<Entity>) -> Self {
+        ZoneLayer {
+            tiles: Grid::with_data(layout, tiles),
+        }
+    }
+
+    pub fn layout(&self) -> SquareGridLayout {
+        self.tiles.layout
+    }
+
+    pub fn set(&mut self, position: HexCoord, entity: Entity) {
+        self.tiles.set(position, entity)
+    }
+
+    pub fn get(&self, position: HexCoord) -> Option<&Entity> {
+        self.tiles.get(position)
+    }
+}
+
+pub fn zone_layer_from_prototype<F>(
+    commands: &mut Commands,
+    prototype: &MapPrototype,
+    mut spawn_tile: F,
+) -> ZoneLayer
+where
+    F: FnMut(&mut Commands, HexCoord, &ZonePrototype) -> Entity,
+{
+    ZoneLayer {
+        tiles: Grid::with_data(
+            prototype.tiles.layout,
+            prototype
+                .tiles
+                .iter()
+                .map(|(coord, zoneproto)| spawn_tile(commands, coord, zoneproto)),
+        ),
+    }
+}
+
 fn zone_material(assets: &Res<MainAssets>, prototype: &ZonePrototype) -> ZoneMaterial {
     let terrain_texture = match prototype.terrain {
         Terrain::Ocean => Some(assets.ocean_texture.clone()),
@@ -117,7 +163,7 @@ pub fn update_outer_visible(
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     changed_zone_query: Query<(&Fog, &MapPosition, &Handle<ZoneMaterial>), Changed<Fog>>,
     zone_query: Query<(&Fog, &Handle<ZoneMaterial>)>,
-    map_query: Query<&GameMap>,
+    map_query: Query<&ZoneLayer>,
 ) {
     let Ok(map) = map_query.get_single() else { return };
     for (fog, position, handle) in &changed_zone_query {
@@ -251,7 +297,7 @@ pub fn despawn_empty_crystal_deposit(
 
 pub fn hide_decorations_behind_camp(
     presence_query: Query<&MapPresence, (Changed<MapPresence>, With<Camp>)>,
-    map_query: Query<&GameMap>,
+    map_query: Query<&ZoneLayer>,
     zone_query: Query<&Children>,
     mut decoration_query: Query<(&mut Visibility, &Transform), With<ZoneDecorationTree>>,
 ) {
@@ -269,16 +315,16 @@ pub fn hide_decorations_behind_camp(
 
 pub fn show_decorations_behind_camp(
     mut events: EventReader<MapEvent>,
-    map_query: Query<&GameMap>,
+    map_query: Query<(&ZoneLayer, &PresenceLayer)>,
     zone_query: Query<&Children>,
     camp_query: Query<&Camp>,
     mut decoration_query: Query<&mut Visibility, With<ZoneDecorationTree>>,
 ) {
-    let Ok(map) = map_query.get_single() else { return };
+    let Ok((map, presence_layer)) = map_query.get_single() else { return };
     for event in &mut events {
         let MapEvent::PresenceRemoved { position, .. } = event else { continue };
         if camp_query
-            .iter_many(map.presence(*position))
+            .iter_many(presence_layer.presence(*position))
             .next()
             .is_some()
         {

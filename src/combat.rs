@@ -3,7 +3,7 @@ use crate::{
     assets::MainAssets,
     character::Character,
     enemy::Enemy,
-    map::{GameMap, HexCoord, MapEvent},
+    map::{HexCoord, MapEvent, PresenceLayer},
     party::{Group, GroupCommandsExt, GroupMember},
     State,
 };
@@ -94,19 +94,21 @@ pub fn initiate_combat(
     mut map_events: EventReader<MapEvent>,
     mut combat_events: EventWriter<CombatEvent>,
     mut combat_params: CombatParams,
-    map_query: Query<&GameMap>,
+    map_query: Query<&PresenceLayer>,
     friend_query: Query<&Group>,
     character_query: Query<Entity, With<Character>>,
     foe_query: Query<Entity, With<Enemy>>,
 ) {
-    let Ok(map) = map_query.get_single() else { return };
+    let Ok(presence_layer) = map_query.get_single() else { return };
     for event in &mut map_events {
         let MapEvent::PresenceMoved { position, .. } = event else { continue };
         let friends: SmallVec<[Entity; 8]> = friend_query
-            .iter_many(map.presence(*position))
+            .iter_many(presence_layer.presence(*position))
             .flat_map(|group| character_query.iter_many(&group.members))
             .collect();
-        let foes: SmallVec<[Entity; 8]> = foe_query.iter_many(map.presence(*position)).collect();
+        let foes: SmallVec<[Entity; 8]> = foe_query
+            .iter_many(presence_layer.presence(*position))
+            .collect();
         if !friends.is_empty() && !foes.is_empty() {
             commands.spawn(CombatBundle::new(
                 &mut combat_params,

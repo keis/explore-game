@@ -1,22 +1,23 @@
-use super::{GameMap, HexCoord, Zone};
+use super::{HexCoord, Zone, ZoneLayer};
 use bevy::{ecs::system::SystemParam, prelude::*};
 use pathfinding::prelude::astar;
 
 #[derive(SystemParam)]
 pub struct PathFinder<'w, 's> {
-    map_query: Query<'w, 's, &'static GameMap>,
+    map_query: Query<'w, 's, &'static ZoneLayer>,
     zone_query: Query<'w, 's, &'static Zone>,
 }
 
 impl<'w, 's> PathFinder<'w, 's> {
     pub fn find_path(&self, start: HexCoord, goal: HexCoord) -> Option<(Vec<HexCoord>, u32)> {
-        let map = self.map_query.single();
+        let zone_layer = self.map_query.single();
         astar(
             &start,
             |p| {
                 p.neighbours()
                     .filter(&|c: &HexCoord| {
-                        map.get(*c)
+                        zone_layer
+                            .get(*c)
                             .and_then(|&entity| self.zone_query.get(entity).ok())
                             .map_or(false, |zone| zone.is_walkable())
                     })
