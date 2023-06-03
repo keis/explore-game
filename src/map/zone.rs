@@ -12,6 +12,7 @@ use crate::{
     structure::Camp,
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
+use bevy_mod_picking::prelude::{Pickable, RaycastPickTarget};
 use glam::Vec3Swizzles;
 use rand::{
     distributions::{Distribution, Standard},
@@ -88,9 +89,8 @@ pub struct ZoneBundle {
     pub height: Height,
     pub fog: Fog,
     pub position: MapPosition,
-    pub pickable_mesh: bevy_mod_picking::PickableMesh,
-    pub hover: bevy_mod_picking::Hover,
-    pub no_deselect: bevy_mod_picking::NoDeselect,
+    pub pickable: Pickable,
+    pub raycast_pick_target: RaycastPickTarget,
     pub interaction: Interaction,
     pub not_shadow_caster: NotShadowCaster,
 }

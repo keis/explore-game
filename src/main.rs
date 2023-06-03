@@ -1,7 +1,7 @@
 use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
 use bevy_mod_outline::OutlinePlugin;
-use bevy_mod_picking::PickingCameraBundle;
+use bevy_mod_picking::prelude::RaycastPickCamera;
 use clap::Parser;
 use expl_wfc::{Seed, SeedType};
 use explore_game::{
@@ -117,6 +117,6 @@ fn spawn_camera(mut commands: Commands) {
             gap: 1.0,
         },
         CameraControl::default(),
-        PickingCameraBundle::default(),
+        RaycastPickCamera::default(),
     ));
 }

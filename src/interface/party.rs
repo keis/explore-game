@@ -6,11 +6,10 @@ use super::{
 };
 use crate::{
     character::{Character, Movement},
-    input::{Action, ActionState},
+    input::{Action, ActionState, Selection},
     party::{Group, Party},
 };
 use bevy::prelude::*;
-use bevy_mod_picking::Selection;
 
 #[derive(Component)]
 pub struct PartyList;
@@ -166,7 +165,7 @@ pub fn update_party_selection(
     for (selection, bindings) in &selection_query {
         let mut party_display_iter = party_display_query.iter_many_mut(bindings);
         while let Some(mut background_color) = party_display_iter.fetch_next() {
-            *background_color = if selection.selected() {
+            *background_color = if selection.is_selected {
                 SELECTED
             } else {
                 NORMAL
@@ -223,11 +222,11 @@ pub fn handle_party_display_interaction(
     if let Ok((Interaction::Clicked, display)) = interaction_query.get_single() {
         if let Ok((entity, mut selection)) = selection_query.get_mut(display.party) {
             if action_state.pressed(Action::MultiSelect) {
-                let selected = selection.selected();
-                selection.set_selected(!selected);
+                let selected = selection.is_selected;
+                selection.is_selected = !selected;
             } else {
                 for (e, mut selection) in selection_query.iter_mut() {
-                    selection.set_selected(e == entity)
+                    selection.is_selected = e == entity;
                 }
             }
         }

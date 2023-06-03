@@ -1,6 +1,5 @@
 use crate::map::Fog;
 use bevy::{prelude::*, reflect::TypeUuid, render::render_resource::*};
-use bevy_mod_picking::Hover;
 
 #[derive(Default)]
 pub struct ZoneMaterialPlugin;
@@ -108,12 +107,15 @@ impl Material for ZoneMaterial {
 #[allow(clippy::type_complexity)]
 fn apply_to_material(
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
-    zone_query: Query<(&Fog, &Hover, &Handle<ZoneMaterial>), Or<(Changed<Fog>, Changed<Hover>)>>,
+    zone_query: Query<
+        (&Fog, &Interaction, &Handle<ZoneMaterial>),
+        Or<(Changed<Fog>, Changed<Interaction>)>,
+    >,
 ) {
-    for (fog, hover, handle) in &zone_query {
+    for (fog, interaction, handle) in &zone_query {
         let Some(mut material) = zone_materials.get_mut(handle) else { continue };
         material.visible = fog.visible;
         material.explored = fog.explored;
-        material.hover = hover.hovered();
+        material.hover = matches!(interaction, Interaction::Hovered);
     }
 }

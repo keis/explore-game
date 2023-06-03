@@ -6,13 +6,12 @@ use super::{
 };
 use crate::{
     character::Character,
-    input::{Action, ActionState},
+    input::{Action, ActionState, Selection},
     map::MapEvent,
     party::Group,
     structure::Camp,
 };
 use bevy::prelude::*;
-use bevy_mod_picking::Selection;
 
 #[derive(Component)]
 pub struct CampList;
@@ -144,7 +143,7 @@ pub fn update_camp_selection(
     for (selection, bindings) in &selection_query {
         let mut camp_display_iter = camp_display_query.iter_many_mut(bindings);
         while let Some(mut background_color) = camp_display_iter.fetch_next() {
-            *background_color = if selection.selected() {
+            *background_color = if selection.is_selected {
                 SELECTED
             } else {
                 NORMAL
@@ -174,11 +173,11 @@ pub fn handle_camp_display_interaction(
     if let Ok((Interaction::Clicked, display)) = interaction_query.get_single() {
         if let Ok((entity, mut selection)) = selection_query.get_mut(display.camp) {
             if action_state.pressed(Action::MultiSelect) {
-                let selected = selection.selected();
-                selection.set_selected(!selected);
+                let selected = selection.is_selected;
+                selection.is_selected = !selected;
             } else {
                 for (e, mut selection) in selection_query.iter_mut() {
-                    selection.set_selected(e == entity)
+                    selection.is_selected = e == entity;
                 }
             }
         }
