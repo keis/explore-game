@@ -27,6 +27,7 @@ impl Plugin for CombatPlugin {
             .add_systems(
                 (
                     combat_round,
+                    combat_log,
                     despawn_no_health.after(combat_round),
                     finish_combat.after(despawn_no_health),
                 )
@@ -39,8 +40,8 @@ impl Plugin for CombatPlugin {
 pub struct Combat {
     position: HexCoord,
     timer: Timer,
-    friends: SmallVec<[Entity; 8]>,
-    foes: SmallVec<[Entity; 8]>,
+    initiative_order: SmallVec<[Entity; 8]>,
+    initiative: usize,
 }
 
 #[derive(Bundle)]
@@ -55,15 +56,14 @@ impl CombatBundle {
     pub fn new(
         (main_assets, sprite_params): &mut CombatParams,
         position: HexCoord,
-        friends: SmallVec<[Entity; 8]>,
-        foes: SmallVec<[Entity; 8]>,
+        initiative_order: SmallVec<[Entity; 8]>,
     ) -> Self {
         Self {
             combat: Combat {
                 position,
-                timer: Timer::new(Duration::from_secs(1), TimerMode::Repeating),
-                friends,
-                foes,
+                timer: Timer::new(Duration::from_millis(600), TimerMode::Repeating),
+                initiative: 0,
+                initiative_order,
             },
             sprite3d: Sprite3d {
                 image: main_assets.swords_emblem_icon.clone(),
@@ -85,7 +85,34 @@ pub struct Health(pub u16);
 pub struct Attack(pub Range<u16>);
 
 pub enum CombatEvent {
-    Initiate,
+    Initiate(Entity),
+    FriendDamage(Entity, u16),
+    EnemyDamage(Entity, u16),
+}
+
+pub fn combat_log(mut combat_events: EventReader<CombatEvent>, combat_query: Query<&Combat>) {
+    for event in &mut combat_events {
+        match event {
+            CombatEvent::Initiate(entity) => {
+                let Ok(combat) = combat_query.get(*entity) else { continue };
+                info!("Combat initiated at {}!", combat.position)
+            }
+            CombatEvent::FriendDamage(entity, damage) => {
+                let Ok(combat) = combat_query.get(*entity) else { continue };
+                info!(
+                    "Damage to friendly in combat at {} - {}",
+                    combat.position, damage
+                )
+            }
+            CombatEvent::EnemyDamage(entity, damage) => {
+                let Ok(combat) = combat_query.get(*entity) else { continue };
+                info!(
+                    "Damage to enemy in combat at {} - {}",
+                    combat.position, damage
+                )
+            }
+        }
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -102,34 +129,37 @@ pub fn initiate_combat(
     let Ok(presence_layer) = map_query.get_single() else { return };
     for event in &mut map_events {
         let MapEvent::PresenceMoved { position, .. } = event else { continue };
-        let friends: SmallVec<[Entity; 8]> = friend_query
+        let friends: Vec<_> = friend_query
             .iter_many(presence_layer.presence(*position))
             .flat_map(|group| character_query.iter_many(&group.members))
             .collect();
-        let foes: SmallVec<[Entity; 8]> = foe_query
+        let foes: Vec<_> = foe_query
             .iter_many(presence_layer.presence(*position))
             .collect();
+        let initiative_order = friends.iter().chain(foes.iter()).cloned().collect();
         if !friends.is_empty() && !foes.is_empty() {
-            commands.spawn(CombatBundle::new(
-                &mut combat_params,
-                *position,
-                friends,
-                foes,
-            ));
-            combat_events.send(CombatEvent::Initiate);
+            let entity = commands
+                .spawn(CombatBundle::new(
+                    &mut combat_params,
+                    *position,
+                    initiative_order,
+                ))
+                .id();
+            combat_events.send(CombatEvent::Initiate(entity));
         }
     }
 }
 
 #[allow(clippy::type_complexity)]
 pub fn combat_round(
-    mut combat_query: Query<&mut Combat>,
+    mut combat_query: Query<(Entity, &mut Combat)>,
+    mut combat_events: EventWriter<CombatEvent>,
     time: Res<Time>,
-    mut friend_query: Query<(&Attack, &mut Health), (With<Character>, Without<Enemy>)>,
-    mut foe_query: Query<(&Attack, &mut Health), (With<Enemy>, Without<Character>)>,
+    attacker_query: Query<(&Attack, Option<&Enemy>)>,
+    mut target_query: Query<(&mut Health, Option<&Enemy>)>,
 ) {
     let mut rng = rand::thread_rng();
-    for mut combat in &mut combat_query {
+    for (entity, mut combat) in &mut combat_query {
         combat.timer.tick(time.delta());
         if !combat.timer.just_finished() {
             continue;
@@ -137,26 +167,23 @@ pub fn combat_round(
 
         info!("Combat at {}", combat.position);
 
-        for (attack, _health) in friend_query.iter_many(&combat.friends) {
-            let mut foe_iter = foe_query.iter_many_mut(&combat.foes);
-            while let Some((_, mut health)) = foe_iter.fetch_next() {
-                if health.0 == 0 {
-                    continue;
-                }
-                health.0 = health.0.saturating_sub(rng.gen_range(attack.0.clone()));
-                break;
-            }
-        }
+        let attacker_entity = combat.initiative_order[combat.initiative];
+        combat.initiative = (combat.initiative + 1) % combat.initiative_order.len();
 
-        for (attack, _health) in foe_query.iter_many(&combat.foes) {
-            let mut friend_iter = friend_query.iter_many_mut(&combat.friends);
-            while let Some((_, mut health)) = friend_iter.fetch_next() {
-                if health.0 == 0 {
-                    continue;
-                }
-                health.0 = health.0.saturating_sub(rng.gen_range(attack.0.clone()));
-                break;
+        let Ok((attack, maybe_attacker_enemy)) = attacker_query.get(attacker_entity) else { continue };
+        let mut target_iter = target_query.iter_many_mut(&combat.initiative_order);
+        while let Some((mut health, maybe_target_enemy)) = target_iter.fetch_next() {
+            if health.0 == 0 || maybe_attacker_enemy.is_some() == maybe_target_enemy.is_some() {
+                continue;
             }
+            let damage = rng.gen_range(attack.0.clone()).min(health.0);
+            health.0 -= damage;
+            combat_events.send(if maybe_target_enemy.is_some() {
+                CombatEvent::EnemyDamage(entity, damage)
+            } else {
+                CombatEvent::FriendDamage(entity, damage)
+            });
+            break;
         }
     }
 }
@@ -183,8 +210,14 @@ pub fn finish_combat(
     foe_query: Query<Entity, (With<Enemy>, Without<Character>)>,
 ) {
     for (entity, combat) in &combat_query {
-        let no_friends = friend_query.iter_many(&combat.friends).next().is_none();
-        let no_foes = foe_query.iter_many(&combat.foes).next().is_none();
+        let no_friends = friend_query
+            .iter_many(&combat.initiative_order)
+            .next()
+            .is_none();
+        let no_foes = foe_query
+            .iter_many(&combat.initiative_order)
+            .next()
+            .is_none();
         if no_friends && no_foes {
             info!("Combat at {} leaves no one alive", combat.position);
         } else if no_friends {
