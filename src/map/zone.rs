@@ -210,6 +210,7 @@ pub fn spawn_zone(
     };
     let zone_entity = commands
         .spawn((
+            Name::new(format!("Zone {}", position)),
             ZoneBundle {
                 position: MapPosition(position),
                 zone,
@@ -228,34 +229,41 @@ pub fn spawn_zone(
                 let mut filliter = prototype.random_fill.iter();
                 if prototype.crystals {
                     let (pos, scale) = filliter.next().unwrap();
-                    parent.spawn(ZoneDecorationCrystalsBundle::new(
-                        main_assets,
-                        terrain_materials,
-                        Vec3::new(
-                            pos.x,
-                            height.height_at(*pos, Vec3::from(position).xz() + *pos),
-                            pos.y,
+                    parent.spawn((
+                        Name::new("Crystal"),
+                        ZoneDecorationCrystalsBundle::new(
+                            main_assets,
+                            terrain_materials,
+                            Vec3::new(
+                                pos.x,
+                                height.height_at(*pos, Vec3::from(position).xz() + *pos),
+                                pos.y,
+                            ),
+                            *scale,
                         ),
-                        *scale,
                     ));
                 }
 
                 for (pos, scale) in filliter {
-                    parent.spawn(ZoneDecorationTreeBundle::new(
-                        main_assets,
-                        terrain_materials,
-                        Vec3::new(
-                            pos.x,
-                            height.height_at(*pos, Vec3::from(position).xz() + *pos),
-                            pos.y,
+                    parent.spawn((
+                        Name::new("Tree"),
+                        ZoneDecorationTreeBundle::new(
+                            main_assets,
+                            terrain_materials,
+                            Vec3::new(
+                                pos.x,
+                                height.height_at(*pos, Vec3::from(position).xz() + *pos),
+                                pos.y,
+                            ),
+                            *scale,
                         ),
-                        *scale,
                     ));
                 }
             }
             Terrain::Mountain => {}
             Terrain::Ocean => {
                 parent.spawn((
+                    Name::new("Water"),
                     Fog::default(),
                     NotShadowCaster,
                     MaterialMeshBundle {

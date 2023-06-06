@@ -12,6 +12,7 @@ use explore_game::{
     combat::CombatPlugin,
     enemy::move_enemy,
     input::InputPlugin,
+    inspector::InspectorPlugin,
     interface::InterfacePlugin,
     light,
     map::{start_map_generation, MapPlugin, MapSeed},
@@ -72,13 +73,14 @@ fn main() {
         .add_plugin(bevy_obj::ObjPlugin)
         .add_plugin(noisy_bevy::NoisyShaderPlugin)
         .add_plugin(bevy_sprite3d::Sprite3dPlugin)
+        .add_plugin(ActionPlugin)
         .add_plugin(CameraControlPlugin)
+        .add_plugin(CombatPlugin)
         .add_plugin(InputPlugin)
+        .add_plugin(InspectorPlugin)
         .add_plugin(InterfacePlugin)
         .add_plugin(MapPlugin)
-        .add_plugin(ActionPlugin)
         .add_plugin(OutlinePlugin)
-        .add_plugin(CombatPlugin)
         .add_plugin(StructurePlugin)
         .add_startup_system(spawn_camera)
         .add_startup_system(light::spawn_light)
