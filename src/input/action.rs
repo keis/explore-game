@@ -13,7 +13,7 @@ use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 use smallvec::SmallVec;
 
-pub use leafwing_input_manager::{common_conditions::action_just_pressed, prelude::ActionState};
+pub use leafwing_input_manager::prelude::ActionState;
 
 #[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum Action {
@@ -37,6 +37,7 @@ pub enum Action {
     SelectNext,
     SplitParty,
     ToggleMainMenu,
+    ToggleInspector,
     ZoomCamera,
 }
 

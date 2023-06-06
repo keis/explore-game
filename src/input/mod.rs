@@ -13,8 +13,12 @@ mod action;
 mod map;
 mod selection;
 
-pub use action::{action_just_pressed, Action, ActionState};
-pub use leafwing_input_manager::plugin::InputManagerSystem;
+pub use action::Action;
+pub use leafwing_input_manager::{
+    common_conditions::{action_just_pressed, action_toggle_active},
+    plugin::InputManagerSystem,
+    prelude::ActionState,
+};
 pub use selection::{Deselect, NextSelectionQuery, Select, Selection, SelectionBundle};
 
 pub struct InputPlugin;
@@ -86,6 +90,7 @@ fn input_map() -> InputMap<Action> {
         .insert(SingleAxis::mouse_wheel_y(), Action::ZoomCamera)
         .insert(MouseButton::Right, Action::PanCamera)
         .insert(DualAxis::mouse_motion(), Action::PanCameraMotion)
+        .insert(KeyCode::F12, Action::ToggleInspector)
         .build()
 }
 

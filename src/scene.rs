@@ -42,7 +42,11 @@ pub fn spawn_map(
         },
     );
     commands
-        .spawn((zone_layer, PresenceLayer::new(prototype.tiles.layout)))
+        .spawn((
+            Name::new("Game map"),
+            zone_layer,
+            PresenceLayer::new(prototype.tiles.layout),
+        ))
         .with_presence(prototype.portal_position, |location| {
             let zone_prototype = prototype.tiles.get(prototype.portal_position).unwrap();
             let height = Height {
@@ -51,10 +55,13 @@ pub fn spawn_map(
                 outer_amp: zone_prototype.outer_amp,
                 outer_base: zone_prototype.outer_base,
             };
-            location.spawn(PortalBundle::new(
-                &mut param_set.p1(),
-                prototype.portal_position,
-                height.height_at(Vec2::ZERO, Vec3::from(prototype.portal_position).xz()),
+            location.spawn((
+                Name::new("Portal"),
+                PortalBundle::new(
+                    &mut param_set.p1(),
+                    prototype.portal_position,
+                    height.height_at(Vec2::ZERO, Vec3::from(prototype.portal_position).xz()),
+                ),
             ));
         });
 }

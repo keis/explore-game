@@ -16,7 +16,7 @@ opt-level = 3
 
 [dependencies]
 bevy_asset_loader = "0.16"
-bevy_mod_picking = { version = "0.13.0", git = "https://github.com/keis/bevy_mod_picking", branch = "ui-fix" }
+bevy_mod_picking = { version = "0.13.0", git = "https://github.com/keis/bevy_mod_picking", branch = "ui-fix", features = ["backend_egui"] }
 bevy_obj = "0.10.1"
 bevy = { version = "0.10", features = ["wayland", "dynamic_linking"] }
 clap = {version = "4.3.0", features = ["derive"] }
@@ -35,6 +35,8 @@ smallvec = "1.6"
 splines = { git = "https://github.com/phaazon/splines.git", branch = "dependabot/cargo/master/glam-gte-0.10-and-lt-0.25", version = "4.2.0", features = ["glam"] }
 bevy_mod_outline = "0.4.1"
 bevy_sprite3d = "2.4.0"
+bevy-inspector-egui = "0.18.3"
+bevy_egui = "0.20.3"
 
 [dev-dependencies]
 rstest = { version = "0.17.0", default-features = false }

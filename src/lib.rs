@@ -6,6 +6,7 @@ pub mod combat;
 pub mod crystals;
 pub mod enemy;
 pub mod input;
+pub mod inspector;
 pub mod interface;
 pub mod light;
 pub mod map;
