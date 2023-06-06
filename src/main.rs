@@ -1,6 +1,5 @@
 use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
-use bevy_mod_outline::OutlinePlugin;
 use bevy_mod_picking::prelude::RaycastPickCamera;
 use clap::Parser;
 use expl_wfc::{Seed, SeedType};
@@ -70,9 +69,11 @@ fn main() {
         )
         .add_plugins(MaterialPlugins)
         .add_state::<State>()
+        .add_plugin(bevy_mod_billboard::prelude::BillboardPlugin)
+        .add_plugin(bevy_mod_outline::OutlinePlugin)
         .add_plugin(bevy_obj::ObjPlugin)
-        .add_plugin(noisy_bevy::NoisyShaderPlugin)
         .add_plugin(bevy_sprite3d::Sprite3dPlugin)
+        .add_plugin(noisy_bevy::NoisyShaderPlugin)
         .add_plugin(ActionPlugin)
         .add_plugin(CameraControlPlugin)
         .add_plugin(CombatPlugin)
@@ -80,7 +81,6 @@ fn main() {
         .add_plugin(InspectorPlugin)
         .add_plugin(InterfacePlugin)
         .add_plugin(MapPlugin)
-        .add_plugin(OutlinePlugin)
         .add_plugin(StructurePlugin)
         .add_startup_system(spawn_camera)
         .add_startup_system(light::spawn_light)

@@ -3,15 +3,20 @@ use crate::{
     assets::MainAssets,
     character::Character,
     enemy::Enemy,
+    interface::InterfaceAssets,
     map::{HexCoord, MapEvent, PresenceLayer},
     party::{Group, GroupCommandsExt, GroupMember},
     State,
 };
 use bevy::prelude::*;
+use bevy_mod_billboard::prelude::*;
 use bevy_sprite3d::{Sprite3d, Sprite3dBundle, Sprite3dParams};
 use core::{ops::Range, time::Duration};
 use rand::Rng;
 use smallvec::SmallVec;
+
+mod floating_text;
+use floating_text::{float_and_fade, FloatingText};
 
 pub struct CombatPlugin;
 
@@ -24,10 +29,12 @@ impl Plugin for CombatPlugin {
                     .in_base_set(ActionSet::PostApply)
                     .run_if(on_event::<MapEvent>()),
             )
+            .add_system(float_and_fade)
             .add_systems(
                 (
                     combat_round,
                     combat_log,
+                    spawn_damage_text,
                     despawn_no_health.after(combat_round),
                     finish_combat.after(despawn_no_health),
                 )
@@ -229,5 +236,62 @@ pub fn finish_combat(
         }
 
         commands.entity(entity).despawn();
+    }
+}
+
+pub fn spawn_damage_text(
+    mut commands: Commands,
+    mut combat_events: EventReader<CombatEvent>,
+    combat_query: Query<&Combat>,
+    interface_assets: Res<InterfaceAssets>,
+) {
+    for event in &mut combat_events {
+        match event {
+            CombatEvent::FriendDamage(entity, damage) => {
+                let Ok(combat) = combat_query.get(*entity) else { continue };
+                commands.spawn((
+                    FloatingText::default(),
+                    BillboardTextBundle {
+                        transform: Transform::from_translation(
+                            Vec3::from(combat.position) + Vec3::new(-0.1, 1.0, 0.2),
+                        )
+                        .with_scale(Vec3::new(0.01, 0.01, 0.01)),
+                        text: Text::from_sections([TextSection {
+                            value: damage.to_string(),
+                            style: TextStyle {
+                                font_size: 26.0,
+                                font: interface_assets.font.clone(),
+                                color: Color::RED,
+                            },
+                        }])
+                        .with_alignment(TextAlignment::Center),
+                        ..default()
+                    },
+                ));
+            }
+            CombatEvent::EnemyDamage(entity, damage) => {
+                let Ok(combat) = combat_query.get(*entity) else { continue };
+                commands.spawn((
+                    FloatingText::default(),
+                    BillboardTextBundle {
+                        transform: Transform::from_translation(
+                            Vec3::from(combat.position) + Vec3::new(0.1, 1.0, 0.2),
+                        )
+                        .with_scale(Vec3::new(0.01, 0.01, 0.01)),
+                        text: Text::from_sections([TextSection {
+                            value: damage.to_string(),
+                            style: TextStyle {
+                                font_size: 26.0,
+                                font: interface_assets.font.clone(),
+                                color: Color::YELLOW,
+                            },
+                        }])
+                        .with_alignment(TextAlignment::Center),
+                        ..default()
+                    },
+                ));
+            }
+            _ => {}
+        }
     }
 }
