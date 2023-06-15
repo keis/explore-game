@@ -92,28 +92,24 @@ impl GridLayout for HexagonalGridLayout {
     }
 
     fn iter(&'_ self) -> Self::LayoutIter<'_> {
-        HexagonalGridLayoutIterator {
-            layout: self,
-            q: 0,
-            r: 1 - self.radius,
-        }
+        HexagonalGridLayoutIterator { layout: self, i: 0 }
     }
 
     fn offset(&self, position: HexCoord) -> Option<usize> {
         if !self.contains(position) {
             return None;
         }
-        let row = position.r + self.radius - 1;
-        let qadjust = if position.r >= 0 {
-            (self.radius - 1) * self.radius
-                - (self.radius - position.r - 1) * (self.radius - position.r) / 2
+        let rhombus_size = (self.radius - 1) * self.radius;
+        let offset = if position.q >= 0 && position.r < 0 {
+            position.q * (self.radius - 1) - position.r
+        } else if position.r >= 0 && position.s() < 0 {
+            rhombus_size + position.r * (self.radius - 1) - position.s()
+        } else if position.s() >= 0 && position.q < 0 {
+            rhombus_size * 2 + position.s() * (self.radius - 1) - position.q
         } else {
-            row * (row + 1) / 2
+            0
         };
-        // adjust for lowest q and increasing width (in neg these are related)
-        usize::try_from(row * self.radius + qadjust + position.q)
-            .ok()
-            .filter(|o| o < &self.size())
+        usize::try_from(offset).ok().filter(|o| o < &self.size())
     }
 
     fn contains(&self, position: HexCoord) -> bool {
@@ -140,6 +136,7 @@ impl GridLayout for HexagonalGridLayout {
         }
         result
     }
+
     fn center(&self) -> HexCoord {
         HexCoord::ZERO
     }
@@ -147,34 +144,40 @@ impl GridLayout for HexagonalGridLayout {
 
 pub struct HexagonalGridLayoutIterator<'a> {
     layout: &'a HexagonalGridLayout,
-    q: i32,
-    r: i32,
+    i: i32,
 }
 
 impl<'a> Iterator for HexagonalGridLayoutIterator<'a> {
     type Item = HexCoord;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let r = self.r;
-        let q = self.q;
-        if self.r > self.layout.radius - 1 {
-            return None;
-        }
-        let qend = if r <= 0 {
-            self.layout.radius - 1
+        let rhombus_height = self.layout.radius - 1;
+        let rhombus_size = rhombus_height * self.layout.radius;
+        let result = if self.i == 0 {
+            Some(HexCoord::ZERO)
+        } else if self.i <= rhombus_size {
+            let offset = self.i - 1;
+            Some(HexCoord::new(
+                offset / rhombus_height,
+                -(offset % rhombus_height) - 1,
+            ))
+        } else if self.i <= rhombus_size * 2 {
+            let offset = self.i - rhombus_size - 1;
+            Some(HexCoord::new_rs(
+                offset / rhombus_height,
+                -(offset % rhombus_height) - 1,
+            ))
+        } else if self.i <= rhombus_size * 3 {
+            let offset = self.i - rhombus_size * 2 - 1;
+            Some(HexCoord::new_qs(
+                -(offset % rhombus_height) - 1,
+                offset / rhombus_height,
+            ))
         } else {
-            self.layout.radius - r - 1
+            None
         };
-        self.q += 1;
-        if self.q > qend {
-            self.r += 1;
-            self.q = if self.r >= 0 {
-                1 - self.layout.radius
-            } else {
-                1 - self.r - self.layout.radius
-            }
-        }
-        Some(HexCoord::new(q, r))
+        self.i += 1;
+        result
     }
 }
 
@@ -228,9 +231,13 @@ mod tests {
         println!("coords {:?}", coords);
         assert_eq!(layout.size(), 7);
         assert_eq!(coords.len(), 7);
-        assert_eq!(coords[3], HexCoord::ZERO);
-        assert_eq!(layout.offset(HexCoord::ZERO), Some(3));
-        assert_eq!(layout.offset(HexCoord::new(0, 1)), Some(6));
+        assert_eq!(coords[0], HexCoord::ZERO);
+        assert_eq!(coords[1], HexCoord::new(0, -1));
+        assert_eq!(coords[2], HexCoord::new(1, -1));
+        assert_eq!(coords[5], HexCoord::new(-1, 1));
+        assert_eq!(layout.offset(HexCoord::ZERO), Some(0));
+        assert_eq!(layout.offset(HexCoord::new(0, -1)), Some(1));
+        assert_eq!(layout.offset(HexCoord::new(-1, 1)), Some(5));
 
         assert!(layout.contains(HexCoord::ZERO));
         assert!(layout.contains(HexCoord::new(-1, 1)));
@@ -245,8 +252,13 @@ mod tests {
         println!("coords {:?}", coords);
         assert_eq!(layout.size(), 19);
         assert_eq!(coords.len(), 19);
-        assert_eq!(coords[7], HexCoord::new(-2, 0));
-        assert_eq!(layout.offset(HexCoord::new(-2, 0)), Some(7));
+        assert_eq!(coords[0], HexCoord::ZERO);
+        assert_eq!(coords[1], HexCoord::new(0, -1));
+        assert_eq!(coords[2], HexCoord::new(0, -2));
+        assert_eq!(coords[3], HexCoord::new(1, -1));
+        assert_eq!(coords[7], HexCoord::new(1, 0));
+        assert_eq!(coords[13], HexCoord::new(-1, 1));
+        assert_eq!(layout.offset(HexCoord::new(-2, 0)), Some(18));
     }
 
     #[test]
