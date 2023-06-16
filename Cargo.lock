@@ -4011,7 +4011,7 @@ dependencies = [
 [[package]]
 name = "splines"
 version = "4.2.0"
-source = "git+https://github.com/phaazon/splines.git?branch=dependabot/cargo/master/glam-gte-0.10-and-lt-0.25#cdc48a49a7283700368f6d1ae57cfba2e47f4374"
+source = "git+https://github.com/phaazon/splines.git?branch=master#e1b78070c637bb873228b413ef2d42b5c595dddc"
 dependencies = [
  "glam",
 ]
