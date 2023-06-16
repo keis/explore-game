@@ -33,7 +33,7 @@ pathfinding = "4.2.1"
 rand = "0.8.5"
 smallvec = "1.6"
 splines = { git = "https://github.com/phaazon/splines.git", branch = "master", version = "4.2.0", features = ["glam"] }
-bevy_mod_outline = "0.4.1"
+bevy_mod_outline = "0.4.2"
 bevy_sprite3d = "2.4.0"
 bevy-inspector-egui = "0.18.3"
 bevy_egui = "0.20.3"
