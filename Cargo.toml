@@ -29,7 +29,7 @@ interpolation = "0.2.0"
 itertools = "0.10.5"
 leafwing-input-manager = "0.9"
 noisy_bevy = "0.3"
-pathfinding = "4.2.1"
+pathfinding = "4.3.0"
 rand = "0.8.5"
 smallvec = "1.6"
 splines = { git = "https://github.com/phaazon/splines.git", branch = "master", version = "4.2.0", features = ["glam"] }
