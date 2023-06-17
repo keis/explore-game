@@ -31,7 +31,7 @@ impl<L: GridLayout, T> Grid<L, T> {
         }
     }
 
-    /// Create a new grid of the given layout with the given data
+    /// Create a new grid of the given layout and data in the internal iteration order.
     pub fn with_data<Iter>(layout: L, iter: Iter) -> Self
     where
         Iter: IntoIterator<Item = T>,
@@ -43,7 +43,7 @@ impl<L: GridLayout, T> Grid<L, T> {
 
     /// An iterator visiting all coordinate-value pairs of the grid
     pub fn iter(&self) -> impl Iterator<Item = (HexCoord, &T)> {
-        self.layout.iter().map(|coord| (coord, &self[coord]))
+        self.layout.iter().zip(self.data.iter())
     }
 
     /// An iterator visiting all values contained in the grid
@@ -115,6 +115,15 @@ impl<L: GridLayout, T> IndexMut<HexCoord> for Grid<L, T> {
     }
 }
 
+impl<L: GridLayout, T> Extend<(HexCoord, T)> for Grid<L, T> {
+    fn extend<Iter: IntoIterator<Item = (HexCoord, T)>>(&mut self, iter: Iter) {
+        for (coord, elem) in iter {
+            let Some(offset) = self.layout.offset(coord) else { continue };
+            self.data[offset] = elem;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{Grid, GridLayout, HexCoord};
@@ -162,5 +171,18 @@ mod tests {
             regions.iter().map(|r| r.0.len()).sum::<usize>(),
             layout.size()
         );
+    }
+
+    #[test]
+    fn extend() {
+        let layout = SquareGridLayout {
+            width: 3,
+            height: 3,
+        };
+        let mut grid = Grid::new(layout);
+        grid.extend(vec![(HexCoord::new(1, 1), 6), (HexCoord::new(2, 2), 7)]);
+        assert_eq!(grid[HexCoord::new(0, 0)], 0);
+        assert_eq!(grid[HexCoord::new(1, 1)], 6);
+        assert_eq!(grid.get(HexCoord::new(2, 2)), None);
     }
 }
