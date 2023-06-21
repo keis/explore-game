@@ -131,11 +131,13 @@ pub fn standard_tile_transforms() -> Vec<TransformMatrix> {
 #[cfg(test)]
 pub mod tests {
     use super::{extract_tiles, standard_tile_transforms, Tile};
+    use crate::util::LoadGrid;
     use expl_hexgrid::{
         layout::HexagonalGridLayout, Grid, GridLayout, HexCoord, Transform, TransformMatrix,
     };
     use rstest::*;
     use std::cmp::Ordering;
+    use std::{fs::File, io};
 
     #[fixture]
     pub fn standard_transforms() -> Vec<TransformMatrix> {
@@ -144,14 +146,8 @@ pub mod tests {
 
     #[fixture]
     pub fn sample_map() -> Grid<HexagonalGridLayout, char> {
-        let layout = HexagonalGridLayout { radius: 3 };
-        Grid::with_data(
-            layout,
-            [
-                '~', '~', '~', '~', '~', '^', '^', '~', '^', '^', '^', '%', '^', '^', '%', '%',
-                '%', '%', '%',
-            ],
-        )
+        let mut file = io::BufReader::new(File::open("res/test-r3.txt").unwrap());
+        Grid::<HexagonalGridLayout, char>::load(&mut file).unwrap()
     }
 
     #[rstest]
