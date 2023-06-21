@@ -50,15 +50,26 @@ impl From<Terrain> for char {
     }
 }
 
+#[derive(Debug)]
+pub struct Error(&'static str);
+
+impl std::error::Error for Error {}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 impl TryFrom<char> for Terrain {
-    type Error = &'static str;
+    type Error = Error;
 
     fn try_from(c: char) -> Result<Terrain, Self::Error> {
         match c {
             '%' => Ok(Terrain::Forest),
             '^' => Ok(Terrain::Mountain),
             '~' => Ok(Terrain::Ocean),
-            _ => Err("Unknown terrain character"),
+            _ => Err(Error("Unknown terrain character")),
         }
     }
 }

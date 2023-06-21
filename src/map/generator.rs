@@ -56,7 +56,8 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
     info!("Generating map with seed {} ...", seed);
     let mut file =
         io::BufReader::new(File::open("assets/maps/test.txt").map_err(|_| "failed to open file")?);
-    let input = Grid::<HexagonalGridLayout, Terrain>::load(&mut file)?;
+    let input =
+        Grid::<HexagonalGridLayout, Terrain>::load(&mut file).map_err(|_| "failed to load map")?;
     let wrapped_input = wrap_grid(input);
     let transforms = standard_tile_transforms();
     let template = Template::from_tiles(extract_tiles(&wrapped_input, &transforms));

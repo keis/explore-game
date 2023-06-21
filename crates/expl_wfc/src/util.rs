@@ -72,11 +72,14 @@ impl<Item: Into<char> + Copy, T: DumpGridWith<Item = Item>> DumpGrid for T {
     }
 }
 
-impl<Item: TryFrom<char> + Clone> LoadGrid for Grid<HexagonalGridLayout, Item> {
-    type Error = Item::Error;
+impl<Item: TryFrom<char> + Clone + Default> LoadGrid for Grid<HexagonalGridLayout, Item>
+where
+    Item::Error: std::error::Error + 'static,
+{
+    type Error = Box<dyn std::error::Error>;
 
     fn load<R: BufRead>(buf: &mut R) -> Result<Self, Self::Error> {
-        let lines: Vec<_> = buf.lines().map(|l| l.unwrap()).collect();
+        let lines: Vec<_> = buf.lines().collect::<Result<_, _>>()?;
         let layout = HexagonalGridLayout {
             radius: (lines.len() / 2 + 1) as i32,
         };
@@ -146,15 +149,26 @@ mod tests {
         }
     }
 
+    #[derive(Debug)]
+    pub struct Error(&'static str);
+
+    impl std::error::Error for Error {}
+
+    impl std::fmt::Display for Error {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+
     impl TryFrom<char> for Terrain {
-        type Error = &'static str;
+        type Error = Error;
 
         fn try_from(c: char) -> Result<Terrain, Self::Error> {
             match c {
                 '%' => Ok(Terrain::Forest),
                 '^' => Ok(Terrain::Mountain),
                 '~' => Ok(Terrain::Ocean),
-                _ => Err("Unknown terrain character"),
+                _ => Err(Error("Unknown terrain character")),
             }
         }
     }
