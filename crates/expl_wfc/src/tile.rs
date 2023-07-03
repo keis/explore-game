@@ -11,25 +11,30 @@ use std::ops::Index;
 pub struct Tile<'a, Layout: GridLayout, Item> {
     grid: &'a Grid<Layout, Item>,
     offset: HexCoord,
-    pub layout: Layout,
     // Note that transform is applied to coordinates so effectivly the tile is rotated in the *opposite*
     // direction
     transform: &'a TransformMatrix,
 }
 
 impl<Layout: GridLayout, Item: Copy + PartialEq> Tile<'_, Layout, Item> {
+    const COORDS: [HexCoord; 7] = [
+        HexCoord::new(0, -1),
+        HexCoord::new(1, -1),
+        HexCoord::new(-1, 0),
+        HexCoord::new(0, 0),
+        HexCoord::new(1, 0),
+        HexCoord::new(-1, 1),
+        HexCoord::new(0, 1),
+    ];
+
     pub fn iter(&self) -> impl '_ + Iterator<Item = Item> {
-        self.layout.iter().map(|coord| self[coord])
+        Self::COORDS.iter().map(|&coord| self[coord])
     }
 
     pub fn compatible_with(&self, other: &Tile<Layout, Item>, offset: HexCoord) -> bool {
-        if self.layout != other.layout {
-            return false;
-        }
-
-        self.layout.iter().all(|coord| {
-            !self.layout.contains(coord - offset) || self[coord] == other[coord - offset]
-        })
+        Self::COORDS
+            .iter()
+            .all(|&coord| (coord - offset).length() > 1 || self[coord] == other[coord - offset])
     }
 }
 
@@ -53,8 +58,7 @@ impl<'a, Layout: GridLayout, Item: Copy + PartialEq + Eq + Hash> PartialEq
     for Tile<'a, Layout, Item>
 {
     fn eq(&self, other: &Self) -> bool {
-        self.layout.size() == other.layout.size()
-            && self.iter().zip(other.iter()).all(|(s, o)| s.eq(&o))
+        self.iter().zip(other.iter()).all(|(s, o)| s.eq(&o))
     }
 }
 
@@ -64,10 +68,7 @@ impl<'a, Layout: GridLayout, Item: Copy + PartialEq + Eq + Hash + Ord + PartialO
     for Tile<'a, Layout, Item>
 {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.layout
-            .size()
-            .cmp(&other.layout.size())
-            .then_with(|| self.iter().cmp(other.iter()))
+        self.iter().cmp(other.iter())
     }
 }
 
@@ -87,14 +88,12 @@ pub fn extract_tiles<'a, Item: Copy + Eq + Hash>(
     let inner_layout = HexagonalGridLayout {
         radius: grid.layout.radius - 1,
     };
-    let layout = HexagonalGridLayout { radius: 2 };
     inner_layout
         .iter()
         .flat_map(|offset| {
             transforms.iter().map(move |transform| Tile {
                 grid,
                 offset,
-                layout,
                 transform,
             })
         })
@@ -132,9 +131,7 @@ pub fn standard_tile_transforms() -> Vec<TransformMatrix> {
 pub mod tests {
     use super::{extract_tiles, standard_tile_transforms, Tile};
     use crate::util::LoadGrid;
-    use expl_hexgrid::{
-        layout::HexagonalGridLayout, Grid, GridLayout, HexCoord, Transform, TransformMatrix,
-    };
+    use expl_hexgrid::{layout::HexagonalGridLayout, Grid, HexCoord, Transform, TransformMatrix};
     use rstest::*;
     use std::cmp::Ordering;
     use std::{fs::File, io};
@@ -155,7 +152,6 @@ pub mod tests {
         let tile = Tile {
             grid: &sample_map,
             offset: HexCoord::new(0, 0),
-            layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         let items: Vec<_> = tile.iter().collect();
@@ -167,7 +163,6 @@ pub mod tests {
         let tile = Tile {
             grid: &sample_map,
             offset: HexCoord::new(1, 0),
-            layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         let items: Vec<_> = tile.iter().collect();
@@ -179,19 +174,16 @@ pub mod tests {
         let tile_a = Tile {
             grid: &sample_map,
             offset: HexCoord::new(1, 0),
-            layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         let tile_b = Tile {
             grid: &sample_map,
             offset: HexCoord::new(-1, 1),
-            layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         let tile_c = Tile {
             grid: &sample_map,
             offset: HexCoord::new(0, 0),
-            layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         assert_eq!(tile_a, tile_b);
@@ -204,19 +196,16 @@ pub mod tests {
         let tile_a = Tile {
             grid: &sample_map,
             offset: HexCoord::new(1, 0),
-            layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         let tile_b = Tile {
             grid: &sample_map,
             offset: HexCoord::new(-1, 1),
-            layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         let tile_c = Tile {
             grid: &sample_map,
             offset: HexCoord::new(0, 0),
-            layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         assert_eq!(tile_a.cmp(&tile_b), Ordering::Equal);
@@ -229,13 +218,11 @@ pub mod tests {
         let tile_a = Tile {
             grid: &sample_map,
             offset: HexCoord::new(1, -1),
-            layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         let tile_b = Tile {
             grid: &sample_map,
             offset: HexCoord::new(-1, 1),
-            layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         assert!(tile_a.compatible_with(&tile_b, HexCoord::new(0, 1)));
@@ -257,10 +244,12 @@ pub mod tests {
         let tile = Tile {
             grid: &sample_map,
             offset: (0, -1).into(),
-            layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::RotateClockwise300.into(),
         };
-        for (coord, data) in tile.layout.iter().zip(tile.iter()) {
+        for (&coord, data) in Tile::<HexagonalGridLayout, char>::COORDS
+            .iter()
+            .zip(tile.iter())
+        {
             println!("{:?} {:?}", coord, data);
             assert_eq!(data, tile[coord]);
         }
@@ -271,13 +260,11 @@ pub mod tests {
         let tile = Tile {
             grid: &sample_map,
             offset: (0, -1).into(),
-            layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::Identity.into(),
         };
         let tilex = Tile {
             grid: &sample_map,
             offset: (0, -1).into(),
-            layout: HexagonalGridLayout { radius: 2 },
             transform: &Transform::RotateClockwise300.into(),
         };
         assert!(tile.compatible_with(&tilex, (-1, 0).into()));
