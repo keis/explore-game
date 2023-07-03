@@ -2146,6 +2146,7 @@ dependencies = [
  "rand_xoshiro",
  "rstest",
  "serde",
+ "serde-jsonlines",
 ]
 
 [[package]]
@@ -4031,6 +4032,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e8c8cf938e98f769bc164923b06dce91cea1751522f46f8466461af04c9027d"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-jsonlines"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4684abdec99c1de7e507a3516c82385ff74d54c385973846b079bfd9f5920d35"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
