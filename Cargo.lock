@@ -2817,14 +2817,14 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "leafwing-input-manager"
-version = "0.9.2"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ca8bb439a17e3a964829170cd0252ad54d25a22cb9eb07ec888a7c923d94e05"
+checksum = "a14fbbaeefddd8af07092ce92b445f19e68fdc6228fe59d3ece05ceef4a09d15"
 dependencies = [
  "bevy",
  "derive_more",
  "fixedbitset",
- "itertools 0.10.5",
+ "itertools 0.11.0",
  "leafwing_input_manager_macros",
  "once_cell",
  "petitset",
