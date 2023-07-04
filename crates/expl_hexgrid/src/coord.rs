@@ -2,6 +2,7 @@ use glam::{IVec3, Vec3};
 use std::{
     fmt,
     ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
+    str::FromStr,
 };
 
 // sqrt(3)
@@ -76,6 +77,30 @@ impl HexCoord {
 impl fmt::Display for HexCoord {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "q{}r{}", self.q, self.r)
+    }
+}
+
+impl FromStr for HexCoord {
+    type Err = &'static str;
+
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
+        if !string.starts_with('q') {
+            return Err("Coordinate does not start with `q`");
+        }
+        let rpos = string
+            .find('r')
+            .ok_or("Coordinate does not have a `r` separator")?;
+        let coord = HexCoord::new(
+            string[1..rpos]
+                .parse()
+                .ok()
+                .ok_or("Coordinate q-component is not a valid integer")?,
+            string[rpos + 1..]
+                .parse()
+                .ok()
+                .ok_or("Coordinate r-component is not a valid integer")?,
+        );
+        Ok(coord)
     }
 }
 
@@ -236,5 +261,19 @@ mod tests {
             HexCoord::new(8, 9),
             HexCoord::from(vec + Vec3::new(1.0, 0.0, 0.0))
         );
+    }
+
+    #[test]
+    fn parse_ok() {
+        let input = "q10r-2";
+        let result: Result<HexCoord, _> = input.parse();
+        assert_eq!(result, Ok(HexCoord::new(10, -2)));
+    }
+
+    #[test]
+    fn parse_fail() {
+        let input = "10r-2";
+        let result: Result<HexCoord, _> = input.parse();
+        assert!(result.is_err());
     }
 }
