@@ -31,6 +31,14 @@ impl HexCoord {
         HexCoord { q, r }
     }
 
+    pub const fn new_rs(r: i32, s: i32) -> Self {
+        HexCoord { q: -s - r, r }
+    }
+
+    pub const fn new_qs(q: i32, s: i32) -> Self {
+        HexCoord { q, r: -q - s }
+    }
+
     pub fn new_round(q: f32, r: f32) -> Self {
         let qround = q.round();
         let qrem = q - qround;
@@ -275,5 +283,12 @@ mod tests {
         let input = "10r-2";
         let result: Result<HexCoord, _> = input.parse();
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn alternative_constructor() {
+        let coord = HexCoord::new(4, 5);
+        assert_eq!(coord, HexCoord::new_qs(coord.q, coord.s()));
+        assert_eq!(coord, HexCoord::new_rs(coord.r, coord.s()));
     }
 }
