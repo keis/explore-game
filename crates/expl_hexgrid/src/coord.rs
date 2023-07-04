@@ -1,4 +1,5 @@
 use glam::{IVec3, Vec3};
+use serde_with::{DeserializeFromStr, SerializeDisplay};
 use std::{
     fmt,
     ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
@@ -10,7 +11,19 @@ const SQRT3: f32 = 1.732_050_8;
 
 /// Represents a position on a hexagonal grid with axial coordinates
 /// https://www.redblobgames.com/grids/hexagons/#coordinates
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default)]
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    SerializeDisplay,
+    DeserializeFromStr,
+)]
 pub struct HexCoord {
     pub q: i32,
     pub r: i32,
