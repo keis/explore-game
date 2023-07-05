@@ -1,4 +1,4 @@
-use expl_hexgrid::{layout::HexagonalGridLayout, Grid, GridLayout};
+use expl_hexgrid::{layout::HexagonalGridLayout, Grid, GridLayout, HexCoord};
 use expl_wfc::{
     cell::Cell,
     seed::Seed,
@@ -7,7 +7,9 @@ use expl_wfc::{
     Generator, Template,
 };
 use more_asserts::assert_le;
-use std::{fs::File, io};
+use serde::{Deserialize, Serialize};
+use serde_jsonlines::{json_lines, write_json_lines};
+use std::{collections::BTreeMap, fs::File, io};
 
 fn sample_map() -> Result<Grid<HexagonalGridLayout, char>, &'static str> {
     let mut file =
@@ -28,7 +30,9 @@ fn verify_generator_invariants(generator: &Generator<HexagonalGridLayout, char>)
             Cell::Collapsed(_) => {
                 assert_ne!(
                     generator.collapsed.iter().find(|(cc, _, _)| *cc == coord),
-                    None
+                    None,
+                    "expected to find {:?} in collapsed history",
+                    coord,
                 );
             }
             Cell::Alternatives(num_alts, _) => {
@@ -43,6 +47,13 @@ fn verify_generator_invariants(generator: &Generator<HexagonalGridLayout, char>)
             }
         };
     }
+}
+
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
+struct GeneratorTraceStep {
+    pub coord: HexCoord,
+    pub tile: usize,
+    pub pending: BTreeMap<HexCoord, usize>,
 }
 
 #[test]
@@ -73,13 +84,31 @@ fn test_fixed_seed() {
         Generator::new_with_seed(&template, seed).unwrap();
     println!("map size is {:?}", generator.grid.layout.size());
 
+    let expected_trace = json_lines("res/trace.jsonl")
+        .and_then(|data| data.collect::<Result<Vec<GeneratorTraceStep>, _>>())
+        .unwrap();
+    let mut new_trace = vec![];
+    let mut expected_trace_iter = expected_trace.iter();
+
     let mut steps = 0;
     while generator.step().is_some() {
         verify_generator_invariants(&generator);
         steps += 1;
+        let last = generator.collapsed.last().unwrap();
+        let step = GeneratorTraceStep {
+            coord: last.0,
+            tile: last.1,
+            pending: generator.pending.clone().drain().collect(),
+        };
+        if let Some(expected) = expected_trace_iter.next() {
+            assert_eq!(step, *expected);
+        }
+        new_trace.push(step);
     }
     let output = generator.export().unwrap();
 
     assert_eq!(steps, 405);
     assert_eq!(output.layout.radius, 10);
+
+    write_json_lines("res/trace.jsonl", &new_trace).unwrap();
 }

@@ -32,17 +32,11 @@ impl<Item> DumpGridWith for Grid<HexagonalGridLayout, Item> {
     where
         F: Fn(&Item) -> char,
     {
-        let mut lastr = 0;
-        for coord in self.layout.iter() {
-            if coord.r != lastr {
-                write!(
-                    writer,
-                    "\n{}",
-                    " ".repeat(coord.r.abs().try_into().unwrap())
-                )?;
-                lastr = coord.r;
+        for r in -(self.layout.radius - 1)..(self.layout.radius) {
+            write!(writer, "\n{}", " ".repeat(r.abs().try_into().unwrap()))?;
+            for q in (-self.layout.radius - r.min(0) + 1)..(self.layout.radius - r.max(0)) {
+                write!(writer, " {}", dump_item(&self[(q, r).into()]))?;
             }
-            write!(writer, " {}", dump_item(&self[coord]))?;
         }
         writeln!(writer)?;
         Ok(())
@@ -56,16 +50,14 @@ impl<Item> DumpGridWith for Grid<SquareGridLayout, Item> {
     where
         F: Fn(&Item) -> char,
     {
-        let mut lastr = -1;
-        for coord in self.layout.iter() {
-            if coord.r != lastr {
-                writeln!(writer)?;
-                if coord.r % 2 == 1 {
-                    write!(writer, " ")?;
-                }
-                lastr = coord.r;
+        for r in 0..self.layout.height {
+            writeln!(writer)?;
+            if r % 2 == 1 {
+                write!(writer, " ")?;
             }
-            write!(writer, " {}", dump_item(&self[coord]))?;
+            for q in (-r / 2)..(self.layout.width - (r / 2)) {
+                write!(writer, " {}", dump_item(&self[(q, r).into()]))?;
+            }
         }
         writeln!(writer)?;
         Ok(())
@@ -80,26 +72,39 @@ impl<Item: Into<char> + Copy, T: DumpGridWith<Item = Item>> DumpGrid for T {
     }
 }
 
-impl<Item: TryFrom<char> + Clone> LoadGrid for Grid<HexagonalGridLayout, Item> {
-    type Error = Item::Error;
+impl<Item: TryFrom<char> + Clone + Default> LoadGrid for Grid<HexagonalGridLayout, Item>
+where
+    Item::Error: std::error::Error + 'static,
+{
+    type Error = Box<dyn std::error::Error>;
 
     fn load<R: BufRead>(buf: &mut R) -> Result<Self, Self::Error> {
-        let lines: Vec<_> = buf.lines().map(|l| l.unwrap()).collect();
+        let lines: Vec<_> = buf.lines().collect::<Result<_, _>>()?;
         let layout = HexagonalGridLayout {
             radius: (lines.len() / 2 + 1) as i32,
         };
         let data: Vec<_> = lines
             .iter()
             .enumerate()
-            .flat_map(|(i, l)| {
-                l.chars()
-                    .skip(((i + 1) as i32 - layout.radius).unsigned_abs() as usize + 1)
+            .flat_map(|(lineno, line)| {
+                let r = lineno as i32 - layout.radius + 1;
+                line.chars()
+                    .skip(((lineno + 1) as i32 - layout.radius).unsigned_abs() as usize + 1)
                     .step_by(2)
-                    .map(|c| c.try_into())
+                    .enumerate()
+                    .map(move |(colno, c)| {
+                        c.try_into().map(|d| {
+                            (
+                                HexCoord::new(-layout.radius - r.min(0) + colno as i32 + 1, r),
+                                d,
+                            )
+                        })
+                    })
             })
             .collect::<Result<_, _>>()?;
-
-        Ok(Self::with_data(layout, data))
+        let mut grid = Self::new(layout);
+        grid.extend(data);
+        Ok(grid)
     }
 }
 
@@ -144,15 +149,26 @@ mod tests {
         }
     }
 
+    #[derive(Debug)]
+    pub struct Error(&'static str);
+
+    impl std::error::Error for Error {}
+
+    impl std::fmt::Display for Error {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+
     impl TryFrom<char> for Terrain {
-        type Error = &'static str;
+        type Error = Error;
 
         fn try_from(c: char) -> Result<Terrain, Self::Error> {
             match c {
                 '%' => Ok(Terrain::Forest),
                 '^' => Ok(Terrain::Mountain),
                 '~' => Ok(Terrain::Ocean),
-                _ => Err("Unknown terrain character"),
+                _ => Err(Error("Unknown terrain character")),
             }
         }
     }

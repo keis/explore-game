@@ -2,7 +2,7 @@ use super::TileId;
 use fixedbitset::FixedBitSet;
 use rand::Rng;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Cell {
     Collapsed(TileId),
     Alternatives(usize, FixedBitSet),
