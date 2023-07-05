@@ -1,7 +1,9 @@
 use glam::{IVec3, Vec3};
+use serde_with::{DeserializeFromStr, SerializeDisplay};
 use std::{
     fmt,
     ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
+    str::FromStr,
 };
 
 // sqrt(3)
@@ -9,7 +11,19 @@ const SQRT3: f32 = 1.732_050_8;
 
 /// Represents a position on a hexagonal grid with axial coordinates
 /// https://www.redblobgames.com/grids/hexagons/#coordinates
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default)]
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    SerializeDisplay,
+    DeserializeFromStr,
+)]
 pub struct HexCoord {
     pub q: i32,
     pub r: i32,
@@ -28,6 +42,14 @@ impl HexCoord {
 
     pub const fn new(q: i32, r: i32) -> Self {
         HexCoord { q, r }
+    }
+
+    pub const fn new_rs(r: i32, s: i32) -> Self {
+        HexCoord { q: -s - r, r }
+    }
+
+    pub const fn new_qs(q: i32, s: i32) -> Self {
+        HexCoord { q, r: -q - s }
     }
 
     pub fn new_round(q: f32, r: f32) -> Self {
@@ -76,6 +98,30 @@ impl HexCoord {
 impl fmt::Display for HexCoord {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "q{}r{}", self.q, self.r)
+    }
+}
+
+impl FromStr for HexCoord {
+    type Err = &'static str;
+
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
+        if !string.starts_with('q') {
+            return Err("Coordinate does not start with `q`");
+        }
+        let rpos = string
+            .find('r')
+            .ok_or("Coordinate does not have a `r` separator")?;
+        let coord = HexCoord::new(
+            string[1..rpos]
+                .parse()
+                .ok()
+                .ok_or("Coordinate q-component is not a valid integer")?,
+            string[rpos + 1..]
+                .parse()
+                .ok()
+                .ok_or("Coordinate r-component is not a valid integer")?,
+        );
+        Ok(coord)
     }
 }
 
@@ -236,5 +282,26 @@ mod tests {
             HexCoord::new(8, 9),
             HexCoord::from(vec + Vec3::new(1.0, 0.0, 0.0))
         );
+    }
+
+    #[test]
+    fn parse_ok() {
+        let input = "q10r-2";
+        let result: Result<HexCoord, _> = input.parse();
+        assert_eq!(result, Ok(HexCoord::new(10, -2)));
+    }
+
+    #[test]
+    fn parse_fail() {
+        let input = "10r-2";
+        let result: Result<HexCoord, _> = input.parse();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn alternative_constructor() {
+        let coord = HexCoord::new(4, 5);
+        assert_eq!(coord, HexCoord::new_qs(coord.q, coord.s()));
+        assert_eq!(coord, HexCoord::new_rs(coord.r, coord.s()));
     }
 }
