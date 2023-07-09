@@ -16,7 +16,7 @@ opt-level = 3
 
 [dependencies]
 bevy_asset_loader = "0.16"
-bevy_mod_picking = { version = "0.13.0", git = "https://github.com/keis/bevy_mod_picking", branch = "ui-fix", features = ["backend_egui"] }
+bevy_mod_picking = { version = "0.14.0", features = ["backend_egui"] }
 bevy_obj = "0.10.1"
 bevy = { version = "0.10", features = ["wayland", "dynamic_linking"] }
 clap = {version = "4.3.8", features = ["derive"] }
