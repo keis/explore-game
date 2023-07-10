@@ -1,7 +1,7 @@
 use super::{HexCoord, Transform};
 
 pub trait GridLayout: Copy + Clone + PartialEq {
-    type LayoutIter<'a>: Iterator<Item = HexCoord>
+    type LayoutIter<'a>: Iterator<Item = HexCoord> + ExactSizeIterator
     where
         Self: 'a;
 
@@ -64,18 +64,25 @@ pub struct SquareGridLayoutIterator<'a> {
 impl<'a> Iterator for SquareGridLayoutIterator<'a> {
     type Item = HexCoord;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let r = self.i / self.layout.width;
-        let q = self.i % self.layout.width - r / 2;
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remains = self.layout.size() - self.i as usize;
+        (remains, Some(remains))
+    }
 
-        if r >= self.layout.height {
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.i >= self.layout.size() as i32 {
             return None;
         }
+
+        let r = self.i / self.layout.width;
+        let q = self.i % self.layout.width - r / 2;
 
         self.i += 1;
         Some(HexCoord::new(q, r))
     }
 }
+
+impl ExactSizeIterator for SquareGridLayoutIterator<'_> {}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct HexagonalGridLayout {
@@ -150,6 +157,11 @@ pub struct HexagonalGridLayoutIterator<'a> {
 impl<'a> Iterator for HexagonalGridLayoutIterator<'a> {
     type Item = HexCoord;
 
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remains = self.layout.size() - self.i as usize;
+        (remains, Some(remains))
+    }
+
     fn next(&mut self) -> Option<Self::Item> {
         let rhombus_height = self.layout.radius - 1;
         let rhombus_size = rhombus_height * self.layout.radius;
@@ -181,6 +193,8 @@ impl<'a> Iterator for HexagonalGridLayoutIterator<'a> {
     }
 }
 
+impl ExactSizeIterator for HexagonalGridLayoutIterator<'_> {}
+
 #[cfg(test)]
 mod tests {
     use super::{GridLayout, HexCoord, HexagonalGridLayout, SquareGridLayout};
@@ -191,6 +205,7 @@ mod tests {
             width: 3,
             height: 3,
         };
+        assert_eq!(layout.iter().len(), 9);
         let coords: Vec<HexCoord> = layout.iter().collect();
 
         println!("coords {:?}", coords);
@@ -228,6 +243,7 @@ mod tests {
         let layout = HexagonalGridLayout { radius: 2 };
         let coords: Vec<HexCoord> = layout.iter().collect();
 
+        assert_eq!(layout.iter().len(), 7);
         println!("coords {:?}", coords);
         assert_eq!(layout.size(), 7);
         assert_eq!(coords.len(), 7);
