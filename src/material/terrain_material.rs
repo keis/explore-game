@@ -52,7 +52,7 @@ fn apply_to_material(
     terrain_query: Query<(&Fog, &Handle<TerrainMaterial>), Changed<Fog>>,
 ) {
     for (fog, handle) in &terrain_query {
-        let Some(mut material) = terrain_materials.get_mut(handle) else { continue };
+        let Some(material) = terrain_materials.get_mut(handle) else { continue };
         material.visible = fog.visible;
         material.explored = fog.explored;
     }
