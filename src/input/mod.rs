@@ -57,7 +57,7 @@ impl Plugin for InputPlugin {
                 .in_set(InputManagerSystem::ManualControl)
                 .run_if(action_just_pressed(Action::Cancel)),
         )
-        .add_system(map::handle_zone_interaction.in_base_set(CoreSet::PostUpdate))
+        .add_system(map::handle_zone_click_events)
         .add_event::<Select>()
         .add_event::<Deselect>()
         .add_systems(
