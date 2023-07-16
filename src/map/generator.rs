@@ -126,7 +126,7 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
                     .unwrap_or(0.0)
             })
             .collect();
-        let mut zone = &mut prototype[coord];
+        let zone = &mut prototype[coord];
         for i in 0..=5 {
             let min_amp = zone
                 .height_amp

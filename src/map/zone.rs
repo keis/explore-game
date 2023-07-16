@@ -178,15 +178,15 @@ pub fn update_outer_visible(
 ) {
     let Ok(map) = map_query.get_single() else { return };
     for (fog, position, handle) in &changed_zone_query {
-        let Some(mut material) = zone_materials.get_mut(handle) else { continue };
         if fog.explored {
+            let Some(material) = zone_materials.get_mut(handle) else { continue };
             material.outer_visible = [true; 6];
             for (idx, coord) in position.0.neighbours().enumerate() {
                 let Some((neighbour_fog, neighbour_handle)) = map.get(coord).and_then(|&e| zone_query.get(e).ok()) else { continue };
                 if neighbour_fog.explored {
                     continue;
                 }
-                let Some(mut neighbour_material) = zone_materials.get_mut(neighbour_handle) else { continue };
+                let Some(neighbour_material) = zone_materials.get_mut(neighbour_handle) else { continue };
                 neighbour_material.outer_visible[(idx + 2) % 6] = true;
                 neighbour_material.outer_visible[(idx + 3) % 6] = true;
             }
