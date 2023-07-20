@@ -1,6 +1,6 @@
 use crate::{
     character::Movement,
-    combat::CombatEvent,
+    combat::{Combat, CombatEvent},
     crystals::CrystalDeposit,
     map::{
         HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder, PathGuided, PresenceLayer,
@@ -38,6 +38,8 @@ pub enum ActionSet {
     Apply,
     CommandFlush,
     PostApply,
+    FollowUp,
+    Cleanup,
 }
 
 impl Plugin for ActionPlugin {
@@ -49,6 +51,8 @@ impl Plugin for ActionPlugin {
                     ActionSet::Apply,
                     ActionSet::CommandFlush,
                     ActionSet::PostApply,
+                    ActionSet::FollowUp,
+                    ActionSet::Cleanup,
                 )
                     .chain(),
             )
@@ -80,8 +84,10 @@ impl Plugin for ActionPlugin {
                     .after(handle_move),
                 follow_path
                     .run_if(has_current_action)
-                    // Create new set after post apply to trigger follow up actions?
-                    .in_base_set(ActionSet::PostApply),
+                    .in_base_set(ActionSet::FollowUp),
+                clear_current_action
+                    .run_if(has_current_action)
+                    .in_base_set(ActionSet::Cleanup),
             ))
             .add_system(handle_save.run_if(run_on_save));
     }
@@ -119,7 +125,7 @@ impl GameActionQueue {
         self.waiting = false;
     }
 
-    pub fn cancel(&mut self) {
+    pub fn clear(&mut self) {
         self.current = None;
     }
 }
@@ -128,13 +134,21 @@ pub fn advance_action_queue(mut game_action_queue: ResMut<GameActionQueue>) {
     game_action_queue.start_next();
 }
 
+pub fn clear_current_action(mut game_action_queue: ResMut<GameActionQueue>) {
+    game_action_queue.clear();
+}
+
 pub fn has_current_action(game_action_queue: Res<GameActionQueue>) -> bool {
     !game_action_queue.is_waiting() && game_action_queue.current.is_some()
 }
 
-pub fn ready_for_next_action(game_action_queue: Res<GameActionQueue>) -> bool {
+pub fn ready_for_next_action(
+    game_action_queue: Res<GameActionQueue>,
+    combat_query: Query<&Combat>,
+) -> bool {
     !game_action_queue.is_waiting()
         && (game_action_queue.current.is_some() || game_action_queue.has_next())
+        && combat_query.is_empty()
 }
 
 pub fn handle_move(
@@ -149,7 +163,7 @@ pub fn handle_move(
 
     if movement.points == 0 {
         warn!("tried to move without movement points");
-        queue.cancel();
+        queue.clear();
         return;
     }
 

@@ -1,5 +1,5 @@
 use crate::{
-    action::{follow_path, ActionSet},
+    action::ActionSet,
     assets::MainAssets,
     character::Character,
     enemy::Enemy,
@@ -25,7 +25,6 @@ impl Plugin for CombatPlugin {
         app.add_event::<CombatEvent>()
             .add_system(
                 initiate_combat
-                    .before(follow_path)
                     .in_base_set(ActionSet::PostApply)
                     .run_if(on_event::<MapEvent>()),
             )
