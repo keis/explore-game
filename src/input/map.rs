@@ -1,6 +1,7 @@
 use super::Selection;
 use crate::{
     action::{GameAction, GameActionQueue},
+    combat::Combat,
     map::{MapPosition, MapPresence, PathGuided, Zone},
 };
 use bevy::prelude::*;
@@ -11,7 +12,13 @@ pub fn handle_zone_click_events(
     zone_query: Query<&MapPosition, With<Zone>>,
     presence_query: Query<(Entity, &Selection), (With<PathGuided>, With<MapPresence>)>,
     mut game_action_queue: ResMut<GameActionQueue>,
+    combat_query: Query<&Combat>,
 ) {
+    if !combat_query.is_empty() {
+        events.clear();
+        return;
+    }
+
     for event in &mut events {
         if event.event.button != PointerButton::Primary {
             continue;
