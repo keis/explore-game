@@ -7,11 +7,20 @@ use crate::{
     },
     party::{GroupCommandsExt, PartyBundle, PartyParams},
     structure::{PortalBundle, PortalParams},
+    State,
 };
 use bevy::prelude::*;
 use expl_hexgrid::{spiral, GridLayout};
 use futures_lite::future;
 use glam::Vec3Swizzles;
+
+pub struct ScenePlugin;
+
+impl Plugin for ScenePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems((spawn_map, spawn_party, spawn_enemy).in_set(OnUpdate(State::Running)));
+    }
+}
 
 pub fn spawn_map(
     mut commands: Commands,
