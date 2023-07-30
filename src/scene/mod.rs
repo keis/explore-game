@@ -1,12 +1,11 @@
 use crate::{
     character::CharacterBundle,
-    enemy::{EnemyBundle, EnemyParams},
     map::{
-        spawn_zone, zone_layer_from_prototype, GenerateMapTask, Height, HexCoord, MapCommandsExt,
+        spawn_zone, zone_layer_from_prototype, GenerateMapTask, Height, MapCommandsExt,
         PresenceLayer, Terrain, Zone, ZoneLayer, ZoneParams,
     },
     party::{GroupCommandsExt, PartyBundle, PartyParams},
-    structure::{PortalBundle, PortalParams},
+    structure::{PortalBundle, PortalParams, SpawnerBundle, SpawnerParams},
     State,
 };
 use bevy::prelude::*;
@@ -18,13 +17,13 @@ pub struct ScenePlugin;
 
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems((spawn_map, spawn_party, spawn_enemy).in_set(OnUpdate(State::Running)));
+        app.add_systems((spawn_map, spawn_party).in_set(OnUpdate(State::Running)));
     }
 }
 
 pub fn spawn_map(
     mut commands: Commands,
-    mut param_set: ParamSet<(ZoneParams, PortalParams)>,
+    mut param_set: ParamSet<(ZoneParams, PortalParams, SpawnerParams)>,
     mut generate_map_task: Query<(Entity, &mut GenerateMapTask)>,
 ) {
     if generate_map_task.is_empty() {
@@ -72,6 +71,23 @@ pub fn spawn_map(
                     height.height_at(Vec2::ZERO, Vec3::from(prototype.portal_position).xz()),
                 ),
             ));
+        })
+        .with_presence(prototype.spawner_position, |location| {
+            let zone_prototype = prototype.tiles.get(prototype.portal_position).unwrap();
+            let height = Height {
+                height_amp: zone_prototype.height_amp,
+                height_base: zone_prototype.height_base,
+                outer_amp: zone_prototype.outer_amp,
+                outer_base: zone_prototype.outer_base,
+            };
+            location.spawn((
+                Name::new("EnemySpawner"),
+                SpawnerBundle::new(
+                    &mut param_set.p2(),
+                    prototype.spawner_position,
+                    height.height_at(Vec2::ZERO, Vec3::from(prototype.spawner_position).xz()),
+                ),
+            ));
         });
 }
 
@@ -109,26 +125,5 @@ pub fn spawn_party(
                     1,
                 ))
                 .add_members(&[character1, character2, character3]);
-        });
-}
-
-pub fn spawn_enemy(
-    mut commands: Commands,
-    mut enemy_params: EnemyParams,
-    map_query: Query<(Entity, &ZoneLayer), Added<ZoneLayer>>,
-    zone_query: Query<&Zone>,
-) {
-    let Ok((map_entity, map)) = map_query.get_single() else { return };
-    let enemycoord = spiral(map.layout().center() + HexCoord::new(2, 3))
-        .find(|&c| {
-            map.get(c)
-                .and_then(|&entity| zone_query.get(entity).ok())
-                .map_or(false, |zone| zone.terrain != Terrain::Ocean)
-        })
-        .unwrap();
-    commands
-        .entity(map_entity)
-        .with_presence(enemycoord, |location| {
-            location.spawn(EnemyBundle::new(&mut enemy_params, enemycoord));
         });
 }

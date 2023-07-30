@@ -18,6 +18,7 @@ use std::io;
 pub struct MapPrototype {
     pub tiles: Grid<SquareGridLayout, ZonePrototype>,
     pub portal_position: HexCoord,
+    pub spawner_position: HexCoord,
 }
 
 #[derive(Component)]
@@ -67,6 +68,7 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
     info!("Generated map!");
     let terrain: Grid<SquareGridLayout, Terrain> = generator.export()?;
     let mut rng = generator.rand();
+
     let portal_position = spiral(
         terrain.layout.center() + *HexCoord::NEIGHBOUR_OFFSETS.choose(&mut rng).unwrap() * 3,
     )
@@ -76,6 +78,16 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
         })
     })
     .ok_or("could not place portal")?;
+
+    let spawner_position = spiral(
+        terrain.layout.center() + *HexCoord::NEIGHBOUR_OFFSETS.choose(&mut rng).unwrap() * 4,
+    )
+    .find(|&c| {
+        terrain.get(c).map_or(false, |&terrain| {
+            terrain != Terrain::Ocean && terrain != Terrain::Mountain
+        })
+    })
+    .ok_or("could not place spawner")?;
 
     let mut prototype = Grid::with_data(
         terrain.layout,
@@ -164,6 +176,7 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
     Ok(MapPrototype {
         tiles: prototype,
         portal_position,
+        spawner_position,
     })
 }
 
