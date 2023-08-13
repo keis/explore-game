@@ -4,7 +4,6 @@ use crate::{
     combat::{Attack, Health},
     map::{HeightQuery, HexCoord, MapPresence, Offset, PathFinder, ViewRadius},
     slide::Slide,
-    turn::Turn,
 };
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_mod_outline::{OutlineBundle, OutlineVolume};
@@ -84,17 +83,14 @@ impl<'w, 's> Target<'w, 's> {
 
 pub fn move_enemy(
     mut queue: ResMut<GameActionQueue>,
-    turn: Res<Turn>,
     enemy_query: Query<(Entity, &MapPresence, &ViewRadius), With<Enemy>>,
     target: Target,
     path_finder: PathFinder,
 ) {
-    if turn.is_changed() {
-        for (entity, presence, view_radius) in &enemy_query {
-            let Some(target) = target.closest_in_view(presence.position, view_radius) else { continue };
-            let Some((path, _length)) = path_finder.find_path(presence.position, target.position) else { continue };
-            let Some(next) = path.get(1) else { continue };
-            queue.add(GameAction::Move(entity, *next));
-        }
+    for (entity, presence, view_radius) in &enemy_query {
+        let Some(target) = target.closest_in_view(presence.position, view_radius) else { continue };
+        let Some((path, _length)) = path_finder.find_path(presence.position, target.position) else { continue };
+        let Some(next) = path.get(1) else { continue };
+        queue.add(GameAction::Move(entity, *next));
     }
 }

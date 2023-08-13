@@ -91,10 +91,10 @@ fn main() {
         .add_collection_to_loading_state::<_, MainAssets>(State::AssetLoading)
         .add_systems(
             (
-                reset_movement_points,
+                reset_movement_points.run_if(resource_changed::<Turn>()),
                 derive_party_movement,
                 despawn_empty_party,
-                move_enemy,
+                move_enemy.run_if(resource_changed::<Turn>()),
                 slide,
             )
                 .in_set(OnUpdate(State::Running)),
