@@ -17,7 +17,7 @@ use explore_game::{
     map::{start_map_generation, MapPlugin, MapSeed},
     material::MaterialPlugins,
     party::{derive_party_movement, despawn_empty_party},
-    scene,
+    scene::ScenePlugin,
     slide::{slide, SlideEvent},
     structure::StructurePlugin,
     turn::Turn,
@@ -82,6 +82,7 @@ fn main() {
         .add_plugin(InterfacePlugin)
         .add_plugin(MapPlugin)
         .add_plugin(StructurePlugin)
+        .add_plugin(ScenePlugin)
         .add_startup_system(spawn_camera)
         .add_startup_system(light::spawn_light)
         .add_startup_system(start_map_generation)
@@ -90,13 +91,10 @@ fn main() {
         .add_collection_to_loading_state::<_, MainAssets>(State::AssetLoading)
         .add_systems(
             (
-                scene::spawn_map,
-                scene::spawn_party,
-                scene::spawn_enemy,
-                reset_movement_points,
+                reset_movement_points.run_if(resource_changed::<Turn>()),
                 derive_party_movement,
                 despawn_empty_party,
-                move_enemy,
+                move_enemy.run_if(resource_changed::<Turn>()),
                 slide,
             )
                 .in_set(OnUpdate(State::Running)),

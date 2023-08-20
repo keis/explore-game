@@ -2,12 +2,17 @@ use crate::{
     action::{GameAction, GameActionQueue},
     assets::MainAssets,
     combat::{Attack, Health},
-    map::{HeightQuery, HexCoord, MapPresence, Offset, PathFinder, ViewRadius},
+    map::{
+        HeightQuery, HexCoord, MapPresence, Offset, PathFinder, PresenceLayer, ViewRadius, Zone,
+        ZoneLayer,
+    },
+    party::Party,
     slide::Slide,
-    turn::Turn,
 };
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_mod_outline::{OutlineBundle, OutlineVolume};
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 
 #[derive(Component, Default)]
 pub struct Enemy;
@@ -66,7 +71,7 @@ impl EnemyBundle {
 
 #[derive(SystemParam)]
 pub struct Target<'w, 's> {
-    presence_query: Query<'w, 's, &'static MapPresence, Without<Enemy>>,
+    presence_query: Query<'w, 's, &'static MapPresence, With<Party>>,
 }
 
 impl<'w, 's> Target<'w, 's> {
@@ -84,17 +89,44 @@ impl<'w, 's> Target<'w, 's> {
 
 pub fn move_enemy(
     mut queue: ResMut<GameActionQueue>,
-    turn: Res<Turn>,
+    map_query: Query<(&PresenceLayer, &ZoneLayer)>,
     enemy_query: Query<(Entity, &MapPresence, &ViewRadius), With<Enemy>>,
+    zone_query: Query<&Zone>,
     target: Target,
     path_finder: PathFinder,
 ) {
-    if turn.is_changed() {
-        for (entity, presence, view_radius) in &enemy_query {
-            let Some(target) = target.closest_in_view(presence.position, view_radius) else { continue };
+    let Ok((presence_layer, zone_layer)) = map_query.get_single() else { return };
+    let mut rng = thread_rng();
+    for (entity, presence, view_radius) in &enemy_query {
+        if let Some(target) = target.closest_in_view(presence.position, view_radius) {
             let Some((path, _length)) = path_finder.find_path(presence.position, target.position) else { continue };
             let Some(next) = path.get(1) else { continue };
+            if enemy_query
+                .iter_many(presence_layer.presence(*next))
+                .next()
+                .is_some()
+            {
+                continue;
+            }
             queue.add(GameAction::Move(entity, *next));
+        } else {
+            let mut neighbours = HexCoord::NEIGHBOUR_OFFSETS;
+            neighbours.shuffle(&mut rng);
+            for offset in neighbours {
+                let next = presence.position + offset;
+                if zone_layer
+                    .get(next)
+                    .and_then(|&entity| zone_query.get(entity).ok())
+                    .map_or(false, |zone| zone.is_walkable())
+                    && enemy_query
+                        .iter_many(presence_layer.presence(next))
+                        .next()
+                        .is_none()
+                {
+                    queue.add(GameAction::Move(entity, next));
+                    break;
+                }
+            }
         }
     }
 }

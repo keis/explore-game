@@ -1,7 +1,6 @@
 use crate::{
     combat::{Attack, Health},
     input::Selection,
-    turn::Turn,
 };
 use bevy::prelude::*;
 
@@ -36,10 +35,8 @@ pub struct Movement {
     pub points: u32,
 }
 
-pub fn reset_movement_points(turn: Res<Turn>, mut movement_query: Query<&mut Movement>) {
-    if turn.is_changed() {
-        for mut movement in movement_query.iter_mut() {
-            movement.points = 2;
-        }
+pub fn reset_movement_points(mut movement_query: Query<&mut Movement>) {
+    for mut movement in movement_query.iter_mut() {
+        movement.points = 2;
     }
 }
