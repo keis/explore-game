@@ -5,6 +5,7 @@ pub mod character;
 pub mod combat;
 pub mod crystals;
 pub mod enemy;
+mod error;
 pub mod input;
 pub mod inspector;
 pub mod interface;
@@ -19,6 +20,8 @@ pub mod structure;
 pub mod turn;
 
 use bevy::prelude::*;
+
+pub use error::ExplError;
 
 pub const VIEW_RADIUS: u32 = 3;
 

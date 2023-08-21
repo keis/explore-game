@@ -38,6 +38,7 @@ bevy_sprite3d = "2.4.0"
 bevy-inspector-egui = "0.18.3"
 bevy_egui = "0.20.3"
 bevy_mod_billboard = "0.3.0"
+thiserror = "1.0.47"
 
 [dev-dependencies]
 rstest = { version = "0.17.0", default-features = false }

@@ -1,4 +1,5 @@
 use super::{Terrain, ZonePrototype};
+use crate::ExplError;
 use bevy::{
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task},
@@ -22,7 +23,7 @@ pub struct MapPrototype {
 }
 
 #[derive(Component)]
-pub struct GenerateMapTask(pub Task<Result<MapPrototype, &'static str>>);
+pub struct GenerateMapTask(pub Task<Result<MapPrototype, ExplError>>);
 
 #[derive(Resource)]
 pub struct MapSeed(pub Seed);
@@ -53,21 +54,18 @@ fn random_fill(fixed: Vec<(Vec2, f32)>) -> Vec<(Vec2, f32)> {
     result
 }
 
-fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
+fn generate_map(seed: Seed) -> Result<MapPrototype, ExplError> {
     info!("Generating map with seed {} ...", seed);
-    let mut file =
-        io::BufReader::new(File::open("assets/maps/test.txt").map_err(|_| "failed to open file")?);
-    let input =
-        Grid::<HexagonalGridLayout, Terrain>::load(&mut file).map_err(|_| "failed to load map")?;
+    let mut file = io::BufReader::new(File::open("assets/maps/test.txt")?);
+    let input = Grid::<HexagonalGridLayout, Terrain>::load(&mut file)?;
     let wrapped_input = wrap_grid(input);
     let transforms = standard_tile_transforms();
     let template = Template::from_tiles(extract_tiles(&wrapped_input, &transforms));
-    let mut generator = Generator::new_with_seed(&template, seed).map_err(|_| "invalid seed")?;
+    let mut generator = Generator::new_with_seed(&template, seed)?;
 
     while generator.step().is_some() {}
     info!("Generated map!");
-    let terrain: Grid<SquareGridLayout, Terrain> =
-        generator.export().map_err(|_| "generator fail")?;
+    let terrain: Grid<SquareGridLayout, Terrain> = generator.export()?;
     let mut rng = generator.rand();
 
     let portal_position = spiral(
@@ -78,7 +76,7 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
             terrain != Terrain::Ocean && terrain != Terrain::Mountain
         })
     })
-    .ok_or("could not place portal")?;
+    .ok_or(ExplError::CouldNotPlacePortal)?;
 
     let spawner_position = spiral(
         terrain.layout.center() + *HexCoord::NEIGHBOUR_OFFSETS.choose(&mut rng).unwrap() * 4,
@@ -88,7 +86,7 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
             terrain != Terrain::Ocean && terrain != Terrain::Mountain
         })
     })
-    .ok_or("could not place spawner")?;
+    .ok_or(ExplError::CouldNotPlaceSpawner)?;
 
     let mut prototype = Grid::with_data(
         terrain.layout,

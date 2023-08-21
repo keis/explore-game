@@ -2242,6 +2242,7 @@ dependencies = [
  "rstest",
  "smallvec",
  "splines",
+ "thiserror",
 ]
 
 [[package]]
