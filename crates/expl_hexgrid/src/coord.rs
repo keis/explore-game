@@ -5,6 +5,7 @@ use std::{
     ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
     str::FromStr,
 };
+use thiserror::Error;
 
 // sqrt(3)
 const SQRT3: f32 = 1.732_050_8;
@@ -27,6 +28,18 @@ const SQRT3: f32 = 1.732_050_8;
 pub struct HexCoord {
     pub q: i32,
     pub r: i32,
+}
+
+#[derive(Error, Debug)]
+pub enum HexCoordError {
+    #[error("coordinate does not start with `q`")]
+    FormatNoLeadingQ,
+    #[error("coordinate does not have a `r` separator")]
+    FormatNoSeparator,
+    #[error("invalid integer in component")]
+    FormatInvalidComponent(#[from] std::num::ParseIntError),
+    #[error("inconsistent coordinate sum `{0}` (expected 0)")]
+    InconsistentSum(i32),
 }
 
 impl HexCoord {
@@ -102,25 +115,14 @@ impl fmt::Display for HexCoord {
 }
 
 impl FromStr for HexCoord {
-    type Err = &'static str;
+    type Err = HexCoordError;
 
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         if !string.starts_with('q') {
-            return Err("Coordinate does not start with `q`");
+            return Err(HexCoordError::FormatNoLeadingQ);
         }
-        let rpos = string
-            .find('r')
-            .ok_or("Coordinate does not have a `r` separator")?;
-        let coord = HexCoord::new(
-            string[1..rpos]
-                .parse()
-                .ok()
-                .ok_or("Coordinate q-component is not a valid integer")?,
-            string[rpos + 1..]
-                .parse()
-                .ok()
-                .ok_or("Coordinate r-component is not a valid integer")?,
-        );
+        let rpos = string.find('r').ok_or(HexCoordError::FormatNoSeparator)?;
+        let coord = HexCoord::new(string[1..rpos].parse()?, string[rpos + 1..].parse()?);
         Ok(coord)
     }
 }
@@ -188,11 +190,12 @@ impl From<(i32, i32)> for HexCoord {
 
 /// Construct axial coordinate from qube coordinate in IVec3
 impl TryFrom<IVec3> for HexCoord {
-    type Error = &'static str;
+    type Error = HexCoordError;
 
     fn try_from(value: IVec3) -> Result<Self, Self::Error> {
-        if value.x + value.y + value.z != 0 {
-            Err("Components of cube coordinates does not sum to 0")
+        let sum = value.x + value.y + value.z;
+        if sum != 0 {
+            Err(HexCoordError::InconsistentSum(sum))
         } else {
             Ok(HexCoord {
                 q: value.x,
@@ -223,7 +226,7 @@ impl From<Vec3> for HexCoord {
 
 #[cfg(test)]
 mod tests {
-    use super::{HexCoord, SQRT3};
+    use super::{HexCoord, HexCoordError, SQRT3};
     use glam::{IVec3, Vec3};
 
     #[test]
@@ -249,9 +252,10 @@ mod tests {
     }
 
     #[test]
-    fn from_ivec3() {
-        let coord: Result<HexCoord, _> = IVec3::new(2, -3, 1).try_into();
-        assert_eq!(coord, Ok(HexCoord { q: 2, r: -3 }));
+    fn from_ivec3() -> Result<(), HexCoordError> {
+        let coord: HexCoord = IVec3::new(2, -3, 1).try_into()?;
+        assert_eq!(coord, HexCoord { q: 2, r: -3 });
+        Ok(())
     }
 
     #[test]
@@ -285,10 +289,11 @@ mod tests {
     }
 
     #[test]
-    fn parse_ok() {
+    fn parse_ok() -> Result<(), HexCoordError> {
         let input = "q10r-2";
-        let result: Result<HexCoord, _> = input.parse();
-        assert_eq!(result, Ok(HexCoord::new(10, -2)));
+        let result: HexCoord = input.parse()?;
+        assert_eq!(result, HexCoord::new(10, -2));
+        Ok(())
     }
 
     #[test]
