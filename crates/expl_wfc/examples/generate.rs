@@ -7,7 +7,7 @@ use expl_wfc::{
     cell::Cell,
     tile::{extract_tiles, standard_tile_transforms},
     util::{wrap_grid, DumpGrid, DumpGridWith, LoadGrid},
-    Generator, Seed, SeedType, Template,
+    Generator, Seed, SeedType, Template, WFCError,
 };
 use std::fs::File;
 use std::io;
@@ -77,7 +77,7 @@ fn generate_map<Layout>(
     output.dump(&mut io::stdout()).unwrap();
 }
 
-fn main() -> Result<(), &'static str> {
+fn main() -> Result<(), WFCError> {
     let args = Cli::parse();
 
     let template = sample_template();

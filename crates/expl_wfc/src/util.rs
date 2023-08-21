@@ -1,3 +1,4 @@
+use super::WFCError;
 use expl_hexgrid::{
     layout::{HexagonalGridLayout, SquareGridLayout},
     ring, Grid, GridLayout, HexCoord,
@@ -72,11 +73,8 @@ impl<Item: Into<char> + Copy, T: DumpGridWith<Item = Item>> DumpGrid for T {
     }
 }
 
-impl<Item: TryFrom<char> + Clone + Default> LoadGrid for Grid<HexagonalGridLayout, Item>
-where
-    Item::Error: std::error::Error + 'static,
-{
-    type Error = Box<dyn std::error::Error>;
+impl<Item: TryFrom<char> + Clone + Default> LoadGrid for Grid<HexagonalGridLayout, Item> {
+    type Error = WFCError;
 
     fn load<R: BufRead>(buf: &mut R) -> Result<Self, Self::Error> {
         let lines: Vec<_> = buf.lines().collect::<Result<_, _>>()?;
@@ -93,12 +91,14 @@ where
                     .step_by(2)
                     .enumerate()
                     .map(move |(colno, c)| {
-                        c.try_into().map(|d| {
-                            (
-                                HexCoord::new(-layout.radius - r.min(0) + colno as i32 + 1, r),
-                                d,
-                            )
-                        })
+                        c.try_into()
+                            .map(|d| {
+                                (
+                                    HexCoord::new(-layout.radius - r.min(0) + colno as i32 + 1, r),
+                                    d,
+                                )
+                            })
+                            .map_err(|_| WFCError::CellParseError)
                     })
             })
             .collect::<Result<_, _>>()?;
@@ -127,6 +127,7 @@ pub fn wrap_grid<Item: Default + Clone + Copy>(
 #[cfg(test)]
 mod tests {
     use super::{DumpGrid, LoadGrid};
+    use crate::WFCError;
     use expl_hexgrid::{layout::HexagonalGridLayout, Grid};
     use std::fs::File;
     use std::io::{BufReader, BufWriter};
@@ -149,26 +150,15 @@ mod tests {
         }
     }
 
-    #[derive(Debug)]
-    pub struct Error(&'static str);
-
-    impl std::error::Error for Error {}
-
-    impl std::fmt::Display for Error {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "{}", self.0)
-        }
-    }
-
     impl TryFrom<char> for Terrain {
-        type Error = Error;
+        type Error = WFCError;
 
         fn try_from(c: char) -> Result<Terrain, Self::Error> {
             match c {
                 '%' => Ok(Terrain::Forest),
                 '^' => Ok(Terrain::Mountain),
                 '~' => Ok(Terrain::Ocean),
-                _ => Err(Error("Unknown terrain character")),
+                _ => Err(WFCError::UnknownError),
             }
         }
     }

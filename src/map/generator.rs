@@ -62,11 +62,12 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, &'static str> {
     let wrapped_input = wrap_grid(input);
     let transforms = standard_tile_transforms();
     let template = Template::from_tiles(extract_tiles(&wrapped_input, &transforms));
-    let mut generator = Generator::new_with_seed(&template, seed)?;
+    let mut generator = Generator::new_with_seed(&template, seed).map_err(|_| "invalid seed")?;
 
     while generator.step().is_some() {}
     info!("Generated map!");
-    let terrain: Grid<SquareGridLayout, Terrain> = generator.export()?;
+    let terrain: Grid<SquareGridLayout, Terrain> =
+        generator.export().map_err(|_| "generator fail")?;
     let mut rng = generator.rand();
 
     let portal_position = spiral(
