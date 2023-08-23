@@ -2,7 +2,7 @@ use super::{
     cell::Cell,
     seed::{Seed, SeedType},
     template::Template,
-    TileId,
+    TileId, WFCError,
 };
 use expl_hexgrid::{Grid, GridLayout, HexCoord};
 use fixedbitset::FixedBitSet;
@@ -45,10 +45,10 @@ where
         }
     }
 
-    pub fn new_with_seed(template: &'a Template<Item>, seed: Seed) -> Result<Self, &'static str>
+    pub fn new_with_seed(template: &'a Template<Item>, seed: Seed) -> Result<Self, WFCError>
     where
         Layout: TryFrom<SeedType> + TryFrom<SeedType>,
-        &'static str: From<<Layout as TryFrom<SeedType>>::Error>,
+        WFCError: From<<Layout as TryFrom<SeedType>>::Error>,
     {
         let default_cell = Cell::empty(template.available_tiles());
         let layout: Layout = seed.seed_type.try_into()?;
@@ -141,13 +141,13 @@ where
         Some(())
     }
 
-    pub fn export(&self) -> Result<Grid<Layout, Item>, &'static str> {
+    pub fn export(&self) -> Result<Grid<Layout, Item>, WFCError> {
         let data: Vec<_> = self
             .grid
             .iter_data()
             .map(|cell| match cell {
                 Cell::Collapsed(tile) => Ok(self.template.contribution(*tile)),
-                Cell::Alternatives(_, _) => Err("Cell not collapsed"),
+                Cell::Alternatives(_, _) => Err(WFCError::CellNotCollapsed),
             })
             .collect::<Result<_, _>>()?;
 

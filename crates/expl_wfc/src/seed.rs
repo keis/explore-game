@@ -1,3 +1,4 @@
+use super::WFCError;
 use bincode::Options;
 use data_encoding::BASE32_NOPAD;
 use expl_hexgrid::layout::{HexagonalGridLayout, SquareGridLayout};
@@ -12,7 +13,7 @@ pub enum SeedType {
 }
 
 impl TryFrom<SeedType> for HexagonalGridLayout {
-    type Error = &'static str;
+    type Error = WFCError;
 
     fn try_from(seed_type: SeedType) -> Result<Self, Self::Error> {
         if let SeedType::Hexagonal(radius) = seed_type {
@@ -20,13 +21,13 @@ impl TryFrom<SeedType> for HexagonalGridLayout {
                 radius: radius.into(),
             })
         } else {
-            Err("Incompatible seed")
+            Err(WFCError::IncompatibleSeed)
         }
     }
 }
 
 impl TryFrom<SeedType> for SquareGridLayout {
-    type Error = &'static str;
+    type Error = WFCError;
 
     fn try_from(seed_type: SeedType) -> Result<Self, Self::Error> {
         if let SeedType::Square(width, height) = seed_type {
@@ -35,7 +36,7 @@ impl TryFrom<SeedType> for SquareGridLayout {
                 height: height.into(),
             })
         } else {
-            Err("Incompatible seed")
+            Err(WFCError::IncompatibleSeed)
         }
     }
 }
@@ -79,7 +80,7 @@ impl fmt::Display for Seed {
 }
 
 impl FromStr for Seed {
-    type Err = &'static str;
+    type Err = WFCError;
 
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         BASE32_NOPAD
@@ -90,7 +91,7 @@ impl FromStr for Seed {
                     .deserialize::<Seed>(&bytes)
                     .ok()
             })
-            .ok_or("Not a valid seed")
+            .ok_or(WFCError::InvalidSeed)
     }
 }
 
@@ -102,7 +103,7 @@ impl From<Seed> for rand_xoshiro::Xoshiro256PlusPlus {
 
 #[cfg(test)]
 mod tests {
-    use super::{Seed, SeedType};
+    use super::{Seed, SeedType, WFCError};
 
     #[test]
     fn display_seed() {
@@ -117,14 +118,15 @@ mod tests {
     }
 
     #[test]
-    fn parse_seed() {
-        let seed: Result<Seed, _> = "AAEPWOIF".parse();
+    fn parse_seed() -> Result<(), WFCError> {
+        let seed: Seed = "AAEPWOIF".parse()?;
         assert_eq!(
             seed,
-            Ok(Seed {
+            Seed {
                 seed_type: SeedType::Hexagonal(8),
                 rng_seed: 1337,
-            })
+            }
         );
+        Ok(())
     }
 }
