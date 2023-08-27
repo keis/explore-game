@@ -22,7 +22,8 @@ fn spawn_menu_item(
         .spawn((
             ButtonBundle {
                 style: Style {
-                    size: Size::new(Val::Percent(100.0), Val::Px(50.0)),
+                    width: Val::Percent(100.0),
+                    height: Val::Px(50.0),
                     margin: UiRect {
                         bottom: Val::Px(10.0),
                         ..default()
@@ -53,7 +54,8 @@ pub fn spawn_menu(mut commands: Commands, assets: Res<InterfaceAssets>) {
         .spawn((
             NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
                     position_type: PositionType::Absolute,
                     align_items: AlignItems::Center,
                     justify_content: JustifyContent::SpaceAround,
@@ -69,7 +71,8 @@ pub fn spawn_menu(mut commands: Commands, assets: Res<InterfaceAssets>) {
             parent
                 .spawn(NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Px(300.0), Val::Px(400.0)),
+                        width: Val::Px(300.0),
+                        height: Val::Px(400.0),
                         flex_direction: FlexDirection::Column,
                         justify_content: JustifyContent::FlexStart,
                         padding: UiRect::all(Val::Px(5.0)),
@@ -105,7 +108,7 @@ pub fn handle_save(
     interaction_query: Query<&Interaction, (With<MenuItemSave>, Changed<Interaction>)>,
     mut event_writer: EventWriter<GameAction>,
 ) {
-    if let Ok(Interaction::Clicked) = interaction_query.get_single() {
+    if let Ok(Interaction::Pressed) = interaction_query.get_single() {
         event_writer.send(GameAction::Save());
     }
 }
@@ -114,7 +117,7 @@ pub fn handle_quit(
     interaction_query: Query<&Interaction, (With<MenuItemQuit>, Changed<Interaction>)>,
     mut event_writer: EventWriter<bevy::app::AppExit>,
 ) {
-    if let Ok(Interaction::Clicked) = interaction_query.get_single() {
+    if let Ok(Interaction::Pressed) = interaction_query.get_single() {
         event_writer.send(bevy::app::AppExit);
     }
 }

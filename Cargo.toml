@@ -15,29 +15,29 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-bevy_asset_loader = "0.16"
-bevy_mod_picking = { version = "0.14.0", features = ["backend_egui"] }
-bevy_obj = "0.10.1"
-bevy = { version = "0.10", features = ["wayland", "dynamic_linking"] }
+bevy_asset_loader = "0.17"
+bevy_mod_picking = { version = "0.15", features = ["backend_egui"] }
+bevy_obj = "0.11"
+bevy = { version = "0.11", features = ["wayland", "dynamic_linking"] }
 clap = {version = "4.3.21", features = ["derive"] }
 expl_hexgrid = { path = "crates/expl_hexgrid" }
 expl_wfc = { path = "crates/expl_wfc" }
 futures-lite = "1.13.0"
-glam = "0.23.0"
-hexasphere = "8.0.0"
+glam = "0.24"
+hexasphere = "9.1"
 interpolation = "0.2.0"
 itertools = "0.11.0"
-leafwing-input-manager = { version = "0.9", default-features = false, features = ["egui"] }
-noisy_bevy = "0.3"
+leafwing-input-manager = { version = "0.10", default-features = false, features = ["egui"] }
+noisy_bevy = "0.4"
 pathfinding = "4.3.0"
 rand = "0.8.5"
 smallvec = "1.6"
 splines = { git = "https://github.com/phaazon/splines.git", branch = "master", version = "4.2.0", features = ["glam"] }
-bevy_mod_outline = "0.4.2"
-bevy_sprite3d = "2.4.0"
-bevy-inspector-egui = "0.18.3"
-bevy_egui = "0.20.3"
-bevy_mod_billboard = "0.3.0"
+bevy_mod_outline = "0.5"
+bevy_sprite3d = "2.5"
+bevy-inspector-egui = "0.19"
+bevy_egui = "0.21"
+bevy_mod_billboard = "0.4"
 thiserror = "1.0.47"
 
 [dev-dependencies]

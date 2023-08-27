@@ -95,7 +95,7 @@ impl<'w, 's, 'a> MapCommandsExt for EntityCommands<'w, 's, 'a> {
 }
 
 impl Command for MoveMapPresence {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         if let Some(current_position) = world
             .entity(self.presence)
             .get::<MapPresence>()
@@ -121,7 +121,7 @@ impl Command for MoveMapPresence {
 }
 
 impl Command for AddMapPresence {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         for presence in self.presence {
             // TODO: How to handle the case where presence is already on map? Convert into move?
             if let Some(mut map) = world.entity_mut(self.map).get_mut::<PresenceLayer>() {
@@ -150,7 +150,7 @@ impl Command for AddMapPresence {
 }
 
 impl Command for DespawnPresence {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         if let Some(position) = world
             .entity(self.presence)
             .get::<MapPresence>()

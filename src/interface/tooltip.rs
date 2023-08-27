@@ -26,15 +26,13 @@ pub fn spawn_tooltip(
                 background_color: NORMAL.into(),
                 style: Style {
                     position_type: PositionType::Absolute,
-                    position: match position {
-                        TooltipPosition::Above => UiRect {
-                            bottom: Val::Px(60.0),
-                            ..default()
-                        },
-                        TooltipPosition::Below => UiRect {
-                            top: Val::Px(40.0),
-                            ..default()
-                        },
+                    bottom: match position {
+                        TooltipPosition::Above => Val::Px(60.0),
+                        _ => Val::DEFAULT,
+                    },
+                    top: match position {
+                        TooltipPosition::Below => Val::Px(40.0),
+                        _ => Val::DEFAULT,
                     },
                     display: Display::None,
                     padding: UiRect::all(Val::Px(4.0)),

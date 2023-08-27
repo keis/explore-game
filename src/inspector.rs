@@ -7,9 +7,11 @@ pub struct InspectorPlugin;
 
 impl Plugin for InspectorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(DefaultInspectorConfigPlugin)
-            .add_plugin(EguiPlugin)
-            .add_system(inspector_ui.run_if(action_toggle_active(false, Action::ToggleInspector)));
+        app.add_plugins((DefaultInspectorConfigPlugin, EguiPlugin))
+            .add_systems(
+                Update,
+                inspector_ui.run_if(action_toggle_active(false, Action::ToggleInspector)),
+            );
     }
 }
 

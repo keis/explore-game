@@ -31,10 +31,11 @@ impl Plugin for InputPlugin {
                 .disable::<DebugPickingPlugin>()
                 .disable::<bevy_mod_picking::prelude::SelectionPlugin>(),
         )
-        .add_plugin(InputManagerPlugin::<Action>::default())
+        .add_plugins(InputManagerPlugin::<Action>::default())
         .init_resource::<ActionState<Action>>()
         .insert_resource(input_map())
         .add_systems(
+            Update,
             (
                 action::handle_deselect.run_if(action_just_pressed(Action::Deselect)),
                 action::handle_select_next.run_if(action_just_pressed(Action::SelectNext)),
@@ -49,25 +50,28 @@ impl Plugin for InputPlugin {
                 action::handle_open_portal.run_if(action_just_pressed(Action::OpenPortal)),
                 action::handle_next_turn.run_if(action_just_pressed(Action::NextTurn)),
             )
-                .after(InputManagerSystem::ManualControl)
-                .in_set(OnUpdate(State::Running)),
+                .run_if(in_state(State::Running))
+                .after(InputManagerSystem::ManualControl),
         )
-        .add_system(
+        .add_systems(
+            PreUpdate,
             action::magic_cancel
                 .in_set(InputManagerSystem::ManualControl)
                 .run_if(action_just_pressed(Action::Cancel)),
         )
-        .add_system(map::handle_zone_click_events)
+        .add_systems(Update, map::handle_zone_click_events)
         .add_event::<Select>()
         .add_event::<Deselect>()
         .add_systems(
+            PreUpdate,
             (
                 selection::send_selection_events,
                 selection::apply_selection_events,
             )
                 .in_set(PickSet::PostFocus),
         )
-        .add_system(
+        .add_systems(
+            PreUpdate,
             selection::update_highlight
                 .after(update_highlight_assets::<StandardMaterial>)
                 .in_set(PickSet::Last),
@@ -81,7 +85,7 @@ fn input_map() -> InputMap<Action> {
         .insert(KeyCode::Down, Action::PanCameraDown)
         .insert(KeyCode::Left, Action::PanCameraLeft)
         .insert(KeyCode::Right, Action::PanCameraRight)
-        .insert(KeyCode::LControl, Action::MultiSelect)
+        .insert(KeyCode::ControlLeft, Action::MultiSelect)
         .insert(KeyCode::Escape, Action::Cancel)
         .insert(KeyCode::Space, Action::SelectNext)
         .insert(KeyCode::M, Action::ResumeMove)
@@ -145,7 +149,7 @@ mod tests {
 
     #[rstest]
     pub fn select_next(mut app: App) {
-        app.add_system(handle_select_next);
+        app.add_systems(Update, handle_select_next);
 
         press_select_next(&mut app);
         app.update();

@@ -1,6 +1,7 @@
-#import bevy_pbr::mesh_view_bindings
-#import bevy_pbr::mesh_bindings
-#import noisy_bevy::prelude
+#import bevy_pbr::mesh_bindings mesh
+#import bevy_pbr::mesh_functions as mesh_functions
+#import bevy_pbr::mesh_vertex_output MeshVertexOutput
+#import noisy_bevy simplex_noise_2d
 
 // NOTE: Bindings must come before functions that use them!
 #import bevy_pbr::mesh_functions
@@ -50,11 +51,6 @@ struct Vertex {
 #endif
 };
 
-struct VertexOutput {
-    @builtin(position) clip_position: vec4<f32>,
-    #import bevy_pbr::mesh_vertex_output
-};
-
 fn height_at(position: vec2<f32>, world_position: vec2<f32>) -> f32 {
     var amp: f32;
     var base: f32;
@@ -102,26 +98,26 @@ fn height_at(position: vec2<f32>, world_position: vec2<f32>) -> f32 {
 }
 
 @vertex
-fn vertex(vertex: Vertex) -> VertexOutput {
-    var out: VertexOutput;
+fn vertex(vertex: Vertex) -> MeshVertexOutput {
+    var out: MeshVertexOutput;
 
 #ifdef SKINNED
-    var model = skin_model(vertex.joint_indices, vertex.joint_weights);
+    var model = bevy_pbr::skinningt::skin_model(vertex.joint_indices, vertex.joint_weights);
 #else
     var model = mesh.model;
 #endif
 
 #ifdef VERTEX_NORMALS
 #ifdef SKINNED
-    out.world_normal = skin_normals(model, vertex.normal);
+    out.world_normal = bevy_pbr::skinning::skin_normals(model, vertex.normal);
 #else
-    out.world_normal = mesh_normal_local_to_world(vertex.normal);
+    out.world_normal = mesh_functions::mesh_normal_local_to_world(vertex.normal);
 #endif
 #endif
 
 #ifdef VERTEX_POSITIONS
-    out.world_position = mesh_position_local_to_world(model, vec4<f32>(vertex.position, 1.0));
-    out.clip_position = mesh_position_world_to_clip(out.world_position);
+    out.world_position = mesh_functions::mesh_position_local_to_world(model, vec4<f32>(vertex.position, 1.0));
+    out.position = mesh_functions::mesh_position_world_to_clip(out.world_position);
 #endif
 
 #ifdef VERTEX_UVS
@@ -129,7 +125,7 @@ fn vertex(vertex: Vertex) -> VertexOutput {
 #endif
 
 #ifdef VERTEX_TANGENTS
-    out.world_tangent = mesh_tangent_local_to_world(model, vertex.tangent);
+    out.world_tangent = mesh_functions::mesh_tangent_local_to_world(model, vertex.tangent);
 #endif
 
 #ifdef VERTEX_COLORS
@@ -144,7 +140,7 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     let c = height_at(vertex.position.xz + offset.yx, worldxz + offset.yx);
     let d = height_at(vertex.position.xz + offset.yz, worldxz + offset.yz);
     out.world_normal = normalize(vec3<f32>((a - b) / 2.0, 1.0, (c - d) / 2.0));
-    out.clip_position = mesh_position_world_to_clip(out.world_position);
+    out.position = mesh_functions::mesh_position_world_to_clip(out.world_position);
 
     return out;
 }

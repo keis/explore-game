@@ -12,6 +12,7 @@ use crate::{
     turn::Turn,
 };
 use bevy::{prelude::*, ui::FocusPolicy};
+use bevy_mod_picking::prelude::{Pickable, PickingInteraction};
 
 #[derive(Component)]
 pub struct Shell;
@@ -48,7 +49,8 @@ fn spawn_toolbar_icon(
         .with_children(|parent| {
             parent.spawn(ImageBundle {
                 style: Style {
-                    size: Size::new(Val::Px(32.0), Val::Px(32.0)),
+                    width: Val::Px(32.0),
+                    height: Val::Px(32.0),
                     ..default()
                 },
                 image: image.into(),
@@ -70,13 +72,15 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
         .spawn((
             NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
                     justify_content: JustifyContent::SpaceBetween,
                     ..default()
                 },
                 focus_policy: FocusPolicy::Pass,
                 ..default()
             },
+            Pickable::IGNORE,
             Shell,
         ))
         .with_children(|parent| {
@@ -94,25 +98,25 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                 .with_style(Style {
                     align_self: AlignSelf::FlexEnd,
                     position_type: PositionType::Absolute,
-                    position: UiRect {
-                        top: Val::Px(5.0),
-                        right: Val::Px(15.0),
-                        ..default()
-                    },
+                    top: Val::Px(5.0),
+                    right: Val::Px(15.0),
                     ..default()
                 }),
             ));
             parent
-                .spawn(NodeBundle { ..default() })
+                .spawn((NodeBundle::default(), Pickable::IGNORE))
                 .with_children(|parent| {
                     parent
-                        .spawn(NodeBundle {
-                            style: Style {
-                                flex_direction: FlexDirection::Column,
+                        .spawn((
+                            NodeBundle {
+                                style: Style {
+                                    flex_direction: FlexDirection::Column,
+                                    ..default()
+                                },
                                 ..default()
                             },
-                            ..default()
-                        })
+                            Pickable::IGNORE,
+                        ))
                         .with_children(|parent| {
                             parent.spawn(CampListBundle::default());
                             parent.spawn(PartyListBundle::default());
@@ -199,7 +203,8 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     TooltipTarget,
                     ButtonBundle {
                         style: Style {
-                            size: Size::new(Val::Px(200.0), Val::Px(60.0)),
+                            width: Val::Px(200.0),
+                            height: Val::Px(60.0),
                             align_self: AlignSelf::FlexEnd,
                             align_items: AlignItems::Center,
                             justify_content: JustifyContent::Center,
@@ -247,11 +252,14 @@ pub fn update_turn_text(mut turn_text_query: Query<&mut Text, With<TurnText>>, t
 #[allow(clippy::type_complexity)]
 pub fn update_zone_text(
     mut zone_text_query: Query<&mut Text, With<ZoneText>>,
-    zone_query: Query<(&MapPosition, &Interaction), (With<Zone>, Changed<Interaction>)>,
+    zone_query: Query<
+        (&MapPosition, &PickingInteraction),
+        (With<Zone>, Changed<PickingInteraction>),
+    >,
 ) {
     for (zone_position, _) in zone_query
         .iter()
-        .filter(|(_, interaction)| **interaction == Interaction::Hovered)
+        .filter(|(_, interaction)| **interaction == PickingInteraction::Hovered)
     {
         for mut text in &mut zone_text_query {
             text.sections[0].value = format!("{:?}", zone_position.0);
@@ -263,6 +271,11 @@ pub fn handle_action_button_interaction(
     interaction_query: Query<(&ActionButton, &Interaction), Changed<Interaction>>,
     mut action_state: ResMut<ActionState<Action>>,
 ) {
-    let Ok((ActionButton(action), Interaction::Clicked)) = interaction_query.get_single() else { return };
-    action_state.press(*action);
+    for ActionButton(action) in interaction_query
+        .iter()
+        .filter(|(_, interaction)| **interaction == Interaction::Pressed)
+        .map(|(action, _)| action)
+    {
+        action_state.press(*action);
+    }
 }

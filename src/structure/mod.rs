@@ -14,14 +14,18 @@ pub struct StructurePlugin;
 
 impl Plugin for StructurePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems((camp::update_camp_view_radius, portal::update_portal_effect))
-            .add_systems(
-                (
-                    spawner::charge_spawner.run_if(resource_changed::<Turn>()),
-                    spawner::spawn_enemy.run_if(resource_changed::<Turn>()),
-                )
-                    .chain()
-                    .in_set(OnUpdate(State::Running)),
-            );
+        app.add_systems(
+            Update,
+            (camp::update_camp_view_radius, portal::update_portal_effect),
+        )
+        .add_systems(
+            Update,
+            (
+                spawner::charge_spawner.run_if(resource_changed::<Turn>()),
+                spawner::spawn_enemy.run_if(resource_changed::<Turn>()),
+            )
+                .run_if(in_state(State::Running))
+                .chain(),
+        );
     }
 }

@@ -27,14 +27,21 @@ impl Plugin for InterfacePlugin {
             LoadingState::new(State::AssetLoading).continue_to_state(State::Running),
         )
         .add_collection_to_loading_state::<_, InterfaceAssets>(State::AssetLoading)
-        .add_systems((shell::spawn_shell, menu::spawn_menu).in_schedule(OnEnter(State::Running)))
-        .add_system(party::update_party_list.run_if(party::run_if_any_party_changed))
-        .add_system(camp::update_camp_list.run_if(camp::run_if_any_camp_changed))
-        .add_system(
-            character::update_character_list
-                .run_if(character::run_if_any_party_or_selection_changed),
+        .add_systems(
+            OnEnter(State::Running),
+            (shell::spawn_shell, menu::spawn_menu),
         )
         .add_systems(
+            Update,
+            (
+                party::update_party_list.run_if(party::run_if_any_party_changed),
+                camp::update_camp_list.run_if(camp::run_if_any_camp_changed),
+                character::update_character_list
+                    .run_if(character::run_if_any_party_or_selection_changed),
+            ),
+        )
+        .add_systems(
+            Update,
             (
                 party::update_party_selection,
                 party::update_party_movement_points,
@@ -48,27 +55,32 @@ impl Plugin for InterfacePlugin {
                 character::update_character_health,
                 character::handle_character_display_interaction,
             )
-                .in_set(OnUpdate(State::Running)),
+                .run_if(in_state(State::Running)),
         )
         .add_systems(
+            Update,
             (
                 shell::update_turn_text,
                 shell::update_zone_text,
                 tooltip::show_tooltip_on_hover,
             )
-                .in_set(OnUpdate(State::Running)),
-        )
-        .add_system(
-            shell::handle_action_button_interaction.in_set(InputManagerSystem::ManualControl),
+                .run_if(in_state(State::Running)),
         )
         .add_systems(
+            PreUpdate,
+            shell::handle_action_button_interaction
+                .in_set(InputManagerSystem::ManualControl)
+                .after(InputManagerSystem::Update),
+        )
+        .add_systems(
+            Update,
             (
                 menu::handle_toggle_main_menu.run_if(action_just_pressed(Action::ToggleMainMenu)),
                 menu::handle_save,
                 menu::handle_quit,
             )
                 .after(InputManagerSystem::ManualControl)
-                .in_set(OnUpdate(State::Running)),
+                .run_if(in_state(State::Running)),
         );
     }
 }

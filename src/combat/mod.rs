@@ -23,13 +23,15 @@ pub struct CombatPlugin;
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<CombatEvent>()
-            .add_system(
-                initiate_combat
-                    .in_base_set(ActionSet::PostApply)
-                    .run_if(on_event::<MapEvent>()),
-            )
-            .add_system(float_and_fade)
             .add_systems(
+                Update,
+                initiate_combat
+                    .run_if(on_event::<MapEvent>())
+                    .in_set(ActionSet::PostApply),
+            )
+            .add_systems(Update, float_and_fade)
+            .add_systems(
+                Update,
                 (
                     combat_round,
                     combat_log,
@@ -37,7 +39,7 @@ impl Plugin for CombatPlugin {
                     despawn_no_health.after(combat_round),
                     finish_combat.after(despawn_no_health),
                 )
-                    .in_set(OnUpdate(State::Running)),
+                    .run_if(in_state(State::Running)),
             );
     }
 }
@@ -90,6 +92,7 @@ pub struct Health(pub u16);
 #[derive(Component, Default)]
 pub struct Attack(pub Range<u16>);
 
+#[derive(Event)]
 pub enum CombatEvent {
     Initiate(Entity),
     FriendDamage(Entity, u16),

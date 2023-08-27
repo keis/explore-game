@@ -10,6 +10,7 @@ use crate::{
     party::{Group, Party},
 };
 use bevy::prelude::*;
+use bevy_mod_picking::prelude::Pickable;
 
 #[derive(Component)]
 pub struct PartyList;
@@ -32,6 +33,7 @@ pub struct PartyCrystalsText;
 pub struct PartyListBundle {
     node_bundle: NodeBundle,
     party_list: PartyList,
+    pickable: Pickable,
 }
 
 impl Default for PartyListBundle {
@@ -39,7 +41,8 @@ impl Default for PartyListBundle {
         Self {
             node_bundle: NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Px(200.0), Val::Auto),
+                    width: Val::Px(200.0),
+                    height: Val::Auto,
                     flex_direction: FlexDirection::Column,
                     margin: UiRect {
                         right: Val::Px(8.0),
@@ -51,6 +54,7 @@ impl Default for PartyListBundle {
                 ..default()
             },
             party_list: PartyList,
+            pickable: Pickable::IGNORE,
         }
     }
 }
@@ -68,7 +72,8 @@ fn spawn_party_display(
             PartyDisplay { party: entity },
             ButtonBundle {
                 style: Style {
-                    size: Size::new(Val::Percent(100.0), Val::Px(120.0)),
+                    width: Val::Percent(100.0),
+                    height: Val::Px(120.0),
                     margin: UiRect::all(Val::Px(2.0)),
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::SpaceBetween,
@@ -219,7 +224,7 @@ pub fn handle_party_display_interaction(
     interaction_query: Query<(&Interaction, &PartyDisplay), Changed<Interaction>>,
     mut selection_query: Query<(Entity, &mut Selection), Without<Character>>,
 ) {
-    if let Ok((Interaction::Clicked, display)) = interaction_query.get_single() {
+    if let Ok((Interaction::Pressed, display)) = interaction_query.get_single() {
         if let Ok((entity, mut selection)) = selection_query.get_mut(display.party) {
             if action_state.pressed(Action::MultiSelect) {
                 let selected = selection.is_selected;

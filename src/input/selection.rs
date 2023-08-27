@@ -6,7 +6,9 @@ use crate::{
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_mod_picking::{
     highlight::InitialHighlight,
-    prelude::{GlobalHighlight, Highlight, PickHighlight, Pickable, RaycastPickTarget},
+    prelude::{
+        GlobalHighlight, Highlight, PickHighlight, Pickable, PickingInteraction, RaycastPickTarget,
+    },
 };
 
 #[derive(Component, Debug, Default, Clone)]
@@ -17,28 +19,31 @@ pub struct Selection {
 #[derive(Bundle, Default)]
 pub struct SelectionBundle {
     pub pickable: Pickable,
-    pub interaction: Interaction,
+    pub picking_interaction: PickingInteraction,
     pub selection: Selection,
     pub highlight: PickHighlight,
     pub raycast_pick_target: RaycastPickTarget,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
 pub struct Select(Entity);
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
 pub struct Deselect(Entity);
 
 pub fn send_selection_events(
     action_state: Res<ActionState<Action>>,
-    interaction_query: Query<(Entity, &Selection, &Interaction), Changed<Interaction>>,
+    interaction_query: Query<
+        (Entity, &Selection, &PickingInteraction),
+        Changed<PickingInteraction>,
+    >,
     selection_query: Query<(Entity, &Selection)>,
     mut select_events: EventWriter<Select>,
     mut deselect_events: EventWriter<Deselect>,
 ) {
     for (entity, selection, _) in interaction_query
         .iter()
-        .filter(|(_, _, interaction)| matches!(interaction, Interaction::Clicked))
+        .filter(|(_, _, interaction)| matches!(interaction, PickingInteraction::Pressed))
     {
         if action_state.pressed(Action::MultiSelect) {
             if selection.is_selected {
@@ -81,17 +86,17 @@ pub fn update_highlight(
     mut interaction_query: Query<
         (
             &mut Handle<StandardMaterial>,
-            &Interaction,
+            &PickingInteraction,
             &Selection,
             &InitialHighlight<StandardMaterial>,
             Option<&Highlight<StandardMaterial>>,
         ),
-        Or<(Changed<Selection>, Changed<Interaction>)>,
+        Or<(Changed<Selection>, Changed<PickingInteraction>)>,
     >,
 ) {
     for (mut asset, interaction, selection, initial_highlight, highlight) in &mut interaction_query
     {
-        if let Interaction::None = interaction {
+        if let PickingInteraction::None = interaction {
             *asset = if selection.is_selected {
                 global_defaults.selected(&highlight)
             } else {

@@ -1,6 +1,7 @@
 use super::HexCoord;
 use bevy::prelude::*;
 
+#[derive(Event)]
 pub enum MapEvent {
     PresenceAdded {
         map: Entity,

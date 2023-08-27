@@ -12,6 +12,7 @@ use crate::{
     structure::Camp,
 };
 use bevy::prelude::*;
+use bevy_mod_picking::prelude::Pickable;
 
 #[derive(Component)]
 pub struct CampList;
@@ -28,6 +29,7 @@ pub struct CampCrystalsText;
 pub struct CampListBundle {
     node_bundle: NodeBundle,
     camp_list: CampList,
+    pickable: Pickable,
 }
 
 impl Default for CampListBundle {
@@ -35,7 +37,8 @@ impl Default for CampListBundle {
         Self {
             node_bundle: NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Px(200.0), Val::Auto),
+                    width: Val::Px(200.0),
+                    height: Val::Auto,
                     flex_direction: FlexDirection::Column,
                     margin: UiRect {
                         right: Val::Px(8.0),
@@ -47,6 +50,7 @@ impl Default for CampListBundle {
                 ..default()
             },
             camp_list: CampList,
+            pickable: Pickable::IGNORE,
         }
     }
 }
@@ -62,7 +66,8 @@ fn spawn_camp_display(
             CampDisplay { camp: entity },
             ButtonBundle {
                 style: Style {
-                    size: Size::new(Val::Percent(100.0), Val::Px(120.0)),
+                    width: Val::Percent(100.0),
+                    height: Val::Px(120.0),
                     margin: UiRect::all(Val::Px(2.0)),
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::SpaceBetween,
@@ -170,7 +175,7 @@ pub fn handle_camp_display_interaction(
     interaction_query: Query<(&Interaction, &CampDisplay), Changed<Interaction>>,
     mut selection_query: Query<(Entity, &mut Selection), Without<Character>>,
 ) {
-    if let Ok((Interaction::Clicked, display)) = interaction_query.get_single() {
+    if let Ok((Interaction::Pressed, display)) = interaction_query.get_single() {
         if let Ok((entity, mut selection)) = selection_query.get_mut(display.camp) {
             if action_state.pressed(Action::MultiSelect) {
                 let selected = selection.is_selected;

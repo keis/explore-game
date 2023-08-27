@@ -21,6 +21,7 @@ impl Default for Slide {
     }
 }
 
+#[derive(Event)]
 pub enum SlideEvent {
     Stopped,
 }
