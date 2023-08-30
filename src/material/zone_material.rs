@@ -1,17 +1,22 @@
 use crate::map::Fog;
-use bevy::{prelude::*, reflect::TypeUuid, render::render_resource::*};
+use bevy::{
+    prelude::*,
+    reflect::{TypePath, TypeUuid},
+    render::render_resource::*,
+};
+use bevy_mod_picking::prelude::PickingInteraction;
 
 #[derive(Default)]
 pub struct ZoneMaterialPlugin;
 
 impl Plugin for ZoneMaterialPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(MaterialPlugin::<ZoneMaterial>::default())
-            .add_system(apply_to_material);
+        app.add_plugins(MaterialPlugin::<ZoneMaterial>::default())
+            .add_systems(Update, apply_to_material);
     }
 }
 
-#[derive(AsBindGroup, TypeUuid, Clone, Default)]
+#[derive(AsBindGroup, TypeUuid, TypePath, Clone, Default)]
 #[uuid = "05f50382-7218-4860-8c4c-06dbd66694db"]
 #[uniform(4, ZoneMaterialUniform)]
 pub struct ZoneMaterial {
@@ -108,14 +113,14 @@ impl Material for ZoneMaterial {
 fn apply_to_material(
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     zone_query: Query<
-        (&Fog, &Interaction, &Handle<ZoneMaterial>),
-        Or<(Changed<Fog>, Changed<Interaction>)>,
+        (&Fog, &PickingInteraction, &Handle<ZoneMaterial>),
+        Or<(Changed<Fog>, Changed<PickingInteraction>)>,
     >,
 ) {
     for (fog, interaction, handle) in &zone_query {
         let Some(material) = zone_materials.get_mut(handle) else { continue };
         material.visible = fog.visible;
         material.explored = fog.explored;
-        material.hover = matches!(interaction, Interaction::Hovered);
+        material.hover = matches!(interaction, PickingInteraction::Hovered);
     }
 }

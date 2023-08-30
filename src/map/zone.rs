@@ -13,7 +13,7 @@ use crate::{
     structure::Camp,
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
-use bevy_mod_picking::prelude::{Pickable, RaycastPickTarget};
+use bevy_mod_picking::prelude::{Pickable, PickingInteraction, RaycastPickTarget};
 use expl_hexgrid::{layout::SquareGridLayout, Grid};
 use glam::Vec3Swizzles;
 use rand::{
@@ -104,7 +104,7 @@ pub struct ZoneBundle {
     pub position: MapPosition,
     pub pickable: Pickable,
     pub raycast_pick_target: RaycastPickTarget,
-    pub interaction: Interaction,
+    pub interaction: PickingInteraction,
     pub not_shadow_caster: NotShadowCaster,
 }
 

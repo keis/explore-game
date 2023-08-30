@@ -62,7 +62,7 @@ mod tests {
     fn pathfinding_neighbour(mut app: App) {
         app.world
             .spawn((Start(HexCoord::new(2, 1)), Goal(HexCoord::new(2, 0))));
-        app.add_system(find_path_system);
+        app.add_systems(Update, find_path_system);
 
         app.update();
 
@@ -75,7 +75,7 @@ mod tests {
     fn pathfinding(mut app: App) {
         app.world
             .spawn((Start(HexCoord::new(0, 0)), Goal(HexCoord::new(0, 2))));
-        app.add_system(find_path_system);
+        app.add_systems(Update, find_path_system);
 
         app.update();
 

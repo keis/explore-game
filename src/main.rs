@@ -1,4 +1,6 @@
-use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
+use bevy::{
+    asset::ChangeWatcher, log::LogPlugin, prelude::*, utils::Duration, window::PresentMode,
+};
 use bevy_asset_loader::prelude::*;
 use bevy_mod_picking::prelude::RaycastPickCamera;
 use clap::Parser;
@@ -63,33 +65,39 @@ fn main() {
                 })
                 .set(ImagePlugin::default_nearest())
                 .set(AssetPlugin {
-                    watch_for_changes: true,
+                    watch_for_changes: ChangeWatcher::with_delay(Duration::from_millis(200)),
                     ..default()
                 }),
         )
         .add_plugins(MaterialPlugins)
         .add_state::<State>()
-        .add_plugin(bevy_mod_billboard::prelude::BillboardPlugin)
-        .add_plugin(bevy_mod_outline::OutlinePlugin)
-        .add_plugin(bevy_obj::ObjPlugin)
-        .add_plugin(bevy_sprite3d::Sprite3dPlugin)
-        .add_plugin(noisy_bevy::NoisyShaderPlugin)
-        .add_plugin(ActionPlugin)
-        .add_plugin(CameraControlPlugin)
-        .add_plugin(CombatPlugin)
-        .add_plugin(InputPlugin)
-        .add_plugin(InspectorPlugin)
-        .add_plugin(InterfacePlugin)
-        .add_plugin(MapPlugin)
-        .add_plugin(StructurePlugin)
-        .add_plugin(ScenePlugin)
-        .add_startup_system(spawn_camera)
-        .add_startup_system(light::spawn_light)
-        .add_startup_system(start_map_generation)
+        .add_plugins((
+            bevy_mod_billboard::prelude::BillboardPlugin,
+            bevy_mod_outline::OutlinePlugin,
+            bevy_obj::ObjPlugin,
+            bevy_sprite3d::Sprite3dPlugin,
+            noisy_bevy::NoisyShaderPlugin,
+        ))
+        .add_plugins((
+            ActionPlugin,
+            CameraControlPlugin,
+            CombatPlugin,
+            InputPlugin,
+            InspectorPlugin,
+            InterfacePlugin,
+            MapPlugin,
+            StructurePlugin,
+            ScenePlugin,
+        ))
+        .add_systems(
+            Startup,
+            (spawn_camera, light::spawn_light, start_map_generation),
+        )
         .add_event::<SlideEvent>()
         .add_loading_state(LoadingState::new(State::AssetLoading).continue_to_state(State::Running))
         .add_collection_to_loading_state::<_, MainAssets>(State::AssetLoading)
         .add_systems(
+            Update,
             (
                 reset_movement_points.run_if(resource_changed::<Turn>()),
                 derive_party_movement,
@@ -97,7 +105,7 @@ fn main() {
                 move_enemy.run_if(resource_changed::<Turn>()),
                 slide,
             )
-                .in_set(OnUpdate(State::Running)),
+                .run_if(in_state(State::Running)),
         )
         .run();
 }

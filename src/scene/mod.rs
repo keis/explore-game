@@ -17,7 +17,10 @@ pub struct ScenePlugin;
 
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems((spawn_map, spawn_party).in_set(OnUpdate(State::Running)));
+        app.add_systems(
+            Update,
+            (spawn_map, spawn_party).run_if(in_state(State::Running)),
+        );
     }
 }
 

@@ -14,7 +14,7 @@ use bevy::prelude::*;
 use smallvec::SmallVec;
 use std::collections::VecDeque;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Event)]
 pub enum GameAction {
     Move(Entity, HexCoord),
     MoveTo(Entity, HexCoord),
@@ -33,8 +33,8 @@ pub enum GameAction {
 pub struct ActionPlugin;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
-#[system_set(base)]
 pub enum ActionSet {
+    Prepare,
     Apply,
     CommandFlush,
     PostApply,
@@ -47,7 +47,9 @@ impl Plugin for ActionPlugin {
         app.add_event::<GameAction>()
             .insert_resource(GameActionQueue::default())
             .configure_sets(
+                Update,
                 (
+                    ActionSet::Prepare,
                     ActionSet::Apply,
                     ActionSet::CommandFlush,
                     ActionSet::PostApply,
@@ -57,6 +59,13 @@ impl Plugin for ActionPlugin {
                     .chain(),
             )
             .add_systems(
+                Update,
+                advance_action_queue
+                    .run_if(ready_for_next_action)
+                    .in_set(ActionSet::Prepare),
+            )
+            .add_systems(
+                Update,
                 (
                     handle_move.run_if(has_current_action),
                     handle_enemy_move.run_if(has_current_action),
@@ -70,26 +79,25 @@ impl Plugin for ActionPlugin {
                     handle_merge_party.run_if(has_current_action),
                     handle_collect_crystals.run_if(has_current_action),
                     handle_open_portal.run_if(has_current_action),
+                    handle_slide_stopped
+                        .run_if(on_event::<SlideEvent>())
+                        .after(handle_move),
                 )
-                    .after(advance_action_queue)
-                    .in_base_set(ActionSet::Apply),
+                    .in_set(ActionSet::Apply),
             )
-            .add_systems((
-                apply_system_buffers.in_base_set(ActionSet::CommandFlush),
-                advance_action_queue.run_if(ready_for_next_action),
-                handle_slide_stopped
-                    .in_base_set(ActionSet::Apply)
-                    .run_if(on_event::<SlideEvent>())
-                    .after(advance_action_queue)
-                    .after(handle_move),
-                follow_path
-                    .run_if(has_current_action)
-                    .in_base_set(ActionSet::FollowUp),
-                clear_current_action
-                    .run_if(has_current_action)
-                    .in_base_set(ActionSet::Cleanup),
-            ))
-            .add_system(handle_save.run_if(run_on_save));
+            .add_systems(
+                Update,
+                (
+                    apply_deferred.in_set(ActionSet::CommandFlush),
+                    follow_path
+                        .run_if(has_current_action)
+                        .in_set(ActionSet::FollowUp),
+                    clear_current_action
+                        .run_if(has_current_action)
+                        .in_set(ActionSet::Cleanup),
+                ),
+            )
+            .add_systems(Update, handle_save.run_if(run_on_save));
     }
 }
 

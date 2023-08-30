@@ -21,7 +21,8 @@ pub fn spawn_stat_display(
         .with_children(|parent| {
             parent.spawn(ImageBundle {
                 style: Style {
-                    size: Size::new(Val::Px(20.0), Val::Px(20.0)),
+                    width: Val::Px(20.0),
+                    height: Val::Px(20.0),
                     ..default()
                 },
                 image: image.into(),

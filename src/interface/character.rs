@@ -11,6 +11,7 @@ use crate::{
     party::Group,
 };
 use bevy::prelude::*;
+use bevy_mod_picking::prelude::Pickable;
 
 #[derive(Component)]
 pub struct CharacterList;
@@ -24,6 +25,7 @@ pub struct CharacterDisplay {
 pub struct CharacterListBundle {
     node_bundle: NodeBundle,
     character_list: CharacterList,
+    pickable: Pickable,
 }
 
 #[derive(Component)]
@@ -37,13 +39,15 @@ impl Default for CharacterListBundle {
         Self {
             node_bundle: NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Px(200.0), Val::Auto),
+                    width: Val::Px(200.0),
+                    height: Val::Auto,
                     flex_direction: FlexDirection::Column,
                     ..default()
                 },
                 ..default()
             },
             character_list: CharacterList,
+            pickable: Pickable::IGNORE,
         }
     }
 }
@@ -61,7 +65,8 @@ fn spawn_character_display(
             CharacterDisplay { character: entity },
             ButtonBundle {
                 style: Style {
-                    size: Size::new(Val::Percent(100.0), Val::Px(60.0)),
+                    width: Val::Percent(100.0),
+                    height: Val::Px(60.0),
                     margin: UiRect::all(Val::Px(2.0)),
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::SpaceBetween,
@@ -191,7 +196,7 @@ pub fn handle_character_display_interaction(
     interaction_query: Query<(&Interaction, &CharacterDisplay), Changed<Interaction>>,
     mut selection_query: Query<(Entity, &mut Selection), With<Character>>,
 ) {
-    if let Ok((Interaction::Clicked, display)) = interaction_query.get_single() {
+    if let Ok((Interaction::Pressed, display)) = interaction_query.get_single() {
         if let Ok((entity, mut selection)) = selection_query.get_mut(display.character) {
             if action_state.pressed(Action::MultiSelect) {
                 let selected = selection.is_selected;

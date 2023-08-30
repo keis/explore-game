@@ -1,15 +1,19 @@
-use bevy::{prelude::*, reflect::TypeUuid, render::render_resource::*};
+use bevy::{
+    prelude::*,
+    reflect::{TypePath, TypeUuid},
+    render::render_resource::*,
+};
 
 #[derive(Default)]
 pub struct WaterMaterialPlugin;
 
 impl Plugin for WaterMaterialPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(MaterialPlugin::<WaterMaterial>::default());
+        app.add_plugins(MaterialPlugin::<WaterMaterial>::default());
     }
 }
 
-#[derive(AsBindGroup, TypeUuid, Clone, Default)]
+#[derive(AsBindGroup, TypeUuid, TypePath, Clone, Default)]
 #[uuid = "ce8eb070-dbb0-44c1-a1c5-d4a6ac9f4033"]
 #[uniform(0, WaterMaterialUniform)]
 pub struct WaterMaterial {

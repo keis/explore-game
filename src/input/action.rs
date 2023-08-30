@@ -9,13 +9,13 @@ use crate::{
     structure::Camp,
     turn::Turn,
 };
-use bevy::prelude::*;
+use bevy::{prelude::*, reflect::TypePath};
 use leafwing_input_manager::prelude::*;
 use smallvec::SmallVec;
 
 pub use leafwing_input_manager::prelude::ActionState;
 
-#[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug)]
+#[derive(Actionlike, TypePath, PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum Action {
     BreakCamp,
     Camp,

@@ -50,9 +50,13 @@ pub struct MapPlugin;
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Damaged(true))
-            .add_startup_system(hex::insert_hex_assets)
-            .add_system(presence::update_zone_visibility.run_if(run_if_damaged))
+            .add_systems(Startup, hex::insert_hex_assets)
             .add_systems(
+                Update,
+                presence::update_zone_visibility.run_if(run_if_damaged),
+            )
+            .add_systems(
+                Update,
                 (
                     log_moves,
                     pathdisplay::update_path_display,
@@ -64,9 +68,9 @@ impl Plugin for MapPlugin {
                     zone::show_decorations_behind_camp,
                     zone::update_outer_visible,
                 )
-                    .in_set(OnUpdate(State::Running)),
+                    .run_if(in_state(State::Running)),
             )
-            .add_system(damage.in_base_set(CoreSet::PostUpdate))
+            .add_systems(PostUpdate, damage)
             .add_event::<MapEvent>();
     }
 }

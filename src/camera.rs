@@ -13,13 +13,14 @@ pub struct CameraControlPlugin;
 impl Plugin for CameraControlPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
+            Update,
             (
                 camera_control.before(camera_movement),
                 camera_target.before(camera_movement),
                 cursor_grab,
                 camera_movement,
             )
-                .in_set(OnUpdate(State::Running)),
+                .run_if(in_state(State::Running)),
         );
     }
 }
@@ -195,11 +196,14 @@ mod tests {
 
     fn init_bare_app() -> App {
         let mut app = App::new();
-        app.add_systems((
-            camera_control.before(camera_movement),
-            camera_target.before(camera_movement),
-            camera_movement,
-        ));
+        app.add_systems(
+            Update,
+            (
+                camera_control.before(camera_movement),
+                camera_target.before(camera_movement),
+                camera_movement,
+            ),
+        );
 
         let mut time = Time::default();
         time.update();

@@ -130,7 +130,7 @@ impl<'w, 's, 'a> GroupCommandsExt for EntityCommands<'w, 's, 'a> {
 }
 
 impl Command for AddMembers {
-    fn write(mut self, world: &mut World) {
+    fn apply(mut self, world: &mut World) {
         let mut old = HashSet::new();
         for &member in &self.members {
             if let Some(mut group_member) = world.entity_mut(member).get_mut::<GroupMember>() {
@@ -161,7 +161,7 @@ impl Command for AddMembers {
 }
 
 impl Command for RemoveMembers {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let mut group_entity = world.entity_mut(self.group);
         if let Some(mut group) = group_entity.get_mut::<Group>() {
             group
@@ -210,7 +210,7 @@ mod tests {
     #[fixture]
     fn app() -> App {
         let mut app = App::new();
-        app.add_system(derive_party_movement);
+        app.add_systems(Update, derive_party_movement);
         let party_entity = app
             .world
             .spawn((Party::default(), Group::default(), Movement::default()))
@@ -220,7 +220,7 @@ mod tests {
             group: party_entity,
             members: SmallVec::from_slice(&[member_entity]),
         };
-        addmembers.write(&mut app.world);
+        addmembers.apply(&mut app.world);
         app
     }
 
@@ -251,7 +251,7 @@ mod tests {
             group: new_group_entity,
             members: SmallVec::from_slice(&[member_entity]),
         };
-        addmembers.write(&mut app.world);
+        addmembers.apply(&mut app.world);
 
         let group = app
             .world

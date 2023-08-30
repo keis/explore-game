@@ -1,21 +1,16 @@
-#import bevy_pbr::mesh_view_bindings
+#import bevy_pbr::mesh_view_bindings globals
 #import bevy_pbr::mesh_bindings
 #import bevy_pbr::pbr_types
 #import bevy_pbr::utils
 #import bevy_pbr::clustered_forward
 #import bevy_pbr::lighting
-#import bevy_pbr::pbr_ambient
+#import bevy_pbr::ambient
 #import bevy_pbr::shadows
 #import bevy_pbr::fog
+#import bevy_pbr::mesh_vertex_output MeshVertexOutput
 #import bevy_pbr::pbr_functions
 
-#import noisy_bevy::prelude
-
-struct FragmentInput {
-    @builtin(front_facing) is_front: bool,
-    @builtin(position) frag_coord: vec4<f32>,
-    #import bevy_pbr::mesh_vertex_output
-};
+#import noisy_bevy fbm_simplex_2d
 
 struct UniformData {
     color: vec4<f32>,
@@ -29,12 +24,12 @@ fn modulo(a: f32, n: f32) -> f32 {
 }
 
 @fragment
-fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
+fn fragment(mesh: MeshVertexOutput) -> @location(0) vec4<f32> {
     var output_color = uniform_data.color;
 #ifdef VERTEX_COLORS
-    output_color = output_color * in.color
+    output_color = output_color * mesh.color
 #endif
-    var world_uv = floor(in.world_position.xz * 16.0) / 16.0;
+    var world_uv = floor(mesh.world_position.xz * 16.0) / 16.0;
 
     var octaves = 2;
     var lacunarity = 2.0;

@@ -23,7 +23,7 @@ pub struct Bind {
 }
 
 impl Command for Bind {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let mut source_entity = world.entity_mut(self.source);
         if let Some(mut data_bindings) = source_entity.get_mut::<DataBindings>() {
             data_bindings.0.push(self.sink);
