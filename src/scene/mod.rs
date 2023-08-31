@@ -1,4 +1,5 @@
 use crate::{
+    assets::AssetState,
     character::CharacterBundle,
     map::{
         spawn_zone, zone_layer_from_prototype, GenerateMapTask, Height, MapCommandsExt,
@@ -6,7 +7,6 @@ use crate::{
     },
     party::{GroupCommandsExt, PartyBundle, PartyParams},
     structure::{PortalBundle, PortalParams, SpawnerBundle, SpawnerParams},
-    State,
 };
 use bevy::prelude::*;
 use expl_hexgrid::{spiral, GridLayout};
@@ -19,7 +19,7 @@ impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (spawn_map, spawn_party).run_if(in_state(State::Running)),
+            (spawn_map, spawn_party).run_if(in_state(AssetState::Loaded)),
         );
     }
 }

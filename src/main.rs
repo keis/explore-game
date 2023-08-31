@@ -7,7 +7,7 @@ use clap::Parser;
 use expl_wfc::{Seed, SeedType};
 use explore_game::{
     action::ActionPlugin,
-    assets::MainAssets,
+    assets::{AssetState, MainAssets},
     camera::{CameraBounds, CameraControl, CameraControlPlugin},
     character::reset_movement_points,
     combat::CombatPlugin,
@@ -23,7 +23,6 @@ use explore_game::{
     slide::{slide, SlideEvent},
     structure::StructurePlugin,
     turn::Turn,
-    State,
 };
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
@@ -70,7 +69,7 @@ fn main() {
                 }),
         )
         .add_plugins(MaterialPlugins)
-        .add_state::<State>()
+        .add_state::<AssetState>()
         .add_plugins((
             bevy_mod_billboard::prelude::BillboardPlugin,
             bevy_mod_outline::OutlinePlugin,
@@ -94,8 +93,10 @@ fn main() {
             (spawn_camera, light::spawn_light, start_map_generation),
         )
         .add_event::<SlideEvent>()
-        .add_loading_state(LoadingState::new(State::AssetLoading).continue_to_state(State::Running))
-        .add_collection_to_loading_state::<_, MainAssets>(State::AssetLoading)
+        .add_loading_state(
+            LoadingState::new(AssetState::Loading).continue_to_state(AssetState::Loaded),
+        )
+        .add_collection_to_loading_state::<_, MainAssets>(AssetState::Loading)
         .add_systems(
             Update,
             (
@@ -104,8 +105,7 @@ fn main() {
                 despawn_empty_party,
                 move_enemy.run_if(resource_changed::<Turn>()),
                 slide,
-            )
-                .run_if(in_state(State::Running)),
+            ),
         )
         .run();
 }

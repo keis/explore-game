@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{turn::Turn, State};
+use crate::{assets::AssetState, turn::Turn};
 
 mod camp;
 mod portal;
@@ -24,7 +24,7 @@ impl Plugin for StructurePlugin {
                 spawner::charge_spawner.run_if(resource_changed::<Turn>()),
                 spawner::spawn_enemy.run_if(resource_changed::<Turn>()),
             )
-                .run_if(in_state(State::Running))
+                .run_if(in_state(AssetState::Loaded))
                 .chain(),
         );
     }

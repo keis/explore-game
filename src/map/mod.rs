@@ -1,4 +1,4 @@
-use crate::State;
+use crate::assets::AssetState;
 use bevy::prelude::*;
 
 mod commands;
@@ -68,7 +68,7 @@ impl Plugin for MapPlugin {
                     zone::show_decorations_behind_camp,
                     zone::update_outer_visible,
                 )
-                    .run_if(in_state(State::Running)),
+                    .run_if(in_state(AssetState::Loaded)),
             )
             .add_systems(PostUpdate, damage)
             .add_event::<MapEvent>();

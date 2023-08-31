@@ -1,6 +1,6 @@
 use crate::{
+    assets::AssetState,
     input::{action_just_pressed, Action, InputManagerSystem},
-    State,
 };
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
@@ -24,11 +24,11 @@ pub struct InterfacePlugin;
 impl Plugin for InterfacePlugin {
     fn build(&self, app: &mut App) {
         app.add_loading_state(
-            LoadingState::new(State::AssetLoading).continue_to_state(State::Running),
+            LoadingState::new(AssetState::Loading).continue_to_state(AssetState::Loaded),
         )
-        .add_collection_to_loading_state::<_, InterfaceAssets>(State::AssetLoading)
+        .add_collection_to_loading_state::<_, InterfaceAssets>(AssetState::Loading)
         .add_systems(
-            OnEnter(State::Running),
+            OnEnter(AssetState::Loaded),
             (shell::spawn_shell, menu::spawn_menu),
         )
         .add_systems(
@@ -55,7 +55,7 @@ impl Plugin for InterfacePlugin {
                 character::update_character_health,
                 character::handle_character_display_interaction,
             )
-                .run_if(in_state(State::Running)),
+                .run_if(in_state(AssetState::Loaded)),
         )
         .add_systems(
             Update,
@@ -64,7 +64,7 @@ impl Plugin for InterfacePlugin {
                 shell::update_zone_text,
                 tooltip::show_tooltip_on_hover,
             )
-                .run_if(in_state(State::Running)),
+                .run_if(in_state(AssetState::Loaded)),
         )
         .add_systems(
             PreUpdate,
@@ -80,7 +80,7 @@ impl Plugin for InterfacePlugin {
                 menu::handle_quit,
             )
                 .after(InputManagerSystem::ManualControl)
-                .run_if(in_state(State::Running)),
+                .run_if(in_state(AssetState::Loaded)),
         );
     }
 }
