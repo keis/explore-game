@@ -2,8 +2,8 @@ use crate::{
     assets::AssetState,
     character::CharacterBundle,
     map::{
-        spawn_zone, zone_layer_from_prototype, GenerateMapTask, Height, MapCommandsExt,
-        PresenceLayer, Terrain, Zone, ZoneLayer, ZoneParams,
+        spawn_zone, start_map_generation, zone_layer_from_prototype, GenerateMapTask, Height,
+        MapCommandsExt, MapPrototype, PresenceLayer, Terrain, Zone, ZoneLayer, ZoneParams,
     },
     party::{GroupCommandsExt, PartyBundle, PartyParams},
     structure::{PortalBundle, PortalParams, SpawnerBundle, SpawnerParams},
@@ -13,45 +13,90 @@ use expl_hexgrid::{spiral, GridLayout};
 use futures_lite::future;
 use glam::Vec3Swizzles;
 
+mod camera;
+mod light;
+
 pub struct ScenePlugin;
 
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (spawn_map, spawn_party).run_if(in_state(AssetState::Loaded)),
-        );
+        app.add_state::<SceneState>()
+            .configure_sets(
+                OnEnter(SceneState::Active),
+                (
+                    SceneSet::InitialSetup,
+                    SceneSet::CommandFlush,
+                    SceneSet::Populate,
+                )
+                    .chain(),
+            )
+            .add_systems(
+                Startup,
+                (
+                    start_map_generation,
+                    camera::spawn_camera,
+                    light::spawn_light,
+                ),
+            )
+            .add_systems(
+                Update,
+                watch_map_generation_task
+                    .run_if(in_state(SceneState::GeneratingMap))
+                    .run_if(in_state(AssetState::Loaded)),
+            )
+            .add_systems(
+                OnEnter(SceneState::Active),
+                (
+                    spawn_map.in_set(SceneSet::InitialSetup),
+                    apply_deferred.in_set(SceneSet::CommandFlush),
+                    spawn_party.in_set(SceneSet::Populate),
+                ),
+            );
     }
+}
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
+pub enum SceneSet {
+    InitialSetup,
+    CommandFlush,
+    Populate,
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, States, Default)]
+pub enum SceneState {
+    #[default]
+    GeneratingMap,
+    Active,
+}
+
+fn watch_map_generation_task(
+    mut commands: Commands,
+    mut generate_map_task: Query<(Entity, &mut GenerateMapTask)>,
+    mut scene_state: ResMut<NextState<SceneState>>,
+) {
+    let Ok((entity, mut task)) = generate_map_task.get_single_mut() else { return };
+    match future::block_on(future::poll_once(&mut task.0)) {
+        Some(Ok(prototype)) => {
+            commands.entity(entity).insert(prototype);
+            scene_state.set(SceneState::Active);
+        }
+        Some(Err(e)) => {
+            error!("something went wrong: {}", e);
+        }
+        None => (),
+    };
 }
 
 pub fn spawn_map(
     mut commands: Commands,
     mut param_set: ParamSet<(ZoneParams, PortalParams, SpawnerParams)>,
-    mut generate_map_task: Query<(Entity, &mut GenerateMapTask)>,
+    map_prototype_query: Query<&MapPrototype>,
 ) {
-    if generate_map_task.is_empty() {
-        return;
-    }
-    let (task_entity, mut task) = generate_map_task.single_mut();
-    let prototype = match future::block_on(future::poll_once(&mut task.0)) {
-        Some(Ok(result)) => {
-            commands.entity(task_entity).despawn();
-            result
-        }
-        Some(Err(e)) => {
-            error!("something went wrong: {}", e);
-            commands.entity(task_entity).despawn();
-            return;
-        }
-        None => return,
-    };
-    let zone_layer = zone_layer_from_prototype(
-        &mut commands,
-        &prototype,
-        |commands, position, zoneproto| {
+    let Ok(prototype) = map_prototype_query.get_single() else { return };
+    let zone_layer =
+        zone_layer_from_prototype(&mut commands, prototype, |commands, position, zoneproto| {
             spawn_zone(commands, &mut param_set.p0(), position, zoneproto)
-        },
-    );
+        });
     commands
         .spawn((
             Name::new("Game map"),
@@ -97,7 +142,7 @@ pub fn spawn_map(
 pub fn spawn_party(
     mut commands: Commands,
     mut party_params: PartyParams,
-    map_query: Query<(Entity, &ZoneLayer), Added<ZoneLayer>>,
+    map_query: Query<(Entity, &ZoneLayer)>,
     zone_query: Query<&Zone>,
 ) {
     let Ok((map_entity, map)) = map_query.get_single() else { return };

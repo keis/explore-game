@@ -2,21 +2,19 @@ use bevy::{
     asset::ChangeWatcher, log::LogPlugin, prelude::*, utils::Duration, window::PresentMode,
 };
 use bevy_asset_loader::prelude::*;
-use bevy_mod_picking::prelude::RaycastPickCamera;
 use clap::Parser;
 use expl_wfc::{Seed, SeedType};
 use explore_game::{
     action::ActionPlugin,
     assets::{AssetState, MainAssets},
-    camera::{CameraBounds, CameraControl, CameraControlPlugin},
+    camera::CameraControlPlugin,
     character::reset_movement_points,
     combat::CombatPlugin,
     enemy::move_enemy,
     input::InputPlugin,
     inspector::InspectorPlugin,
     interface::InterfacePlugin,
-    light,
-    map::{start_map_generation, MapPlugin, MapSeed},
+    map::{MapPlugin, MapSeed},
     material::MaterialPlugins,
     party::{derive_party_movement, despawn_empty_party},
     scene::ScenePlugin,
@@ -88,10 +86,6 @@ fn main() {
             StructurePlugin,
             ScenePlugin,
         ))
-        .add_systems(
-            Startup,
-            (spawn_camera, light::spawn_light, start_map_generation),
-        )
         .add_event::<SlideEvent>()
         .add_loading_state(
             LoadingState::new(AssetState::Loading).continue_to_state(AssetState::Loaded),
@@ -108,23 +102,4 @@ fn main() {
             ),
         )
         .run();
-}
-
-fn spawn_camera(mut commands: Commands) {
-    let translation = Vec3::new(30.0, 10.0, 30.0);
-    let lookto = Vec3::new(-2.0, -20.0, -20.0);
-    commands.spawn((
-        Camera3dBundle {
-            transform: Transform::from_translation(translation)
-                .looking_at(translation + lookto, Vec3::Y),
-            ..default()
-        },
-        CameraBounds {
-            position: Vec3::new(0.0, 5.0, 10.0),
-            extent: Vec3::new(40.0, 25.0, 40.0),
-            gap: 1.0,
-        },
-        CameraControl::default(),
-        RaycastPickCamera::default(),
-    ));
 }

@@ -16,6 +16,7 @@ use rand::{seq::SliceRandom, Rng};
 use std::fs::File;
 use std::io;
 
+#[derive(Component)]
 pub struct MapPrototype {
     pub tiles: Grid<SquareGridLayout, ZonePrototype>,
     pub portal_position: HexCoord,

@@ -9,7 +9,6 @@ mod error;
 pub mod input;
 pub mod inspector;
 pub mod interface;
-pub mod light;
 pub mod map;
 pub mod material;
 pub mod party;
