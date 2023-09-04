@@ -55,6 +55,7 @@ impl Plugin for InputPlugin {
             PreUpdate,
             action::magic_cancel
                 .in_set(InputManagerSystem::ManualControl)
+                .after(InputManagerSystem::Update)
                 .run_if(action_just_pressed(Action::Cancel)),
         )
         .add_systems(Update, map::handle_zone_click_events)
