@@ -41,4 +41,4 @@ bevy_mod_billboard = "0.4"
 thiserror = "1.0.47"
 
 [dev-dependencies]
-rstest = { version = "0.17.0", default-features = false }
+rstest = { version = "0.18.2", default-features = false }
