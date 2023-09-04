@@ -1,6 +1,6 @@
 use crate::{
     assets::MainAssets,
-    map::{Fog, HexCoord},
+    map::{Fog, HeightQuery, HexCoord},
     material::{PortalMaterial, TerrainMaterial},
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
@@ -17,13 +17,16 @@ pub struct PortalBundle {
     material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
 }
 
-pub type PortalParams<'w, 's> = (Res<'w, MainAssets>, ResMut<'w, Assets<TerrainMaterial>>);
+pub type PortalParams<'w, 's> = (
+    Res<'w, MainAssets>,
+    ResMut<'w, Assets<TerrainMaterial>>,
+    HeightQuery<'w, 's>,
+);
 
 impl PortalBundle {
     pub fn new(
-        (main_assets, terrain_materials): &mut PortalParams,
+        (main_assets, terrain_materials, height_query): &mut PortalParams,
         position: HexCoord,
-        height: f32,
     ) -> Self {
         Self {
             material_mesh_bundle: MaterialMeshBundle {
@@ -33,11 +36,9 @@ impl PortalBundle {
                     ..default()
                 }),
                 visibility: Visibility::Hidden,
-                transform: Transform::from_translation(
-                    Vec3::from(position) + Vec3::new(0.0, height, 0.0),
-                )
-                .with_scale(Vec3::splat(0.3))
-                .with_rotation(Quat::from_rotation_y(2.0)),
+                transform: Transform::from_translation(height_query.adjust(position.into()))
+                    .with_scale(Vec3::splat(0.3))
+                    .with_rotation(Quat::from_rotation_y(2.0)),
                 ..default()
             },
             ..default()
