@@ -904,9 +904,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_mod_billboard"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1680dd7d6ff174dc86f50465a37d89aec8b6ae22f1b62c6579152fb399bfae21"
+checksum = "1461d2d757cb3ee6a8f6f5cf5589b7bf00752e2f03d633598b297b5e87f4e65b"
 dependencies = [
  "bevy",
  "bitflags 2.4.0",
