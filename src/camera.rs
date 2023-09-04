@@ -1,7 +1,6 @@
 use crate::{
     input::{Action, ActionState},
     map::HexCoord,
-    State,
 };
 use bevy::{
     prelude::*,
@@ -19,8 +18,7 @@ impl Plugin for CameraControlPlugin {
                 camera_target.before(camera_movement),
                 cursor_grab,
                 camera_movement,
-            )
-                .run_if(in_state(State::Running)),
+            ),
         );
     }
 }

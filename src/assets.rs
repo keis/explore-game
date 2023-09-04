@@ -1,6 +1,13 @@
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, States, Default)]
+pub enum AssetState {
+    #[default]
+    Loading,
+    Loaded,
+}
+
 #[derive(AssetCollection, Resource)]
 pub struct MainAssets {
     #[asset(path = "textures/cloud.png")]

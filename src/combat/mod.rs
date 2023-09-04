@@ -1,12 +1,11 @@
 use crate::{
     action::ActionSet,
-    assets::MainAssets,
+    assets::{AssetState, MainAssets},
     character::Character,
     enemy::Enemy,
     interface::InterfaceAssets,
     map::{HexCoord, MapEvent, PresenceLayer},
     party::{Group, GroupCommandsExt, GroupMember},
-    State,
 };
 use bevy::prelude::*;
 use bevy_mod_billboard::prelude::*;
@@ -39,7 +38,7 @@ impl Plugin for CombatPlugin {
                     despawn_no_health.after(combat_round),
                     finish_combat.after(despawn_no_health),
                 )
-                    .run_if(in_state(State::Running)),
+                    .run_if(in_state(AssetState::Loaded)),
             );
     }
 }

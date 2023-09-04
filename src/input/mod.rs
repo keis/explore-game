@@ -1,6 +1,5 @@
 #![allow(clippy::type_complexity)]
 
-use crate::State;
 use bevy::prelude::*;
 use bevy_mod_picking::{
     backend::prelude::PickSet,
@@ -50,7 +49,6 @@ impl Plugin for InputPlugin {
                 action::handle_open_portal.run_if(action_just_pressed(Action::OpenPortal)),
                 action::handle_next_turn.run_if(action_just_pressed(Action::NextTurn)),
             )
-                .run_if(in_state(State::Running))
                 .after(InputManagerSystem::ManualControl),
         )
         .add_systems(
