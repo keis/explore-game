@@ -10,4 +10,6 @@ pub enum ExplError {
     CouldNotPlacePortal,
     #[error("could not place spawner")]
     CouldNotPlaceSpawner,
+    #[error("could not place party")]
+    CouldNotPlaceParty,
 }

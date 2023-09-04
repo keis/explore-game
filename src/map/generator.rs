@@ -19,6 +19,7 @@ use std::io;
 #[derive(Component)]
 pub struct MapPrototype {
     pub tiles: Grid<SquareGridLayout, ZonePrototype>,
+    pub party_position: HexCoord,
     pub portal_position: HexCoord,
     pub spawner_position: HexCoord,
 }
@@ -68,6 +69,14 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, ExplError> {
     info!("Generated map!");
     let terrain: Grid<SquareGridLayout, Terrain> = generator.export()?;
     let mut rng = generator.rand();
+
+    let party_position = spiral(terrain.layout.center())
+        .find(|&c| {
+            terrain
+                .get(c)
+                .map_or(false, |&terrain| terrain != Terrain::Ocean)
+        })
+        .ok_or(ExplError::CouldNotPlaceParty)?;
 
     let portal_position = spiral(
         terrain.layout.center() + *HexCoord::NEIGHBOUR_OFFSETS.choose(&mut rng).unwrap() * 3,
@@ -175,6 +184,7 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, ExplError> {
     }
     Ok(MapPrototype {
         tiles: prototype,
+        party_position,
         portal_position,
         spawner_position,
     })

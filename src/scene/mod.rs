@@ -3,13 +3,12 @@ use crate::{
     character::CharacterBundle,
     map::{
         spawn_zone, start_map_generation, zone_layer_from_prototype, GenerateMapTask,
-        MapCommandsExt, MapPrototype, PresenceLayer, Terrain, Zone, ZoneLayer, ZoneParams,
+        MapCommandsExt, MapPrototype, PresenceLayer, ZoneParams,
     },
     party::{GroupCommandsExt, PartyBundle, PartyParams},
     structure::{PortalBundle, PortalParams, SpawnerBundle, SpawnerParams},
 };
 use bevy::prelude::*;
-use expl_hexgrid::{spiral, GridLayout};
 use futures_lite::future;
 
 mod camera;
@@ -142,17 +141,11 @@ pub fn spawn_spawner(
 pub fn spawn_party(
     mut commands: Commands,
     mut party_params: PartyParams,
-    map_query: Query<(Entity, &ZoneLayer)>,
-    zone_query: Query<&Zone>,
+    map_prototype_query: Query<&MapPrototype>,
+    map_query: Query<Entity, With<PresenceLayer>>,
 ) {
-    let Ok((map_entity, map)) = map_query.get_single() else { return };
-    let groupcoord = spiral(map.layout().center())
-        .find(|&c| {
-            map.get(c)
-                .and_then(|&entity| zone_query.get(entity).ok())
-                .map_or(false, |zone| zone.terrain != Terrain::Ocean)
-        })
-        .unwrap();
+    let Ok(prototype) = map_prototype_query.get_single() else { return };
+    let Ok(map_entity) = map_query.get_single() else { return };
     let character1 = commands
         .spawn(CharacterBundle::new(String::from("Alice")))
         .id();
@@ -164,11 +157,11 @@ pub fn spawn_party(
         .id();
     commands
         .entity(map_entity)
-        .with_presence(groupcoord, |location| {
+        .with_presence(prototype.party_position, |location| {
             location
                 .spawn(PartyBundle::new(
                     &mut party_params,
-                    groupcoord,
+                    prototype.party_position,
                     String::from("Alpha Group"),
                     1,
                 ))
