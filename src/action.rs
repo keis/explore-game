@@ -11,6 +11,7 @@ use crate::{
         Terrain, Zone, ZoneLayer,
     },
     structure::{Camp, CampBundle, CampParams, Portal},
+    turn::{set_player_turn, TurnState},
 };
 use bevy::prelude::*;
 use smallvec::SmallVec;
@@ -97,6 +98,9 @@ impl Plugin for ActionPlugin {
                     clear_current_action
                         .run_if(has_current_action)
                         .in_set(ActionSet::Cleanup),
+                    set_player_turn
+                        .run_if(in_state(TurnState::System))
+                        .run_if(action_queue_is_empty),
                 ),
             )
             .add_systems(Update, handle_save.run_if(run_on_save));
@@ -150,6 +154,10 @@ pub fn clear_current_action(mut game_action_queue: ResMut<GameActionQueue>) {
 
 pub fn has_current_action(game_action_queue: Res<GameActionQueue>) -> bool {
     !game_action_queue.is_waiting() && game_action_queue.current.is_some()
+}
+
+pub fn action_queue_is_empty(game_action_queue: Res<GameActionQueue>) -> bool {
+    game_action_queue.current.is_none() && !game_action_queue.has_next()
 }
 
 pub fn ready_for_next_action(

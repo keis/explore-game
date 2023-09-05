@@ -17,7 +17,7 @@ use explore_game::{
     material::MaterialPlugins,
     scene::ScenePlugin,
     structure::StructurePlugin,
-    turn::Turn,
+    turn::TurnPlugin,
 };
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
@@ -38,7 +38,6 @@ fn main() {
 
     App::new()
         .insert_resource(ClearColor(CLEAR))
-        .insert_resource(Turn { number: 0 })
         .insert_resource(MapSeed(seed))
         .add_plugins(
             DefaultPlugins
@@ -83,6 +82,7 @@ fn main() {
             MapPlugin,
             ScenePlugin,
             StructurePlugin,
+            TurnPlugin,
         ))
         .add_loading_state(
             LoadingState::new(AssetState::Loading).continue_to_state(AssetState::Loaded),

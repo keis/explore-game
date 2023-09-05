@@ -1,5 +1,5 @@
 #![allow(clippy::type_complexity)]
-
+use crate::turn;
 use bevy::prelude::*;
 use bevy_mod_picking::{
     backend::prelude::PickSet,
@@ -47,7 +47,7 @@ impl Plugin for InputPlugin {
                 action::handle_collect_crystals
                     .run_if(action_just_pressed(Action::CollectCrystals)),
                 action::handle_open_portal.run_if(action_just_pressed(Action::OpenPortal)),
-                action::handle_next_turn.run_if(action_just_pressed(Action::NextTurn)),
+                turn::set_system_turn.run_if(action_just_pressed(Action::NextTurn)),
             )
                 .after(InputManagerSystem::ManualControl),
         )

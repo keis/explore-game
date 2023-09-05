@@ -9,7 +9,6 @@ use crate::{
     interface::MenuLayer,
     map::{MapPresence, PresenceLayer},
     structure::Camp,
-    turn::Turn,
 };
 use bevy::{prelude::*, reflect::TypePath};
 use leafwing_input_manager::prelude::*;
@@ -190,10 +189,6 @@ pub fn handle_open_portal(
     for (party, _) in party_query.iter().filter(|(_, s)| s.is_selected) {
         game_action_queue.add(GameAction::OpenPortal(party));
     }
-}
-
-pub fn handle_next_turn(mut turn: ResMut<Turn>) {
-    turn.number += 1;
 }
 
 pub fn handle_resume_move(

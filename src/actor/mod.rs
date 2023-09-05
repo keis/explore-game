@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::turn::Turn;
+use crate::turn::TurnState;
 
 pub mod character;
 pub mod enemy;
@@ -11,15 +11,16 @@ pub struct ActorPlugin;
 
 impl Plugin for ActorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<slide::SlideEvent>().add_systems(
-            Update,
-            (
-                character::reset_movement_points.run_if(resource_changed::<Turn>()),
-                party::derive_party_movement,
-                party::despawn_empty_party,
-                enemy::move_enemy.run_if(resource_changed::<Turn>()),
-                slide::slide,
-            ),
-        );
+        app.add_event::<slide::SlideEvent>()
+            .add_systems(OnEnter(TurnState::System), enemy::move_enemy)
+            .add_systems(OnEnter(TurnState::Player), character::reset_movement_points)
+            .add_systems(
+                Update,
+                (
+                    party::derive_party_movement,
+                    party::despawn_empty_party,
+                    slide::slide,
+                ),
+            );
     }
 }
