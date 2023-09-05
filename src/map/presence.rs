@@ -1,5 +1,5 @@
 use super::{Damaged, Fog, HexCoord, MapPosition, Zone, ZoneLayer};
-use crate::enemy::Enemy;
+use crate::actor::enemy::Enemy;
 use bevy::prelude::*;
 use expl_hexgrid::{layout::SquareGridLayout, Grid};
 use std::collections::hash_set::HashSet;

@@ -6,19 +6,16 @@ use clap::Parser;
 use expl_wfc::{Seed, SeedType};
 use explore_game::{
     action::ActionPlugin,
+    actor::ActorPlugin,
     assets::{AssetState, MainAssets},
     camera::CameraControlPlugin,
-    character::reset_movement_points,
     combat::CombatPlugin,
-    enemy::move_enemy,
     input::InputPlugin,
     inspector::InspectorPlugin,
     interface::InterfacePlugin,
     map::{MapPlugin, MapSeed},
     material::MaterialPlugins,
-    party::{derive_party_movement, despawn_empty_party},
     scene::ScenePlugin,
-    slide::{slide, SlideEvent},
     structure::StructurePlugin,
     turn::Turn,
 };
@@ -77,29 +74,19 @@ fn main() {
         ))
         .add_plugins((
             ActionPlugin,
+            ActorPlugin,
             CameraControlPlugin,
             CombatPlugin,
             InputPlugin,
             InspectorPlugin,
             InterfacePlugin,
             MapPlugin,
-            StructurePlugin,
             ScenePlugin,
+            StructurePlugin,
         ))
-        .add_event::<SlideEvent>()
         .add_loading_state(
             LoadingState::new(AssetState::Loading).continue_to_state(AssetState::Loaded),
         )
         .add_collection_to_loading_state::<_, MainAssets>(AssetState::Loading)
-        .add_systems(
-            Update,
-            (
-                reset_movement_points.run_if(resource_changed::<Turn>()),
-                derive_party_movement,
-                despawn_empty_party,
-                move_enemy.run_if(resource_changed::<Turn>()),
-                slide,
-            ),
-        )
         .run();
 }

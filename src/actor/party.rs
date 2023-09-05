@@ -1,8 +1,7 @@
 use crate::{
-    character::Movement,
+    actor::{character::Movement, slide::Slide},
     input::SelectionBundle,
     map::{HeightQuery, HexCoord, MapCommandsExt, MapPresence, Offset, PathGuided, ViewRadius},
-    slide::Slide,
     VIEW_RADIUS,
 };
 

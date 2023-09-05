@@ -1,13 +1,12 @@
 use crate::{
     action::{GameAction, GameActionQueue},
+    actor::{party::Party, slide::Slide},
     assets::MainAssets,
     combat::{Attack, Health},
     map::{
         HeightQuery, HexCoord, MapPresence, Offset, PathFinder, PresenceLayer, ViewRadius, Zone,
         ZoneLayer,
     },
-    party::Party,
-    slide::Slide,
 };
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_mod_outline::{OutlineBundle, OutlineVolume};

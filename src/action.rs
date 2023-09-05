@@ -1,13 +1,15 @@
 use crate::{
-    character::Movement,
+    actor::{
+        character::Movement,
+        party::{Group, GroupCommandsExt, Party, PartyBundle, PartyParams},
+        slide::{Slide, SlideEvent},
+    },
     combat::{Combat, CombatEvent},
     crystals::CrystalDeposit,
     map::{
         HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder, PathGuided, PresenceLayer,
         Terrain, Zone, ZoneLayer,
     },
-    party::{Group, GroupCommandsExt, Party, PartyBundle, PartyParams},
-    slide::{Slide, SlideEvent},
     structure::{Camp, CampBundle, CampParams, Portal},
 };
 use bevy::prelude::*;

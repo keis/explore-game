@@ -1,9 +1,9 @@
 use crate::{
+    actor::party::Group,
     assets::MainAssets,
     input::SelectionBundle,
     map::{Fog, HexCoord, Offset, ViewRadius},
     material::TerrainMaterial,
-    party::Group,
     VIEW_RADIUS,
 };
 use bevy::prelude::*;

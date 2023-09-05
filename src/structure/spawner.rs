@@ -1,6 +1,6 @@
 use crate::{
+    actor::enemy::{EnemyBundle, EnemyParams},
     assets::MainAssets,
-    enemy::{EnemyBundle, EnemyParams},
     map::{Fog, HeightQuery, HexCoord, MapCommandsExt, MapPresence, PresenceLayer},
     material::TerrainMaterial,
 };

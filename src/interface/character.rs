@@ -5,10 +5,9 @@ use super::{
     InterfaceAssets,
 };
 use crate::{
-    character::Character,
+    actor::{character::Character, party::Group},
     combat::{Attack, Health},
     input::{Action, ActionState, Selection},
-    party::Group,
 };
 use bevy::prelude::*;
 use bevy_mod_picking::prelude::Pickable;
