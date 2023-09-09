@@ -5,9 +5,11 @@ use super::{
     InterfaceAssets,
 };
 use crate::{
-    character::{Character, Movement},
+    actor::{
+        character::{Character, Movement},
+        party::{Group, Party},
+    },
     input::{Action, ActionState, Selection},
-    party::{Group, Party},
 };
 use bevy::prelude::*;
 use bevy_mod_picking::prelude::Pickable;

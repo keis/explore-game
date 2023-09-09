@@ -1,9 +1,10 @@
 use crate::{
+    actor::party::Group,
     assets::MainAssets,
+    combat::Health,
     input::SelectionBundle,
     map::{Fog, HexCoord, Offset, ViewRadius},
     material::TerrainMaterial,
-    party::Group,
     VIEW_RADIUS,
 };
 use bevy::prelude::*;
@@ -65,5 +66,17 @@ pub fn update_camp_view_radius(
         } else {
             VIEW_RADIUS
         };
+    }
+}
+
+pub fn heal_characters(
+    camp_query: Query<&Group, With<Camp>>,
+    mut health_query: Query<&mut Health>,
+) {
+    for group in &camp_query {
+        let mut iter = health_query.iter_many_mut(&group.members);
+        while let Some(mut health) = iter.fetch_next() {
+            health.heal(2);
+        }
     }
 }

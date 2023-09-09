@@ -24,7 +24,7 @@ impl CharacterBundle {
             character: Character { name },
             movement: Movement { points: 2 },
             attack: Attack(0..8),
-            health: Health(10),
+            health: Health(10, 10),
             ..default()
         }
     }

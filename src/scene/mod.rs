@@ -1,11 +1,13 @@
 use crate::{
+    actor::{
+        character::CharacterBundle,
+        party::{GroupCommandsExt, PartyBundle, PartyParams},
+    },
     assets::AssetState,
-    character::CharacterBundle,
     map::{
         spawn_zone, start_map_generation, zone_layer_from_prototype, GenerateMapTask,
         MapCommandsExt, MapPrototype, PresenceLayer, ZoneParams,
     },
-    party::{GroupCommandsExt, PartyBundle, PartyParams},
     structure::{PortalBundle, PortalParams, SpawnerBundle, SpawnerParams},
 };
 use bevy::prelude::*;

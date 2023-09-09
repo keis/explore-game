@@ -5,10 +5,9 @@ use super::{
     InterfaceAssets,
 };
 use crate::{
-    character::Character,
+    actor::{character::Character, party::Group},
     input::{Action, ActionState, Selection},
     map::MapEvent,
-    party::Group,
     structure::Camp,
 };
 use bevy::prelude::*;

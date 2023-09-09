@@ -1,13 +1,12 @@
 use crate::{
     action::{GameAction, GameActionQueue},
+    actor::{party::Party, slide::Slide},
     assets::MainAssets,
     combat::{Attack, Health},
     map::{
         HeightQuery, HexCoord, MapPresence, Offset, PathFinder, PresenceLayer, ViewRadius, Zone,
         ZoneLayer,
     },
-    party::Party,
-    slide::Slide,
 };
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_mod_outline::{OutlineBundle, OutlineVolume};
@@ -45,7 +44,7 @@ impl EnemyBundle {
             offset: Offset(offset),
             view_radius: ViewRadius(3),
             attack: Attack(1..10),
-            health: Health(20),
+            health: Health(20, 20),
             pbr_bundle: PbrBundle {
                 mesh: main_assets.blob_mesh.clone(),
                 material: standard_materials.add(Color::rgba(0.749, 0.584, 0.901, 0.666).into()),

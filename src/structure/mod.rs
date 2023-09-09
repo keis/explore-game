@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{assets::AssetState, turn::Turn};
+use crate::{assets::AssetState, turn::TurnState};
 
 mod camp;
 mod portal;
@@ -18,12 +18,10 @@ impl Plugin for StructurePlugin {
             Update,
             (camp::update_camp_view_radius, portal::update_portal_effect),
         )
+        .add_systems(OnEnter(TurnState::Player), camp::heal_characters)
         .add_systems(
-            Update,
-            (
-                spawner::charge_spawner.run_if(resource_changed::<Turn>()),
-                spawner::spawn_enemy.run_if(resource_changed::<Turn>()),
-            )
+            OnEnter(TurnState::System),
+            (spawner::charge_spawner, spawner::spawn_enemy)
                 .run_if(in_state(AssetState::Loaded))
                 .chain(),
         );

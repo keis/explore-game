@@ -1,13 +1,14 @@
 use super::{NextSelectionQuery, Selection};
 use crate::{
     action::{GameAction, GameActionQueue},
+    actor::{
+        character::Character,
+        party::{Group, Party},
+    },
     camera::{CameraControl, CameraTarget},
-    character::Character,
     interface::MenuLayer,
     map::{MapPresence, PresenceLayer},
-    party::{Group, Party},
     structure::Camp,
-    turn::Turn,
 };
 use bevy::{prelude::*, reflect::TypePath};
 use leafwing_input_manager::prelude::*;
@@ -188,10 +189,6 @@ pub fn handle_open_portal(
     for (party, _) in party_query.iter().filter(|(_, s)| s.is_selected) {
         game_action_queue.add(GameAction::OpenPortal(party));
     }
-}
-
-pub fn handle_next_turn(mut turn: ResMut<Turn>) {
-    turn.number += 1;
 }
 
 pub fn handle_resume_move(
