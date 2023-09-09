@@ -15,7 +15,7 @@ fixedbitset = "0.4.2"
 rand = "0.8.5"
 rand_xoshiro = "0.6.0"
 serde = { version = "1.0.188", features = ["derive"] }
-thiserror = "1.0.47"
+thiserror = "1.0.48"
 
 [dev-dependencies]
 clap = { version = "4.4.2", features = ["derive"] }
