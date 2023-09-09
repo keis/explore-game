@@ -44,7 +44,7 @@ impl EnemyBundle {
             offset: Offset(offset),
             view_radius: ViewRadius(3),
             attack: Attack(1..10),
-            health: Health(20),
+            health: Health(20, 20),
             pbr_bundle: PbrBundle {
                 mesh: main_assets.blob_mesh.clone(),
                 material: standard_materials.add(Color::rgba(0.749, 0.584, 0.901, 0.666).into()),

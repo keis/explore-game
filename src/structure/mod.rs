@@ -18,6 +18,7 @@ impl Plugin for StructurePlugin {
             Update,
             (camp::update_camp_view_radius, portal::update_portal_effect),
         )
+        .add_systems(OnEnter(TurnState::Player), camp::heal_characters)
         .add_systems(
             OnEnter(TurnState::System),
             (spawner::charge_spawner, spawner::spawn_enemy)

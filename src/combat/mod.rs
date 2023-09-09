@@ -88,7 +88,13 @@ impl CombatBundle {
 }
 
 #[derive(Component, Default)]
-pub struct Health(pub u16);
+pub struct Health(pub u16, pub u16);
+
+impl Health {
+    pub fn heal(&mut self, amount: u16) {
+        self.0 = (self.0 + amount).min(self.1);
+    }
+}
 
 #[derive(Component, Default)]
 pub struct Attack(pub Range<u16>);
