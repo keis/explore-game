@@ -919,7 +919,7 @@ checksum = "479f08715afd391e7012c7d8c28f771fd1acdbf8a2bccea0ebacec0f81648cfe"
 dependencies = [
  "bevy",
  "bitfield",
- "interpolation",
+ "interpolation 0.2.0",
  "thiserror",
  "wgpu-types",
 ]
@@ -2323,7 +2323,7 @@ dependencies = [
  "futures-lite",
  "glam",
  "hexasphere",
- "interpolation",
+ "interpolation 0.3.0",
  "itertools 0.11.0",
  "leafwing-input-manager",
  "noisy_bevy",
@@ -2908,6 +2908,12 @@ name = "interpolation"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3b7357d2bbc5ee92f8e899ab645233e43d21407573cceb37fed8bc3dede2c02"
+
+[[package]]
+name = "interpolation"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9c13ae9d91148fcb4aab6654c4c2a7d02a15395ea9e23f65170f175f8b269ce"
 
 [[package]]
 name = "io-kit-sys"

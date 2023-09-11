@@ -25,7 +25,7 @@ expl_wfc = { path = "crates/expl_wfc" }
 futures-lite = "1.13.0"
 glam = "0.24"
 hexasphere = "9.1"
-interpolation = "0.2.0"
+interpolation = "0.3.0"
 itertools = "0.11.0"
 leafwing-input-manager = { version = "0.10", default-features = false, features = ["egui"] }
 noisy_bevy = "0.4"
