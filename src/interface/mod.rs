@@ -72,6 +72,7 @@ impl Plugin for InterfacePlugin {
                 .in_set(InputManagerSystem::ManualControl)
                 .after(InputManagerSystem::Update),
         )
+        .add_systems(Update, menu::menu_item_interaction_effect)
         .add_systems(
             Update,
             (

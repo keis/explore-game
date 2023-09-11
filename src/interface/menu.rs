@@ -1,10 +1,13 @@
-use super::color::{BACKGROUND, MENU, NORMAL};
+use super::color::{BACKGROUND, HOVERED, MENU, NORMAL, PRESSED};
 use super::{shell::Shell, InterfaceAssets};
 use crate::action::GameAction;
 use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct MenuLayer;
+
+#[derive(Component)]
+pub struct MenuItem;
 
 #[derive(Component)]
 pub struct MenuItemSave;
@@ -35,6 +38,7 @@ fn spawn_menu_item(
                 background_color: NORMAL.into(),
                 ..default()
             },
+            MenuItem,
             tag,
         ))
         .with_children(|parent| {
@@ -101,6 +105,22 @@ pub fn handle_toggle_main_menu(
     } else {
         *menu_layer_visibility = Visibility::Inherited;
         *shell_visibility = Visibility::Hidden;
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn menu_item_interaction_effect(
+    mut menu_item_query: Query<
+        (&mut BackgroundColor, &Interaction),
+        (With<MenuItem>, Changed<Interaction>),
+    >,
+) {
+    for (mut background_color, interaction) in &mut menu_item_query {
+        *background_color = match interaction {
+            Interaction::Pressed => PRESSED.into(),
+            Interaction::Hovered => HOVERED.into(),
+            Interaction::None => NORMAL.into(),
+        }
     }
 }
 
