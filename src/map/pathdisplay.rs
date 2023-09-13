@@ -1,5 +1,8 @@
 use super::PathGuided;
-use crate::path::{path_mesh, update_path_mesh, Path};
+use crate::{
+    path::{path_mesh, update_path_mesh, Path},
+    scene::save,
+};
 use bevy::{pbr::NotShadowCaster, prelude::*};
 use splines::{Interpolation, Key, Spline};
 use std::iter;
@@ -62,6 +65,8 @@ pub fn update_path_display(
             update_path_mesh(path, mesh);
         } else {
             commands.spawn((
+                Name::new("Path Display"),
+                save::Save,
                 PathDisplay {
                     path_guided: entity,
                 },

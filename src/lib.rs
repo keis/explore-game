@@ -2,6 +2,7 @@ pub mod action;
 pub mod actor;
 pub mod assets;
 pub mod camera;
+pub mod cleanup;
 pub mod combat;
 pub mod crystals;
 mod error;

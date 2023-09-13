@@ -3,7 +3,7 @@ use bevy::{
 };
 use bevy_asset_loader::prelude::*;
 use clap::Parser;
-use expl_wfc::{Seed, SeedType};
+use expl_wfc::Seed;
 use explore_game::{
     action::ActionPlugin,
     actor::ActorPlugin,
@@ -32,13 +32,14 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
     let height = 900.0;
-    let seed = cli
-        .seed
-        .unwrap_or_else(|| Seed::new(SeedType::Square(30, 24)));
 
     App::new()
         .insert_resource(ClearColor(CLEAR))
-        .insert_resource(MapSeed(seed))
+        .add_systems(Startup, move |mut commands: Commands| {
+            if let Some(seed) = cli.seed {
+                commands.spawn(MapSeed(seed));
+            }
+        })
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {

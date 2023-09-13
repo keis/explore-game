@@ -10,6 +10,7 @@ use crate::{
         HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder, PathGuided, PresenceLayer,
         Terrain, Zone, ZoneLayer,
     },
+    scene::save,
     structure::{Camp, CampBundle, CampParams, Portal},
     turn::{set_player_turn, TurnState},
 };
@@ -320,14 +321,18 @@ pub fn handle_make_camp(
         .entity(map_entity)
         .with_presence(position, |location| {
             location
-                .spawn(CampBundle::new(
-                    &mut spawn_camp_params,
-                    position,
-                    Camp {
-                        name: String::from("New camp"),
-                        supplies: party.supplies,
-                        crystals: party.crystals,
-                    },
+                .spawn((
+                    Name::new("Camp"),
+                    save::Save,
+                    CampBundle::new(
+                        &mut spawn_camp_params,
+                        position,
+                        Camp {
+                            name: String::from("New camp"),
+                            supplies: party.supplies,
+                            crystals: party.crystals,
+                        },
+                    ),
                 ))
                 .add_members(&group.members);
         });
@@ -393,11 +398,15 @@ pub fn handle_create_party_from_camp(
         .entity(map_entity)
         .with_presence(presence.position, |location| {
             location
-                .spawn(PartyBundle::new(
-                    &mut spawn_party_params,
-                    presence.position,
-                    "New Party".to_string(),
-                    new_supplies,
+                .spawn((
+                    Name::new("Party"),
+                    save::Save,
+                    PartyBundle::new(
+                        &mut spawn_party_params,
+                        presence.position,
+                        "New Party".to_string(),
+                        new_supplies,
+                    ),
                 ))
                 .add_members(characters);
         });
@@ -428,11 +437,15 @@ pub fn handle_split_party(
         .entity(map_entity)
         .with_presence(presence.position, |location| {
             location
-                .spawn(PartyBundle::new(
-                    &mut spawn_party_params,
-                    presence.position,
-                    "New Party".to_string(),
-                    new_supplies,
+                .spawn((
+                    Name::new("Party"),
+                    save::Save,
+                    PartyBundle::new(
+                        &mut spawn_party_params,
+                        presence.position,
+                        "New Party".to_string(),
+                        new_supplies,
+                    ),
                 ))
                 .add_members(characters);
         });

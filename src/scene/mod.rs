@@ -4,17 +4,20 @@ use crate::{
         party::{GroupCommandsExt, PartyBundle, PartyParams},
     },
     assets::AssetState,
+    cleanup,
     map::{
         spawn_zone, start_map_generation, zone_layer_from_prototype, GenerateMapTask,
         MapCommandsExt, MapPrototype, PresenceLayer, ZoneParams,
     },
     structure::{PortalBundle, PortalParams, SpawnerBundle, SpawnerParams},
+    turn::Turn,
 };
 use bevy::prelude::*;
 use futures_lite::future;
 
 mod camera;
 mod light;
+pub mod save;
 
 pub struct ScenePlugin;
 
@@ -27,22 +30,24 @@ impl Plugin for ScenePlugin {
                     SceneSet::InitialSetup,
                     SceneSet::CommandFlush,
                     SceneSet::Populate,
+                    SceneSet::Cleanup,
                 )
                     .chain(),
             )
-            .add_systems(
-                Startup,
-                (
-                    start_map_generation,
-                    camera::spawn_camera,
-                    light::spawn_light,
-                ),
-            )
+            .add_systems(Startup, (camera::spawn_camera, light::spawn_light))
             .add_systems(
                 Update,
                 watch_map_generation_task
-                    .run_if(in_state(SceneState::GeneratingMap))
-                    .run_if(in_state(AssetState::Loaded)),
+                    .run_if(in_state(AssetState::Loaded))
+                    .run_if(in_state(SceneState::Setup)),
+            )
+            .add_systems(
+                OnEnter(SceneState::Setup),
+                (
+                    cleanup::despawn_all::<(With<save::Save>, Without<Parent>)>,
+                    reset_turn_counter,
+                    start_map_generation,
+                ),
             )
             .add_systems(
                 OnEnter(SceneState::Active),
@@ -50,6 +55,7 @@ impl Plugin for ScenePlugin {
                     spawn_map.in_set(SceneSet::InitialSetup),
                     apply_deferred.in_set(SceneSet::CommandFlush),
                     (spawn_party, spawn_portal, spawn_spawner).in_set(SceneSet::Populate),
+                    cleanup_map_generation_task.in_set(SceneSet::Cleanup),
                 ),
             );
     }
@@ -60,12 +66,13 @@ pub enum SceneSet {
     InitialSetup,
     CommandFlush,
     Populate,
+    Cleanup,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, States, Default)]
 pub enum SceneState {
     #[default]
-    GeneratingMap,
+    Setup,
     Active,
 }
 
@@ -87,7 +94,20 @@ fn watch_map_generation_task(
     };
 }
 
-pub fn spawn_map(
+fn reset_turn_counter(mut turn: ResMut<Turn>) {
+    **turn = 1;
+}
+
+fn cleanup_map_generation_task(
+    mut commands: Commands,
+    generate_map_task_query: Query<Entity, With<GenerateMapTask>>,
+) {
+    for task_entity in &generate_map_task_query {
+        commands.entity(task_entity).despawn();
+    }
+}
+
+fn spawn_map(
     mut commands: Commands,
     mut zone_params: ZoneParams,
     map_prototype_query: Query<&MapPrototype>,
@@ -99,12 +119,13 @@ pub fn spawn_map(
         });
     commands.spawn((
         Name::new("Game map"),
+        save::Save,
         zone_layer,
         PresenceLayer::new(prototype.tiles.layout),
     ));
 }
 
-pub fn spawn_portal(
+fn spawn_portal(
     mut commands: Commands,
     mut portal_params: PortalParams,
     map_prototype_query: Query<&MapPrototype>,
@@ -117,12 +138,13 @@ pub fn spawn_portal(
         .with_presence(prototype.portal_position, |location| {
             location.spawn((
                 Name::new("Portal"),
+                save::Save,
                 PortalBundle::new(&mut portal_params, prototype.portal_position),
             ));
         });
 }
 
-pub fn spawn_spawner(
+fn spawn_spawner(
     mut commands: Commands,
     mut spawner_params: SpawnerParams,
     map_prototype_query: Query<&MapPrototype>,
@@ -135,6 +157,7 @@ pub fn spawn_spawner(
         .with_presence(prototype.spawner_position, |location| {
             location.spawn((
                 Name::new("EnemySpawner"),
+                save::Save,
                 SpawnerBundle::new(&mut spawner_params, prototype.spawner_position),
             ));
         });
@@ -161,11 +184,15 @@ pub fn spawn_party(
         .entity(map_entity)
         .with_presence(prototype.party_position, |location| {
             location
-                .spawn(PartyBundle::new(
-                    &mut party_params,
-                    prototype.party_position,
-                    String::from("Alpha Group"),
-                    1,
+                .spawn((
+                    Name::new("Party"),
+                    save::Save,
+                    PartyBundle::new(
+                        &mut party_params,
+                        prototype.party_position,
+                        String::from("Alpha Group"),
+                        1,
+                    ),
                 ))
                 .add_members(&[character1, character2, character3]);
         });

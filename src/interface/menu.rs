@@ -3,7 +3,7 @@ use super::{
     shell::Shell,
     InterfaceAssets, InterfaceState,
 };
-use crate::action::GameAction;
+use crate::{action::GameAction, scene::SceneState};
 use bevy::prelude::*;
 
 #[derive(Component)]
@@ -11,6 +11,9 @@ pub struct MenuLayer;
 
 #[derive(Component)]
 pub struct MenuItem;
+
+#[derive(Component)]
+pub struct MenuItemNewGame;
 
 #[derive(Component)]
 pub struct MenuItemSave;
@@ -89,6 +92,7 @@ pub fn spawn_menu(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     ..default()
                 })
                 .with_children(|parent| {
+                    spawn_menu_item(parent, &assets, MenuItemNewGame, "New game");
                     spawn_menu_item(parent, &assets, MenuItemSave, "Save");
                     spawn_menu_item(parent, &assets, MenuItemQuit, "Quit");
                 });
@@ -139,6 +143,17 @@ pub fn menu_item_interaction_effect(
             Interaction::Hovered => HOVERED.into(),
             Interaction::None => NORMAL.into(),
         }
+    }
+}
+
+pub fn handle_new_game(
+    interaction_query: Query<&Interaction, (With<MenuItemNewGame>, Changed<Interaction>)>,
+    mut next_state: ResMut<NextState<InterfaceState>>,
+    mut next_scene_state: ResMut<NextState<SceneState>>,
+) {
+    if let Ok(Interaction::Pressed) = interaction_query.get_single() {
+        next_state.set(InterfaceState::Shell);
+        next_scene_state.set(SceneState::Setup);
     }
 }
 
