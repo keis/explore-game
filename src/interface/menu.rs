@@ -1,10 +1,16 @@
-use super::color::{BACKGROUND, MENU, NORMAL};
-use super::{shell::Shell, InterfaceAssets};
+use super::{
+    color::{BACKGROUND, HOVERED, MENU, NORMAL, PRESSED},
+    shell::Shell,
+    InterfaceAssets, InterfaceState,
+};
 use crate::action::GameAction;
 use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct MenuLayer;
+
+#[derive(Component)]
+pub struct MenuItem;
 
 #[derive(Component)]
 pub struct MenuItemSave;
@@ -35,6 +41,7 @@ fn spawn_menu_item(
                 background_color: NORMAL.into(),
                 ..default()
             },
+            MenuItem,
             tag,
         ))
         .with_children(|parent| {
@@ -88,19 +95,50 @@ pub fn spawn_menu(mut commands: Commands, assets: Res<InterfaceAssets>) {
         });
 }
 
-pub fn handle_toggle_main_menu(
+pub fn show_menu(
     mut menu_layer_query: Query<&mut Visibility, With<MenuLayer>>,
     mut shell_query: Query<&mut Visibility, (With<Shell>, Without<MenuLayer>)>,
 ) {
     let mut menu_layer_visibility = menu_layer_query.single_mut();
     let mut shell_visibility = shell_query.single_mut();
+    *menu_layer_visibility = Visibility::Inherited;
+    *shell_visibility = Visibility::Hidden;
+}
 
-    if *menu_layer_visibility == Visibility::Inherited {
-        *menu_layer_visibility = Visibility::Hidden;
-        *shell_visibility = Visibility::Inherited;
-    } else {
-        *menu_layer_visibility = Visibility::Inherited;
-        *shell_visibility = Visibility::Hidden;
+pub fn hide_menu(
+    mut menu_layer_query: Query<&mut Visibility, With<MenuLayer>>,
+    mut shell_query: Query<&mut Visibility, (With<Shell>, Without<MenuLayer>)>,
+) {
+    let mut menu_layer_visibility = menu_layer_query.single_mut();
+    let mut shell_visibility = shell_query.single_mut();
+    *menu_layer_visibility = Visibility::Hidden;
+    *shell_visibility = Visibility::Inherited;
+}
+
+pub fn handle_toggle_main_menu(
+    current_state: Res<State<InterfaceState>>,
+    mut next_state: ResMut<NextState<InterfaceState>>,
+) {
+    next_state.set(match current_state.get() {
+        InterfaceState::Hidden => InterfaceState::Menu,
+        InterfaceState::Menu => InterfaceState::Shell,
+        InterfaceState::Shell => InterfaceState::Menu,
+    });
+}
+
+#[allow(clippy::type_complexity)]
+pub fn menu_item_interaction_effect(
+    mut menu_item_query: Query<
+        (&mut BackgroundColor, &Interaction),
+        (With<MenuItem>, Changed<Interaction>),
+    >,
+) {
+    for (mut background_color, interaction) in &mut menu_item_query {
+        *background_color = match interaction {
+            Interaction::Pressed => PRESSED.into(),
+            Interaction::Hovered => HOVERED.into(),
+            Interaction::None => NORMAL.into(),
+        }
     }
 }
 

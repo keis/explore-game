@@ -78,6 +78,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     ..default()
                 },
                 focus_policy: FocusPolicy::Pass,
+                visibility: Visibility::Hidden,
                 ..default()
             },
             Pickable::IGNORE,

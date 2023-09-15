@@ -26,10 +26,17 @@ impl Plugin for InterfacePlugin {
         app.add_loading_state(
             LoadingState::new(AssetState::Loading).continue_to_state(AssetState::Loaded),
         )
+        .add_state::<InterfaceState>()
         .add_collection_to_loading_state::<_, InterfaceAssets>(AssetState::Loading)
         .add_systems(
             OnEnter(AssetState::Loaded),
-            (shell::spawn_shell, menu::spawn_menu),
+            (
+                shell::spawn_shell,
+                menu::spawn_menu,
+                |mut next_state: ResMut<NextState<InterfaceState>>| {
+                    next_state.set(InterfaceState::Shell)
+                },
+            ),
         )
         .add_systems(
             Update,
@@ -72,6 +79,7 @@ impl Plugin for InterfacePlugin {
                 .in_set(InputManagerSystem::ManualControl)
                 .after(InputManagerSystem::Update),
         )
+        .add_systems(Update, menu::menu_item_interaction_effect)
         .add_systems(
             Update,
             (
@@ -81,6 +89,16 @@ impl Plugin for InterfacePlugin {
             )
                 .after(InputManagerSystem::ManualControl)
                 .run_if(in_state(AssetState::Loaded)),
-        );
+        )
+        .add_systems(OnEnter(InterfaceState::Menu), menu::show_menu)
+        .add_systems(OnExit(InterfaceState::Menu), menu::hide_menu);
     }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, States, Default)]
+pub enum InterfaceState {
+    #[default]
+    Hidden,
+    Shell,
+    Menu,
 }
