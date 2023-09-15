@@ -3,7 +3,10 @@ use super::{
     shell::Shell,
     InterfaceAssets, InterfaceState,
 };
-use crate::{action::GameAction, scene::SceneState};
+use crate::{
+    input::{Action, ActionState},
+    scene::SceneState,
+};
 use bevy::prelude::*;
 
 #[derive(Component)]
@@ -11,6 +14,9 @@ pub struct MenuLayer;
 
 #[derive(Component)]
 pub struct MenuItem;
+
+#[derive(Component)]
+pub struct MenuItemResume;
 
 #[derive(Component)]
 pub struct MenuItemNewGame;
@@ -92,6 +98,7 @@ pub fn spawn_menu(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     ..default()
                 })
                 .with_children(|parent| {
+                    spawn_menu_item(parent, &assets, MenuItemResume, "Resume");
                     spawn_menu_item(parent, &assets, MenuItemNewGame, "New game");
                     spawn_menu_item(parent, &assets, MenuItemSave, "Save");
                     spawn_menu_item(parent, &assets, MenuItemQuit, "Quit");
@@ -146,6 +153,20 @@ pub fn menu_item_interaction_effect(
     }
 }
 
+pub fn handle_resume(
+    interaction_query: Query<&Interaction, (With<MenuItemResume>, Changed<Interaction>)>,
+    scene_state: Res<State<SceneState>>,
+    mut next_state: ResMut<NextState<InterfaceState>>,
+) {
+    if let Ok(Interaction::Pressed) = interaction_query.get_single() {
+        if *scene_state.get() != SceneState::Active {
+            warn!("Can't resume; No active game");
+            return;
+        }
+        next_state.set(InterfaceState::Shell);
+    }
+}
+
 pub fn handle_new_game(
     interaction_query: Query<&Interaction, (With<MenuItemNewGame>, Changed<Interaction>)>,
     mut next_state: ResMut<NextState<InterfaceState>>,
@@ -153,16 +174,16 @@ pub fn handle_new_game(
 ) {
     if let Ok(Interaction::Pressed) = interaction_query.get_single() {
         next_state.set(InterfaceState::Shell);
-        next_scene_state.set(SceneState::Setup);
+        next_scene_state.set(SceneState::Reset);
     }
 }
 
 pub fn handle_save(
     interaction_query: Query<&Interaction, (With<MenuItemSave>, Changed<Interaction>)>,
-    mut event_writer: EventWriter<GameAction>,
+    mut action_state: ResMut<ActionState<Action>>,
 ) {
     if let Ok(Interaction::Pressed) = interaction_query.get_single() {
-        event_writer.send(GameAction::Save());
+        action_state.press(Action::Save);
     }
 }
 

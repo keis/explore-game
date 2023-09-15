@@ -4,7 +4,8 @@ use interpolation::Ease;
 
 const SLIDE_SPEED: f32 = 1.7;
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
+#[reflect(Component)]
 pub struct Slide {
     pub start: Vec3,
     pub end: Vec3,

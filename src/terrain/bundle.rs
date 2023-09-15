@@ -1,10 +1,12 @@
 use super::component::*;
 use crate::{
     assets::MainAssets,
-    map::{Fog, HexAssets, HexCoord},
-    material::{TerrainMaterial, WaterMaterial},
+    map::{Fog, HexAssets, HexCoord, MapPosition},
+    map_generator::ZonePrototype,
+    material::{TerrainMaterial, WaterMaterial, ZoneMaterial},
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
+use bevy_mod_picking::prelude::{Pickable, PickingInteraction, RaycastPickTarget};
 use glam::Vec3Swizzles;
 
 pub type ZoneDecorationParams<'w> = (Res<'w, MainAssets>, ResMut<'w, Assets<TerrainMaterial>>);
@@ -114,6 +116,103 @@ impl WaterBundle {
                 transform: Transform::from_translation(Vec3::new(0.0, -0.1, 0.0)),
                 ..default()
             },
+            ..default()
+        }
+    }
+}
+
+pub type ZoneParams<'w> = (
+    Res<'w, MainAssets>,
+    Res<'w, HexAssets>,
+    ResMut<'w, Assets<ZoneMaterial>>,
+);
+
+#[derive(Bundle, Default)]
+pub struct ZoneBundle {
+    terrain: Terrain,
+    height: Height,
+    fog: Fog,
+    position: MapPosition,
+    zone_decorations: ZoneDecorations,
+}
+
+#[derive(Bundle, Default)]
+pub struct ZoneFluffBundle {
+    pickable: Pickable,
+    raycast_pick_target: RaycastPickTarget,
+    interaction: PickingInteraction,
+    not_shadow_caster: NotShadowCaster,
+    material_mesh_bundle: MaterialMeshBundle<ZoneMaterial>,
+    outer_visible: OuterVisible,
+}
+
+impl ZoneBundle {
+    pub fn new(position: HexCoord, prototype: &ZonePrototype) -> Self {
+        let terrain = prototype.terrain;
+        let height = Height {
+            height_amp: prototype.height_amp,
+            height_base: prototype.height_base,
+            outer_amp: prototype.outer_amp.into(),
+            outer_base: prototype.outer_base.into(),
+        };
+        let mut filliter = prototype.random_fill.iter();
+        Self {
+            position: MapPosition(position),
+            terrain,
+            height,
+            zone_decorations: ZoneDecorations {
+                crystal_detail: if prototype.crystals {
+                    filliter
+                        .next()
+                        .map(|(pos, scale)| ZoneDecorationDetail(*pos, *scale))
+                } else {
+                    None
+                },
+                tree_details: filliter
+                    .map(|(pos, scale)| ZoneDecorationDetail(*pos, *scale))
+                    .collect(),
+            },
+            ..default()
+        }
+    }
+
+    pub fn with_fluff(self, zone_params: &mut ZoneParams) -> (Self, ZoneFluffBundle) {
+        let outer_visible = OuterVisible::default();
+        let fluff = ZoneFluffBundle::new(
+            zone_params,
+            &self.position,
+            &self.terrain,
+            &self.height,
+            &self.fog,
+            outer_visible,
+        );
+        (self, fluff)
+    }
+}
+
+impl ZoneFluffBundle {
+    pub fn new(
+        (main_assets, hex_assets, zone_materials): &mut ZoneParams,
+        position: &MapPosition,
+        terrain: &Terrain,
+        height: &Height,
+        fog: &Fog,
+        outer_visible: OuterVisible,
+    ) -> Self {
+        Self {
+            material_mesh_bundle: MaterialMeshBundle {
+                mesh: hex_assets.mesh.clone(),
+                material: zone_materials.add(ZoneMaterial::new(
+                    main_assets,
+                    terrain,
+                    height,
+                    fog,
+                    &outer_visible,
+                )),
+                transform: Transform::from_translation(position.0.into()),
+                ..default()
+            },
+            outer_visible,
             ..default()
         }
     }

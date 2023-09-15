@@ -14,8 +14,6 @@ use bevy::{prelude::*, reflect::TypePath};
 use leafwing_input_manager::prelude::*;
 use smallvec::SmallVec;
 
-pub use leafwing_input_manager::prelude::ActionState;
-
 #[derive(Actionlike, TypePath, PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum Action {
     BreakCamp,
@@ -40,6 +38,7 @@ pub enum Action {
     ToggleMainMenu,
     ToggleInspector,
     ZoomCamera,
+    Save,
 }
 
 pub fn magic_cancel(

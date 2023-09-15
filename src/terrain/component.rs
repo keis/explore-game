@@ -5,8 +5,10 @@ use rand::{
     distributions::{Distribution, Standard},
     Rng,
 };
+use std::cmp::min;
 
-#[derive(Component, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, Ord, PartialOrd)]
+#[derive(Component, Reflect, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, Ord, PartialOrd)]
+#[reflect(Component)]
 pub enum Terrain {
     #[default]
     Ocean,
@@ -54,26 +56,43 @@ impl TryFrom<char> for Terrain {
     }
 }
 
-#[derive(Reflect, Default)]
+#[derive(Component, Reflect, Default, Debug)]
+#[reflect(Component)]
+pub struct CrystalDeposit {
+    pub amount: u8,
+}
+
+impl CrystalDeposit {
+    pub fn take(&mut self) -> u8 {
+        let take = min(self.amount, 10);
+        self.amount -= take;
+        take
+    }
+}
+
+#[derive(Reflect, Default, Debug)]
 pub struct ZoneDecorationDetail(pub Vec2, pub f32);
 
-#[derive(Component, Reflect, Default)]
+#[derive(Component, Reflect, Default, Debug)]
 #[reflect(Component)]
 pub struct ZoneDecorations {
     pub crystal_detail: Option<ZoneDecorationDetail>,
     pub tree_details: Vec<ZoneDecorationDetail>,
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
 pub struct ZoneDecorationCrystals;
 
-#[derive(Component)]
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
 pub struct ZoneDecorationTree;
 
-#[derive(Component, Default)]
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
 pub struct Water;
 
-#[derive(Default, Copy, Clone)]
+#[derive(Default, Reflect, Copy, Clone)]
 pub struct Outer(f32, f32, f32, f32, f32, f32);
 
 impl From<[f32; 6]> for Outer {
@@ -88,7 +107,11 @@ impl From<Outer> for [f32; 6] {
     }
 }
 
-#[derive(Component, Default, Copy, Clone)]
+#[derive(Component, Default, Deref, Reflect, Copy, Clone)]
+pub struct OuterVisible(pub [bool; 6]);
+
+#[derive(Component, Reflect, Default, Copy, Clone)]
+#[reflect(Component)]
 pub struct Height {
     pub height_amp: f32,
     pub height_base: f32,

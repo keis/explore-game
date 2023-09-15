@@ -3,41 +3,61 @@ use crate::{
     assets::MainAssets,
     combat::Health,
     input::SelectionBundle,
-    map::{Fog, HexCoord, Offset, ViewRadius},
+    map::{Fog, HexCoord, MapPresence, Offset, ViewRadius},
     material::TerrainMaterial,
     VIEW_RADIUS,
 };
 use bevy::prelude::*;
 
-#[derive(Component, Debug, Default)]
+#[derive(Component, Reflect, Debug, Default)]
+#[reflect(Component)]
 pub struct Camp {
     pub name: String,
     pub supplies: u32,
     pub crystals: u32,
 }
 
-#[derive(Bundle, Default)]
-pub struct CampBundle {
-    pub camp: Camp,
-    pub group: Group,
-    pub selection: SelectionBundle,
-    pub offset: Offset,
-    pub view_radius: ViewRadius,
-    pub fog: Fog,
-    pub material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
-}
-
 pub type CampParams<'w> = (Res<'w, MainAssets>, ResMut<'w, Assets<TerrainMaterial>>);
 
+#[derive(Bundle, Default)]
+pub struct CampBundle {
+    camp: Camp,
+    presence: MapPresence,
+    group: Group,
+    offset: Offset,
+    view_radius: ViewRadius,
+    fog: Fog,
+}
+
+#[derive(Bundle, Default)]
+pub struct CampFluffBundle {
+    selection: SelectionBundle,
+    material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
+}
+
 impl CampBundle {
-    pub fn new(
-        (main_assets, terrain_materials): &mut CampParams,
-        position: HexCoord,
-        camp: Camp,
-    ) -> Self {
+    pub fn new(position: HexCoord, camp: Camp) -> Self {
         Self {
             camp,
+            presence: MapPresence { position },
             view_radius: ViewRadius(VIEW_RADIUS),
+            ..default()
+        }
+    }
+
+    pub fn with_fluff(self, camp_params: &mut CampParams) -> (Self, CampFluffBundle) {
+        let fluff = CampFluffBundle::new(camp_params, &self.presence, &self.offset);
+        (self, fluff)
+    }
+}
+
+impl CampFluffBundle {
+    pub fn new(
+        (main_assets, terrain_materials): &mut CampParams,
+        presence: &MapPresence,
+        offset: &Offset,
+    ) -> Self {
+        Self {
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: main_assets.tent_mesh.clone(),
                 material: terrain_materials.add(TerrainMaterial {
@@ -46,13 +66,26 @@ impl CampBundle {
                     explored: true,
                     ..default()
                 }),
-                transform: Transform::from_translation(position.into())
+                transform: Transform::from_translation(Vec3::from(presence.position) + offset.0)
                     .with_rotation(Quat::from_rotation_y(1.0))
                     .with_scale(Vec3::splat(0.5)),
                 ..default()
             },
             ..default()
         }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn fluff_camp(
+    mut commands: Commands,
+    mut camp_params: CampParams,
+    camp_query: Query<(Entity, &MapPresence, &Offset), (With<Camp>, Without<GlobalTransform>)>,
+) {
+    for (entity, presence, offset) in &camp_query {
+        commands
+            .entity(entity)
+            .insert(CampFluffBundle::new(&mut camp_params, presence, offset));
     }
 }
 

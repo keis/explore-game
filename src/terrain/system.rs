@@ -1,6 +1,5 @@
 use super::{bundle::*, component::*};
 use crate::{
-    crystals::CrystalDeposit,
     map::{Fog, MapEvent, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     structure::Camp,
 };
@@ -64,6 +63,39 @@ pub fn show_decorations_behind_camp(
     }
 }
 
+pub fn fluff_zone(
+    mut commands: Commands,
+    mut zone_params: ZoneParams,
+    map_query: Query<&ZoneLayer>,
+    zone_query: Query<(Entity, &Terrain, &MapPosition, &Height, &Fog), Without<GlobalTransform>>,
+    neighbour_zone_query: Query<&Fog>,
+) {
+    let Ok(zone_layer) = map_query.get_single() else { return };
+    for (entity, terrain, position, height, fog) in &zone_query {
+        let outer_visible = if fog.explored {
+            OuterVisible([true; 6])
+        } else {
+            let mut bits = [false; 6];
+            for (idx, coord) in position.0.neighbours().enumerate() {
+                let Some(fog) = zone_layer.get(coord).and_then(|&e| neighbour_zone_query.get(e).ok()) else { continue };
+                if fog.explored {
+                    bits[idx % 6] = true;
+                    bits[(idx + 5) % 6] = true;
+                }
+            }
+            OuterVisible(bits)
+        };
+        commands.entity(entity).insert(ZoneFluffBundle::new(
+            &mut zone_params,
+            position,
+            terrain,
+            height,
+            fog,
+            outer_visible,
+        ));
+    }
+}
+
 pub fn decorate_zone(
     mut commands: Commands,
     zone_query: Query<(
@@ -109,5 +141,28 @@ pub fn decorate_zone(
                 parent.spawn((Name::new("Water"), WaterBundle::new(&mut water_params)));
             }
         });
+    }
+}
+
+pub fn update_outer_visible(
+    map_query: Query<&ZoneLayer>,
+    changed_zone_query: Query<(Entity, &Fog, &MapPosition), Changed<Fog>>,
+    mut zone_query: Query<(&Fog, &mut OuterVisible)>,
+) {
+    let Ok(map) = map_query.get_single() else { return };
+    for (entity, fog, position) in &changed_zone_query {
+        if fog.explored {
+            let Ok((_, mut outer_visible)) = zone_query.get_mut(entity) else { continue };
+            outer_visible.0 = [true; 6];
+
+            for (idx, coord) in position.0.neighbours().enumerate() {
+                let Some((neighbour_fog, mut neighbour_outer_visible)) = map.get(coord).and_then(|&e| zone_query.get_mut(e).ok()) else { continue };
+                if neighbour_fog.explored {
+                    continue;
+                }
+                neighbour_outer_visible.0[(idx + 2) % 6] = true;
+                neighbour_outer_visible.0[(idx + 3) % 6] = true;
+            }
+        }
     }
 }

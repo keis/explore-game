@@ -4,7 +4,8 @@ use crate::{
 };
 use bevy::prelude::*;
 
-#[derive(Component, Debug, Default)]
+#[derive(Component, Reflect, Debug, Default)]
+#[reflect(Component)]
 pub struct Character {
     pub name: String,
 }
@@ -23,14 +24,15 @@ impl CharacterBundle {
         Self {
             character: Character { name },
             movement: Movement { points: 2 },
-            attack: Attack(0..8),
+            attack: Attack { low: 0, high: 8 },
             health: Health(10, 10),
             ..default()
         }
     }
 }
 
-#[derive(Component, Default, Debug)]
+#[derive(Component, Reflect, Default, Debug)]
+#[reflect(Component)]
 pub struct Movement {
     pub points: u32,
 }

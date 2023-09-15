@@ -1,6 +1,7 @@
 use crate::{
     assets::AssetState,
     input::{action_just_pressed, Action, InputManagerSystem},
+    scene::SceneState,
 };
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
@@ -34,8 +35,16 @@ impl Plugin for InterfacePlugin {
                 shell::spawn_shell,
                 menu::spawn_menu,
                 |mut next_state: ResMut<NextState<InterfaceState>>| {
-                    next_state.set(InterfaceState::Shell)
+                    next_state.set(InterfaceState::Menu)
                 },
+            ),
+        )
+        .add_systems(
+            OnEnter(SceneState::Active),
+            (
+                party::update_party_list,
+                camp::update_camp_list,
+                character::update_character_list,
             ),
         )
         .add_systems(
@@ -45,7 +54,8 @@ impl Plugin for InterfacePlugin {
                 camp::update_camp_list.run_if(camp::run_if_any_camp_changed),
                 character::update_character_list
                     .run_if(character::run_if_any_party_or_selection_changed),
-            ),
+            )
+                .run_if(in_state(AssetState::Loaded)),
         )
         .add_systems(
             Update,
@@ -83,7 +93,10 @@ impl Plugin for InterfacePlugin {
         .add_systems(
             Update,
             (
-                menu::handle_toggle_main_menu.run_if(action_just_pressed(Action::ToggleMainMenu)),
+                menu::handle_toggle_main_menu
+                    .run_if(action_just_pressed(Action::ToggleMainMenu))
+                    .run_if(in_state(SceneState::Active)),
+                menu::handle_resume,
                 menu::handle_new_game,
                 menu::handle_save,
                 menu::handle_quit,

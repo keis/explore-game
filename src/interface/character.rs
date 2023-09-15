@@ -93,7 +93,7 @@ fn spawn_character_display(
                     entity,
                     AttackText,
                     assets.gladius_icon.clone(),
-                    format!("{}-{}", attack.0.start, attack.0.end),
+                    format!("{}-{}", attack.low, attack.high),
                 );
                 spawn_stat_display(
                     parent,
