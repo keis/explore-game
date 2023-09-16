@@ -91,7 +91,7 @@ impl Plugin for InterfacePlugin {
                 .run_if(in_state(AssetState::Loaded)),
         )
         .add_systems(OnEnter(InterfaceState::Menu), menu::show_menu)
-        .add_systems(OnExit(InterfaceState::Menu), menu::hide_menu);
+        .add_systems(OnEnter(InterfaceState::Shell), menu::hide_menu);
     }
 }
 
