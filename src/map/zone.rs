@@ -153,24 +153,6 @@ where
     }
 }
 
-fn zone_material(assets: &Res<MainAssets>, prototype: &ZonePrototype) -> ZoneMaterial {
-    let terrain_texture = match prototype.terrain {
-        Terrain::Ocean => Some(assets.ocean_texture.clone()),
-        Terrain::Mountain => Some(assets.mountain_texture.clone()),
-        Terrain::Forest => Some(assets.grass_texture.clone()),
-    };
-
-    ZoneMaterial {
-        cloud_texture: Some(assets.cloud_texture.clone()),
-        terrain_texture,
-        height_amp: prototype.height_amp,
-        height_base: prototype.height_base,
-        outer_amp: prototype.outer_amp,
-        outer_base: prototype.outer_base,
-        ..default()
-    }
-}
-
 pub fn update_outer_visible(
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     changed_zone_query: Query<(&Fog, &MapPosition, &Handle<ZoneMaterial>), Changed<Fog>>,
@@ -210,7 +192,6 @@ pub fn spawn_zone(
     position: HexCoord,
     prototype: &ZonePrototype,
 ) -> Entity {
-    let material = zone_material(main_assets, prototype);
     let zone = Zone {
         terrain: prototype.terrain,
     };
@@ -232,7 +213,7 @@ pub fn spawn_zone(
             },
             MaterialMeshBundle {
                 mesh: hex_assets.mesh.clone(),
-                material: zone_materials.add(material),
+                material: zone_materials.add(ZoneMaterial::new(main_assets, &zone, &height)),
                 transform: Transform::from_translation(position.into()),
                 ..default()
             },
