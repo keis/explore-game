@@ -1,7 +1,10 @@
 use crate::{
     actor::{character::Movement, slide::Slide},
     input::SelectionBundle,
-    map::{HeightQuery, HexCoord, MapCommandsExt, MapPresence, Offset, PathGuided, ViewRadius},
+    map::{
+        HeightQuery, HexCoord, MapCommandsExt, MapPresence, Offset, PathGuided, PresenceLayer,
+        ViewRadius,
+    },
     VIEW_RADIUS,
 };
 
@@ -176,11 +179,13 @@ impl Command for RemoveMembers {
 #[allow(clippy::type_complexity)]
 pub fn despawn_empty_party(
     mut commands: Commands,
-    party_query: Query<(Entity, &Group, &MapPresence), (With<Party>, Changed<Group>)>,
+    party_query: Query<(Entity, &Group), (With<Party>, With<MapPresence>, Changed<Group>)>,
+    map_query: Query<Entity, With<PresenceLayer>>,
 ) {
-    for (entity, group, presence) in &party_query {
+    let Ok(map_entity) = map_query.get_single() else { return };
+    for (entity, group) in &party_query {
         if group.members.is_empty() {
-            commands.entity(presence.map).despawn_presence(entity);
+            commands.entity(map_entity).despawn_presence(entity);
         }
     }
 }

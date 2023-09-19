@@ -133,7 +133,6 @@ impl Command for AddMapPresence {
                 presence.position = self.position;
             } else {
                 presence_entity.insert(MapPresence {
-                    map: self.map,
                     position: self.position,
                 });
             }

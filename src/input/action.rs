@@ -104,7 +104,7 @@ pub fn handle_camp(
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
     for (entity, presence, _) in party_query.iter().filter(|(_, _, s)| s.is_selected) {
-        let Ok(presence_layer) = map_query.get(presence.map) else { continue };
+        let Ok(presence_layer) = map_query.get_single() else { continue };
         if let Some(camp_entity) = camp_query
             .iter_many(presence_layer.presence(presence.position))
             .next()
