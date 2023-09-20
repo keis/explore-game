@@ -3,12 +3,12 @@ use super::{
         ZoneDecorationCrystals, ZoneDecorationCrystalsBundle, ZoneDecorationTree,
         ZoneDecorationTreeBundle,
     },
-    Fog, Height, HexAssets, HexCoord, MapEvent, MapPosition, MapPresence, MapPrototype,
-    PresenceLayer,
+    Fog, Height, HexAssets, HexCoord, MapEvent, MapPosition, MapPresence, PresenceLayer,
 };
 use crate::{
     assets::MainAssets,
     crystals::CrystalDeposit,
+    map_generator::{MapPrototype, ZonePrototype},
     material::{TerrainMaterial, WaterMaterial, ZoneMaterial},
     scene::save,
     structure::Camp,
@@ -84,17 +84,6 @@ impl Zone {
     pub fn is_walkable(&self) -> bool {
         self.terrain != Terrain::Ocean
     }
-}
-
-#[derive(Default)]
-pub struct ZonePrototype {
-    pub terrain: Terrain,
-    pub random_fill: Vec<(Vec2, f32)>,
-    pub crystals: bool,
-    pub height_amp: f32,
-    pub height_base: f32,
-    pub outer_amp: [f32; 6],
-    pub outer_base: [f32; 6],
 }
 
 #[derive(Bundle, Default)]

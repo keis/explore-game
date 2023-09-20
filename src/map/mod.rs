@@ -5,7 +5,6 @@ mod commands;
 mod decoration;
 mod events;
 mod fog;
-mod generator;
 mod height;
 mod hex;
 mod pathdisplay;
@@ -19,7 +18,6 @@ pub use commands::MapCommandsExt;
 pub use events::MapEvent;
 pub use expl_hexgrid::HexCoord;
 pub use fog::Fog;
-pub use generator::{start_map_generation, GenerateMapTask, MapPrototype, MapSeed};
 pub use height::{Height, HeightQuery};
 pub use hex::HexAssets;
 pub use pathdisplay::PathDisplay;
@@ -29,7 +27,6 @@ pub use position::MapPosition;
 pub use presence::{MapPresence, Offset, PresenceLayer, ViewRadius};
 pub use zone::{
     spawn_zone, zone_layer_from_prototype, Terrain, Zone, ZoneBundle, ZoneLayer, ZoneParams,
-    ZonePrototype,
 };
 
 #[derive(Resource)]

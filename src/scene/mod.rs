@@ -3,17 +3,14 @@ use crate::{
         character::CharacterBundle,
         party::{GroupCommandsExt, PartyBundle, PartyParams},
     },
-    assets::AssetState,
     cleanup,
-    map::{
-        spawn_zone, start_map_generation, zone_layer_from_prototype, GenerateMapTask,
-        MapCommandsExt, MapPrototype, PresenceLayer, ZoneParams,
-    },
+    map::{spawn_zone, zone_layer_from_prototype, MapCommandsExt, PresenceLayer, ZoneParams},
+    map_generator::{GenerateMapTask, MapPrototype, MapSeed},
     structure::{PortalBundle, PortalParams, SpawnerBundle, SpawnerParams},
     turn::Turn,
 };
 use bevy::prelude::*;
-use futures_lite::future;
+use expl_wfc::{Seed, SeedType};
 
 mod camera;
 mod light;
@@ -36,17 +33,11 @@ impl Plugin for ScenePlugin {
             )
             .add_systems(Startup, (camera::spawn_camera, light::spawn_light))
             .add_systems(
-                Update,
-                watch_map_generation_task
-                    .run_if(in_state(AssetState::Loaded))
-                    .run_if(in_state(SceneState::Setup)),
-            )
-            .add_systems(
                 OnEnter(SceneState::Setup),
                 (
                     cleanup::despawn_all::<(With<save::Save>, Without<Parent>)>,
                     reset_turn_counter,
-                    start_map_generation,
+                    create_map_seed,
                 ),
             )
             .add_systems(
@@ -76,22 +67,10 @@ pub enum SceneState {
     Active,
 }
 
-fn watch_map_generation_task(
-    mut commands: Commands,
-    mut generate_map_task: Query<(Entity, &mut GenerateMapTask)>,
-    mut scene_state: ResMut<NextState<SceneState>>,
-) {
-    let Ok((entity, mut task)) = generate_map_task.get_single_mut() else { return };
-    match future::block_on(future::poll_once(&mut task.0)) {
-        Some(Ok(prototype)) => {
-            commands.entity(entity).insert(prototype);
-            scene_state.set(SceneState::Active);
-        }
-        Some(Err(e)) => {
-            error!("something went wrong: {}", e);
-        }
-        None => (),
-    };
+fn create_map_seed(mut commands: Commands, seed_query: Query<&MapSeed>) {
+    if seed_query.is_empty() {
+        commands.spawn(MapSeed(Seed::new(SeedType::Square(30, 24))));
+    }
 }
 
 fn reset_turn_counter(mut turn: ResMut<Turn>) {
