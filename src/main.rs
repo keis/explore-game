@@ -18,6 +18,7 @@ use explore_game::{
     material::MaterialPlugins,
     scene::ScenePlugin,
     structure::StructurePlugin,
+    terrain::TerrainPlugin,
     turn::TurnPlugin,
 };
 
@@ -85,6 +86,7 @@ fn main() {
             MapPlugin,
             ScenePlugin,
             StructurePlugin,
+            TerrainPlugin,
             TurnPlugin,
         ))
         .add_loading_state(

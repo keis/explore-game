@@ -1,7 +1,8 @@
 use crate::{
     assets::MainAssets,
-    map::{Fog, HeightQuery, HexCoord},
+    map::{Fog, HexCoord},
     material::{PortalMaterial, TerrainMaterial},
+    terrain::HeightQuery,
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
 

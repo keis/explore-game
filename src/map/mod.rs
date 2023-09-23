@@ -2,10 +2,8 @@ use crate::assets::AssetState;
 use bevy::prelude::*;
 
 mod commands;
-mod decoration;
 mod events;
 mod fog;
-mod height;
 mod hex;
 mod pathdisplay;
 mod pathfinder;
@@ -18,16 +16,13 @@ pub use commands::MapCommandsExt;
 pub use events::MapEvent;
 pub use expl_hexgrid::HexCoord;
 pub use fog::Fog;
-pub use height::{Height, HeightQuery};
 pub use hex::HexAssets;
 pub use pathdisplay::PathDisplay;
 pub use pathfinder::PathFinder;
 pub use pathguided::PathGuided;
 pub use position::MapPosition;
 pub use presence::{MapPresence, Offset, PresenceLayer, ViewRadius};
-pub use zone::{
-    spawn_zone, zone_layer_from_prototype, Terrain, Zone, ZoneBundle, ZoneLayer, ZoneParams,
-};
+pub use zone::{spawn_zone, zone_layer_from_prototype, ZoneBundle, ZoneLayer, ZoneParams};
 
 #[derive(Resource)]
 pub struct Damaged(bool);
@@ -60,9 +55,6 @@ impl Plugin for MapPlugin {
                     presence::update_terrain_visibility,
                     presence::update_presence_fog,
                     presence::update_enemy_visibility,
-                    zone::despawn_empty_crystal_deposit,
-                    zone::hide_decorations_behind_camp,
-                    zone::show_decorations_behind_camp,
                     zone::update_outer_visible,
                 )
                     .run_if(in_state(AssetState::Loaded)),
@@ -100,7 +92,8 @@ fn log_moves(
 
 #[cfg(test)]
 pub mod tests {
-    use super::{Terrain, Zone, ZoneLayer};
+    use super::ZoneLayer;
+    use crate::terrain::Terrain;
     use bevy::prelude::*;
     use expl_hexgrid::layout::SquareGridLayout;
     use rstest::*;
@@ -109,33 +102,15 @@ pub mod tests {
         let tiles = app
             .world
             .spawn_batch(vec![
-                Zone {
-                    terrain: Terrain::Forest,
-                },
-                Zone {
-                    terrain: Terrain::Forest,
-                },
-                Zone {
-                    terrain: Terrain::Forest,
-                },
-                Zone {
-                    terrain: Terrain::Ocean,
-                },
-                Zone {
-                    terrain: Terrain::Ocean,
-                },
-                Zone {
-                    terrain: Terrain::Forest,
-                },
-                Zone {
-                    terrain: Terrain::Mountain,
-                },
-                Zone {
-                    terrain: Terrain::Mountain,
-                },
-                Zone {
-                    terrain: Terrain::Mountain,
-                },
+                Terrain::Forest,
+                Terrain::Forest,
+                Terrain::Forest,
+                Terrain::Ocean,
+                Terrain::Ocean,
+                Terrain::Forest,
+                Terrain::Mountain,
+                Terrain::Mountain,
+                Terrain::Mountain,
             ])
             .collect();
         app.world

@@ -1,6 +1,7 @@
 use crate::{
     assets::MainAssets,
-    map::{Fog, Height, Terrain, Zone},
+    map::Fog,
+    terrain::{Height, Terrain},
 };
 use bevy::{
     prelude::*,
@@ -40,8 +41,8 @@ pub struct ZoneMaterial {
 }
 
 impl ZoneMaterial {
-    pub fn new(assets: &Res<MainAssets>, zone: &Zone, height: &Height) -> Self {
-        let terrain_texture = match zone.terrain {
+    pub fn new(assets: &Res<MainAssets>, terrain: &Terrain, height: &Height) -> Self {
+        let terrain_texture = match terrain {
             Terrain::Ocean => Some(assets.ocean_texture.clone()),
             Terrain::Mountain => Some(assets.mountain_texture.clone()),
             Terrain::Forest => Some(assets.grass_texture.clone()),

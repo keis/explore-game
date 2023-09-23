@@ -1,4 +1,4 @@
-use crate::{map::Terrain, ExplError};
+use crate::{terrain::Terrain, ExplError};
 use bevy::{prelude::*, tasks::Task};
 use expl_hexgrid::{layout::SquareGridLayout, Grid, HexCoord};
 use expl_wfc::Seed;

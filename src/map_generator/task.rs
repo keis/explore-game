@@ -1,5 +1,5 @@
 use super::{MapPrototype, ZonePrototype};
-use crate::{map::Terrain, ExplError};
+use crate::{terrain::Terrain, ExplError};
 use bevy::prelude::*;
 use expl_hexgrid::{
     layout::{HexagonalGridLayout, SquareGridLayout},

@@ -1,94 +1,21 @@
-use super::{
-    decoration::{
-        ZoneDecorationCrystals, ZoneDecorationCrystalsBundle, ZoneDecorationTree,
-        ZoneDecorationTreeBundle,
-    },
-    Fog, Height, HexAssets, HexCoord, MapEvent, MapPosition, MapPresence, PresenceLayer,
-};
+use super::{Fog, HexAssets, HexCoord, MapPosition};
 use crate::{
     assets::MainAssets,
     crystals::CrystalDeposit,
     map_generator::{MapPrototype, ZonePrototype},
     material::{TerrainMaterial, WaterMaterial, ZoneMaterial},
     scene::save,
-    structure::Camp,
+    terrain::{
+        Height, Terrain, WaterBundle, ZoneDecorationCrystalsBundle, ZoneDecorationTreeBundle,
+    },
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
 use bevy_mod_picking::prelude::{Pickable, PickingInteraction, RaycastPickTarget};
 use expl_hexgrid::{layout::SquareGridLayout, Grid};
-use glam::Vec3Swizzles;
-use rand::{
-    distributions::{Distribution, Standard},
-    Rng,
-};
-
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default, Ord, PartialOrd)]
-pub enum Terrain {
-    #[default]
-    Ocean,
-    Mountain,
-    Forest,
-}
-
-impl Distribution<Terrain> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Terrain {
-        match rng.gen_range(0..=2) {
-            0 => Terrain::Ocean,
-            1 => Terrain::Mountain,
-            2 => Terrain::Forest,
-            _ => Terrain::Ocean,
-        }
-    }
-}
-
-impl From<Terrain> for char {
-    fn from(terrain: Terrain) -> Self {
-        match terrain {
-            Terrain::Forest => '%',
-            Terrain::Mountain => '^',
-            Terrain::Ocean => '~',
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Error(&'static str);
-
-impl std::error::Error for Error {}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl TryFrom<char> for Terrain {
-    type Error = Error;
-
-    fn try_from(c: char) -> Result<Terrain, Self::Error> {
-        match c {
-            '%' => Ok(Terrain::Forest),
-            '^' => Ok(Terrain::Mountain),
-            '~' => Ok(Terrain::Ocean),
-            _ => Err(Error("Unknown terrain character")),
-        }
-    }
-}
-
-#[derive(Component, Copy, Clone, Debug, Default)]
-pub struct Zone {
-    pub terrain: Terrain,
-}
-
-impl Zone {
-    pub fn is_walkable(&self) -> bool {
-        self.terrain != Terrain::Ocean
-    }
-}
 
 #[derive(Bundle, Default)]
 pub struct ZoneBundle {
-    pub zone: Zone,
+    pub terrain: Terrain,
     pub height: Height,
     pub fog: Fog,
     pub position: MapPosition,
@@ -181,9 +108,7 @@ pub fn spawn_zone(
     position: HexCoord,
     prototype: &ZonePrototype,
 ) -> Entity {
-    let zone = Zone {
-        terrain: prototype.terrain,
-    };
+    let terrain = prototype.terrain;
     let height = Height {
         height_amp: prototype.height_amp,
         height_base: prototype.height_base,
@@ -196,13 +121,13 @@ pub fn spawn_zone(
             save::Save,
             ZoneBundle {
                 position: MapPosition(position),
-                zone,
+                terrain,
                 height,
                 ..default()
             },
             MaterialMeshBundle {
                 mesh: hex_assets.mesh.clone(),
-                material: zone_materials.add(ZoneMaterial::new(main_assets, &zone, &height)),
+                material: zone_materials.add(ZoneMaterial::new(main_assets, &terrain, &height)),
                 transform: Transform::from_translation(position.into()),
                 ..default()
             },
@@ -217,11 +142,9 @@ pub fn spawn_zone(
                         ZoneDecorationCrystalsBundle::new(
                             main_assets,
                             terrain_materials,
-                            Vec3::new(
-                                pos.x,
-                                height.height_at(*pos, Vec3::from(position).xz() + *pos),
-                                pos.y,
-                            ),
+                            &height,
+                            position,
+                            *pos,
                             *scale,
                         ),
                     ));
@@ -233,11 +156,9 @@ pub fn spawn_zone(
                         ZoneDecorationTreeBundle::new(
                             main_assets,
                             terrain_materials,
-                            Vec3::new(
-                                pos.x,
-                                height.height_at(*pos, Vec3::from(position).xz() + *pos),
-                                pos.y,
-                            ),
+                            &height,
+                            position,
+                            *pos,
                             *scale,
                         ),
                     ));
@@ -247,16 +168,7 @@ pub fn spawn_zone(
             Terrain::Ocean => {
                 parent.spawn((
                     Name::new("Water"),
-                    Fog::default(),
-                    NotShadowCaster,
-                    MaterialMeshBundle {
-                        mesh: hex_assets.mesh.clone(),
-                        material: water_materials.add(WaterMaterial {
-                            color: Color::rgba(0.1, 0.1, 0.8, 0.4),
-                        }),
-                        transform: Transform::from_translation(Vec3::new(0.0, -0.1, 0.0)),
-                        ..default()
-                    },
+                    WaterBundle::new(hex_assets, water_materials),
                 ));
             }
         })
@@ -269,62 +181,4 @@ pub fn spawn_zone(
     }
 
     zone_entity
-}
-
-pub fn despawn_empty_crystal_deposit(
-    mut commands: Commands,
-    crystal_deposit_query: Query<(&CrystalDeposit, &Children), Changed<CrystalDeposit>>,
-    zone_decoration_query: Query<Entity, With<ZoneDecorationCrystals>>,
-) {
-    for (_, children) in crystal_deposit_query
-        .iter()
-        .filter(|(deposit, _)| deposit.amount == 0)
-    {
-        for decoration_entity in zone_decoration_query.iter_many(children.iter()) {
-            commands.entity(decoration_entity).despawn();
-        }
-    }
-}
-
-pub fn hide_decorations_behind_camp(
-    presence_query: Query<&MapPresence, (Changed<MapPresence>, With<Camp>)>,
-    map_query: Query<&ZoneLayer>,
-    zone_query: Query<&Children>,
-    mut decoration_query: Query<(&mut Visibility, &Transform), With<ZoneDecorationTree>>,
-) {
-    let Ok(map) = map_query.get_single() else { return };
-    for presence in &presence_query {
-        let Some(children) = map.get(presence.position).and_then(|&e| zone_query.get(e).ok()) else { continue };
-        let mut decoration_iter = decoration_query.iter_many_mut(children);
-        while let Some((mut visibility, transform)) = decoration_iter.fetch_next() {
-            if transform.translation.distance(Vec3::ZERO) < 0.3 {
-                *visibility = Visibility::Hidden;
-            }
-        }
-    }
-}
-
-pub fn show_decorations_behind_camp(
-    mut events: EventReader<MapEvent>,
-    map_query: Query<(&ZoneLayer, &PresenceLayer)>,
-    zone_query: Query<&Children>,
-    camp_query: Query<&Camp>,
-    mut decoration_query: Query<&mut Visibility, With<ZoneDecorationTree>>,
-) {
-    let Ok((map, presence_layer)) = map_query.get_single() else { return };
-    for event in &mut events {
-        let MapEvent::PresenceRemoved { position, .. } = event else { continue };
-        if camp_query
-            .iter_many(presence_layer.presence(*position))
-            .next()
-            .is_some()
-        {
-            continue;
-        }
-        let Some(children) = map.get(*position).and_then(|&e| zone_query.get(e).ok()) else { continue };
-        let mut decoration_iter = decoration_query.iter_many_mut(children);
-        while let Some(mut visibility) = decoration_iter.fetch_next() {
-            *visibility = Visibility::Inherited;
-        }
-    }
 }

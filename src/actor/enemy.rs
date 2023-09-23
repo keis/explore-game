@@ -3,10 +3,8 @@ use crate::{
     actor::{party::Party, slide::Slide},
     assets::MainAssets,
     combat::{Attack, Health},
-    map::{
-        HeightQuery, HexCoord, MapPresence, Offset, PathFinder, PresenceLayer, ViewRadius, Zone,
-        ZoneLayer,
-    },
+    map::{HexCoord, MapPresence, Offset, PathFinder, PresenceLayer, ViewRadius, ZoneLayer},
+    terrain::{HeightQuery, Terrain},
 };
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_mod_outline::{OutlineBundle, OutlineVolume};
@@ -90,7 +88,7 @@ pub fn move_enemy(
     mut queue: ResMut<GameActionQueue>,
     map_query: Query<(&PresenceLayer, &ZoneLayer)>,
     enemy_query: Query<(Entity, &MapPresence, &ViewRadius), With<Enemy>>,
-    zone_query: Query<&Zone>,
+    terrain_query: Query<&Terrain>,
     target: Target,
     path_finder: PathFinder,
 ) {
@@ -115,8 +113,8 @@ pub fn move_enemy(
                 let next = presence.position + offset;
                 if zone_layer
                     .get(next)
-                    .and_then(|&entity| zone_query.get(entity).ok())
-                    .map_or(false, |zone| zone.is_walkable())
+                    .and_then(|&entity| terrain_query.get(entity).ok())
+                    .map_or(false, |terrain| terrain.is_walkable())
                     && enemy_query
                         .iter_many(presence_layer.presence(next))
                         .next()

@@ -8,7 +8,8 @@ use super::{
 };
 use crate::{
     input::{Action, ActionState},
-    map::{MapPosition, Zone},
+    map::MapPosition,
+    terrain::Terrain,
     turn::Turn,
 };
 use bevy::{prelude::*, ui::FocusPolicy};
@@ -255,7 +256,7 @@ pub fn update_zone_text(
     mut zone_text_query: Query<&mut Text, With<ZoneText>>,
     zone_query: Query<
         (&MapPosition, &PickingInteraction),
-        (With<Zone>, Changed<PickingInteraction>),
+        (With<Terrain>, Changed<PickingInteraction>),
     >,
 ) {
     for (zone_position, _) in zone_query

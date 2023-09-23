@@ -1,9 +1,11 @@
-use super::Fog;
-use crate::{assets::MainAssets, material::TerrainMaterial};
-use bevy::prelude::*;
-
-#[derive(Component)]
-pub struct ZoneDecorationCrystals;
+use super::component::*;
+use crate::{
+    assets::MainAssets,
+    map::{Fog, HexAssets, HexCoord},
+    material::{TerrainMaterial, WaterMaterial},
+};
+use bevy::{pbr::NotShadowCaster, prelude::*};
+use glam::Vec3Swizzles;
 
 #[derive(Bundle)]
 pub struct ZoneDecorationCrystalsBundle {
@@ -16,7 +18,9 @@ impl ZoneDecorationCrystalsBundle {
     pub fn new(
         main_assets: &Res<MainAssets>,
         terrain_materials: &mut ResMut<Assets<TerrainMaterial>>,
-        translation: Vec3,
+        height: &Height,
+        position: HexCoord,
+        relative: Vec2,
         scale: f32,
     ) -> Self {
         Self {
@@ -29,16 +33,17 @@ impl ZoneDecorationCrystalsBundle {
                     ..default()
                 }),
                 visibility: Visibility::Hidden,
-                transform: Transform::from_translation(translation)
-                    .with_scale(Vec3::splat(scale * 0.3)),
+                transform: Transform::from_translation(Vec3::new(
+                    relative.x,
+                    height.height_at(relative, Vec3::from(position).xz() + relative),
+                    relative.y,
+                ))
+                .with_scale(Vec3::splat(scale * 0.3)),
                 ..default()
             },
         }
     }
 }
-
-#[derive(Component)]
-pub struct ZoneDecorationTree;
 
 #[derive(Bundle)]
 pub struct ZoneDecorationTreeBundle {
@@ -51,7 +56,9 @@ impl ZoneDecorationTreeBundle {
     pub fn new(
         main_assets: &Res<MainAssets>,
         terrain_materials: &mut ResMut<Assets<TerrainMaterial>>,
-        translation: Vec3,
+        height: &Height,
+        position: HexCoord,
+        relative: Vec2,
         scale: f32,
     ) -> Self {
         Self {
@@ -64,10 +71,41 @@ impl ZoneDecorationTreeBundle {
                     ..default()
                 }),
                 visibility: Visibility::Hidden,
-                transform: Transform::from_translation(translation)
-                    .with_scale(Vec3::splat(scale * 0.5)),
+                transform: Transform::from_translation(Vec3::new(
+                    relative.x,
+                    height.height_at(relative, Vec3::from(position).xz() + relative),
+                    relative.y,
+                ))
+                .with_scale(Vec3::splat(scale * 0.5)),
                 ..default()
             },
+        }
+    }
+}
+
+#[derive(Bundle, Default)]
+pub struct WaterBundle {
+    water: Water,
+    fog: Fog,
+    not_shadow_caster: NotShadowCaster,
+    material_mesh_bundle: MaterialMeshBundle<WaterMaterial>,
+}
+
+impl WaterBundle {
+    pub fn new(
+        hex_assets: &Res<HexAssets>,
+        water_materials: &mut ResMut<Assets<WaterMaterial>>,
+    ) -> Self {
+        Self {
+            material_mesh_bundle: MaterialMeshBundle {
+                mesh: hex_assets.mesh.clone(),
+                material: water_materials.add(WaterMaterial {
+                    color: Color::rgba(0.1, 0.1, 0.8, 0.4),
+                }),
+                transform: Transform::from_translation(Vec3::new(0.0, -0.1, 0.0)),
+                ..default()
+            },
+            ..default()
         }
     }
 }

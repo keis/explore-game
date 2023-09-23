@@ -8,10 +8,11 @@ use crate::{
     crystals::CrystalDeposit,
     map::{
         HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder, PathGuided, PresenceLayer,
-        Terrain, Zone, ZoneLayer,
+        ZoneLayer,
     },
     scene::save,
     structure::{Camp, CampBundle, CampParams, Portal},
+    terrain::Terrain,
     turn::{set_player_turn, TurnState},
 };
 use bevy::prelude::*;
@@ -285,7 +286,7 @@ pub fn handle_make_camp(
     mut commands: Commands,
     mut spawn_camp_params: CampParams,
     map_query: Query<(Entity, &ZoneLayer, &PresenceLayer)>,
-    zone_query: Query<&Zone>,
+    terrain_query: Query<&Terrain>,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
     camp_query: Query<&Camp>,
 ) {
@@ -293,9 +294,9 @@ pub fn handle_make_camp(
 
     let Ok((mut party, group, presence)) = party_query.get_mut(party_entity) else { return };
     let Ok((map_entity, zone_layer, presence_layer)) = map_query.get_single() else { return };
-    let Some(zone) = zone_layer.get(presence.position).and_then(|&e| zone_query.get(e).ok()) else { return };
+    let Some(terrain) = zone_layer.get(presence.position).and_then(|&e| terrain_query.get(e).ok()) else { return };
 
-    if zone.terrain == Terrain::Mountain {
+    if *terrain == Terrain::Mountain {
         info!("Can't camp here");
         return;
     }

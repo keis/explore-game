@@ -12,4 +12,6 @@ pub enum ExplError {
     CouldNotPlaceSpawner,
     #[error("could not place party")]
     CouldNotPlaceParty,
+    #[error("unknown terrain character")]
+    UnknownTerrainCharacter,
 }

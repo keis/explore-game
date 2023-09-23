@@ -15,6 +15,7 @@ pub mod material;
 pub mod path;
 pub mod scene;
 pub mod structure;
+pub mod terrain;
 pub mod turn;
 
 pub use error::ExplError;

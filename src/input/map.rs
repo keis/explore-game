@@ -2,14 +2,15 @@ use super::Selection;
 use crate::{
     action::{GameAction, GameActionQueue},
     combat::Combat,
-    map::{MapPosition, MapPresence, PathGuided, Zone},
+    map::{MapPosition, MapPresence, PathGuided},
+    terrain::Terrain,
 };
 use bevy::prelude::*;
 use bevy_mod_picking::prelude::{Click, Pointer, PointerButton};
 
 pub fn handle_zone_click_events(
     mut events: EventReader<Pointer<Click>>,
-    zone_query: Query<&MapPosition, With<Zone>>,
+    zone_query: Query<&MapPosition, With<Terrain>>,
     presence_query: Query<(Entity, &Selection), (With<PathGuided>, With<MapPresence>)>,
     mut game_action_queue: ResMut<GameActionQueue>,
     combat_query: Query<&Combat>,
