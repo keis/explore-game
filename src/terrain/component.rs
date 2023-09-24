@@ -63,12 +63,27 @@ pub struct ZoneDecorationTree;
 #[derive(Component, Default)]
 pub struct Water;
 
+#[derive(Default, Copy, Clone)]
+pub struct Outer(f32, f32, f32, f32, f32, f32);
+
+impl From<[f32; 6]> for Outer {
+    fn from(value: [f32; 6]) -> Self {
+        Self(value[0], value[1], value[2], value[3], value[4], value[5])
+    }
+}
+
+impl From<Outer> for [f32; 6] {
+    fn from(value: Outer) -> Self {
+        [value.0, value.1, value.2, value.3, value.4, value.5]
+    }
+}
+
 #[derive(Component, Default, Copy, Clone)]
 pub struct Height {
     pub height_amp: f32,
     pub height_base: f32,
-    pub outer_amp: [f32; 6],
-    pub outer_base: [f32; 6],
+    pub outer_amp: Outer,
+    pub outer_base: Outer,
 }
 
 impl Height {
@@ -83,19 +98,19 @@ impl Height {
         } else if da < db {
             if local_position.x > 0.0 {
                 if local_position.y > 0.0 {
-                    (self.outer_amp[0], self.outer_base[0])
+                    (self.outer_amp.0, self.outer_base.0)
                 } else {
-                    (self.outer_amp[5], self.outer_base[5])
+                    (self.outer_amp.5, self.outer_base.5)
                 }
             } else if local_position.y > 0.0 {
-                (self.outer_amp[2], self.outer_base[2])
+                (self.outer_amp.2, self.outer_base.2)
             } else {
-                (self.outer_amp[3], self.outer_base[3])
+                (self.outer_amp.3, self.outer_base.3)
             }
         } else if local_position.y > 0.0 {
-            (self.outer_amp[1], self.outer_base[1])
+            (self.outer_amp.1, self.outer_base.1)
         } else {
-            (self.outer_amp[4], self.outer_base[4])
+            (self.outer_amp.4, self.outer_base.4)
         };
         let noise = (1.0 + simplex_noise_2d(world_position)) / 2.0;
         base + noise * amp

@@ -112,8 +112,8 @@ pub fn spawn_zone(
     let height = Height {
         height_amp: prototype.height_amp,
         height_base: prototype.height_base,
-        outer_amp: prototype.outer_amp,
-        outer_base: prototype.outer_base,
+        outer_amp: prototype.outer_amp.into(),
+        outer_base: prototype.outer_base.into(),
     };
     let zone_entity = commands
         .spawn((

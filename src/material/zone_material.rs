@@ -53,8 +53,8 @@ impl ZoneMaterial {
             terrain_texture,
             height_amp: height.height_amp,
             height_base: height.height_base,
-            outer_amp: height.outer_amp,
-            outer_base: height.outer_base,
+            outer_amp: height.outer_amp.into(),
+            outer_base: height.outer_base.into(),
             ..default()
         }
     }
