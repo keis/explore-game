@@ -54,6 +54,16 @@ impl TryFrom<char> for Terrain {
     }
 }
 
+#[derive(Reflect, Default)]
+pub struct ZoneDecorationDetail(pub Vec2, pub f32);
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct ZoneDecorations {
+    pub crystal_detail: Option<ZoneDecorationDetail>,
+    pub tree_details: Vec<ZoneDecorationDetail>,
+}
+
 #[derive(Component)]
 pub struct ZoneDecorationCrystals;
 

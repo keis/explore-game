@@ -1,17 +1,19 @@
 use super::{Fog, HexAssets, HexCoord, MapPosition};
 use crate::{
     assets::MainAssets,
-    crystals::CrystalDeposit,
-    map_generator::{MapPrototype, ZonePrototype},
-    material::{TerrainMaterial, WaterMaterial, ZoneMaterial},
-    scene::save,
-    terrain::{
-        Height, Terrain, WaterBundle, ZoneDecorationCrystalsBundle, ZoneDecorationTreeBundle,
-    },
+    map_generator::ZonePrototype,
+    material::ZoneMaterial,
+    terrain::{Height, Terrain, ZoneDecorationDetail, ZoneDecorations},
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
 use bevy_mod_picking::prelude::{Pickable, PickingInteraction, RaycastPickTarget};
 use expl_hexgrid::{layout::SquareGridLayout, Grid};
+
+pub type ZoneParams<'w> = (
+    Res<'w, MainAssets>,
+    Res<'w, HexAssets>,
+    ResMut<'w, Assets<ZoneMaterial>>,
+);
 
 #[derive(Bundle, Default)]
 pub struct ZoneBundle {
@@ -23,6 +25,49 @@ pub struct ZoneBundle {
     pub raycast_pick_target: RaycastPickTarget,
     pub interaction: PickingInteraction,
     pub not_shadow_caster: NotShadowCaster,
+    pub material_mesh_bundle: MaterialMeshBundle<ZoneMaterial>,
+    pub zone_decorations: ZoneDecorations,
+}
+
+impl ZoneBundle {
+    pub fn new(
+        (main_assets, hex_assets, zone_materials): &mut ZoneParams,
+        position: HexCoord,
+        prototype: &ZonePrototype,
+    ) -> Self {
+        let terrain = prototype.terrain;
+        let height = Height {
+            height_amp: prototype.height_amp,
+            height_base: prototype.height_base,
+            outer_amp: prototype.outer_amp.into(),
+            outer_base: prototype.outer_base.into(),
+        };
+        let mut filliter = prototype.random_fill.iter();
+        Self {
+            position: MapPosition(position),
+            terrain,
+            height,
+            material_mesh_bundle: MaterialMeshBundle {
+                mesh: hex_assets.mesh.clone(),
+                material: zone_materials.add(ZoneMaterial::new(main_assets, &terrain, &height)),
+                transform: Transform::from_translation(position.into()),
+                ..default()
+            },
+            zone_decorations: ZoneDecorations {
+                crystal_detail: if prototype.crystals {
+                    filliter
+                        .next()
+                        .map(|(pos, scale)| ZoneDecorationDetail(*pos, *scale))
+                } else {
+                    None
+                },
+                tree_details: filliter
+                    .map(|(pos, scale)| ZoneDecorationDetail(*pos, *scale))
+                    .collect(),
+            },
+            ..default()
+        }
+    }
 }
 
 #[derive(Component)]
@@ -50,25 +95,6 @@ impl ZoneLayer {
     }
 }
 
-pub fn zone_layer_from_prototype<F>(
-    commands: &mut Commands,
-    prototype: &MapPrototype,
-    mut spawn_tile: F,
-) -> ZoneLayer
-where
-    F: FnMut(&mut Commands, HexCoord, &ZonePrototype) -> Entity,
-{
-    ZoneLayer {
-        tiles: Grid::with_data(
-            prototype.tiles.layout,
-            prototype
-                .tiles
-                .iter()
-                .map(|(coord, zoneproto)| spawn_tile(commands, coord, zoneproto)),
-        ),
-    }
-}
-
 pub fn update_outer_visible(
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     changed_zone_query: Query<(&Fog, &MapPosition, &Handle<ZoneMaterial>), Changed<Fog>>,
@@ -91,94 +117,4 @@ pub fn update_outer_visible(
             }
         }
     }
-}
-
-pub type ZoneParams<'w> = (
-    Res<'w, MainAssets>,
-    Res<'w, HexAssets>,
-    ResMut<'w, Assets<ZoneMaterial>>,
-    ResMut<'w, Assets<TerrainMaterial>>,
-    ResMut<'w, Assets<WaterMaterial>>,
-);
-
-#[allow(clippy::type_complexity)]
-pub fn spawn_zone(
-    commands: &mut Commands,
-    (main_assets, hex_assets, zone_materials, terrain_materials, water_materials): &mut ZoneParams,
-    position: HexCoord,
-    prototype: &ZonePrototype,
-) -> Entity {
-    let terrain = prototype.terrain;
-    let height = Height {
-        height_amp: prototype.height_amp,
-        height_base: prototype.height_base,
-        outer_amp: prototype.outer_amp.into(),
-        outer_base: prototype.outer_base.into(),
-    };
-    let zone_entity = commands
-        .spawn((
-            Name::new(format!("Zone {}", position)),
-            save::Save,
-            ZoneBundle {
-                position: MapPosition(position),
-                terrain,
-                height,
-                ..default()
-            },
-            MaterialMeshBundle {
-                mesh: hex_assets.mesh.clone(),
-                material: zone_materials.add(ZoneMaterial::new(main_assets, &terrain, &height)),
-                transform: Transform::from_translation(position.into()),
-                ..default()
-            },
-        ))
-        .with_children(|parent| match prototype.terrain {
-            Terrain::Forest => {
-                let mut filliter = prototype.random_fill.iter();
-                if prototype.crystals {
-                    let (pos, scale) = filliter.next().unwrap();
-                    parent.spawn((
-                        Name::new("Crystal"),
-                        ZoneDecorationCrystalsBundle::new(
-                            main_assets,
-                            terrain_materials,
-                            &height,
-                            position,
-                            *pos,
-                            *scale,
-                        ),
-                    ));
-                }
-
-                for (pos, scale) in filliter {
-                    parent.spawn((
-                        Name::new("Tree"),
-                        ZoneDecorationTreeBundle::new(
-                            main_assets,
-                            terrain_materials,
-                            &height,
-                            position,
-                            *pos,
-                            *scale,
-                        ),
-                    ));
-                }
-            }
-            Terrain::Mountain => {}
-            Terrain::Ocean => {
-                parent.spawn((
-                    Name::new("Water"),
-                    WaterBundle::new(hex_assets, water_materials),
-                ));
-            }
-        })
-        .id();
-
-    if prototype.crystals {
-        commands
-            .entity(zone_entity)
-            .insert(CrystalDeposit { amount: 20 });
-    }
-
-    zone_entity
 }

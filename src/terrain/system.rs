@@ -1,7 +1,7 @@
-use super::component::{ZoneDecorationCrystals, ZoneDecorationTree};
+use super::{bundle::*, component::*};
 use crate::{
     crystals::CrystalDeposit,
-    map::{MapEvent, MapPresence, PresenceLayer, ZoneLayer},
+    map::{Fog, MapEvent, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     structure::Camp,
 };
 use bevy::prelude::*;
@@ -61,5 +61,53 @@ pub fn show_decorations_behind_camp(
         while let Some(mut visibility) = decoration_iter.fetch_next() {
             *visibility = Visibility::Inherited;
         }
+    }
+}
+
+pub fn decorate_zone(
+    mut commands: Commands,
+    zone_query: Query<(
+        Entity,
+        &Terrain,
+        &MapPosition,
+        &Height,
+        &Fog,
+        &ZoneDecorations,
+    )>,
+    mut zone_decoration_params: ZoneDecorationParams,
+    mut water_params: WaterParams,
+) {
+    for (entity, terrain, position, height, fog, zone_decorations) in &zone_query {
+        commands.entity(entity).with_children(|parent| {
+            if let Some(ZoneDecorationDetail(pos, scale)) = zone_decorations.crystal_detail {
+                parent.spawn((
+                    Name::new("Crystal"),
+                    ZoneDecorationCrystalsBundle::new(
+                        &mut zone_decoration_params,
+                        height,
+                        fog,
+                        **position,
+                        pos,
+                        scale,
+                    ),
+                ));
+            }
+            for ZoneDecorationDetail(pos, scale) in &zone_decorations.tree_details {
+                parent.spawn((
+                    Name::new("Tree"),
+                    ZoneDecorationTreeBundle::new(
+                        &mut zone_decoration_params,
+                        height,
+                        fog,
+                        **position,
+                        *pos,
+                        *scale,
+                    ),
+                ));
+            }
+            if *terrain == Terrain::Ocean {
+                parent.spawn((Name::new("Water"), WaterBundle::new(&mut water_params)));
+            }
+        });
     }
 }

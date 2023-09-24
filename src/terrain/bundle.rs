@@ -7,6 +7,8 @@ use crate::{
 use bevy::{pbr::NotShadowCaster, prelude::*};
 use glam::Vec3Swizzles;
 
+pub type ZoneDecorationParams<'w> = (Res<'w, MainAssets>, ResMut<'w, Assets<TerrainMaterial>>);
+
 #[derive(Bundle)]
 pub struct ZoneDecorationCrystalsBundle {
     fog: Fog,
@@ -16,9 +18,9 @@ pub struct ZoneDecorationCrystalsBundle {
 
 impl ZoneDecorationCrystalsBundle {
     pub fn new(
-        main_assets: &Res<MainAssets>,
-        terrain_materials: &mut ResMut<Assets<TerrainMaterial>>,
+        (main_assets, terrain_materials): &mut ZoneDecorationParams,
         height: &Height,
+        fog: &Fog,
         position: HexCoord,
         relative: Vec2,
         scale: f32,
@@ -32,7 +34,11 @@ impl ZoneDecorationCrystalsBundle {
                     color: Color::rgba(0.7, 0.4, 0.4, 0.777),
                     ..default()
                 }),
-                visibility: Visibility::Hidden,
+                visibility: if fog.visible {
+                    Visibility::Inherited
+                } else {
+                    Visibility::Hidden
+                },
                 transform: Transform::from_translation(Vec3::new(
                     relative.x,
                     height.height_at(relative, Vec3::from(position).xz() + relative),
@@ -54,15 +60,15 @@ pub struct ZoneDecorationTreeBundle {
 
 impl ZoneDecorationTreeBundle {
     pub fn new(
-        main_assets: &Res<MainAssets>,
-        terrain_materials: &mut ResMut<Assets<TerrainMaterial>>,
+        (main_assets, terrain_materials): &mut ZoneDecorationParams,
         height: &Height,
+        fog: &Fog,
         position: HexCoord,
         relative: Vec2,
         scale: f32,
     ) -> Self {
         Self {
-            fog: Fog::default(),
+            fog: *fog,
             zone_decoration_tree: ZoneDecorationTree,
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: main_assets.pine_mesh.clone(),
@@ -70,7 +76,11 @@ impl ZoneDecorationTreeBundle {
                     texture: Some(main_assets.forest_texture.clone()),
                     ..default()
                 }),
-                visibility: Visibility::Hidden,
+                visibility: if fog.visible {
+                    Visibility::Inherited
+                } else {
+                    Visibility::Hidden
+                },
                 transform: Transform::from_translation(Vec3::new(
                     relative.x,
                     height.height_at(relative, Vec3::from(position).xz() + relative),
@@ -83,6 +93,8 @@ impl ZoneDecorationTreeBundle {
     }
 }
 
+pub type WaterParams<'w> = (Res<'w, HexAssets>, ResMut<'w, Assets<WaterMaterial>>);
+
 #[derive(Bundle, Default)]
 pub struct WaterBundle {
     water: Water,
@@ -92,10 +104,7 @@ pub struct WaterBundle {
 }
 
 impl WaterBundle {
-    pub fn new(
-        hex_assets: &Res<HexAssets>,
-        water_materials: &mut ResMut<Assets<WaterMaterial>>,
-    ) -> Self {
+    pub fn new((hex_assets, water_materials): &mut WaterParams) -> Self {
         Self {
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: hex_assets.mesh.clone(),

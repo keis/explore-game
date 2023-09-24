@@ -22,7 +22,7 @@ pub use pathfinder::PathFinder;
 pub use pathguided::PathGuided;
 pub use position::MapPosition;
 pub use presence::{MapPresence, Offset, PresenceLayer, ViewRadius};
-pub use zone::{spawn_zone, zone_layer_from_prototype, ZoneBundle, ZoneLayer, ZoneParams};
+pub use zone::{ZoneBundle, ZoneLayer, ZoneParams};
 
 #[derive(Resource)]
 pub struct Damaged(bool);

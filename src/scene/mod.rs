@@ -4,7 +4,8 @@ use crate::{
         party::{GroupCommandsExt, PartyBundle, PartyParams},
     },
     cleanup,
-    map::{spawn_zone, zone_layer_from_prototype, MapCommandsExt, PresenceLayer, ZoneParams},
+    crystals::CrystalDeposit,
+    map::{MapCommandsExt, PresenceLayer, ZoneBundle, ZoneLayer, ZoneParams},
     map_generator::{GenerateMapTask, MapPrototype, MapSeed},
     structure::{PortalBundle, PortalParams, SpawnerBundle, SpawnerParams},
     turn::Turn,
@@ -92,14 +93,27 @@ fn spawn_map(
     map_prototype_query: Query<&MapPrototype>,
 ) {
     let Ok(prototype) = map_prototype_query.get_single() else { return };
-    let zone_layer =
-        zone_layer_from_prototype(&mut commands, prototype, |commands, position, zoneproto| {
-            spawn_zone(commands, &mut zone_params, position, zoneproto)
-        });
+    let tiles = prototype
+        .tiles
+        .iter()
+        .map(|(position, zoneproto)| {
+            let mut zone = commands.spawn((
+                Name::new(format!("Zone {}", position)),
+                save::Save,
+                ZoneBundle::new(&mut zone_params, position, zoneproto),
+            ));
+
+            if zoneproto.crystals {
+                zone.insert(CrystalDeposit { amount: 20 });
+            }
+
+            zone.id()
+        })
+        .collect();
     commands.spawn((
         Name::new("Game map"),
         save::Save,
-        zone_layer,
+        ZoneLayer::new(prototype.tiles.layout, tiles),
         PresenceLayer::new(prototype.tiles.layout),
     ));
 }
