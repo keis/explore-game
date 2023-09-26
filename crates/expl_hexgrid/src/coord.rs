@@ -7,6 +7,9 @@ use std::{
 };
 use thiserror::Error;
 
+#[cfg(feature = "bevy-reflect")]
+use bevy_reflect::Reflect;
+
 // sqrt(3)
 const SQRT3: f32 = 1.732_050_8;
 
@@ -25,6 +28,7 @@ const SQRT3: f32 = 1.732_050_8;
     SerializeDisplay,
     DeserializeFromStr,
 )]
+#[cfg_attr(feature = "bevy-reflect", derive(Reflect))]
 pub struct HexCoord {
     pub q: i32,
     pub r: i32,

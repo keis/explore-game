@@ -1,5 +1,8 @@
 use super::{HexCoord, Transform};
 
+#[cfg(feature = "bevy-reflect")]
+use bevy_reflect::Reflect;
+
 pub trait GridLayout: Copy + Clone + PartialEq {
     type LayoutIter<'a>: Iterator<Item = HexCoord> + ExactSizeIterator
     where
@@ -13,7 +16,8 @@ pub trait GridLayout: Copy + Clone + PartialEq {
     fn center(&self) -> HexCoord;
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "bevy-reflect", derive(Reflect))]
 pub struct SquareGridLayout {
     pub width: i32,
     pub height: i32,
@@ -84,7 +88,8 @@ impl<'a> Iterator for SquareGridLayoutIterator<'a> {
 
 impl ExactSizeIterator for SquareGridLayoutIterator<'_> {}
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "bevy-reflect", derive(Reflect))]
 pub struct HexagonalGridLayout {
     pub radius: i32,
 }
