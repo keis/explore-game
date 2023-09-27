@@ -13,10 +13,12 @@ use explore_game::{
     input::InputPlugin,
     inspector::InspectorPlugin,
     interface::InterfacePlugin,
-    map::{MapPlugin, MapSeed},
+    map::MapPlugin,
+    map_generator::{MapGeneratorPlugin, MapSeed},
     material::MaterialPlugins,
     scene::ScenePlugin,
     structure::StructurePlugin,
+    terrain::TerrainPlugin,
     turn::TurnPlugin,
 };
 
@@ -80,9 +82,11 @@ fn main() {
             InputPlugin,
             InspectorPlugin,
             InterfacePlugin,
+            MapGeneratorPlugin,
             MapPlugin,
             ScenePlugin,
             StructurePlugin,
+            TerrainPlugin,
             TurnPlugin,
         ))
         .add_loading_state(

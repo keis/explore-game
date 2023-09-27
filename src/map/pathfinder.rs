@@ -1,11 +1,12 @@
-use super::{HexCoord, Zone, ZoneLayer};
+use super::{HexCoord, ZoneLayer};
+use crate::terrain::Terrain;
 use bevy::{ecs::system::SystemParam, prelude::*};
 use pathfinding::prelude::astar;
 
 #[derive(SystemParam)]
 pub struct PathFinder<'w, 's> {
     map_query: Query<'w, 's, &'static ZoneLayer>,
-    zone_query: Query<'w, 's, &'static Zone>,
+    terrain_query: Query<'w, 's, &'static Terrain>,
 }
 
 impl<'w, 's> PathFinder<'w, 's> {
@@ -18,7 +19,7 @@ impl<'w, 's> PathFinder<'w, 's> {
                     .filter(&|c: &HexCoord| {
                         zone_layer
                             .get(*c)
-                            .and_then(|&entity| self.zone_query.get(entity).ok())
+                            .and_then(|&entity| self.terrain_query.get(entity).ok())
                             .map_or(false, |zone| zone.is_walkable())
                     })
                     .map(|p| (p, 1))

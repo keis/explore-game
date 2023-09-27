@@ -1,9 +1,10 @@
 use crate::{
     actor::enemy::{EnemyBundle, EnemyParams},
     assets::MainAssets,
-    map::{Fog, HeightQuery, HexCoord, MapCommandsExt, MapPresence, PresenceLayer},
+    map::{Fog, HexCoord, MapCommandsExt, MapPresence, PresenceLayer},
     material::TerrainMaterial,
     scene::save,
+    terrain::HeightQuery,
 };
 use bevy::prelude::*;
 

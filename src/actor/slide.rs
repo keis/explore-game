@@ -1,4 +1,4 @@
-use crate::map::{HeightQuery, Offset};
+use crate::{map::Offset, terrain::HeightQuery};
 use bevy::prelude::*;
 use interpolation::Ease;
 

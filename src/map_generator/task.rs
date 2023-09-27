@@ -1,34 +1,17 @@
-use super::{Terrain, ZonePrototype};
-use crate::ExplError;
-use bevy::{
-    prelude::*,
-    tasks::{AsyncComputeTaskPool, Task},
-};
+use super::{MapPrototype, ZonePrototype};
+use crate::{terrain::Terrain, ExplError};
+use bevy::prelude::*;
 use expl_hexgrid::{
     layout::{HexagonalGridLayout, SquareGridLayout},
     spiral, Grid, GridLayout, HexCoord,
 };
 use expl_wfc::{
     tile::extract_tiles, tile::standard_tile_transforms, util::wrap_grid, util::LoadGrid,
-    Generator, Seed, SeedType, Template,
+    Generator, Seed, Template,
 };
 use rand::{seq::SliceRandom, Rng};
 use std::fs::File;
 use std::io;
-
-#[derive(Component)]
-pub struct MapPrototype {
-    pub tiles: Grid<SquareGridLayout, ZonePrototype>,
-    pub party_position: HexCoord,
-    pub portal_position: HexCoord,
-    pub spawner_position: HexCoord,
-}
-
-#[derive(Component)]
-pub struct GenerateMapTask(pub Task<Result<MapPrototype, ExplError>>);
-
-#[derive(Component)]
-pub struct MapSeed(pub Seed);
 
 fn random_in_circle<R: Rng>(rng: &mut R, radius: f32) -> Vec2 {
     let max_r = radius * radius;
@@ -56,7 +39,7 @@ fn random_fill(fixed: Vec<(Vec2, f32)>) -> Vec<(Vec2, f32)> {
     result
 }
 
-fn generate_map(seed: Seed) -> Result<MapPrototype, ExplError> {
+pub fn generate_map(seed: Seed) -> Result<MapPrototype, ExplError> {
     info!("Generating map with seed {} ...", seed);
     let mut file = io::BufReader::new(File::open("assets/maps/test.txt")?);
     let input = Grid::<HexagonalGridLayout, Terrain>::load(&mut file)?;
@@ -188,15 +171,4 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, ExplError> {
         portal_position,
         spawner_position,
     })
-}
-
-pub fn start_map_generation(mut commands: Commands, seed_query: Query<&MapSeed>) {
-    let seed: Seed = seed_query
-        .get_single()
-        .ok()
-        .map(|seed| seed.0)
-        .unwrap_or_else(|| Seed::new(SeedType::Square(30, 24)));
-    let thread_pool = AsyncComputeTaskPool::get();
-    let task = thread_pool.spawn(async move { generate_map(seed) });
-    commands.spawn(GenerateMapTask(task));
 }

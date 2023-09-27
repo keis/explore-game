@@ -10,10 +10,12 @@ pub mod input;
 pub mod inspector;
 pub mod interface;
 pub mod map;
+pub mod map_generator;
 pub mod material;
 pub mod path;
 pub mod scene;
 pub mod structure;
+pub mod terrain;
 pub mod turn;
 
 pub use error::ExplError;

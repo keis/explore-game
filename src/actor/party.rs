@@ -1,10 +1,8 @@
 use crate::{
     actor::{character::Movement, slide::Slide},
     input::SelectionBundle,
-    map::{
-        HeightQuery, HexCoord, MapCommandsExt, MapPresence, Offset, PathGuided, PresenceLayer,
-        ViewRadius,
-    },
+    map::{HexCoord, MapCommandsExt, MapPresence, Offset, PathGuided, PresenceLayer, ViewRadius},
+    terrain::HeightQuery,
     VIEW_RADIUS,
 };
 

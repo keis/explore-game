@@ -1,5 +1,5 @@
-use super::{Damaged, Fog, HexCoord, MapPosition, Zone, ZoneLayer};
-use crate::actor::enemy::Enemy;
+use super::{Damaged, Fog, HexCoord, MapPosition, ZoneLayer};
+use crate::{actor::enemy::Enemy, terrain::Terrain};
 use bevy::prelude::*;
 use expl_hexgrid::{layout::SquareGridLayout, Grid};
 use std::collections::hash_set::HashSet;
@@ -59,7 +59,7 @@ impl PresenceLayer {
 
 pub fn update_zone_visibility(
     view_query: Query<(&MapPresence, &ViewRadius), Without<Enemy>>,
-    mut zone_query: Query<(&MapPosition, &mut Fog), With<Zone>>,
+    mut zone_query: Query<(&MapPosition, &mut Fog), With<Terrain>>,
     mut damaged: ResMut<Damaged>,
 ) {
     for (position, mut fog) in zone_query.iter_mut() {

@@ -1,4 +1,8 @@
-use crate::map::Fog;
+use crate::{
+    assets::MainAssets,
+    map::Fog,
+    terrain::{Height, Terrain},
+};
 use bevy::{
     prelude::*,
     reflect::{TypePath, TypeUuid},
@@ -34,6 +38,26 @@ pub struct ZoneMaterial {
     pub outer_amp: [f32; 6],
     pub outer_base: [f32; 6],
     pub outer_visible: [bool; 6],
+}
+
+impl ZoneMaterial {
+    pub fn new(assets: &Res<MainAssets>, terrain: &Terrain, height: &Height) -> Self {
+        let terrain_texture = match terrain {
+            Terrain::Ocean => Some(assets.ocean_texture.clone()),
+            Terrain::Mountain => Some(assets.mountain_texture.clone()),
+            Terrain::Forest => Some(assets.grass_texture.clone()),
+        };
+
+        Self {
+            cloud_texture: Some(assets.cloud_texture.clone()),
+            terrain_texture,
+            height_amp: height.height_amp,
+            height_base: height.height_base,
+            outer_amp: height.outer_amp.into(),
+            outer_base: height.outer_base.into(),
+            ..default()
+        }
+    }
 }
 
 #[derive(Clone, Default, ShaderType)]
