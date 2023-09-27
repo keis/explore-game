@@ -2269,6 +2269,7 @@ dependencies = [
  "interpolation 0.3.0",
  "itertools 0.11.0",
  "leafwing-input-manager",
+ "moonshine-save",
  "noisy_bevy",
  "pathfinding",
  "rand",
@@ -3218,6 +3219,22 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "moonshine-save"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5624d12fbc72b10d25f09d1046aa1e200fb447821b397545663024afaeefd2a"
+dependencies = [
+ "bevy_app",
+ "bevy_ecs",
+ "bevy_hierarchy",
+ "bevy_reflect",
+ "bevy_scene",
+ "bevy_utils",
+ "ron",
+ "serde",
 ]
 
 [[package]]

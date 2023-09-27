@@ -110,12 +110,11 @@ mod tests {
     #[fixture]
     pub fn app() -> App {
         let mut app = App::new();
-        let map_entity = spawn_game_map(&mut app);
+        spawn_game_map(&mut app);
         app.insert_resource(ActionState::<Action>::default());
         app.world.spawn(CameraControl::default());
         app.world.spawn((
             MapPresence {
-                map: map_entity,
                 position: (1, 1).into(),
             },
             Selection::default(),
@@ -123,7 +122,6 @@ mod tests {
         ));
         app.world.spawn((
             MapPresence {
-                map: map_entity,
                 position: (2, 0).into(),
             },
             Selection::default(),

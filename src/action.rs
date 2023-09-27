@@ -10,6 +10,7 @@ use crate::{
         HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder, PathGuided, PresenceLayer,
         Terrain, Zone, ZoneLayer,
     },
+    scene::save,
     structure::{Camp, CampBundle, CampParams, Portal},
     turn::{set_player_turn, TurnState},
 };
@@ -216,14 +217,14 @@ pub fn handle_slide_stopped(
     mut commands: Commands,
     mut events: EventReader<SlideEvent>,
     mut queue: ResMut<GameActionQueue>,
-    presence_query: Query<&MapPresence>,
+    map_query: Query<Entity, With<PresenceLayer>>,
 ) {
+    let Ok(map_entity) = map_query.get_single() else { return };
     for _ in &mut events {
         let Some(GameAction::Move(e, next)) = queue.current else { return };
         queue.done();
-        let Ok(presence) = presence_query.get(e) else { continue };
 
-        commands.entity(presence.map).move_presence(e, next);
+        commands.entity(map_entity).move_presence(e, next);
     }
 }
 
@@ -291,7 +292,7 @@ pub fn handle_make_camp(
     let Some(GameAction::MakeCamp(party_entity)) = queue.current else { return };
 
     let Ok((mut party, group, presence)) = party_query.get_mut(party_entity) else { return };
-    let Ok((map_entity, zone_layer, presence_layer)) = map_query.get(presence.map) else { return };
+    let Ok((map_entity, zone_layer, presence_layer)) = map_query.get_single() else { return };
     let Some(zone) = zone_layer.get(presence.position).and_then(|&e| zone_query.get(e).ok()) else { return };
 
     if zone.terrain == Terrain::Mountain {
@@ -320,14 +321,18 @@ pub fn handle_make_camp(
         .entity(map_entity)
         .with_presence(position, |location| {
             location
-                .spawn(CampBundle::new(
-                    &mut spawn_camp_params,
-                    position,
-                    Camp {
-                        name: String::from("New camp"),
-                        supplies: party.supplies,
-                        crystals: party.crystals,
-                    },
+                .spawn((
+                    Name::new("Camp"),
+                    save::Save,
+                    CampBundle::new(
+                        &mut spawn_camp_params,
+                        position,
+                        Camp {
+                            name: String::from("New camp"),
+                            supplies: party.supplies,
+                            crystals: party.crystals,
+                        },
+                    ),
                 ))
                 .add_members(&group.members);
         });
@@ -337,13 +342,13 @@ pub fn handle_break_camp(
     mut commands: Commands,
     queue: ResMut<GameActionQueue>,
     mut party_query: Query<(&mut Party, &MapPresence)>,
-    mut map_query: Query<(Entity, &PresenceLayer)>,
+    map_query: Query<(Entity, &PresenceLayer)>,
     camp_query: Query<(Entity, &Camp, &Group)>,
 ) {
     let Some(GameAction::BreakCamp(e)) = queue.current else { return };
 
     let Ok((mut party, presence)) = party_query.get_mut(e) else { return };
-    let Ok((map_entity, presence_layer)) = map_query.get_mut(presence.map) else { return };
+    let Ok((map_entity, presence_layer)) = map_query.get_single() else { return };
     let Some((camp_entity, camp, group)) = camp_query.iter_many(presence_layer.presence(presence.position)).next() else { return };
     if !group.members.is_empty() {
         info!("Camp is not empty");
@@ -376,11 +381,13 @@ pub fn handle_create_party_from_camp(
     queue: ResMut<GameActionQueue>,
     mut spawn_party_params: PartyParams,
     mut camp_query: Query<(&mut Camp, &MapPresence)>,
+    map_query: Query<Entity, With<PresenceLayer>>,
 ) {
     let Some(GameAction::CreatePartyFromCamp(camp_entity, characters)) = &queue.current else { return };
 
     info!("Creating party at camp {:?} {:?}", camp_entity, characters);
     let (mut camp, presence) = camp_query.get_mut(*camp_entity).unwrap();
+    let Ok(map_entity) = map_query.get_single() else { return };
     let new_supplies = if camp.supplies > 0 {
         camp.supplies -= 1;
         1
@@ -388,14 +395,18 @@ pub fn handle_create_party_from_camp(
         0
     };
     commands
-        .entity(presence.map)
+        .entity(map_entity)
         .with_presence(presence.position, |location| {
             location
-                .spawn(PartyBundle::new(
-                    &mut spawn_party_params,
-                    presence.position,
-                    "New Party".to_string(),
-                    new_supplies,
+                .spawn((
+                    Name::new("Party"),
+                    save::Save,
+                    PartyBundle::new(
+                        &mut spawn_party_params,
+                        presence.position,
+                        "New Party".to_string(),
+                        new_supplies,
+                    ),
                 ))
                 .add_members(characters);
         });
@@ -406,10 +417,12 @@ pub fn handle_split_party(
     queue: ResMut<GameActionQueue>,
     mut spawn_party_params: PartyParams,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
+    map_query: Query<Entity, With<PresenceLayer>>,
 ) {
     let Some(GameAction::SplitParty(party_entity, characters)) = &queue.current else { return };
 
     let (mut party, group, presence) = party_query.get_mut(*party_entity).unwrap();
+    let Ok(map_entity) = map_query.get_single() else { return };
     if group.members.len() == characters.len() {
         info!("Refusing split resulting in empty party");
         return;
@@ -421,14 +434,18 @@ pub fn handle_split_party(
         0
     };
     commands
-        .entity(presence.map)
+        .entity(map_entity)
         .with_presence(presence.position, |location| {
             location
-                .spawn(PartyBundle::new(
-                    &mut spawn_party_params,
-                    presence.position,
-                    "New Party".to_string(),
-                    new_supplies,
+                .spawn((
+                    Name::new("Party"),
+                    save::Save,
+                    PartyBundle::new(
+                        &mut spawn_party_params,
+                        presence.position,
+                        "New Party".to_string(),
+                        new_supplies,
+                    ),
                 ))
                 .add_members(characters);
         });
@@ -476,7 +493,7 @@ pub fn handle_collect_crystals(
     let Some(GameAction::CollectCrystals(party_entity)) = queue.current else { return };
 
     let Ok((mut party, presence)) = party_query.get_mut(party_entity) else { return };
-    let Ok(zone_layer) = map_query.get(presence.map) else { return };
+    let Ok(zone_layer) = map_query.get_single() else { return };
     let Some(mut crystal_deposit) = zone_layer
         .get(presence.position)
         .and_then(|&e| crystal_deposit_query.get_mut(e).ok()) else {
@@ -496,7 +513,7 @@ pub fn handle_open_portal(
     let Some(GameAction::OpenPortal(party_entity)) = queue.current else { return };
 
     let Ok(presence) = party_query.get(party_entity) else { return };
-    let Ok(presence_layer) = map_query.get(presence.map) else { return };
+    let Ok(presence_layer) = map_query.get_single() else { return };
     let mut portal_iter = portal_query.iter_many_mut(presence_layer.presence(presence.position));
     let Some(mut portal) = portal_iter.fetch_next() else { return };
 

@@ -6,7 +6,6 @@ use std::collections::hash_set::HashSet;
 
 #[derive(Component, Debug)]
 pub struct MapPresence {
-    pub map: Entity,
     pub position: HexCoord,
 }
 

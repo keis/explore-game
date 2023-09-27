@@ -10,6 +10,7 @@ use crate::{
     assets::MainAssets,
     crystals::CrystalDeposit,
     material::{TerrainMaterial, WaterMaterial, ZoneMaterial},
+    scene::save,
     structure::Camp,
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
@@ -222,6 +223,7 @@ pub fn spawn_zone(
     let zone_entity = commands
         .spawn((
             Name::new(format!("Zone {}", position)),
+            save::Save,
             ZoneBundle {
                 position: MapPosition(position),
                 zone,

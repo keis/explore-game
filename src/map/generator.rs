@@ -10,7 +10,7 @@ use expl_hexgrid::{
 };
 use expl_wfc::{
     tile::extract_tiles, tile::standard_tile_transforms, util::wrap_grid, util::LoadGrid,
-    Generator, Seed, Template,
+    Generator, Seed, SeedType, Template,
 };
 use rand::{seq::SliceRandom, Rng};
 use std::fs::File;
@@ -27,7 +27,7 @@ pub struct MapPrototype {
 #[derive(Component)]
 pub struct GenerateMapTask(pub Task<Result<MapPrototype, ExplError>>);
 
-#[derive(Resource)]
+#[derive(Component)]
 pub struct MapSeed(pub Seed);
 
 fn random_in_circle<R: Rng>(rng: &mut R, radius: f32) -> Vec2 {
@@ -190,9 +190,13 @@ fn generate_map(seed: Seed) -> Result<MapPrototype, ExplError> {
     })
 }
 
-pub fn start_map_generation(mut commands: Commands, seed_res: Res<MapSeed>) {
+pub fn start_map_generation(mut commands: Commands, seed_query: Query<&MapSeed>) {
+    let seed: Seed = seed_query
+        .get_single()
+        .ok()
+        .map(|seed| seed.0)
+        .unwrap_or_else(|| Seed::new(SeedType::Square(30, 24)));
     let thread_pool = AsyncComputeTaskPool::get();
-    let seed = seed_res.into_inner().0;
     let task = thread_pool.spawn(async move { generate_map(seed) });
     commands.spawn(GenerateMapTask(task));
 }

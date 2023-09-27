@@ -39,6 +39,7 @@ bevy-inspector-egui = "0.19"
 bevy_egui = "0.21"
 bevy_mod_billboard = "0.4"
 thiserror = "1.0.48"
+moonshine-save = "0.3.1"
 
 [dev-dependencies]
 rstest = { version = "0.18.2", default-features = false }

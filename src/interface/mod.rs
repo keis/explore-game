@@ -84,6 +84,7 @@ impl Plugin for InterfacePlugin {
             Update,
             (
                 menu::handle_toggle_main_menu.run_if(action_just_pressed(Action::ToggleMainMenu)),
+                menu::handle_new_game,
                 menu::handle_save,
                 menu::handle_quit,
             )

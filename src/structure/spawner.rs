@@ -3,6 +3,7 @@ use crate::{
     assets::MainAssets,
     map::{Fog, HeightQuery, HexCoord, MapCommandsExt, MapPresence, PresenceLayer},
     material::TerrainMaterial,
+    scene::save,
 };
 use bevy::prelude::*;
 
@@ -73,7 +74,11 @@ pub fn spawn_enemy(
             commands
                 .entity(map_entity)
                 .with_presence(presence.position, |location| {
-                    location.spawn(EnemyBundle::new(&mut enemy_params, presence.position));
+                    location.spawn((
+                        Name::new("Enemy"),
+                        save::Save,
+                        EnemyBundle::new(&mut enemy_params, presence.position),
+                    ));
                 });
         }
     }

@@ -80,6 +80,7 @@ fn log_moves(
     presence_query: Query<&MapPresence>,
     presence_layer_query: Query<&PresenceLayer>,
 ) {
+    let Ok(presence_layer) = presence_layer_query.get_single() else { return };
     for event in &mut map_events {
         if let MapEvent::PresenceMoved {
             presence: entity,
@@ -89,13 +90,11 @@ fn log_moves(
         {
             info!("{:?} moved to {}", entity, position);
             if let Ok(presence) = presence_query.get(*entity) {
-                if let Ok(presence_layer) = presence_layer_query.get(presence.map) {
-                    for other in presence_layer
-                        .presence(presence.position)
-                        .filter(|e| *e != entity)
-                    {
-                        info!("{:?} is here", other);
-                    }
+                for other in presence_layer
+                    .presence(presence.position)
+                    .filter(|e| *e != entity)
+                {
+                    info!("{:?} is here", other);
                 }
             }
         }
