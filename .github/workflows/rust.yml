@@ -19,7 +19,7 @@ jobs:
       run: |
         df -h
         dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
-        sudo apt-get remove -y '^dotnet-.*' '^mongodb-.*' '^mysql-.*' '^llvm-.*' google-cloud-sdk azure-cli microsoft-edge-stable google-chrome-stable firefox powershell mono-devel
+        sudo apt-get remove -y '^dotnet-.*' '^mongodb-.*' '^mysql-.*' '^llvm-.*' '^google-cloud-.*' azure-cli microsoft-edge-stable google-chrome-stable firefox powershell mono-devel
         sudo apt-get autoremove -y
         df -h
         sudo rm -rf /usr/share/dotnet /usr/local/graalvm/ /usr/local/.ghcup/ /usr/local/share/powershell /usr/local/share/chromium /usr/local/lib/android /usr/local/lib/node_modules
