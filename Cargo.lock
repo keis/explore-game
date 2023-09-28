@@ -4341,8 +4341,9 @@ dependencies = [
 
 [[package]]
 name = "splines"
-version = "4.2.0"
-source = "git+https://github.com/phaazon/splines.git?branch=master#e1b78070c637bb873228b413ef2d42b5c595dddc"
+version = "4.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b71c74502daf438e97dc4eee0265c084cf76701992a4997f94d5b909498ad1d"
 dependencies = [
  "glam",
 ]
