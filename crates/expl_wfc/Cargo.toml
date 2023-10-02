@@ -21,7 +21,7 @@ thiserror = "1.0"
 clap = { version = "4.4", features = ["derive"] }
 criterion = "0.5"
 more-asserts = "0.3"
-pprof = { version = "0.12", features = ["flamegraph", "criterion"] }
+pprof = { version = "0.13", features = ["flamegraph", "criterion"] }
 rstest = { version = "0.18", default-features = false }
 serde-jsonlines = "0.4"
 
