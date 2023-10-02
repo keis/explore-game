@@ -31,7 +31,7 @@ leafwing-input-manager = { version = "0.10", default-features = false, features 
 noisy_bevy = "0.4"
 pathfinding = "4"
 rand = "0.8"
-smallvec = "1.6"
+smallvec = "1.11"
 splines = { version = "4", features = ["glam"] }
 bevy_mod_outline = "0.5"
 bevy_sprite3d = "2.6"
