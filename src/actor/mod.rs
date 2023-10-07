@@ -1,46 +1,97 @@
-use bevy::prelude::*;
+mod bundle;
+mod command;
+mod component;
+mod event;
+mod plugin;
+mod system;
+mod system_param;
 
-use crate::{
-    scene::{SceneSet, SceneState},
-    turn::TurnState,
-};
+pub use bundle::*;
+pub use command::GroupCommandsExt;
+pub use component::*;
+pub use event::*;
+pub use plugin::ActorPlugin;
+pub use system_param::*;
 
-pub mod character;
-pub mod enemy;
-pub mod party;
-pub mod slide;
+#[cfg(test)]
+mod tests {
+    use super::{
+        command::AddMembers, system::derive_party_movement, Group, GroupMember, Movement, Party,
+    };
+    use bevy::{ecs::system::Command, prelude::*};
+    use rstest::*;
+    use smallvec::SmallVec;
 
-pub struct ActorPlugin;
+    #[fixture]
+    fn app() -> App {
+        let mut app = App::new();
+        app.add_systems(Update, derive_party_movement);
+        let party_entity = app
+            .world
+            .spawn((Party::default(), Group::default(), Movement::default()))
+            .id();
+        let member_entity = app.world.spawn(Movement { points: 2 }).id();
+        let addmembers = AddMembers {
+            group: party_entity,
+            members: SmallVec::from_slice(&[member_entity]),
+        };
+        addmembers.apply(&mut app.world);
+        app
+    }
 
-impl Plugin for ActorPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_event::<slide::SlideEvent>()
-            .register_type::<character::Character>()
-            .register_type::<character::Movement>()
-            .register_type::<enemy::Enemy>()
-            .register_type::<party::Group>()
-            .register_type::<party::GroupMember>()
-            .register_type::<party::Party>()
-            .register_type::<slide::Slide>()
-            .add_systems(
-                OnEnter(TurnState::System),
-                enemy::move_enemy.run_if(in_state(SceneState::Active)),
-            )
-            .add_systems(
-                OnEnter(TurnState::Player),
-                character::reset_movement_points.run_if(in_state(SceneState::Active)),
-            )
-            .add_systems(
-                OnEnter(SceneState::Active),
-                (party::fluff_party, enemy::fluff_enemy).in_set(SceneSet::Populate),
-            )
-            .add_systems(
-                Update,
-                (
-                    party::derive_party_movement,
-                    party::despawn_empty_party,
-                    slide::slide,
-                ),
-            );
+    #[rstest]
+    fn join_group(mut app: App) {
+        let (group_entity, group) = app.world.query::<(Entity, &Group)>().single(&app.world);
+        assert_eq!(group.members.len(), 1);
+        let member_from_group_entity = group.members[0];
+
+        let (member_entity, member) = app
+            .world
+            .query::<(Entity, &GroupMember)>()
+            .single(&app.world);
+
+        assert_eq!(member_from_group_entity, member_entity);
+        assert_eq!(member.group, Some(group_entity));
+    }
+
+    #[rstest]
+    fn change_group(mut app: App) {
+        let (member_entity, _) = app
+            .world
+            .query::<(Entity, &GroupMember)>()
+            .single(&app.world);
+
+        let new_group_entity = app.world.spawn(Group::default()).id();
+        let addmembers = AddMembers {
+            group: new_group_entity,
+            members: SmallVec::from_slice(&[member_entity]),
+        };
+        addmembers.apply(&mut app.world);
+
+        let group = app
+            .world
+            .query::<&Group>()
+            .get(&app.world, new_group_entity)
+            .unwrap();
+
+        assert_eq!(group.members.len(), 1);
+        assert_eq!(group.members[0], member_entity);
+
+        let member = app.world.query::<&GroupMember>().single(&app.world);
+        assert_eq!(member.group, Some(new_group_entity));
+    }
+
+    #[rstest]
+    fn party_movement(mut app: App) {
+        let (mut movement, _member) = app
+            .world
+            .query::<(&mut Movement, &GroupMember)>()
+            .single_mut(&mut app.world);
+        movement.points = 3;
+
+        app.update();
+
+        let (party_movement, _party) = app.world.query::<(&Movement, &Party)>().single(&app.world);
+        assert_eq!(party_movement.points, 3);
     }
 }

@@ -1,10 +1,7 @@
 use super::{NextSelectionQuery, Selection};
 use crate::{
     action::{GameAction, GameActionQueue},
-    actor::{
-        character::Character,
-        party::{Group, Party},
-    },
+    actor::{Character, Group, Party},
     camera::{CameraControl, CameraTarget},
     interface::MenuLayer,
     map::{MapPresence, PresenceLayer},

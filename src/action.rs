@@ -1,8 +1,6 @@
 use crate::{
     actor::{
-        character::Movement,
-        party::{Group, GroupCommandsExt, Party, PartyBundle, PartyParams},
-        slide::{Slide, SlideEvent},
+        Group, GroupCommandsExt, Movement, Party, PartyBundle, PartyParams, Slide, SlideEvent,
     },
     combat::{Combat, CombatEvent},
     map::{

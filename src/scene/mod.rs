@@ -1,8 +1,5 @@
 use crate::{
-    actor::{
-        character::CharacterBundle,
-        party::{GroupCommandsExt, PartyBundle, PartyParams},
-    },
+    actor::{CharacterBundle, GroupCommandsExt, PartyBundle, PartyParams},
     assets::AssetState,
     cleanup,
     input::{action_just_pressed, Action},

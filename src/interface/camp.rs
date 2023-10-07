@@ -5,7 +5,7 @@ use super::{
     InterfaceAssets,
 };
 use crate::{
-    actor::{character::Character, party::Group},
+    actor::{Character, Group},
     input::{Action, ActionState, Selection},
     map::MapEvent,
     structure::Camp,

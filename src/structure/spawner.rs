@@ -1,5 +1,5 @@
 use crate::{
-    actor::enemy::{EnemyBundle, EnemyParams},
+    actor::{EnemyBundle, EnemyParams},
     assets::MainAssets,
     map::{Fog, HexCoord, MapCommandsExt, MapPresence, PresenceLayer},
     material::TerrainMaterial,

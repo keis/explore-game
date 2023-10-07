@@ -1,5 +1,5 @@
-use super::{Damaged, Fog, HexCoord, MapCommandsExt, MapPosition, ZoneLayer};
-use crate::{actor::enemy::Enemy, terrain::Terrain};
+use super::{Damaged, Fog, HexCoord, MapCommandsExt, MapPosition};
+use crate::{actor::Enemy, terrain::Terrain};
 use bevy::prelude::*;
 use expl_hexgrid::{layout::SquareGridLayout, Grid};
 use std::collections::hash_set::HashSet;
@@ -116,40 +116,6 @@ pub fn update_presence_fog(
                 *visibility = Visibility::Inherited;
             }
         }
-    }
-}
-
-#[allow(clippy::type_complexity)]
-pub fn update_enemy_visibility(
-    map_query: Query<(&ZoneLayer, &PresenceLayer)>,
-    mut enemy_params: ParamSet<(
-        Query<&mut Visibility, With<Enemy>>,
-        Query<(&MapPresence, &mut Visibility), (With<Enemy>, Changed<MapPresence>)>,
-    )>,
-    changed_zone_query: Query<(&MapPosition, &Fog), Changed<Fog>>,
-    any_zone_query: Query<&Fog>,
-) {
-    let Ok((zone_layer, presence_layer)) = map_query.get_single() else { return };
-    // Update enemies at locations that had their fog status changed
-    for (position, fog) in &changed_zone_query {
-        let mut enemy_query = enemy_params.p0();
-        let mut enemy_iter = enemy_query.iter_many_mut(presence_layer.presence(position.0));
-        while let Some(mut visibility) = enemy_iter.fetch_next() {
-            *visibility = if fog.visible {
-                Visibility::Inherited
-            } else {
-                Visibility::Hidden
-            };
-        }
-    }
-    // Update enemies that had their location changed
-    for (presence, mut visibility) in &mut enemy_params.p1() {
-        let Some(fog) = zone_layer.get(presence.position).and_then(|&e| any_zone_query.get(e).ok()) else { continue };
-        *visibility = if fog.visible {
-            Visibility::Inherited
-        } else {
-            Visibility::Hidden
-        };
     }
 }
 

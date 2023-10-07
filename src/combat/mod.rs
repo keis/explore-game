@@ -1,10 +1,6 @@
 use crate::{
     action::ActionSet,
-    actor::{
-        character::Character,
-        enemy::Enemy,
-        party::{Group, GroupCommandsExt, GroupMember},
-    },
+    actor::{Character, Enemy, Group, GroupCommandsExt, GroupMember},
     assets::{AssetState, MainAssets},
     interface::InterfaceAssets,
     map::{HexCoord, MapEvent, PresenceLayer},

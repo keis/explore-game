@@ -69,7 +69,6 @@ impl Plugin for MapPlugin {
                     pathdisplay::update_path_display,
                     presence::update_terrain_visibility,
                     presence::update_presence_fog,
-                    presence::update_enemy_visibility,
                 )
                     .run_if(in_state(AssetState::Loaded)),
             )
