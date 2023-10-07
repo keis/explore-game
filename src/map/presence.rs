@@ -1,18 +1,21 @@
-use super::{Damaged, Fog, HexCoord, MapPosition, ZoneLayer};
+use super::{Damaged, Fog, HexCoord, MapCommandsExt, MapPosition, ZoneLayer};
 use crate::{actor::enemy::Enemy, terrain::Terrain};
 use bevy::prelude::*;
 use expl_hexgrid::{layout::SquareGridLayout, Grid};
 use std::collections::hash_set::HashSet;
 
-#[derive(Component, Debug)]
+#[derive(Component, Reflect, Default, Debug)]
+#[reflect(Component)]
 pub struct MapPresence {
     pub position: HexCoord,
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
 pub struct Offset(pub Vec3);
 
-#[derive(Component, Default)]
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
 pub struct ViewRadius(pub u32);
 
 #[derive(Component)]
@@ -147,5 +150,18 @@ pub fn update_enemy_visibility(
         } else {
             Visibility::Hidden
         };
+    }
+}
+
+pub fn fluff_presence(
+    mut commands: Commands,
+    map_query: Query<Entity, With<PresenceLayer>>,
+    presence_query: Query<(Entity, &MapPresence), Without<GlobalTransform>>,
+) {
+    let Ok(map_entity) = map_query.get_single() else { return };
+    for (entity, presence) in &presence_query {
+        commands
+            .entity(map_entity)
+            .add_presence(entity, presence.position);
     }
 }

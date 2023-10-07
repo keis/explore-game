@@ -31,6 +31,7 @@ impl Plugin for InputPlugin {
                 .disable::<bevy_mod_picking::prelude::SelectionPlugin>(),
         )
         .add_plugins(InputManagerPlugin::<Action>::default())
+        .register_type::<Selection>()
         .init_resource::<ActionState<Action>>()
         .insert_resource(input_map())
         .add_systems(

@@ -6,31 +6,22 @@ use crate::{
     VIEW_RADIUS,
 };
 
-use bevy::ecs::system::{Command, EntityCommands};
+use bevy::ecs::{
+    entity::{EntityMapper, MapEntities},
+    reflect::ReflectMapEntities,
+    system::{Command, EntityCommands},
+};
 use bevy::prelude::*;
 use bevy_mod_outline::{OutlineBundle, OutlineVolume};
 use smallvec::SmallVec;
 use std::collections::HashSet;
 
-#[derive(Component, Debug, Default)]
+#[derive(Component, Reflect, Debug, Default)]
+#[reflect(Component)]
 pub struct Party {
     pub name: String,
     pub supplies: u32,
     pub crystals: u32,
-}
-
-#[derive(Bundle, Default)]
-pub struct PartyBundle {
-    pub party: Party,
-    pub group: Group,
-    pub movement: Movement,
-    pub selection_bundle: SelectionBundle,
-    pub offset: Offset,
-    pub view_radius: ViewRadius,
-    pub path_guided: PathGuided,
-    pub slide: Slide,
-    pub pbr_bundle: PbrBundle,
-    pub outline_bundle: OutlineBundle,
 }
 
 pub type PartyParams<'w, 's> = (
@@ -39,28 +30,60 @@ pub type PartyParams<'w, 's> = (
     HeightQuery<'w, 's>,
 );
 
+#[derive(Bundle, Default)]
+pub struct PartyBundle {
+    party: Party,
+    presence: MapPresence,
+    group: Group,
+    movement: Movement,
+    offset: Offset,
+    view_radius: ViewRadius,
+    slide: Slide,
+}
+
+#[derive(Bundle, Default)]
+pub struct PartyFluffBundle {
+    selection_bundle: SelectionBundle,
+    path_guided: PathGuided,
+    pbr_bundle: PbrBundle,
+    outline_bundle: OutlineBundle,
+}
+
 impl PartyBundle {
-    pub fn new(
-        (meshes, standard_materials, height_query): &mut PartyParams,
-        position: HexCoord,
-        name: String,
-        supplies: u32,
-    ) -> Self {
-        let offset = Vec3::new(0.0, 0.1, 0.0);
+    pub fn new(position: HexCoord, name: String, supplies: u32) -> Self {
+        let presence = MapPresence { position };
+        let offset = Offset(Vec3::new(0.0, 0.1, 0.0));
         Self {
             party: Party {
                 name,
                 supplies,
                 ..default()
             },
-            group: Group::default(),
-            offset: Offset(offset),
+            presence,
+            offset,
             view_radius: ViewRadius(VIEW_RADIUS),
+            ..default()
+        }
+    }
+
+    pub fn with_fluff(self, party_params: &mut PartyParams) -> (Self, PartyFluffBundle) {
+        let fluff = PartyFluffBundle::new(party_params, &self.presence, &self.offset);
+        (self, fluff)
+    }
+}
+
+impl PartyFluffBundle {
+    pub fn new(
+        (meshes, standard_materials, height_query): &mut PartyParams,
+        presence: &MapPresence,
+        offset: &Offset,
+    ) -> Self {
+        Self {
             pbr_bundle: PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Cube { size: 0.2 })),
                 material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
                 transform: Transform::from_translation(
-                    height_query.adjust(position.into()) + offset,
+                    height_query.adjust(presence.position.into()) + offset.0,
                 ),
                 ..default()
             },
@@ -77,14 +100,32 @@ impl PartyBundle {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Reflect, Default)]
+#[reflect(Component, MapEntities)]
 pub struct Group {
     pub members: SmallVec<[Entity; 8]>,
 }
 
-#[derive(Component)]
+impl MapEntities for Group {
+    fn map_entities(&mut self, entity_mapper: &mut EntityMapper) {
+        for entity in &mut self.members {
+            *entity = entity_mapper.get_or_reserve(*entity);
+        }
+    }
+}
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component, MapEntities)]
 pub struct GroupMember {
-    pub group: Entity,
+    pub group: Option<Entity>,
+}
+
+impl MapEntities for GroupMember {
+    fn map_entities(&mut self, entity_mapper: &mut EntityMapper) {
+        if let Some(group) = self.group.as_mut() {
+            *group = entity_mapper.get_or_reserve(*group);
+        }
+    }
 }
 
 struct AddMembers {
@@ -134,14 +175,16 @@ impl Command for AddMembers {
         let mut old = HashSet::new();
         for &member in &self.members {
             if let Some(mut group_member) = world.entity_mut(member).get_mut::<GroupMember>() {
-                if group_member.group != self.group {
-                    old.insert(group_member.group);
-                    group_member.group = self.group;
+                if group_member.group != Some(self.group) {
+                    if let Some(group) = group_member.group {
+                        old.insert(group);
+                    }
+                    group_member.group = Some(self.group);
                 }
             } else {
-                world
-                    .entity_mut(member)
-                    .insert(GroupMember { group: self.group });
+                world.entity_mut(member).insert(GroupMember {
+                    group: Some(self.group),
+                });
             }
         }
 
@@ -171,6 +214,19 @@ impl Command for RemoveMembers {
         for member in self.members {
             world.entity_mut(member).remove::<Parent>();
         }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn fluff_party(
+    mut commands: Commands,
+    party_query: Query<(Entity, &MapPresence, &Offset), (With<Party>, Without<GlobalTransform>)>,
+    mut party_params: PartyParams,
+) {
+    for (entity, presence, offset) in &party_query {
+        commands
+            .entity(entity)
+            .insert(PartyFluffBundle::new(&mut party_params, presence, offset));
     }
 }
 
@@ -238,7 +294,7 @@ mod tests {
             .single(&app.world);
 
         assert_eq!(member_from_group_entity, member_entity);
-        assert_eq!(member.group, group_entity);
+        assert_eq!(member.group, Some(group_entity));
     }
 
     #[rstest]
@@ -265,7 +321,7 @@ mod tests {
         assert_eq!(group.members[0], member_entity);
 
         let member = app.world.query::<&GroupMember>().single(&app.world);
-        assert_eq!(member.group, new_group_entity);
+        assert_eq!(member.group, Some(new_group_entity));
     }
 
     #[rstest]

@@ -1,7 +1,7 @@
 use crate::{
     assets::MainAssets,
     map::Fog,
-    terrain::{Height, Terrain},
+    terrain::{Height, OuterVisible, Terrain},
 };
 use bevy::{
     prelude::*,
@@ -41,7 +41,13 @@ pub struct ZoneMaterial {
 }
 
 impl ZoneMaterial {
-    pub fn new(assets: &Res<MainAssets>, terrain: &Terrain, height: &Height) -> Self {
+    pub fn new(
+        assets: &Res<MainAssets>,
+        terrain: &Terrain,
+        height: &Height,
+        fog: &Fog,
+        outer_visible: &OuterVisible,
+    ) -> Self {
         let terrain_texture = match terrain {
             Terrain::Ocean => Some(assets.ocean_texture.clone()),
             Terrain::Mountain => Some(assets.mountain_texture.clone()),
@@ -51,10 +57,13 @@ impl ZoneMaterial {
         Self {
             cloud_texture: Some(assets.cloud_texture.clone()),
             terrain_texture,
+            visible: fog.visible,
+            explored: fog.explored,
             height_amp: height.height_amp,
             height_base: height.height_base,
             outer_amp: height.outer_amp.into(),
             outer_base: height.outer_base.into(),
+            outer_visible: **outer_visible,
             ..default()
         }
     }
@@ -137,14 +146,24 @@ impl Material for ZoneMaterial {
 fn apply_to_material(
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     zone_query: Query<
-        (&Fog, &PickingInteraction, &Handle<ZoneMaterial>),
-        Or<(Changed<Fog>, Changed<PickingInteraction>)>,
+        (
+            &Fog,
+            &PickingInteraction,
+            &OuterVisible,
+            &Handle<ZoneMaterial>,
+        ),
+        Or<(
+            Changed<Fog>,
+            Changed<PickingInteraction>,
+            Changed<OuterVisible>,
+        )>,
     >,
 ) {
-    for (fog, interaction, handle) in &zone_query {
+    for (fog, interaction, outer_visible, handle) in &zone_query {
         let Some(material) = zone_materials.get_mut(handle) else { continue };
         material.visible = fog.visible;
         material.explored = fog.explored;
         material.hover = matches!(interaction, PickingInteraction::Hovered);
+        material.outer_visible = **outer_visible;
     }
 }

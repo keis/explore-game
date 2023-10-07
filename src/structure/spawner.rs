@@ -8,16 +8,10 @@ use crate::{
 };
 use bevy::prelude::*;
 
-#[derive(Component, Default, Debug)]
+#[derive(Component, Reflect, Default, Debug)]
+#[reflect(Component)]
 pub struct Spawner {
     charge: u8,
-}
-
-#[derive(Bundle, Default)]
-pub struct SpawnerBundle {
-    fog: Fog,
-    spawner: Spawner,
-    material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
 }
 
 pub type SpawnerParams<'w, 's> = (
@@ -26,10 +20,37 @@ pub type SpawnerParams<'w, 's> = (
     HeightQuery<'w, 's>,
 );
 
+#[derive(Bundle, Default)]
+pub struct SpawnerBundle {
+    presence: MapPresence,
+    fog: Fog,
+    spawner: Spawner,
+}
+
+#[derive(Bundle, Default)]
+pub struct SpawnerFluffBundle {
+    material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
+}
+
 impl SpawnerBundle {
+    pub fn new(position: HexCoord) -> Self {
+        Self {
+            presence: MapPresence { position },
+            ..default()
+        }
+    }
+
+    pub fn with_fluff(self, spawner_params: &mut SpawnerParams) -> (Self, SpawnerFluffBundle) {
+        let fluff = SpawnerFluffBundle::new(spawner_params, &self.presence, &self.fog);
+        (self, fluff)
+    }
+}
+
+impl SpawnerFluffBundle {
     pub fn new(
         (main_assets, terrain_materials, height_query): &mut SpawnerParams,
-        position: HexCoord,
+        presence: &MapPresence,
+        fog: &Fog,
     ) -> Self {
         Self {
             material_mesh_bundle: MaterialMeshBundle {
@@ -38,14 +59,32 @@ impl SpawnerBundle {
                     color: Color::rgb(0.8, 0.32, 0.3),
                     ..default()
                 }),
-                visibility: Visibility::Hidden,
-                transform: Transform::from_translation(height_query.adjust(position.into()))
-                    .with_scale(Vec3::splat(0.3))
-                    .with_rotation(Quat::from_rotation_y(2.0)),
+                visibility: if fog.visible {
+                    Visibility::Inherited
+                } else {
+                    Visibility::Hidden
+                },
+                transform: Transform::from_translation(
+                    height_query.adjust(presence.position.into()),
+                )
+                .with_scale(Vec3::splat(0.3))
+                .with_rotation(Quat::from_rotation_y(2.0)),
                 ..default()
             },
-            ..default()
         }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn fluff_spawner(
+    mut commands: Commands,
+    mut spawner_params: SpawnerParams,
+    spawner_query: Query<(Entity, &MapPresence, &Fog), (With<Spawner>, Without<GlobalTransform>)>,
+) {
+    for (entity, presence, fog) in &spawner_query {
+        commands
+            .entity(entity)
+            .insert(SpawnerFluffBundle::new(&mut spawner_params, presence, fog));
     }
 }
 
@@ -78,7 +117,7 @@ pub fn spawn_enemy(
                     location.spawn((
                         Name::new("Enemy"),
                         save::Save,
-                        EnemyBundle::new(&mut enemy_params, presence.position),
+                        EnemyBundle::new(presence.position).with_fluff(&mut enemy_params),
                     ));
                 });
         }

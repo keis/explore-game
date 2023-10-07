@@ -11,20 +11,9 @@ use bevy_mod_outline::{OutlineBundle, OutlineVolume};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
-#[derive(Component, Default)]
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
 pub struct Enemy;
-
-#[derive(Bundle, Default)]
-pub struct EnemyBundle {
-    pub enemy: Enemy,
-    pub offset: Offset,
-    pub view_radius: ViewRadius,
-    pub slide: Slide,
-    pub attack: Attack,
-    pub health: Health,
-    pub pbr_bundle: PbrBundle,
-    pub outline_bundle: OutlineBundle,
-}
 
 pub type EnemyParams<'w, 's> = (
     Res<'w, MainAssets>,
@@ -32,22 +21,55 @@ pub type EnemyParams<'w, 's> = (
     HeightQuery<'w, 's>,
 );
 
+#[derive(Bundle, Default)]
+pub struct EnemyBundle {
+    enemy: Enemy,
+    offset: Offset,
+    presence: MapPresence,
+    view_radius: ViewRadius,
+    slide: Slide,
+    attack: Attack,
+    health: Health,
+}
+
+#[derive(Bundle, Default)]
+pub struct EnemyFluffBundle {
+    pbr_bundle: PbrBundle,
+    outline_bundle: OutlineBundle,
+}
+
 impl EnemyBundle {
+    pub fn new(position: HexCoord) -> Self {
+        let presence = MapPresence { position };
+        let offset = Offset(Vec3::new(0.0, 0.05, 0.0));
+        Self {
+            offset,
+            presence,
+            view_radius: ViewRadius(3),
+            attack: Attack { low: 1, high: 10 },
+            health: Health(20, 20),
+            ..default()
+        }
+    }
+
+    pub fn with_fluff(self, enemy_params: &mut EnemyParams) -> (Self, EnemyFluffBundle) {
+        let fluff = EnemyFluffBundle::new(enemy_params, &self.presence, &self.offset);
+        (self, fluff)
+    }
+}
+
+impl EnemyFluffBundle {
     pub fn new(
         (main_assets, standard_materials, height_query): &mut EnemyParams,
-        position: HexCoord,
+        presence: &MapPresence,
+        offset: &Offset,
     ) -> Self {
-        let offset = Vec3::new(0.0, 0.05, 0.0);
         Self {
-            offset: Offset(offset),
-            view_radius: ViewRadius(3),
-            attack: Attack(1..10),
-            health: Health(20, 20),
             pbr_bundle: PbrBundle {
                 mesh: main_assets.blob_mesh.clone(),
                 material: standard_materials.add(Color::rgba(0.749, 0.584, 0.901, 0.666).into()),
                 transform: Transform::from_translation(
-                    height_query.adjust(position.into()) + offset,
+                    height_query.adjust(presence.position.into()) + offset.0,
                 )
                 .with_scale(Vec3::splat(0.5)),
                 visibility: Visibility::Hidden,
@@ -61,8 +83,20 @@ impl EnemyBundle {
                 },
                 ..default()
             },
-            ..default()
         }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn fluff_enemy(
+    mut commands: Commands,
+    enemy_query: Query<(Entity, &MapPresence, &Offset), (With<Enemy>, Without<GlobalTransform>)>,
+    mut enemy_params: EnemyParams,
+) {
+    for (entity, presence, offset) in &enemy_query {
+        commands
+            .entity(entity)
+            .insert(EnemyFluffBundle::new(&mut enemy_params, presence, offset));
     }
 }
 

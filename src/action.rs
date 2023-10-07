@@ -5,14 +5,13 @@ use crate::{
         slide::{Slide, SlideEvent},
     },
     combat::{Combat, CombatEvent},
-    crystals::CrystalDeposit,
     map::{
         HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder, PathGuided, PresenceLayer,
         ZoneLayer,
     },
     scene::save,
     structure::{Camp, CampBundle, CampParams, Portal},
-    terrain::Terrain,
+    terrain::{CrystalDeposit, Terrain},
     turn::{set_player_turn, TurnState},
 };
 use bevy::prelude::*;
@@ -32,7 +31,6 @@ pub enum GameAction {
     CreatePartyFromCamp(Entity, SmallVec<[Entity; 8]>),
     CollectCrystals(Entity),
     OpenPortal(Entity),
-    Save(),
 }
 
 pub struct ActionPlugin;
@@ -104,8 +102,7 @@ impl Plugin for ActionPlugin {
                         .run_if(in_state(TurnState::System))
                         .run_if(action_queue_is_empty),
                 ),
-            )
-            .add_systems(Update, handle_save.run_if(run_on_save));
+            );
     }
 }
 
@@ -326,14 +323,14 @@ pub fn handle_make_camp(
                     Name::new("Camp"),
                     save::Save,
                     CampBundle::new(
-                        &mut spawn_camp_params,
                         position,
                         Camp {
                             name: String::from("New camp"),
                             supplies: party.supplies,
                             crystals: party.crystals,
                         },
-                    ),
+                    )
+                    .with_fluff(&mut spawn_camp_params),
                 ))
                 .add_members(&group.members);
         });
@@ -380,7 +377,7 @@ pub fn handle_enter_camp(
 pub fn handle_create_party_from_camp(
     mut commands: Commands,
     queue: ResMut<GameActionQueue>,
-    mut spawn_party_params: PartyParams,
+    mut party_params: PartyParams,
     mut camp_query: Query<(&mut Camp, &MapPresence)>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) {
@@ -402,12 +399,8 @@ pub fn handle_create_party_from_camp(
                 .spawn((
                     Name::new("Party"),
                     save::Save,
-                    PartyBundle::new(
-                        &mut spawn_party_params,
-                        presence.position,
-                        "New Party".to_string(),
-                        new_supplies,
-                    ),
+                    PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
+                        .with_fluff(&mut party_params),
                 ))
                 .add_members(characters);
         });
@@ -416,7 +409,7 @@ pub fn handle_create_party_from_camp(
 pub fn handle_split_party(
     mut commands: Commands,
     queue: ResMut<GameActionQueue>,
-    mut spawn_party_params: PartyParams,
+    mut party_params: PartyParams,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) {
@@ -441,12 +434,8 @@ pub fn handle_split_party(
                 .spawn((
                     Name::new("Party"),
                     save::Save,
-                    PartyBundle::new(
-                        &mut spawn_party_params,
-                        presence.position,
-                        "New Party".to_string(),
-                        new_supplies,
-                    ),
+                    PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
+                        .with_fluff(&mut party_params),
                 ))
                 .add_members(characters);
         });
@@ -521,15 +510,4 @@ pub fn handle_open_portal(
     if !portal.open {
         portal.open = true;
     }
-}
-
-fn run_on_save(queue: Res<GameActionQueue>) -> bool {
-    if let Some(GameAction::Save()) = queue.current {
-        return true;
-    }
-    false
-}
-
-pub fn handle_save(_world: &mut World) {
-    info!("Save!");
 }

@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
-#[derive(Resource, Debug, Deref, DerefMut)]
+#[derive(Resource, Reflect, Default, Debug, Deref, DerefMut)]
+#[reflect(Resource)]
 pub struct Turn {
     pub number: u32,
 }
@@ -17,6 +18,7 @@ pub struct TurnPlugin;
 impl Plugin for TurnPlugin {
     fn build(&self, app: &mut App) {
         app.add_state::<TurnState>()
+            .register_type::<Turn>()
             .insert_resource(Turn { number: 0 })
             .add_systems(OnEnter(TurnState::Player), update_turn_counter);
     }

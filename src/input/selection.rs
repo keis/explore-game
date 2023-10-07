@@ -11,7 +11,8 @@ use bevy_mod_picking::{
     },
 };
 
-#[derive(Component, Debug, Default, Clone)]
+#[derive(Component, Reflect, Debug, Default, Clone)]
+#[reflect(Component)]
 pub struct Selection {
     pub is_selected: bool,
 }

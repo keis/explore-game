@@ -24,6 +24,8 @@ pub struct CombatPlugin;
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<CombatEvent>()
+            .register_type::<Attack>()
+            .register_type::<Health>()
             .add_systems(
                 Update,
                 initiate_combat
@@ -87,7 +89,8 @@ impl CombatBundle {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
 pub struct Health(pub u16, pub u16);
 
 impl Health {
@@ -96,8 +99,18 @@ impl Health {
     }
 }
 
-#[derive(Component, Default)]
-pub struct Attack(pub Range<u16>);
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct Attack {
+    pub low: u16,
+    pub high: u16,
+}
+
+impl Attack {
+    pub fn range(&self) -> Range<u16> {
+        self.low..self.high
+    }
+}
 
 #[derive(Event)]
 pub enum CombatEvent {
@@ -192,7 +205,7 @@ pub fn combat_round(
             if health.0 == 0 || maybe_attacker_enemy.is_some() == maybe_target_enemy.is_some() {
                 continue;
             }
-            let damage = rng.gen_range(attack.0.clone()).min(health.0);
+            let damage = rng.gen_range(attack.range()).min(health.0);
             health.0 -= damage;
             combat_events.send(if maybe_target_enemy.is_some() {
                 CombatEvent::EnemyDamage(entity, damage)
@@ -211,8 +224,8 @@ pub fn despawn_no_health(
     for (entity, health, maybe_member) in &health_query {
         if health.0 == 0 {
             info!("{:?} is dead", entity);
-            if let Some(member) = maybe_member {
-                commands.entity(member.group).remove_members(&[entity]);
+            if let Some(group) = maybe_member.and_then(|member| member.group) {
+                commands.entity(group).remove_members(&[entity]);
             }
             commands.entity(entity).despawn();
         }
