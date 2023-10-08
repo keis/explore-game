@@ -3,7 +3,8 @@ use crate::{
     assets::MainAssets,
     combat::{Attack, Health},
     input::{Selection, SelectionBundle},
-    map::{HexCoord, MapPresence, Offset, PathGuided, ViewRadius},
+    map::{HexCoord, MapPresence, Offset, ViewRadius},
+    path::PathGuided,
     terrain::HeightQuery,
     VIEW_RADIUS,
 };

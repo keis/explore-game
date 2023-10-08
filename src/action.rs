@@ -3,10 +3,8 @@ use crate::{
         Group, GroupCommandsExt, Movement, Party, PartyBundle, PartyParams, Slide, SlideEvent,
     },
     combat::{Combat, CombatEvent},
-    map::{
-        HexCoord, MapCommandsExt, MapPresence, Offset, PathFinder, PathGuided, PresenceLayer,
-        ZoneLayer,
-    },
+    map::{HexCoord, MapCommandsExt, MapPresence, Offset, PresenceLayer, ZoneLayer},
+    path::{PathFinder, PathGuided},
     scene::save,
     structure::{Camp, CampBundle, CampParams, Portal},
     terrain::{CrystalDeposit, Terrain},

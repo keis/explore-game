@@ -1,15 +1,8 @@
+use super::component::*;
 use bevy::{
     math::Vec3Swizzles, prelude::*, render::mesh::Indices, render::mesh::PrimitiveTopology,
 };
 use itertools::Itertools;
-use splines::Spline;
-
-#[derive(Component)]
-pub struct Path {
-    pub spline: Spline<f32, Vec3>,
-    pub steps: u32,
-    pub stroke: f32,
-}
 
 pub fn update_path_mesh(path: Path, mesh: &mut Mesh) {
     let step = 1.0 / path.steps as f32;
@@ -72,15 +65,17 @@ pub fn empty_path_mesh() -> Mesh {
     Mesh::new(PrimitiveTopology::TriangleList)
 }
 
-pub fn path_mesh(path: Path) -> Mesh {
-    let mut mesh = empty_path_mesh();
-    update_path_mesh(path, &mut mesh);
-    mesh
+impl From<Path> for Mesh {
+    fn from(path: Path) -> Mesh {
+        let mut mesh = empty_path_mesh();
+        update_path_mesh(path, &mut mesh);
+        mesh
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::path::{path_mesh, Path};
+    use super::Path;
     use bevy::{prelude::*, render::mesh::VertexAttributeValues};
     use splines::{Interpolation, Key, Spline};
 
@@ -112,7 +107,7 @@ mod tests {
             steps: 2,
             stroke: 0.1,
         };
-        let mesh = path_mesh(path);
+        let mesh: Mesh = path.into();
         if let VertexAttributeValues::Float32x3(positions) =
             mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap()
         {

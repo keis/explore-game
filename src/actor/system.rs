@@ -2,9 +2,10 @@ use super::{bundle::*, component::*, event::*, system_param::*};
 use crate::{
     action::{GameAction, GameActionQueue},
     map::{
-        Fog, HexCoord, MapCommandsExt, MapPosition, MapPresence, Offset, PathFinder, PresenceLayer,
-        ViewRadius, ZoneLayer,
+        Fog, HexCoord, MapCommandsExt, MapPosition, MapPresence, Offset, PresenceLayer, ViewRadius,
+        ZoneLayer,
     },
+    path::PathFinder,
     terrain::{HeightQuery, Terrain},
 };
 use bevy::prelude::*;

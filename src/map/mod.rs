@@ -8,9 +8,6 @@ mod commands;
 mod events;
 mod fog;
 mod hex;
-mod pathdisplay;
-mod pathfinder;
-mod pathguided;
 mod position;
 mod presence;
 mod zone;
@@ -20,9 +17,6 @@ pub use events::MapEvent;
 pub use expl_hexgrid::{layout::SquareGridLayout, HexCoord};
 pub use fog::Fog;
 pub use hex::HexAssets;
-pub use pathdisplay::PathDisplay;
-pub use pathfinder::PathFinder;
-pub use pathguided::PathGuided;
 pub use position::MapPosition;
 pub use presence::{MapPresence, Offset, PresenceLayer, ViewRadius};
 pub use zone::ZoneLayer;
@@ -66,7 +60,6 @@ impl Plugin for MapPlugin {
                 Update,
                 (
                     log_moves,
-                    pathdisplay::update_path_display,
                     presence::update_terrain_visibility,
                     presence::update_presence_fog,
                 )

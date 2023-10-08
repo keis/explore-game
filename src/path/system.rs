@@ -1,22 +1,13 @@
-use super::PathGuided;
-use crate::{
-    path::{path_mesh, update_path_mesh, Path},
-    scene::save,
-};
-use bevy::{pbr::NotShadowCaster, prelude::*};
+use super::{bundle::*, component::*, mesh::update_path_mesh};
+use crate::scene::save::Save;
+use bevy::prelude::*;
 use splines::{Interpolation, Key, Spline};
 use std::iter;
-
-#[derive(Component)]
-pub struct PathDisplay {
-    pub path_guided: Entity,
-}
 
 pub fn update_path_display(
     path_guided_query: Query<(Entity, &PathGuided), Changed<PathGuided>>,
     path_display_query: Query<(Entity, &PathDisplay, &mut Handle<Mesh>)>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
+    mut path_display_params: PathDisplayParams,
     mut commands: Commands,
 ) {
     for (entity, path_guided) in path_guided_query.iter() {
@@ -61,22 +52,13 @@ pub fn update_path_display(
             .iter()
             .find(|(_, path_display, _)| path_display.path_guided == entity)
         {
-            let mesh = meshes.get_mut(mesh_handle).unwrap();
+            let mesh = path_display_params.0.get_mut(mesh_handle).unwrap();
             update_path_mesh(path, mesh);
         } else {
             commands.spawn((
                 Name::new("Path Display"),
-                save::Save,
-                PathDisplay {
-                    path_guided: entity,
-                },
-                PbrBundle {
-                    mesh: meshes.add(path_mesh(path)),
-                    material: standard_materials.add(Color::rgba(0.8, 0.8, 0.8, 0.6).into()),
-                    transform: Transform::from_translation(Vec3::new(0.0, 0.5, 0.0)),
-                    ..default()
-                },
-                NotShadowCaster,
+                Save,
+                PathDisplayBundle::new(&mut path_display_params, entity, path),
             ));
         }
     }
