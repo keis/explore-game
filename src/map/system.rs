@@ -1,5 +1,5 @@
-use super::{command::*, component::*, event::*, hex::*, resource::*};
-use crate::{actor::Enemy, terrain::Terrain};
+use super::{asset::*, command::*, component::*, event::*, hex::*};
+use crate::actor::Enemy;
 use bevy::prelude::*;
 
 pub fn insert_hex_assets(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
@@ -39,8 +39,7 @@ pub fn log_moves(
 
 pub fn update_zone_visibility(
     view_query: Query<(&MapPresence, &ViewRadius), Without<Enemy>>,
-    mut zone_query: Query<(&MapPosition, &mut Fog), With<Terrain>>,
-    mut damaged: ResMut<Damaged>,
+    mut zone_query: Query<(&MapPosition, &mut Fog)>,
 ) {
     for (position, mut fog) in zone_query.iter_mut() {
         let visible = view_query
@@ -54,7 +53,6 @@ pub fn update_zone_visibility(
             }
         }
     }
-    damaged.0 = false;
 }
 
 pub fn update_terrain_visibility(
