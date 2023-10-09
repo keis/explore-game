@@ -69,20 +69,6 @@ impl BaseShape for HexagonBase {
 
 pub type SubdividedHexagon<T> = Subdivided<T, HexagonBase>;
 
-#[derive(Resource)]
-pub struct HexAssets {
-    pub mesh: Handle<Mesh>,
-}
-
-pub fn insert_hex_assets(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
-    commands.insert_resource(HexAssets {
-        mesh: meshes.add(Mesh::from(Hexagon {
-            radius: 1.0,
-            subdivisions: 2,
-        })),
-    });
-}
-
 mod consts {
     const HEX_RADIUS_RATIO: f32 = 0.866_025_4;
 

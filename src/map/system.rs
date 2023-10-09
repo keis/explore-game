@@ -1,61 +1,38 @@
-use super::{Damaged, Fog, HexCoord, MapCommandsExt, MapPosition};
+use super::{command::*, component::*, event::*, hex::*, resource::*};
 use crate::{actor::Enemy, terrain::Terrain};
 use bevy::prelude::*;
-use expl_hexgrid::{layout::SquareGridLayout, Grid};
-use std::collections::hash_set::HashSet;
 
-#[derive(Component, Reflect, Default, Debug)]
-#[reflect(Component)]
-pub struct MapPresence {
-    pub position: HexCoord,
+pub fn insert_hex_assets(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
+    commands.insert_resource(HexAssets {
+        mesh: meshes.add(Mesh::from(Hexagon {
+            radius: 1.0,
+            subdivisions: 2,
+        })),
+    });
 }
 
-#[derive(Component, Reflect, Default)]
-#[reflect(Component)]
-pub struct Offset(pub Vec3);
-
-#[derive(Component, Reflect, Default)]
-#[reflect(Component)]
-pub struct ViewRadius(pub u32);
-
-#[derive(Component)]
-pub struct PresenceLayer {
-    presence: Grid<SquareGridLayout, HashSet<Entity>>,
-    void: HashSet<Entity>,
-}
-
-impl PresenceLayer {
-    pub fn new(layout: SquareGridLayout) -> Self {
-        PresenceLayer {
-            presence: Grid::new(layout),
-            void: HashSet::new(),
-        }
-    }
-
-    pub fn presence(&self, position: HexCoord) -> impl Iterator<Item = &Entity> {
-        self.presence
-            .get(position)
-            .map_or_else(|| self.void.iter(), |presence| presence.iter())
-    }
-
-    pub fn add_presence(&mut self, position: HexCoord, entity: Entity) {
-        if let Some(presence) = self.presence.get_mut(position) {
-            presence.insert(entity);
-        }
-    }
-
-    pub fn remove_presence(&mut self, position: HexCoord, entity: Entity) {
-        if let Some(presence) = self.presence.get_mut(position) {
-            presence.remove(&entity);
-        }
-    }
-
-    pub fn move_presence(&mut self, entity: Entity, origin: HexCoord, destination: HexCoord) {
-        if let Some(o) = self.presence.get_mut(origin) {
-            o.remove(&entity);
-        }
-        if let Some(d) = self.presence.get_mut(destination) {
-            d.insert(entity);
+pub fn log_moves(
+    mut map_events: EventReader<MapEvent>,
+    presence_query: Query<&MapPresence>,
+    presence_layer_query: Query<&PresenceLayer>,
+) {
+    let Ok(presence_layer) = presence_layer_query.get_single() else { return };
+    for event in &mut map_events {
+        if let MapEvent::PresenceMoved {
+            presence: entity,
+            position,
+            ..
+        } = event
+        {
+            info!("{:?} moved to {}", entity, position);
+            if let Ok(presence) = presence_query.get(*entity) {
+                for other in presence_layer
+                    .presence(presence.position)
+                    .filter(|e| *e != entity)
+                {
+                    info!("{:?} is here", other);
+                }
+            }
         }
     }
 }
