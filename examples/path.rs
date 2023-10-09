@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
     window::PresentMode,
 };
-use explore_game::path::{path_mesh, Path};
+use explore_game::path::Path;
 use splines::{Interpolation, Key, Spline};
 
 fn main() {
@@ -42,18 +42,21 @@ fn setup(
 
     commands.spawn((
         PbrBundle {
-            mesh: meshes.add(path_mesh(Path {
-                spline: Spline::from_vec(vec![
-                    Key::new(
-                        0.0,
-                        Vec3::new(0.0, 0.0, 0.0),
-                        Interpolation::Bezier(Vec3::new(-2.0, 0.0, 0.5)),
-                    ),
-                    Key::new(1.0, Vec3::new(4.0, 0.0, 2.0), Interpolation::default()),
-                ]),
-                steps: 40,
-                stroke: 0.1,
-            })),
+            mesh: meshes.add(
+                Path {
+                    spline: Spline::from_vec(vec![
+                        Key::new(
+                            0.0,
+                            Vec3::new(0.0, 0.0, 0.0),
+                            Interpolation::Bezier(Vec3::new(-2.0, 0.0, 0.5)),
+                        ),
+                        Key::new(1.0, Vec3::new(4.0, 0.0, 2.0), Interpolation::default()),
+                    ]),
+                    steps: 40,
+                    stroke: 0.1,
+                }
+                .into(),
+            ),
             material: standard_materials.add(Color::rgb(1.0, 0.8, 0.8).into()),
             transform: Transform::from_translation(Vec3::new(-2.0, 0.5, 0.0)),
             ..default()
@@ -63,18 +66,21 @@ fn setup(
 
     commands.spawn((
         PbrBundle {
-            mesh: meshes.add(path_mesh(Path {
-                spline: Spline::from_vec(vec![
-                    Key::new(
-                        0.0,
-                        Vec3::new(0.0, 0.0, 0.0),
-                        Interpolation::Bezier(Vec3::new(0.0, 0.0, 1.0)),
-                    ),
-                    Key::new(1.0, Vec3::new(1.0, 0.0, 1.0), Interpolation::default()),
-                ]),
-                steps: 8,
-                stroke: 0.1,
-            })),
+            mesh: meshes.add(
+                Path {
+                    spline: Spline::from_vec(vec![
+                        Key::new(
+                            0.0,
+                            Vec3::new(0.0, 0.0, 0.0),
+                            Interpolation::Bezier(Vec3::new(0.0, 0.0, 1.0)),
+                        ),
+                        Key::new(1.0, Vec3::new(1.0, 0.0, 1.0), Interpolation::default()),
+                    ]),
+                    steps: 8,
+                    stroke: 0.1,
+                }
+                .into(),
+            ),
             material: standard_materials.add(Color::rgb(0.8, 1.0, 0.8).into()),
             transform: Transform::from_translation(Vec3::new(2.0, 0.5, 0.0)),
             ..default()

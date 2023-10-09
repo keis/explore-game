@@ -1,6 +1,19 @@
-use super::HexCoord;
+use crate::map::HexCoord;
 use bevy::prelude::*;
+use splines::Spline;
 use std::collections::VecDeque;
+
+#[derive(Component)]
+pub struct Path {
+    pub spline: Spline<f32, Vec3>,
+    pub steps: u32,
+    pub stroke: f32,
+}
+
+#[derive(Component)]
+pub struct PathDisplay {
+    pub path_guided: Entity,
+}
 
 #[derive(Component, Default, Debug)]
 pub struct PathGuided {

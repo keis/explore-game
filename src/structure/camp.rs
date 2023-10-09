@@ -1,5 +1,5 @@
 use crate::{
-    actor::party::Group,
+    actor::Group,
     assets::MainAssets,
     combat::Health,
     input::SelectionBundle,

@@ -2,7 +2,8 @@ use super::Selection;
 use crate::{
     action::{GameAction, GameActionQueue},
     combat::Combat,
-    map::{MapPosition, MapPresence, PathGuided},
+    map::{MapPosition, MapPresence},
+    path::PathGuided,
     terrain::Terrain,
 };
 use bevy::prelude::*;

@@ -1,5 +1,7 @@
-use super::{HexCoord, ZoneLayer};
-use crate::terrain::Terrain;
+use crate::{
+    map::{HexCoord, ZoneLayer},
+    terrain::Terrain,
+};
 use bevy::{ecs::system::SystemParam, prelude::*};
 use pathfinding::prelude::astar;
 
@@ -33,7 +35,8 @@ impl<'w, 's> PathFinder<'w, 's> {
 
 #[cfg(test)]
 mod tests {
-    use super::{super::tests::app, HexCoord, PathFinder};
+    use super::{HexCoord, PathFinder};
+    use crate::map::tests::app;
     use bevy::prelude::*;
     use rstest::*;
 

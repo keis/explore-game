@@ -102,8 +102,7 @@ fn input_map() -> InputMap<Action> {
 mod tests {
     use super::{action::handle_select_next, Action, ActionState, Selection};
     use crate::{
-        actor::character::Movement, camera::CameraControl, map::tests::spawn_game_map,
-        map::MapPresence,
+        actor::Movement, camera::CameraControl, map::tests::spawn_game_map, map::MapPresence,
     };
     use bevy::prelude::*;
     use rstest::*;

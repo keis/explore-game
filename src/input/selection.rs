@@ -1,5 +1,5 @@
 use crate::{
-    actor::character::Movement,
+    actor::Movement,
     input::{Action, ActionState},
     map::MapPresence,
 };

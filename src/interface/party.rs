@@ -5,10 +5,7 @@ use super::{
     InterfaceAssets,
 };
 use crate::{
-    actor::{
-        character::{Character, Movement},
-        party::{Group, Party},
-    },
+    actor::{Character, Group, Movement, Party},
     input::{Action, ActionState, Selection},
 };
 use bevy::prelude::*;
