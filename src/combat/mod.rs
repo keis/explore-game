@@ -2,18 +2,17 @@ use crate::{
     action::ActionSet,
     actor::{Character, Enemy, Group, GroupCommandsExt, GroupMember},
     assets::{AssetState, MainAssets},
-    interface::InterfaceAssets,
     map::{HexCoord, MapEvent, PresenceLayer},
 };
-use bevy::prelude::*;
-use bevy_mod_billboard::prelude::*;
+use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_sprite3d::{Sprite3d, Sprite3dBundle, Sprite3dParams};
 use core::{ops::Range, time::Duration};
 use rand::Rng;
 use smallvec::SmallVec;
 
 mod floating_text;
-use floating_text::{float_and_fade, FloatingText};
+use floating_text::{float_and_fade, spawn_floating_text};
+pub use floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource};
 
 pub struct CombatPlugin;
 
@@ -28,15 +27,16 @@ impl Plugin for CombatPlugin {
                     .run_if(on_event::<MapEvent>())
                     .in_set(ActionSet::PostApply),
             )
-            .add_systems(Update, float_and_fade)
             .add_systems(
                 Update,
                 (
-                    combat_round,
+                    combat_round.run_if(on_timer(Duration::from_millis(600))),
                     combat_log,
                     spawn_damage_text,
                     despawn_no_health.after(combat_round),
                     finish_combat.after(despawn_no_health),
+                    float_and_fade,
+                    spawn_floating_text.run_if(on_timer(Duration::from_millis(100))),
                 )
                     .run_if(in_state(AssetState::Loaded)),
             );
@@ -46,15 +46,15 @@ impl Plugin for CombatPlugin {
 #[derive(Component)]
 pub struct Combat {
     position: HexCoord,
-    timer: Timer,
     initiative_order: SmallVec<[Entity; 8]>,
     initiative: usize,
 }
 
 #[derive(Bundle)]
 pub struct CombatBundle {
-    pub combat: Combat,
-    pub sprite3d: Sprite3dBundle,
+    combat: Combat,
+    sprite3d: Sprite3dBundle,
+    floating_text_source: FloatingTextSource,
 }
 
 pub type CombatParams<'w, 's> = (Res<'w, MainAssets>, Sprite3dParams<'w, 's>);
@@ -68,7 +68,6 @@ impl CombatBundle {
         Self {
             combat: Combat {
                 position,
-                timer: Timer::new(Duration::from_millis(600), TimerMode::Repeating),
                 initiative: 0,
                 initiative_order,
             },
@@ -81,6 +80,7 @@ impl CombatBundle {
                 ..default()
             }
             .bundle(sprite_params),
+            floating_text_source: FloatingTextSource::default(),
         }
     }
 }
@@ -90,8 +90,10 @@ impl CombatBundle {
 pub struct Health(pub u16, pub u16);
 
 impl Health {
-    pub fn heal(&mut self, amount: u16) {
-        self.0 = (self.0 + amount).min(self.1);
+    pub fn heal(&mut self, amount: u16) -> u16 {
+        let healed = (self.1 - self.0).min(amount);
+        self.0 += healed;
+        healed
     }
 }
 
@@ -189,17 +191,11 @@ pub fn initiate_combat(
 pub fn combat_round(
     mut combat_query: Query<(Entity, &mut Combat)>,
     mut combat_events: EventWriter<CombatEvent>,
-    time: Res<Time>,
     attacker_query: Query<(&Attack, Option<&Enemy>)>,
     mut target_query: Query<(&mut Health, Option<&Enemy>)>,
 ) {
     let mut rng = rand::thread_rng();
     for (entity, mut combat) in &mut combat_query {
-        combat.timer.tick(time.delta());
-        if !combat.timer.just_finished() {
-            continue;
-        }
-
         info!("Combat at {}", combat.position);
 
         let attacker_entity = combat.initiative_order[combat.initiative];
@@ -270,60 +266,30 @@ pub fn finish_combat(
 }
 
 pub fn spawn_damage_text(
-    mut commands: Commands,
     mut combat_events: EventReader<CombatEvent>,
-    combat_query: Query<&Combat>,
-    interface_assets: Res<InterfaceAssets>,
+    mut combat_query: Query<&mut FloatingTextSource, With<Combat>>,
 ) {
     for event in &mut combat_events {
         match event {
             CombatEvent::FriendDamage(entity, damage) => {
-                let Ok(combat) = combat_query.get(*entity) else {
+                let Ok(mut floating_text_source) = combat_query.get_mut(*entity) else {
                     continue;
                 };
-                commands.spawn((
-                    FloatingText::default(),
-                    BillboardTextBundle {
-                        transform: Transform::from_translation(
-                            Vec3::from(combat.position) + Vec3::new(-0.1, 1.0, 0.2),
-                        )
-                        .with_scale(Vec3::new(0.01, 0.01, 0.01)),
-                        text: Text::from_sections([TextSection {
-                            value: damage.to_string(),
-                            style: TextStyle {
-                                font_size: 26.0,
-                                font: interface_assets.font.clone(),
-                                color: Color::RED,
-                            },
-                        }])
-                        .with_alignment(TextAlignment::Center),
-                        ..default()
-                    },
-                ));
+                floating_text_source.add(FloatingTextPrototype {
+                    value: damage.to_string(),
+                    alignment: FloatingTextAlignment::Left,
+                    color: Color::RED,
+                });
             }
             CombatEvent::EnemyDamage(entity, damage) => {
-                let Ok(combat) = combat_query.get(*entity) else {
+                let Ok(mut floating_text_source) = combat_query.get_mut(*entity) else {
                     continue;
                 };
-                commands.spawn((
-                    FloatingText::default(),
-                    BillboardTextBundle {
-                        transform: Transform::from_translation(
-                            Vec3::from(combat.position) + Vec3::new(0.1, 1.0, 0.2),
-                        )
-                        .with_scale(Vec3::new(0.01, 0.01, 0.01)),
-                        text: Text::from_sections([TextSection {
-                            value: damage.to_string(),
-                            style: TextStyle {
-                                font_size: 26.0,
-                                font: interface_assets.font.clone(),
-                                color: Color::YELLOW,
-                            },
-                        }])
-                        .with_alignment(TextAlignment::Center),
-                        ..default()
-                    },
-                ));
+                floating_text_source.add(FloatingTextPrototype {
+                    value: damage.to_string(),
+                    alignment: FloatingTextAlignment::Right,
+                    color: Color::YELLOW,
+                });
             }
             _ => {}
         }
