@@ -2,6 +2,7 @@ use super::component::*;
 use crate::{
     actor::Group,
     assets::MainAssets,
+    combat::FloatingTextSource,
     input::SelectionBundle,
     map::{Fog, HexCoord, MapPresence, Offset, ViewRadius},
     material::TerrainMaterial,
@@ -87,6 +88,7 @@ pub struct CampBundle {
 pub struct CampFluffBundle {
     selection: SelectionBundle,
     material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
+    floating_text_source: FloatingTextSource,
 }
 
 impl CampBundle {
@@ -125,6 +127,7 @@ impl CampFluffBundle {
                     .with_scale(Vec3::splat(0.5)),
                 ..default()
             },
+            floating_text_source: FloatingTextSource::with_offset(Vec3::new(0.0, 0.5, 0.0)),
             ..default()
         }
     }

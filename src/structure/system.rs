@@ -1,7 +1,7 @@
 use super::{bundle::*, component::*};
 use crate::{
     actor::{EnemyBundle, EnemyParams, Group},
-    combat::Health,
+    combat::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource, Health},
     map::{Fog, MapCommandsExt, MapPresence, Offset, PresenceLayer, ViewRadius},
     material::PortalMaterial,
     scene::save,
@@ -130,13 +130,20 @@ pub fn update_camp_view_radius(
 }
 
 pub fn heal_characters(
-    camp_query: Query<&Group, With<Camp>>,
+    mut camp_query: Query<(&Group, &mut FloatingTextSource), With<Camp>>,
     mut health_query: Query<&mut Health>,
 ) {
-    for group in &camp_query {
+    for (group, mut floating_text_source) in &mut camp_query {
         let mut iter = health_query.iter_many_mut(&group.members);
         while let Some(mut health) = iter.fetch_next() {
-            health.heal(2);
+            let healed = health.heal(2);
+            if healed > 0 {
+                floating_text_source.add(FloatingTextPrototype {
+                    value: healed.to_string(),
+                    alignment: FloatingTextAlignment::Center,
+                    color: Color::GREEN,
+                });
+            }
         }
     }
 }
