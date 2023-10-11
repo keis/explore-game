@@ -101,7 +101,9 @@ pub fn spawn_enemy(
     map_query: Query<(Entity, &PresenceLayer)>,
     mut enemy_params: EnemyParams,
 ) {
-    let Ok((map_entity, presence_layer)) = map_query.get_single() else { return };
+    let Ok((map_entity, presence_layer)) = map_query.get_single() else {
+        return;
+    };
     for (presence, mut spawner) in &mut spawner_query {
         if spawner.charge >= 3
             && presence_query

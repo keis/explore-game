@@ -136,7 +136,9 @@ fn fluff_loaded_map(
     map_query: Query<(Entity, &MapLayout)>,
     zone_query: Query<(&MapPosition, Entity), With<Terrain>>,
 ) {
-    let Ok((entity, &MapLayout(layout))) = map_query.get_single() else { return };
+    let Ok((entity, &MapLayout(layout))) = map_query.get_single() else {
+        return;
+    };
     let zone_lookup: HashMap<HexCoord, _> = zone_query
         .iter()
         .map(|(&MapPosition(p), e)| (p, e))
@@ -152,7 +154,9 @@ fn spawn_generated_map(
     mut zone_params: ZoneParams,
     map_prototype_query: Query<&MapPrototype>,
 ) {
-    let Ok(prototype) = map_prototype_query.get_single() else { return };
+    let Ok(prototype) = map_prototype_query.get_single() else {
+        return;
+    };
     let tiles = prototype
         .tiles
         .iter()
@@ -185,8 +189,12 @@ fn spawn_portal(
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) {
-    let Ok(prototype) = map_prototype_query.get_single() else { return };
-    let Ok(map_entity) = map_query.get_single() else { return };
+    let Ok(prototype) = map_prototype_query.get_single() else {
+        return;
+    };
+    let Ok(map_entity) = map_query.get_single() else {
+        return;
+    };
     commands
         .entity(map_entity)
         .with_presence(prototype.portal_position, |location| {
@@ -204,8 +212,12 @@ fn spawn_spawner(
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) {
-    let Ok(prototype) = map_prototype_query.get_single() else { return };
-    let Ok(map_entity) = map_query.get_single() else { return };
+    let Ok(prototype) = map_prototype_query.get_single() else {
+        return;
+    };
+    let Ok(map_entity) = map_query.get_single() else {
+        return;
+    };
     commands
         .entity(map_entity)
         .with_presence(prototype.spawner_position, |location| {
@@ -223,8 +235,12 @@ pub fn spawn_party(
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) {
-    let Ok(prototype) = map_prototype_query.get_single() else { return };
-    let Ok(map_entity) = map_query.get_single() else { return };
+    let Ok(prototype) = map_prototype_query.get_single() else {
+        return;
+    };
+    let Ok(map_entity) = map_query.get_single() else {
+        return;
+    };
     let character1 = commands
         .spawn((
             save::Save,

@@ -160,7 +160,9 @@ fn apply_to_material(
     >,
 ) {
     for (fog, interaction, outer_visible, handle) in &zone_query {
-        let Some(material) = zone_materials.get_mut(handle) else { continue };
+        let Some(material) = zone_materials.get_mut(handle) else {
+            continue;
+        };
         material.visible = fog.visible;
         material.explored = fog.explored;
         material.hover = matches!(interaction, PickingInteraction::Hovered);

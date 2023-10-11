@@ -16,7 +16,9 @@ pub fn log_moves(
     presence_query: Query<&MapPresence>,
     presence_layer_query: Query<&PresenceLayer>,
 ) {
-    let Ok(presence_layer) = presence_layer_query.get_single() else { return };
+    let Ok(presence_layer) = presence_layer_query.get_single() else {
+        return;
+    };
     for event in &mut map_events {
         if let MapEvent::PresenceMoved {
             presence: entity,
@@ -80,7 +82,9 @@ pub fn update_presence_fog(
     map_query: Query<&PresenceLayer>,
     mut presence_query: Query<(&mut Fog, &mut Visibility), With<MapPresence>>,
 ) {
-    let Ok(presence_layer) = map_query.get_single() else { return };
+    let Ok(presence_layer) = map_query.get_single() else {
+        return;
+    };
     for (position, zone_fog) in &zone_query {
         let mut presence_iter = presence_query.iter_many_mut(presence_layer.presence(position.0));
         while let Some((mut fog, mut visibility)) = presence_iter.fetch_next() {
@@ -99,7 +103,9 @@ pub fn fluff_presence(
     map_query: Query<Entity, With<PresenceLayer>>,
     presence_query: Query<(Entity, &MapPresence), Without<GlobalTransform>>,
 ) {
-    let Ok(map_entity) = map_query.get_single() else { return };
+    let Ok(map_entity) = map_query.get_single() else {
+        return;
+    };
     for (entity, presence) in &presence_query {
         commands
             .entity(map_entity)

@@ -118,7 +118,9 @@ impl<L: GridLayout, T> IndexMut<HexCoord> for Grid<L, T> {
 impl<L: GridLayout, T> Extend<(HexCoord, T)> for Grid<L, T> {
     fn extend<Iter: IntoIterator<Item = (HexCoord, T)>>(&mut self, iter: Iter) {
         for (coord, elem) in iter {
-            let Some(offset) = self.layout.offset(coord) else { continue };
+            let Some(offset) = self.layout.offset(coord) else {
+                continue;
+            };
             self.data[offset] = elem;
         }
     }

@@ -71,12 +71,16 @@ pub fn apply_selection_events(
     mut deselect_events: EventReader<Deselect>,
 ) {
     for Select(target) in &mut select_events {
-        let Ok(mut selection) = selection_query.get_mut(*target) else { continue };
+        let Ok(mut selection) = selection_query.get_mut(*target) else {
+            continue;
+        };
         selection.is_selected = true;
     }
 
     for Deselect(target) in &mut deselect_events {
-        let Ok(mut selection) = selection_query.get_mut(*target) else { continue };
+        let Ok(mut selection) = selection_query.get_mut(*target) else {
+            continue;
+        };
         selection.is_selected = false;
     }
 }
