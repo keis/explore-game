@@ -119,18 +119,24 @@ pub fn combat_log(mut combat_events: EventReader<CombatEvent>, combat_query: Que
     for event in &mut combat_events {
         match event {
             CombatEvent::Initiate(entity) => {
-                let Ok(combat) = combat_query.get(*entity) else { continue };
+                let Ok(combat) = combat_query.get(*entity) else {
+                    continue;
+                };
                 info!("Combat initiated at {}!", combat.position)
             }
             CombatEvent::FriendDamage(entity, damage) => {
-                let Ok(combat) = combat_query.get(*entity) else { continue };
+                let Ok(combat) = combat_query.get(*entity) else {
+                    continue;
+                };
                 info!(
                     "Damage to friendly in combat at {} - {}",
                     combat.position, damage
                 )
             }
             CombatEvent::EnemyDamage(entity, damage) => {
-                let Ok(combat) = combat_query.get(*entity) else { continue };
+                let Ok(combat) = combat_query.get(*entity) else {
+                    continue;
+                };
                 info!(
                     "Damage to enemy in combat at {} - {}",
                     combat.position, damage
@@ -151,9 +157,13 @@ pub fn initiate_combat(
     character_query: Query<Entity, With<Character>>,
     foe_query: Query<Entity, With<Enemy>>,
 ) {
-    let Ok(presence_layer) = map_query.get_single() else { return };
+    let Ok(presence_layer) = map_query.get_single() else {
+        return;
+    };
     for event in &mut map_events {
-        let MapEvent::PresenceMoved { position, .. } = event else { continue };
+        let MapEvent::PresenceMoved { position, .. } = event else {
+            continue;
+        };
         let friends: Vec<_> = friend_query
             .iter_many(presence_layer.presence(*position))
             .flat_map(|group| character_query.iter_many(&group.members))
@@ -195,7 +205,9 @@ pub fn combat_round(
         let attacker_entity = combat.initiative_order[combat.initiative];
         combat.initiative = (combat.initiative + 1) % combat.initiative_order.len();
 
-        let Ok((attack, maybe_attacker_enemy)) = attacker_query.get(attacker_entity) else { continue };
+        let Ok((attack, maybe_attacker_enemy)) = attacker_query.get(attacker_entity) else {
+            continue;
+        };
         let mut target_iter = target_query.iter_many_mut(&combat.initiative_order);
         while let Some((mut health, maybe_target_enemy)) = target_iter.fetch_next() {
             if health.0 == 0 || maybe_attacker_enemy.is_some() == maybe_target_enemy.is_some() {
@@ -266,7 +278,9 @@ pub fn spawn_damage_text(
     for event in &mut combat_events {
         match event {
             CombatEvent::FriendDamage(entity, damage) => {
-                let Ok(combat) = combat_query.get(*entity) else { continue };
+                let Ok(combat) = combat_query.get(*entity) else {
+                    continue;
+                };
                 commands.spawn((
                     FloatingText::default(),
                     BillboardTextBundle {
@@ -288,7 +302,9 @@ pub fn spawn_damage_text(
                 ));
             }
             CombatEvent::EnemyDamage(entity, damage) => {
-                let Ok(combat) = combat_query.get(*entity) else { continue };
+                let Ok(combat) = combat_query.get(*entity) else {
+                    continue;
+                };
                 commands.spawn((
                     FloatingText::default(),
                     BillboardTextBundle {

@@ -80,7 +80,9 @@ pub fn handle_select_next(
     camera_query: Query<Entity, With<CameraControl>>,
 ) {
     let camera_entity = camera_query.single();
-    let Some(next) = selection_param_set.p0().get() else { return };
+    let Some(next) = selection_param_set.p0().get() else {
+        return;
+    };
     for (entity, mut selection, presence) in &mut selection_param_set.p1() {
         if entity == next {
             selection.is_selected = true;
@@ -100,7 +102,9 @@ pub fn handle_camp(
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
     for (entity, presence, _) in party_query.iter().filter(|(_, _, s)| s.is_selected) {
-        let Ok(presence_layer) = map_query.get_single() else { continue };
+        let Ok(presence_layer) = map_query.get_single() else {
+            continue;
+        };
         if let Some(camp_entity) = camp_query
             .iter_many(presence_layer.presence(presence.position))
             .next()

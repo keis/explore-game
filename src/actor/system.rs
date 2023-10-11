@@ -52,11 +52,16 @@ pub fn move_enemy(
     target: Target,
     path_finder: PathFinder,
 ) {
-    let Ok((presence_layer, zone_layer)) = map_query.get_single() else { return };
+    let Ok((presence_layer, zone_layer)) = map_query.get_single() else {
+        return;
+    };
     let mut rng = thread_rng();
     for (entity, presence, view_radius) in &enemy_query {
         if let Some(target) = target.closest_in_view(presence.position, view_radius) {
-            let Some((path, _length)) = path_finder.find_path(presence.position, target.position) else { continue };
+            let Some((path, _length)) = path_finder.find_path(presence.position, target.position)
+            else {
+                continue;
+            };
             let Some(next) = path.get(1) else { continue };
             if enemy_query
                 .iter_many(presence_layer.presence(*next))
@@ -98,7 +103,9 @@ pub fn update_enemy_visibility(
     changed_zone_query: Query<(&MapPosition, &Fog), Changed<Fog>>,
     any_zone_query: Query<&Fog>,
 ) {
-    let Ok((zone_layer, presence_layer)) = map_query.get_single() else { return };
+    let Ok((zone_layer, presence_layer)) = map_query.get_single() else {
+        return;
+    };
     // Update enemies at locations that had their fog status changed
     for (position, fog) in &changed_zone_query {
         let mut enemy_query = enemy_params.p0();
@@ -113,7 +120,12 @@ pub fn update_enemy_visibility(
     }
     // Update enemies that had their location changed
     for (presence, mut visibility) in &mut enemy_params.p1() {
-        let Some(fog) = zone_layer.get(presence.position).and_then(|&e| any_zone_query.get(e).ok()) else { continue };
+        let Some(fog) = zone_layer
+            .get(presence.position)
+            .and_then(|&e| any_zone_query.get(e).ok())
+        else {
+            continue;
+        };
         *visibility = if fog.visible {
             Visibility::Inherited
         } else {
@@ -128,7 +140,9 @@ pub fn despawn_empty_party(
     party_query: Query<(Entity, &Group), (With<Party>, With<MapPresence>, Changed<Group>)>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) {
-    let Ok(map_entity) = map_query.get_single() else { return };
+    let Ok(map_entity) = map_query.get_single() else {
+        return;
+    };
     for (entity, group) in &party_query {
         if group.members.is_empty() {
             commands.entity(map_entity).despawn_presence(entity);

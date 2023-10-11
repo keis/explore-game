@@ -26,9 +26,16 @@ pub fn hide_decorations_behind_camp(
     zone_query: Query<&Children>,
     mut decoration_query: Query<(&mut Visibility, &Transform), With<ZoneDecorationTree>>,
 ) {
-    let Ok(map) = map_query.get_single() else { return };
+    let Ok(map) = map_query.get_single() else {
+        return;
+    };
     for presence in &presence_query {
-        let Some(children) = map.get(presence.position).and_then(|&e| zone_query.get(e).ok()) else { continue };
+        let Some(children) = map
+            .get(presence.position)
+            .and_then(|&e| zone_query.get(e).ok())
+        else {
+            continue;
+        };
         let mut decoration_iter = decoration_query.iter_many_mut(children);
         while let Some((mut visibility, transform)) = decoration_iter.fetch_next() {
             if transform.translation.distance(Vec3::ZERO) < 0.3 {
@@ -45,9 +52,13 @@ pub fn show_decorations_behind_camp(
     camp_query: Query<&Camp>,
     mut decoration_query: Query<&mut Visibility, With<ZoneDecorationTree>>,
 ) {
-    let Ok((map, presence_layer)) = map_query.get_single() else { return };
+    let Ok((map, presence_layer)) = map_query.get_single() else {
+        return;
+    };
     for event in &mut events {
-        let MapEvent::PresenceRemoved { position, .. } = event else { continue };
+        let MapEvent::PresenceRemoved { position, .. } = event else {
+            continue;
+        };
         if camp_query
             .iter_many(presence_layer.presence(*position))
             .next()
@@ -55,7 +66,9 @@ pub fn show_decorations_behind_camp(
         {
             continue;
         }
-        let Some(children) = map.get(*position).and_then(|&e| zone_query.get(e).ok()) else { continue };
+        let Some(children) = map.get(*position).and_then(|&e| zone_query.get(e).ok()) else {
+            continue;
+        };
         let mut decoration_iter = decoration_query.iter_many_mut(children);
         while let Some(mut visibility) = decoration_iter.fetch_next() {
             *visibility = Visibility::Inherited;
@@ -70,14 +83,21 @@ pub fn fluff_zone(
     zone_query: Query<(Entity, &Terrain, &MapPosition, &Height, &Fog), Without<GlobalTransform>>,
     neighbour_zone_query: Query<&Fog>,
 ) {
-    let Ok(zone_layer) = map_query.get_single() else { return };
+    let Ok(zone_layer) = map_query.get_single() else {
+        return;
+    };
     for (entity, terrain, position, height, fog) in &zone_query {
         let outer_visible = if fog.explored {
             OuterVisible([true; 6])
         } else {
             let mut bits = [false; 6];
             for (idx, coord) in position.0.neighbours().enumerate() {
-                let Some(fog) = zone_layer.get(coord).and_then(|&e| neighbour_zone_query.get(e).ok()) else { continue };
+                let Some(fog) = zone_layer
+                    .get(coord)
+                    .and_then(|&e| neighbour_zone_query.get(e).ok())
+                else {
+                    continue;
+                };
                 if fog.explored {
                     bits[idx % 6] = true;
                     bits[(idx + 5) % 6] = true;
@@ -149,14 +169,22 @@ pub fn update_outer_visible(
     changed_zone_query: Query<(Entity, &Fog, &MapPosition), Changed<Fog>>,
     mut zone_query: Query<(&Fog, &mut OuterVisible)>,
 ) {
-    let Ok(map) = map_query.get_single() else { return };
+    let Ok(map) = map_query.get_single() else {
+        return;
+    };
     for (entity, fog, position) in &changed_zone_query {
         if fog.explored {
-            let Ok((_, mut outer_visible)) = zone_query.get_mut(entity) else { continue };
+            let Ok((_, mut outer_visible)) = zone_query.get_mut(entity) else {
+                continue;
+            };
             outer_visible.0 = [true; 6];
 
             for (idx, coord) in position.0.neighbours().enumerate() {
-                let Some((neighbour_fog, mut neighbour_outer_visible)) = map.get(coord).and_then(|&e| zone_query.get_mut(e).ok()) else { continue };
+                let Some((neighbour_fog, mut neighbour_outer_visible)) =
+                    map.get(coord).and_then(|&e| zone_query.get_mut(e).ok())
+                else {
+                    continue;
+                };
                 if neighbour_fog.explored {
                     continue;
                 }

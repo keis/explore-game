@@ -74,7 +74,9 @@ where
         let mut alts = FixedBitSet::with_capacity(self.template.available_tiles());
         alts.set_range(.., true);
         for neighbour in coord.neighbours() {
-            let Some(Cell::Collapsed(tile)) = self.grid.get(neighbour) else { continue };
+            let Some(Cell::Collapsed(tile)) = self.grid.get(neighbour) else {
+                continue;
+            };
             for (offset, compatible) in self.template.compatible_tiles(*tile) {
                 if neighbour + *offset == coord {
                     alts.intersect_with(compatible);

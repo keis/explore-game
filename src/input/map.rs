@@ -25,7 +25,9 @@ pub fn handle_zone_click_events(
         if event.event.button != PointerButton::Primary {
             continue;
         }
-        let Ok(zone_position) = zone_query.get(event.target) else { continue };
+        let Ok(zone_position) = zone_query.get(event.target) else {
+            continue;
+        };
         for (entity, _) in presence_query.iter().filter(|(_, s)| s.is_selected) {
             game_action_queue.add(GameAction::MoveTo(entity, zone_position.0));
         }

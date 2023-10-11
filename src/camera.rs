@@ -170,7 +170,9 @@ fn cursor_grab(
     mut window_query: Query<&mut Window, With<PrimaryWindow>>,
     action_state: Res<ActionState<Action>>,
 ) {
-    let Ok(mut window) = window_query.get_single_mut() else { return };
+    let Ok(mut window) = window_query.get_single_mut() else {
+        return;
+    };
 
     if action_state.just_pressed(Action::PanCamera) {
         window.cursor.grab_mode = CursorGrabMode::Locked;
