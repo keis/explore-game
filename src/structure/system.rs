@@ -5,7 +5,6 @@ use crate::{
     map::{Fog, MapCommandsExt, MapPresence, Offset, PresenceLayer, ViewRadius},
     material::PortalMaterial,
     scene::save,
-    VIEW_RADIUS,
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
 
@@ -124,7 +123,7 @@ pub fn update_camp_view_radius(
         view_radius.0 = if group.members.is_empty() {
             0
         } else {
-            VIEW_RADIUS
+            ViewRadius::DEFAULT_VIEW_RADIUS
         };
     }
 }

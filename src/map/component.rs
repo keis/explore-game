@@ -27,9 +27,19 @@ pub struct MapPresence {
 #[reflect(Component)]
 pub struct Offset(pub Vec3);
 
-#[derive(Component, Reflect, Default)]
+#[derive(Component, Reflect)]
 #[reflect(Component)]
 pub struct ViewRadius(pub u32);
+
+impl ViewRadius {
+    pub const DEFAULT_VIEW_RADIUS: u32 = 3;
+}
+
+impl Default for ViewRadius {
+    fn default() -> Self {
+        Self(Self::DEFAULT_VIEW_RADIUS)
+    }
+}
 
 #[derive(Component)]
 pub struct PresenceLayer {

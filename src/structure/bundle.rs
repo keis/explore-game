@@ -7,7 +7,6 @@ use crate::{
     map::{Fog, HexCoord, MapPresence, Offset, ViewRadius},
     material::TerrainMaterial,
     terrain::HeightQuery,
-    VIEW_RADIUS,
 };
 use bevy::prelude::*;
 
@@ -96,7 +95,6 @@ impl CampBundle {
         Self {
             camp,
             presence: MapPresence { position },
-            view_radius: ViewRadius(VIEW_RADIUS),
             ..default()
         }
     }

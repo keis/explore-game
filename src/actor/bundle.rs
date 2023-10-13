@@ -6,7 +6,6 @@ use crate::{
     map::{HexCoord, MapPresence, Offset, ViewRadius},
     path::PathGuided,
     terrain::HeightQuery,
-    VIEW_RADIUS,
 };
 use bevy::prelude::*;
 use bevy_mod_outline::{OutlineBundle, OutlineVolume};
@@ -69,7 +68,6 @@ impl PartyBundle {
             },
             presence,
             offset,
-            view_radius: ViewRadius(VIEW_RADIUS),
             ..default()
         }
     }
