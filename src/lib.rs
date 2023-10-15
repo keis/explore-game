@@ -18,5 +18,3 @@ pub mod terrain;
 pub mod turn;
 
 pub use error::ExplError;
-
-pub const VIEW_RADIUS: u32 = 3;
