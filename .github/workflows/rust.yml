@@ -18,6 +18,7 @@ jobs:
     - name: Blast some junk off the disk
       run: |
         df -h
+        sudo apt-get update
         dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
         sudo apt-get remove -y '^dotnet-.*' '^mongodb-.*' '^mysql-.*' '^llvm-.*' '^google-cloud-.*' azure-cli microsoft-edge-stable google-chrome-stable firefox powershell mono-devel
         sudo apt-get autoremove -y
