@@ -3,12 +3,13 @@ use crate::{
         Group, GroupCommandsExt, Movement, Party, PartyBundle, PartyParams, Slide, SlideEvent,
     },
     combat::{Combat, CombatEvent},
-    map::{HexCoord, MapCommandsExt, MapPresence, Offset, PresenceLayer, ZoneLayer},
+    map::{Fog, HexCoord, MapCommandsExt, MapPresence, Offset, PresenceLayer, ZoneLayer},
     path::{PathFinder, PathGuided},
     scene::save,
     structure::{Camp, CampBundle, CampParams, Portal},
-    terrain::{CrystalDeposit, Terrain},
+    terrain::{CrystalDeposit, HeightQuery, Terrain},
     turn::{set_player_turn, TurnState},
+    ExplError,
 };
 use bevy::prelude::*;
 use smallvec::SmallVec;
@@ -66,8 +67,7 @@ impl Plugin for ActionPlugin {
             .add_systems(
                 Update,
                 (
-                    handle_move.run_if(has_current_action),
-                    handle_enemy_move.run_if(has_current_action),
+                    handle_move.pipe(warn).run_if(has_current_action),
                     handle_move_to.run_if(has_current_action),
                     handle_resume_move.run_if(has_current_action),
                     handle_make_camp.run_if(has_current_action),
@@ -164,53 +164,59 @@ pub fn ready_for_next_action(
         && combat_query.is_empty()
 }
 
+#[allow(clippy::type_complexity)]
 pub fn handle_move(
+    mut commands: Commands,
     mut queue: ResMut<GameActionQueue>,
-    mut party_query: Query<(&Group, &mut Movement, &mut Slide, &Transform, &Offset), With<Party>>,
-    mut member_movement_query: Query<&mut Movement, Without<Party>>,
-) {
-    let Some(GameAction::Move(e, next)) = queue.current else {
-        return;
-    };
-    let Ok((group, mut movement, mut slide, transform, offset)) = party_query.get_mut(e) else {
-        return;
+    mut party_query: Query<(
+        &mut Slide,
+        &mut Transform,
+        &MapPresence,
+        &Offset,
+        Option<(&mut Movement, &Group)>,
+    )>,
+    mut member_movement_query: Query<&mut Movement, Without<MapPresence>>,
+    zone_layer_query: Query<(Entity, &ZoneLayer)>,
+    fog_query: Query<&Fog>,
+    height_query: HeightQuery,
+) -> Result<(), ExplError> {
+    let Some(GameAction::Move(entity, next)) = queue.current else {
+        return Ok(());
     };
 
-    if movement.points == 0 {
-        warn!("tried to move without movement points");
-        queue.clear();
-        return;
-    }
+    let (mut slide, mut transform, presence, offset, maybe_movement) =
+        party_query.get_mut(entity)?;
+    let (map_entity, zone_layer) = zone_layer_query.get_single()?;
+    let source_fog = zone_layer
+        .get(presence.position)
+        .ok_or(ExplError::OutOfBounds)
+        .and_then(|&e| fog_query.get(e).map_err(ExplError::from))?;
 
-    movement.points -= 1;
-    let mut iter = member_movement_query.iter_many_mut(&group.members);
-    while let Some(mut movement) = iter.fetch_next() {
+    // Movement is not tracked for enemies
+    if let Some((mut movement, group)) = maybe_movement {
+        if movement.points == 0 {
+            queue.clear();
+            return Err(ExplError::MoveWithoutMovementPoints);
+        }
         movement.points -= 1;
+        let mut iter = member_movement_query.iter_many_mut(&group.members);
+        while let Some(mut movement) = iter.fetch_next() {
+            movement.points -= 1;
+        }
     }
 
-    slide.start = transform.translation;
-    slide.end = Vec3::from(next) + offset.0;
-    slide.progress = 0.0;
+    if source_fog.visible {
+        slide.start = transform.translation;
+        slide.end = Vec3::from(next) + offset.0;
+        slide.progress = 0.0;
 
-    queue.wait();
-}
+        queue.wait();
+    } else {
+        transform.translation = height_query.adjust(next.into()) + offset.0;
+        commands.entity(map_entity).move_presence(entity, next);
+    }
 
-fn handle_enemy_move(
-    mut queue: ResMut<GameActionQueue>,
-    mut enemy_query: Query<(&mut Slide, &Transform, &Offset), Without<Party>>,
-) {
-    let Some(GameAction::Move(e, next)) = queue.current else {
-        return;
-    };
-    let Ok((mut slide, transform, offset)) = enemy_query.get_mut(e) else {
-        return;
-    };
-
-    slide.start = transform.translation;
-    slide.end = Vec3::from(next) + offset.0;
-    slide.progress = 0.0;
-
-    queue.wait();
+    Ok(())
 }
 
 pub fn handle_slide_stopped(
