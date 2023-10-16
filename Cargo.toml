@@ -35,7 +35,7 @@ smallvec = "1.11"
 splines = { version = "4", features = ["glam"] }
 bevy_mod_outline = "0.5"
 bevy_sprite3d = "2.6"
-bevy-inspector-egui = "0.19"
+bevy-inspector-egui = "0.20"
 bevy_egui = "0.21"
 bevy_mod_billboard = "0.4"
 thiserror = "1.0.49"
