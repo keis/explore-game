@@ -4,6 +4,7 @@ pub mod assets;
 pub mod camera;
 pub mod cleanup;
 pub mod combat;
+pub mod enemy;
 mod error;
 pub mod input;
 pub mod inspector;

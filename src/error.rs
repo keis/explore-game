@@ -6,6 +6,10 @@ pub enum ExplError {
     IOError(#[from] std::io::Error),
     #[error(transparent)]
     WFCError(#[from] expl_wfc::WFCError),
+    #[error(transparent)]
+    QueryEntityError(#[from] bevy::ecs::query::QueryEntityError),
+    #[error(transparent)]
+    QuerySingleError(#[from] bevy::ecs::query::QuerySingleError),
     #[error("could not place portal")]
     CouldNotPlacePortal,
     #[error("could not place spawner")]
@@ -14,4 +18,8 @@ pub enum ExplError {
     CouldNotPlaceParty,
     #[error("unknown terrain character")]
     UnknownTerrainCharacter,
+    #[error("coordinate out of bounds")]
+    OutOfBounds,
+    #[error("tried to move without movement points")]
+    MoveWithoutMovementPoints,
 }

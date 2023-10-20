@@ -10,6 +10,7 @@ use explore_game::{
     assets::{AssetState, MainAssets},
     camera::CameraControlPlugin,
     combat::CombatPlugin,
+    enemy::EnemyPlugin,
     input::InputPlugin,
     inspector::InspectorPlugin,
     interface::InterfacePlugin,
@@ -90,6 +91,7 @@ fn main() {
             StructurePlugin,
             TerrainPlugin,
             TurnPlugin,
+            EnemyPlugin,
         ))
         .add_loading_state(
             LoadingState::new(AssetState::Loading).continue_to_state(AssetState::Loaded),

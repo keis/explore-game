@@ -1,5 +1,7 @@
-use super::component::*;
-use crate::map::{HexCoord, MapPresence, ViewRadius};
+use crate::{
+    actor::Party,
+    map::{HexCoord, MapPresence, ViewRadius},
+};
 use bevy::{ecs::system::SystemParam, prelude::*};
 
 #[derive(SystemParam)]
