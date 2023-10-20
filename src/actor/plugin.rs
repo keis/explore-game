@@ -18,10 +18,6 @@ impl Plugin for ActorPlugin {
             .register_type::<Party>()
             .register_type::<Slide>()
             .add_systems(
-                OnEnter(TurnState::System),
-                move_enemy.run_if(in_state(SceneState::Active)),
-            )
-            .add_systems(
                 OnEnter(TurnState::Player),
                 reset_movement_points.run_if(in_state(SceneState::Active)),
             )

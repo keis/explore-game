@@ -4,14 +4,12 @@ mod component;
 mod event;
 mod plugin;
 mod system;
-mod system_param;
 
 pub use bundle::*;
 pub use command::GroupCommandsExt;
 pub use component::*;
 pub use event::*;
 pub use plugin::ActorPlugin;
-pub use system_param::*;
 
 #[cfg(test)]
 mod tests {
