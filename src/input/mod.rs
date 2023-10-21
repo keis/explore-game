@@ -1,15 +1,8 @@
 #![allow(clippy::type_complexity)]
-use crate::turn;
-use bevy::prelude::*;
-use bevy_mod_picking::{
-    backend::prelude::PickSet,
-    highlight::update_highlight_assets,
-    prelude::{DebugPickingPlugin, DefaultPickingPlugins},
-};
-use leafwing_input_manager::prelude::*;
 
 mod action;
 mod map;
+mod plugin;
 mod selection;
 
 pub use action::Action;
@@ -18,85 +11,8 @@ pub use leafwing_input_manager::{
     plugin::InputManagerSystem,
     prelude::ActionState,
 };
+pub use plugin::InputPlugin;
 pub use selection::{Deselect, NextSelectionQuery, Select, Selection, SelectionBundle};
-
-pub struct InputPlugin;
-
-impl Plugin for InputPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(
-            DefaultPickingPlugins
-                .build()
-                .disable::<DebugPickingPlugin>()
-                .disable::<bevy_mod_picking::prelude::SelectionPlugin>(),
-        )
-        .add_plugins(InputManagerPlugin::<Action>::default())
-        .register_type::<Selection>()
-        .init_resource::<ActionState<Action>>()
-        .insert_resource(input_map())
-        .add_systems(
-            Update,
-            (
-                action::handle_deselect.run_if(action_just_pressed(Action::Deselect)),
-                action::handle_select_next.run_if(action_just_pressed(Action::SelectNext)),
-                action::handle_resume_move.run_if(action_just_pressed(Action::ResumeMove)),
-                action::handle_camp.run_if(action_just_pressed(Action::Camp)),
-                action::handle_break_camp.run_if(action_just_pressed(Action::BreakCamp)),
-                action::handle_create_party.run_if(action_just_pressed(Action::CreateParty)),
-                action::handle_split_party.run_if(action_just_pressed(Action::SplitParty)),
-                action::handle_merge_party.run_if(action_just_pressed(Action::MergeParty)),
-                action::handle_collect_crystals
-                    .run_if(action_just_pressed(Action::CollectCrystals)),
-                action::handle_open_portal.run_if(action_just_pressed(Action::OpenPortal)),
-                turn::set_system_turn.run_if(action_just_pressed(Action::NextTurn)),
-            )
-                .after(InputManagerSystem::ManualControl),
-        )
-        .add_systems(
-            PreUpdate,
-            action::magic_cancel
-                .in_set(InputManagerSystem::ManualControl)
-                .after(InputManagerSystem::Update)
-                .run_if(action_just_pressed(Action::Cancel)),
-        )
-        .add_systems(Update, map::handle_zone_click_events)
-        .add_event::<Select>()
-        .add_event::<Deselect>()
-        .add_systems(
-            PreUpdate,
-            (
-                selection::send_selection_events,
-                selection::apply_selection_events,
-            )
-                .in_set(PickSet::PostFocus),
-        )
-        .add_systems(
-            PreUpdate,
-            selection::update_highlight
-                .after(update_highlight_assets::<StandardMaterial>)
-                .in_set(PickSet::Last),
-        );
-    }
-}
-
-fn input_map() -> InputMap<Action> {
-    InputMap::default()
-        .insert(KeyCode::Up, Action::PanCameraUp)
-        .insert(KeyCode::Down, Action::PanCameraDown)
-        .insert(KeyCode::Left, Action::PanCameraLeft)
-        .insert(KeyCode::Right, Action::PanCameraRight)
-        .insert(KeyCode::ControlLeft, Action::MultiSelect)
-        .insert(KeyCode::Escape, Action::Cancel)
-        .insert(KeyCode::Space, Action::SelectNext)
-        .insert(KeyCode::M, Action::ResumeMove)
-        .insert(KeyCode::C, Action::Camp)
-        .insert(KeyCode::Return, Action::NextTurn)
-        .insert(SingleAxis::mouse_wheel_y(), Action::ZoomCamera)
-        .insert(MouseButton::Right, Action::PanCamera)
-        .insert(DualAxis::mouse_motion(), Action::PanCameraMotion)
-        .insert(KeyCode::F12, Action::ToggleInspector)
-        .build()
-}
 
 #[cfg(test)]
 mod tests {
