@@ -42,16 +42,20 @@ impl Plugin for ActionPlugin {
                 Update,
                 (
                     handle_move.pipe(warn).run_if(has_current_action),
-                    handle_move_to.run_if(has_current_action),
-                    handle_resume_move.run_if(has_current_action),
-                    handle_make_camp.run_if(has_current_action),
-                    handle_break_camp.run_if(has_current_action),
-                    handle_enter_camp.run_if(has_current_action),
-                    handle_create_party_from_camp.run_if(has_current_action),
-                    handle_split_party.run_if(has_current_action),
+                    handle_move_to.pipe(warn).run_if(has_current_action),
+                    handle_resume_move.pipe(warn).run_if(has_current_action),
+                    handle_make_camp.pipe(warn).run_if(has_current_action),
+                    handle_break_camp.pipe(warn).run_if(has_current_action),
+                    handle_enter_camp.pipe(warn).run_if(has_current_action),
+                    handle_create_party_from_camp
+                        .pipe(warn)
+                        .run_if(has_current_action),
+                    handle_split_party.pipe(warn).run_if(has_current_action),
                     handle_merge_party.run_if(has_current_action),
-                    handle_collect_crystals.run_if(has_current_action),
-                    handle_open_portal.run_if(has_current_action),
+                    handle_collect_crystals
+                        .pipe(warn)
+                        .run_if(has_current_action),
+                    handle_open_portal.pipe(warn).run_if(has_current_action),
                     handle_slide_stopped
                         .run_if(on_event::<SlideEvent>())
                         .after(handle_move),

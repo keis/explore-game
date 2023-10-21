@@ -22,4 +22,10 @@ pub enum ExplError {
     OutOfBounds,
     #[error("tried to move without movement points")]
     MoveWithoutMovementPoints,
+    #[error("invalid location: {0}")]
+    InvalidLocation(String),
+    #[error("invalid split")]
+    InvalidPartySplit,
+    #[error("not enough supplies")]
+    MissingSupplies,
 }

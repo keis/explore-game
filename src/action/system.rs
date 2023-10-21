@@ -118,16 +118,14 @@ pub fn handle_move_to(
     mut queue: ResMut<GameActionQueue>,
     mut presence_query: Query<(&MapPresence, &Movement, &mut PathGuided)>,
     path_finder: PathFinder,
-) {
+) -> Result<(), ExplError> {
     let Some(GameAction::MoveTo(e, goal)) = queue.current else {
-        return;
+        return Ok(());
     };
 
-    let Ok((presence, party_movement, mut pathguided)) = presence_query.get_mut(e) else {
-        return;
-    };
+    let (presence, party_movement, mut pathguided) = presence_query.get_mut(e)?;
     let Some((path, _length)) = path_finder.find_path(presence.position, goal) else {
-        return;
+        return Ok(());
     };
     pathguided.path(path);
     if party_movement.points > 0 {
@@ -135,23 +133,23 @@ pub fn handle_move_to(
             queue.add(GameAction::Move(e, *next));
         }
     }
+    Ok(())
 }
 
 pub fn handle_resume_move(
     mut queue: ResMut<GameActionQueue>,
     path_guided_query: Query<&PathGuided>,
-) {
+) -> Result<(), ExplError> {
     let Some(GameAction::ResumeMove(e)) = queue.current else {
-        return;
+        return Ok(());
     };
 
-    let Ok(pathguided) = path_guided_query.get(e) else {
-        return;
-    };
+    let pathguided = path_guided_query.get(e)?;
 
     if let Some(next) = pathguided.next() {
         queue.add(GameAction::Move(e, *next));
     }
+    Ok(())
 }
 
 pub fn handle_make_camp(
@@ -162,27 +160,20 @@ pub fn handle_make_camp(
     terrain_query: Query<&Terrain>,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
     camp_query: Query<&Camp>,
-) {
+) -> Result<(), ExplError> {
     let Some(GameAction::MakeCamp(party_entity)) = queue.current else {
-        return;
+        return Ok(());
     };
 
-    let Ok((mut party, group, presence)) = party_query.get_mut(party_entity) else {
-        return;
-    };
-    let Ok((map_entity, zone_layer, presence_layer)) = map_query.get_single() else {
-        return;
-    };
-    let Some(terrain) = zone_layer
+    let (mut party, group, presence) = party_query.get_mut(party_entity)?;
+    let (map_entity, zone_layer, presence_layer) = map_query.get_single()?;
+    let terrain = zone_layer
         .get(presence.position)
-        .and_then(|&e| terrain_query.get(e).ok())
-    else {
-        return;
-    };
+        .ok_or(ExplError::OutOfBounds)
+        .and_then(|&e| terrain_query.get(e).map_err(ExplError::from))?;
 
     if *terrain == Terrain::Mountain {
-        info!("Can't camp here");
-        return;
+        return Err(ExplError::InvalidLocation("bad terrain".to_string()));
     }
 
     let position = presence.position;
@@ -191,13 +182,11 @@ pub fn handle_make_camp(
         .next()
         .is_some()
     {
-        info!("There's already a camp here");
-        return;
+        return Err(ExplError::InvalidLocation("existing camp".to_string()));
     }
 
     if party.supplies == 0 {
-        info!("Party does not have enough supplies to make camp");
-        return;
+        return Err(ExplError::MissingSupplies);
     }
 
     info!("Spawning camp at {}", position);
@@ -221,6 +210,7 @@ pub fn handle_make_camp(
                 ))
                 .add_members(&group.members);
         });
+    Ok(())
 }
 
 pub fn handle_break_camp(
@@ -229,30 +219,24 @@ pub fn handle_break_camp(
     mut party_query: Query<(&mut Party, &MapPresence)>,
     map_query: Query<(Entity, &PresenceLayer)>,
     camp_query: Query<(Entity, &Camp, &Group)>,
-) {
+) -> Result<(), ExplError> {
     let Some(GameAction::BreakCamp(e)) = queue.current else {
-        return;
+        return Ok(());
     };
 
-    let Ok((mut party, presence)) = party_query.get_mut(e) else {
-        return;
-    };
-    let Ok((map_entity, presence_layer)) = map_query.get_single() else {
-        return;
-    };
-    let Some((camp_entity, camp, group)) = camp_query
+    let (mut party, presence) = party_query.get_mut(e)?;
+    let (map_entity, presence_layer) = map_query.get_single()?;
+    let (camp_entity, camp, group) = camp_query
         .iter_many(presence_layer.presence(presence.position))
         .next()
-    else {
-        return;
-    };
+        .ok_or(ExplError::InvalidLocation("no camp".to_string()))?;
     if !group.members.is_empty() {
-        info!("Camp is not empty");
-        return;
+        return Err(ExplError::InvalidLocation("camp is not empty".to_string()));
     }
     info!("Depawning camp at {}", presence.position);
     party.supplies += camp.supplies + 1;
     commands.entity(map_entity).despawn_presence(camp_entity);
+    Ok(())
 }
 
 pub fn handle_enter_camp(
@@ -260,22 +244,21 @@ pub fn handle_enter_camp(
     queue: ResMut<GameActionQueue>,
     mut party_query: Query<(&mut Party, &Group)>,
     mut camp_query: Query<&mut Camp>,
-) {
+) -> Result<(), ExplError> {
     let Some(GameAction::EnterCamp(party_entity, camp_entity)) = queue.current else {
-        return;
+        return Ok(());
     };
 
-    let Ok((mut party, group)) = party_query.get_mut(party_entity) else {
-        return;
-    };
-    let Ok(mut camp) = camp_query.get_mut(camp_entity) else {
-        return;
-    };
+    let (mut party, group) = party_query.get_mut(party_entity)?;
+    let mut camp = camp_query.get_mut(camp_entity)?;
+
     camp.supplies += party.supplies;
     party.supplies = 0;
     camp.crystals += party.crystals;
     party.crystals = 0;
     commands.entity(camp_entity).add_members(&group.members);
+
+    Ok(())
 }
 
 pub fn handle_create_party_from_camp(
@@ -284,16 +267,15 @@ pub fn handle_create_party_from_camp(
     mut party_params: PartyParams,
     mut camp_query: Query<(&mut Camp, &MapPresence)>,
     map_query: Query<Entity, With<PresenceLayer>>,
-) {
+) -> Result<(), ExplError> {
     let Some(GameAction::CreatePartyFromCamp(camp_entity, characters)) = &queue.current else {
-        return;
+        return Ok(());
     };
 
     info!("Creating party at camp {:?} {:?}", camp_entity, characters);
     let (mut camp, presence) = camp_query.get_mut(*camp_entity).unwrap();
-    let Ok(map_entity) = map_query.get_single() else {
-        return;
-    };
+    let map_entity = map_query.get_single()?;
+
     let new_supplies = if camp.supplies > 0 {
         camp.supplies -= 1;
         1
@@ -312,6 +294,8 @@ pub fn handle_create_party_from_camp(
                 ))
                 .add_members(characters);
         });
+
+    Ok(())
 }
 
 pub fn handle_split_party(
@@ -320,18 +304,15 @@ pub fn handle_split_party(
     mut party_params: PartyParams,
     mut party_query: Query<(&mut Party, &Group, &MapPresence)>,
     map_query: Query<Entity, With<PresenceLayer>>,
-) {
+) -> Result<(), ExplError> {
     let Some(GameAction::SplitParty(party_entity, characters)) = &queue.current else {
-        return;
+        return Ok(());
     };
 
     let (mut party, group, presence) = party_query.get_mut(*party_entity).unwrap();
-    let Ok(map_entity) = map_query.get_single() else {
-        return;
-    };
+    let map_entity = map_query.get_single()?;
     if group.members.len() == characters.len() {
-        info!("Refusing split resulting in empty party");
-        return;
+        return Err(ExplError::InvalidPartySplit);
     }
     let new_supplies = if party.supplies > 1 {
         party.supplies -= 1;
@@ -351,6 +332,7 @@ pub fn handle_split_party(
                 ))
                 .add_members(characters);
         });
+    Ok(())
 }
 
 pub fn handle_merge_party(
@@ -395,26 +377,21 @@ pub fn handle_collect_crystals(
     mut party_query: Query<(&mut Party, &MapPresence)>,
     map_query: Query<&ZoneLayer>,
     mut crystal_deposit_query: Query<&mut CrystalDeposit>,
-) {
+) -> Result<(), ExplError> {
     let Some(GameAction::CollectCrystals(party_entity)) = queue.current else {
-        return;
+        return Ok(());
     };
 
-    let Ok((mut party, presence)) = party_query.get_mut(party_entity) else {
-        return;
-    };
-    let Ok(zone_layer) = map_query.get_single() else {
-        return;
-    };
-    let Some(mut crystal_deposit) = zone_layer
+    let (mut party, presence) = party_query.get_mut(party_entity)?;
+    let zone_layer = map_query.get_single()?;
+
+    let mut crystal_deposit = zone_layer
         .get(presence.position)
-        .and_then(|&e| crystal_deposit_query.get_mut(e).ok())
-    else {
-        info!("No crystal deposit here");
-        return;
-    };
+        .ok_or(ExplError::OutOfBounds)
+        .and_then(|&e| crystal_deposit_query.get_mut(e).map_err(ExplError::from))?;
 
-    party.crystals += crystal_deposit.take() as u32
+    party.crystals += crystal_deposit.take() as u32;
+    Ok(())
 }
 
 pub fn handle_open_portal(
@@ -422,23 +399,22 @@ pub fn handle_open_portal(
     party_query: Query<&MapPresence, With<Party>>,
     map_query: Query<&PresenceLayer>,
     mut portal_query: Query<&mut Portal>,
-) {
+) -> Result<(), ExplError> {
     let Some(GameAction::OpenPortal(party_entity)) = queue.current else {
-        return;
+        return Ok(());
     };
 
-    let Ok(presence) = party_query.get(party_entity) else {
-        return;
-    };
-    let Ok(presence_layer) = map_query.get_single() else {
-        return;
-    };
+    let presence = party_query.get(party_entity)?;
+    let presence_layer = map_query.get_single()?;
+
     let mut portal_iter = portal_query.iter_many_mut(presence_layer.presence(presence.position));
-    let Some(mut portal) = portal_iter.fetch_next() else {
-        return;
-    };
+    let mut portal = portal_iter
+        .fetch_next()
+        .ok_or(ExplError::InvalidLocation("no portal present".to_string()))?;
 
     if !portal.open {
         portal.open = true;
     }
+
+    Ok(())
 }
