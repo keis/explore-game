@@ -1,168 +1,18 @@
+use super::queue::{GameAction, GameActionQueue};
 use crate::{
     actor::{
         Group, GroupCommandsExt, Movement, Party, PartyBundle, PartyParams, Slide, SlideEvent,
     },
-    combat::{Combat, CombatEvent},
-    map::{Fog, HexCoord, MapCommandsExt, MapPresence, Offset, PresenceLayer, ZoneLayer},
+    combat::CombatEvent,
+    map::{Fog, MapCommandsExt, MapPresence, Offset, PresenceLayer, ZoneLayer},
     path::{PathFinder, PathGuided},
     scene::save,
     structure::{Camp, CampBundle, CampParams, Portal},
     terrain::{CrystalDeposit, HeightQuery, Terrain},
-    turn::{set_player_turn, TurnState},
     ExplError,
 };
 use bevy::prelude::*;
 use smallvec::SmallVec;
-use std::collections::VecDeque;
-
-#[derive(Clone, Debug, Event)]
-pub enum GameAction {
-    Move(Entity, HexCoord),
-    MoveTo(Entity, HexCoord),
-    ResumeMove(Entity),
-    MakeCamp(Entity),
-    BreakCamp(Entity),
-    EnterCamp(Entity, Entity),
-    SplitParty(Entity, SmallVec<[Entity; 8]>),
-    MergeParty(SmallVec<[Entity; 8]>),
-    CreatePartyFromCamp(Entity, SmallVec<[Entity; 8]>),
-    CollectCrystals(Entity),
-    OpenPortal(Entity),
-}
-
-pub struct ActionPlugin;
-
-#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
-pub enum ActionSet {
-    Prepare,
-    Apply,
-    CommandFlush,
-    PostApply,
-    FollowUp,
-    Cleanup,
-}
-
-impl Plugin for ActionPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_event::<GameAction>()
-            .insert_resource(GameActionQueue::default())
-            .configure_sets(
-                Update,
-                (
-                    ActionSet::Prepare,
-                    ActionSet::Apply,
-                    ActionSet::CommandFlush,
-                    ActionSet::PostApply,
-                    ActionSet::FollowUp,
-                    ActionSet::Cleanup,
-                )
-                    .chain(),
-            )
-            .add_systems(
-                Update,
-                advance_action_queue
-                    .run_if(ready_for_next_action)
-                    .in_set(ActionSet::Prepare),
-            )
-            .add_systems(
-                Update,
-                (
-                    handle_move.pipe(warn).run_if(has_current_action),
-                    handle_move_to.run_if(has_current_action),
-                    handle_resume_move.run_if(has_current_action),
-                    handle_make_camp.run_if(has_current_action),
-                    handle_break_camp.run_if(has_current_action),
-                    handle_enter_camp.run_if(has_current_action),
-                    handle_create_party_from_camp.run_if(has_current_action),
-                    handle_split_party.run_if(has_current_action),
-                    handle_merge_party.run_if(has_current_action),
-                    handle_collect_crystals.run_if(has_current_action),
-                    handle_open_portal.run_if(has_current_action),
-                    handle_slide_stopped
-                        .run_if(on_event::<SlideEvent>())
-                        .after(handle_move),
-                )
-                    .in_set(ActionSet::Apply),
-            )
-            .add_systems(
-                Update,
-                (
-                    apply_deferred.in_set(ActionSet::CommandFlush),
-                    follow_path
-                        .run_if(has_current_action)
-                        .in_set(ActionSet::FollowUp),
-                    clear_current_action
-                        .run_if(has_current_action)
-                        .in_set(ActionSet::Cleanup),
-                    set_player_turn
-                        .run_if(in_state(TurnState::System))
-                        .run_if(action_queue_is_empty),
-                ),
-            );
-    }
-}
-
-#[derive(Default, Resource)]
-pub struct GameActionQueue {
-    deque: VecDeque<GameAction>,
-    current: Option<GameAction>,
-    waiting: bool,
-}
-
-impl GameActionQueue {
-    pub fn add(&mut self, action: GameAction) {
-        self.deque.push_back(action);
-    }
-
-    pub fn is_waiting(&self) -> bool {
-        self.waiting
-    }
-
-    pub fn has_next(&self) -> bool {
-        !self.deque.is_empty()
-    }
-
-    pub fn start_next(&mut self) {
-        self.current = self.deque.pop_front();
-    }
-
-    pub fn wait(&mut self) {
-        self.waiting = true;
-    }
-
-    pub fn done(&mut self) {
-        self.waiting = false;
-    }
-
-    pub fn clear(&mut self) {
-        self.current = None;
-    }
-}
-
-pub fn advance_action_queue(mut game_action_queue: ResMut<GameActionQueue>) {
-    game_action_queue.start_next();
-}
-
-pub fn clear_current_action(mut game_action_queue: ResMut<GameActionQueue>) {
-    game_action_queue.clear();
-}
-
-pub fn has_current_action(game_action_queue: Res<GameActionQueue>) -> bool {
-    !game_action_queue.is_waiting() && game_action_queue.current.is_some()
-}
-
-pub fn action_queue_is_empty(game_action_queue: Res<GameActionQueue>) -> bool {
-    game_action_queue.current.is_none() && !game_action_queue.has_next()
-}
-
-pub fn ready_for_next_action(
-    game_action_queue: Res<GameActionQueue>,
-    combat_query: Query<&Combat>,
-) -> bool {
-    !game_action_queue.is_waiting()
-        && (game_action_queue.current.is_some() || game_action_queue.has_next())
-        && combat_query.is_empty()
-}
 
 #[allow(clippy::type_complexity)]
 pub fn handle_move(
