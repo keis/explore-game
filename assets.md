@@ -5,6 +5,7 @@
   - assets/icons/knapsack.png
   - assets/icons/portal.png
   - assets/icons/swords-emblem.png
+  - assets/icons/magic-swirl.png
 * By sbed under CC-BY 3.0 (https://opengameart.org/content/95-game-icons)
   - assets/icons/cancel.png
 * By Delapouite under CC-BY 3.0 (https://delapouite.com/)

@@ -3,7 +3,7 @@ use crate::{
     actor::{CharacterBundle, GroupCommandsExt, PartyBundle, PartyParams},
     map::{MapCommandsExt, MapLayout, MapPosition, PresenceLayer, ZoneLayer},
     map_generator::{GenerateMapTask, MapPrototype, MapSeed},
-    structure::{PortalBundle, PortalParams, SpawnerBundle, SpawnerParams},
+    structure::{PortalBundle, PortalParams, SafeHavenBundle, SpawnerBundle, SpawnerParams},
     terrain::{CrystalDeposit, Terrain, ZoneBundle, ZoneParams},
     turn::Turn,
     ExplError,
@@ -171,5 +171,20 @@ pub fn spawn_party(
                 .add_members(&[character1, character2, character3]);
         });
 
+    Ok(())
+}
+
+pub fn spawn_safe_haven(
+    mut commands: Commands,
+    map_prototype_query: Query<&MapPrototype>,
+) -> Result<(), ExplError> {
+    // Check for existence of map prototype
+    let _prototype = map_prototype_query.get_single()?;
+
+    commands.spawn((
+        save::Save,
+        Name::new("Safe Haven"),
+        SafeHavenBundle::default(),
+    ));
     Ok(())
 }

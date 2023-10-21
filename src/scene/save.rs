@@ -64,6 +64,7 @@ pub fn filter_with_enabled_components<Filter: ReadOnlyWorldQuery>(
     components.allow::<map::ViewRadius>();
     components.allow::<structure::Camp>();
     components.allow::<structure::Portal>();
+    components.allow::<structure::SafeHaven>();
     components.allow::<structure::Spawner>();
     components.allow::<terrain::CrystalDeposit>();
     components.allow::<terrain::Height>();

@@ -194,3 +194,10 @@ impl PortalFluffBundle {
         }
     }
 }
+
+#[derive(Bundle, Default)]
+pub struct SafeHavenBundle {
+    safe_haven: SafeHaven,
+    inventory: Inventory,
+    group: Group,
+}

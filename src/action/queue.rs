@@ -16,6 +16,7 @@ pub enum GameAction {
     CreatePartyFromCamp(Entity, SmallVec<[Entity; 8]>),
     CollectCrystals(Entity),
     OpenPortal(Entity),
+    EnterPortal(Entity),
 }
 
 #[derive(Default, Resource)]

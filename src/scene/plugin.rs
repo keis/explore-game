@@ -68,6 +68,7 @@ impl Plugin for ScenePlugin {
                         spawn_party.pipe(warn),
                         spawn_portal.pipe(warn),
                         spawn_spawner.pipe(warn),
+                        spawn_safe_haven.pipe(warn),
                     )
                         .in_set(SceneSet::Populate),
                     cleanup_map_generation_task.in_set(SceneSet::Cleanup),

@@ -8,6 +8,10 @@ pub struct Camp {
 
 #[derive(Component, Reflect, Default, Debug)]
 #[reflect(Component)]
+pub struct SafeHaven;
+
+#[derive(Component, Reflect, Default, Debug)]
+#[reflect(Component)]
 pub struct Portal {
     pub open: bool,
 }

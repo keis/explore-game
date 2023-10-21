@@ -8,7 +8,7 @@ use crate::{
     map::{Fog, MapCommandsExt, MapPresence, Offset, PresenceLayer, ZoneLayer},
     path::{PathFinder, PathGuided},
     scene::save,
-    structure::{Camp, CampBundle, CampParams, Portal},
+    structure::{Camp, CampBundle, CampParams, Portal, SafeHaven},
     terrain::{CrystalDeposit, HeightQuery, Terrain},
     ExplError,
 };
@@ -394,6 +394,41 @@ pub fn handle_open_portal(
     if !portal.open {
         portal.open = true;
     }
+
+    Ok(())
+}
+
+#[allow(clippy::type_complexity)]
+pub fn handle_enter_portal(
+    mut commands: Commands,
+    queue: ResMut<GameActionQueue>,
+    map_query: Query<&PresenceLayer>,
+    portal_query: Query<&Portal>,
+    mut party_query: Query<(&MapPresence, &Group, &mut Inventory), With<Party>>,
+    mut safe_haven_query: Query<(Entity, &mut Inventory), (With<SafeHaven>, Without<Party>)>,
+) -> Result<(), ExplError> {
+    let Some(GameAction::EnterPortal(party_entity)) = queue.current else {
+        return Ok(());
+    };
+
+    let (presence, group, mut party_inventory) = party_query.get_mut(party_entity)?;
+    let presence_layer = map_query.get_single()?;
+
+    let portal = portal_query
+        .iter_many(presence_layer.presence(presence.position))
+        .next()
+        .ok_or(ExplError::InvalidLocation("no portal present".to_string()))?;
+
+    if !portal.open {
+        return Err(ExplError::InvalidLocation("portal not active".to_string()));
+    }
+
+    let (safe_haven_entity, mut safe_inventory) = safe_haven_query.get_single_mut()?;
+    commands
+        .entity(safe_haven_entity)
+        .add_members(&group.members);
+
+    safe_inventory.take_all(&mut party_inventory);
 
     Ok(())
 }
