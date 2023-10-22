@@ -14,6 +14,7 @@ use explore_game::{
     input::InputPlugin,
     inspector::InspectorPlugin,
     interface::InterfacePlugin,
+    inventory::InventoryPlugin,
     map::MapPlugin,
     map_generator::{MapGeneratorPlugin, MapSeed},
     material::MaterialPlugins,
@@ -84,6 +85,9 @@ fn main() {
             InputPlugin,
             InspectorPlugin,
             InterfacePlugin,
+            InventoryPlugin,
+        ))
+        .add_plugins((
             MapGeneratorPlugin,
             MapPlugin,
             PathPlugin,

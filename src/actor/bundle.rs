@@ -3,6 +3,7 @@ use crate::{
     assets::MainAssets,
     combat::{Attack, Health},
     input::{Selection, SelectionBundle},
+    inventory::Inventory,
     map::{HexCoord, MapPresence, Offset, ViewRadius},
     path::PathGuided,
     terrain::HeightQuery,
@@ -40,6 +41,7 @@ pub type PartyParams<'w, 's> = (
 #[derive(Bundle, Default)]
 pub struct PartyBundle {
     party: Party,
+    inventory: Inventory,
     presence: MapPresence,
     group: Group,
     movement: Movement,
@@ -60,12 +62,11 @@ impl PartyBundle {
     pub fn new(position: HexCoord, name: String, supplies: u32) -> Self {
         let presence = MapPresence { position };
         let offset = Offset(Vec3::new(0.0, 0.1, 0.0));
+        let mut inventory = Inventory::default();
+        inventory.add_item(Inventory::SUPPLY, supplies);
         Self {
-            party: Party {
-                name,
-                supplies,
-                ..default()
-            },
+            party: Party { name },
+            inventory,
             presence,
             offset,
             ..default()
