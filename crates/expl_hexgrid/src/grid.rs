@@ -1,5 +1,4 @@
-use super::{GridLayout, HexCoord, Region};
-use disjoint_hash_set::DisjointHashSet;
+use crate::{GridLayout, HexCoord};
 use std::fmt;
 use std::ops::{Index, IndexMut};
 
@@ -68,29 +67,6 @@ impl<L: GridLayout, T> Grid<L, T> {
             .offset(position)
             .and_then(|offset| self.data.get_mut(offset))
     }
-
-    /// Find contiguous regions of the grid by the given binary predicate.
-    pub fn regions<Predicate>(&self, predicate: Predicate) -> impl Iterator<Item = Region>
-    where
-        Predicate: Fn(&T, &T) -> bool,
-    {
-        self.iter()
-            .map(|(coord, item)| {
-                // Find a compatible neighbour and join with that region or form a single element
-                // region
-                if let Some(neighbour) = coord.neighbours().find(|&neighbour| {
-                    self.get(neighbour)
-                        .map_or(false, |other| predicate(item, other))
-                }) {
-                    (coord, neighbour)
-                } else {
-                    (coord, coord)
-                }
-            })
-            .collect::<DisjointHashSet<_>>()
-            .sets()
-            .map(|mut coords| coords.drain().collect())
-    }
 }
 
 impl<L: GridLayout + fmt::Debug, T> fmt::Debug for Grid<L, T> {
@@ -149,30 +125,6 @@ mod tests {
         grid[HexCoord::new(2, 1)] = 13;
         assert_eq!(grid.get(HexCoord::new(2, 1)), Some(&13));
         assert_eq!(grid[HexCoord::new(2, 1)], 13);
-    }
-
-    #[test]
-    fn regions() {
-        let layout = SquareGridLayout {
-            width: 3,
-            height: 3,
-        };
-        let grid = Grid {
-            layout,
-            data: vec![
-                0, 0, 1, //
-                0, 0, 2, //
-                1, 1, 1,
-            ],
-        };
-
-        let regions: Vec<_> = grid.regions(|a, b| a == b).collect();
-        println!("regions {:?}", regions);
-        assert_eq!(regions.len(), 4);
-        assert_eq!(
-            regions.iter().map(|r| r.0.len()).sum::<usize>(),
-            layout.size()
-        );
     }
 
     #[test]
