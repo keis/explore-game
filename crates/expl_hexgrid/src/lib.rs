@@ -9,6 +9,6 @@ mod transform;
 pub use coord::HexCoord;
 pub use grid::Grid;
 pub use layout::GridLayout;
-pub use region::Region;
+pub use region::{Region, Regions};
 pub use ring::{ring, spiral};
 pub use transform::{Transform, TransformMatrix};
