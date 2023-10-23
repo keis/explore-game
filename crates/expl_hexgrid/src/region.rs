@@ -1,4 +1,4 @@
-use super::{GridLayout,Grid,HexCoord};
+use super::{Grid, GridLayout, HexCoord};
 use disjoint_hash_set::DisjointHashSet;
 
 #[derive(Debug)]
@@ -14,29 +14,33 @@ impl FromIterator<HexCoord> for Region {
 }
 
 pub struct Regions<'a, Layout, Item, Predicate>
-    where Layout: GridLayout,
-          Predicate: Fn(&Item, &Item) -> bool
+where
+    Layout: GridLayout,
+    Predicate: Fn(&Item, &Item) -> bool,
 {
     grid: &'a Grid<Layout, Item>,
-    predicate: Predicate
+    predicate: Predicate,
 }
 
 impl<'a, Layout, Item, Predicate> Regions<'a, Layout, Item, Predicate>
-    where Layout: GridLayout,
-          Predicate: Fn(&Item, &Item) -> bool {
-
+where
+    Layout: GridLayout,
+    Predicate: Fn(&Item, &Item) -> bool,
+{
     pub fn from(grid: &'a Grid<Layout, Item>, predicate: Predicate) -> Self {
         Self { grid, predicate }
     }
 
     /// Find contiguous regions of the grid by the given binary predicate.
     pub fn iter(self) -> impl Iterator<Item = Region> {
-        self.grid.iter()
+        self.grid
+            .iter()
             .map(|(coord, item)| {
                 // Find a compatible neighbour and join with that region or form a single element
                 // region
                 if let Some(neighbour) = coord.neighbours().find(|&neighbour| {
-                    self.grid.get(neighbour)
+                    self.grid
+                        .get(neighbour)
                         .map_or(false, |other| (self.predicate)(item, other))
                 }) {
                     (coord, neighbour)
@@ -52,8 +56,8 @@ impl<'a, Layout, Item, Predicate> Regions<'a, Layout, Item, Predicate>
 
 #[cfg(test)]
 mod tests {
-    use crate::{Grid, GridLayout, layout::SquareGridLayout};
     use super::Regions;
+    use crate::{layout::SquareGridLayout, Grid, GridLayout};
 
     #[test]
     fn regions() {
@@ -61,7 +65,9 @@ mod tests {
             width: 3,
             height: 3,
         };
-        let grid = Grid::with_data(layout, vec![
+        let grid = Grid::with_data(
+            layout,
+            vec![
                 0, 0, 1, //
                 0, 0, 2, //
                 1, 1, 1,
@@ -76,5 +82,4 @@ mod tests {
             layout.size()
         );
     }
-
 }
