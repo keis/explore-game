@@ -10,19 +10,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  format:
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: rustfmt
-      - uses: mbrobbel/rustfmt-check@0.8.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          mode: review
   test:
     runs-on: ubuntu-latest
     permissions:
