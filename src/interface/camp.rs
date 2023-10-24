@@ -11,7 +11,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_mod_picking::prelude::Pickable;
-use expl_databinding::{DataBindingExt, DataBindings};
+use expl_databinding::{DataBindingExt, DataBindingUpdate};
 
 #[derive(Component)]
 pub struct CampList;
@@ -141,32 +141,28 @@ pub fn update_camp_list(
 
 #[allow(clippy::type_complexity)]
 pub fn update_camp_selection(
-    mut camp_display_query: Query<&mut BackgroundColor, With<CampDisplay>>,
-    selection_query: Query<(&Selection, &DataBindings), (With<Camp>, Changed<Selection>)>,
+    mut data_binding_update: DataBindingUpdate<
+        &Selection,
+        &mut BackgroundColor,
+        (Changed<Selection>, With<Camp>),
+    >,
 ) {
-    for (selection, bindings) in &selection_query {
-        let mut camp_display_iter = camp_display_query.iter_many_mut(bindings);
-        while let Some(mut background_color) = camp_display_iter.fetch_next() {
-            *background_color = if selection.is_selected {
-                SELECTED
-            } else {
-                NORMAL
-            }
-            .into();
+    data_binding_update.for_each(|selection, background_color| {
+        **background_color = if selection.is_selected {
+            SELECTED
+        } else {
+            NORMAL
         }
-    }
+        .into();
+    });
 }
 
 pub fn update_camp_crystals(
-    mut camp_crystals_text_query: Query<&mut Text, With<CampCrystalsText>>,
-    camp_query: Query<(&Camp, &DataBindings), Changed<Camp>>,
+    mut data_binding_update: DataBindingUpdate<&Camp, &mut Text, Changed<Camp>>,
 ) {
-    for (camp, bindings) in &camp_query {
-        let mut camp_crystals_text_iter = camp_crystals_text_query.iter_many_mut(bindings);
-        while let Some(mut text) = camp_crystals_text_iter.fetch_next() {
-            text.sections[0].value = format!("{}", camp.crystals);
-        }
-    }
+    data_binding_update.for_each(|camp, text| {
+        text.sections[0].value = format!("{}", camp.crystals);
+    });
 }
 
 pub fn handle_camp_display_interaction(
