@@ -2237,6 +2237,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
+name = "expl_databinding"
+version = "0.1.0"
+dependencies = [
+ "bevy_ecs",
+ "smallvec",
+]
+
+[[package]]
 name = "expl_hexgrid"
 version = "0.1.0"
 dependencies = [
@@ -2282,6 +2290,7 @@ dependencies = [
  "bevy_obj",
  "bevy_sprite3d",
  "clap",
+ "expl_databinding",
  "expl_hexgrid",
  "expl_wfc",
  "futures-lite",

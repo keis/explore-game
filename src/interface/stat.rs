@@ -1,5 +1,6 @@
-use super::{databinding::DataBindingExt, InterfaceAssets};
+use super::InterfaceAssets;
 use bevy::prelude::*;
+use expl_databinding::DataBindingExt;
 
 pub fn spawn_stat_display(
     parent: &mut ChildBuilder,

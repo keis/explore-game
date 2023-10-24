@@ -1,6 +1,5 @@
 use super::{
     color::{NORMAL, SELECTED},
-    databinding::{DataBindingExt, DataBindings},
     stat::spawn_stat_display,
     InterfaceAssets,
 };
@@ -11,6 +10,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_mod_picking::prelude::Pickable;
+use expl_databinding::{DataBindingExt, DataBindings};
 
 #[derive(Component)]
 pub struct CharacterList;

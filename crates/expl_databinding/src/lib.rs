@@ -1,6 +1,6 @@
-use bevy::{
-    ecs::system::{Command, EntityCommands},
+use bevy_ecs::{
     prelude::*,
+    system::{Command, EntityCommands},
 };
 use core::slice;
 use smallvec::SmallVec;
