@@ -1,6 +1,5 @@
 use super::{
     color::{NORMAL, SELECTED},
-    databinding::{DataBindingExt, DataBindings},
     stat::spawn_stat_display,
     InterfaceAssets,
 };
@@ -10,6 +9,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_mod_picking::prelude::Pickable;
+use expl_databinding::{DataBindingExt, DataBindingUpdate};
 
 #[derive(Component)]
 pub struct PartyList;
@@ -163,59 +163,49 @@ pub fn update_party_list(
 
 #[allow(clippy::type_complexity)]
 pub fn update_party_selection(
-    mut party_display_query: Query<&mut BackgroundColor, With<PartyDisplay>>,
-    selection_query: Query<(&Selection, &DataBindings), (With<Party>, Changed<Selection>)>,
+    mut data_binding_update: DataBindingUpdate<
+        &Selection,
+        &mut BackgroundColor,
+        (Changed<Selection>, With<Party>),
+    >,
 ) {
-    for (selection, bindings) in &selection_query {
-        let mut party_display_iter = party_display_query.iter_many_mut(bindings);
-        while let Some(mut background_color) = party_display_iter.fetch_next() {
-            *background_color = if selection.is_selected {
-                SELECTED
-            } else {
-                NORMAL
-            }
-            .into();
+    data_binding_update.for_each(|selection, background_color| {
+        **background_color = if selection.is_selected {
+            SELECTED
+        } else {
+            NORMAL
         }
-    }
+        .into();
+    });
 }
 
 #[allow(clippy::type_complexity)]
 pub fn update_party_movement_points(
-    mut party_movement_points_query: Query<&mut Text, With<PartyMovementPointsText>>,
-    party_query: Query<(&Movement, &DataBindings), (Changed<Movement>, With<Party>)>,
+    mut data_binding_update: DataBindingUpdate<
+        &Movement,
+        &mut Text,
+        (Changed<Movement>, With<Party>),
+    >,
 ) {
-    for (party_movement, bindings) in &party_query {
-        let mut party_movement_points_text_iter =
-            party_movement_points_query.iter_many_mut(bindings);
-        while let Some(mut text) = party_movement_points_text_iter.fetch_next() {
-            text.sections[0].value = format!("{}", party_movement.points);
-        }
-    }
+    data_binding_update.for_each(|movement, text| {
+        text.sections[0].value = format!("{}", movement.points);
+    });
 }
 
-#[allow(clippy::type_complexity)]
 pub fn update_party_size(
-    mut party_size_text_query: Query<&mut Text, With<PartySizeText>>,
-    party_query: Query<(&Group, &DataBindings), (Changed<Group>, With<Party>)>,
+    mut data_binding_update: DataBindingUpdate<&Group, &mut Text, (Changed<Group>, With<Party>)>,
 ) {
-    for (group, bindings) in &party_query {
-        let mut party_size_text_iter = party_size_text_query.iter_many_mut(bindings);
-        while let Some(mut text) = party_size_text_iter.fetch_next() {
-            text.sections[0].value = format!("{}", group.members.len());
-        }
-    }
+    data_binding_update.for_each(|group, text| {
+        text.sections[0].value = format!("{}", group.members.len());
+    });
 }
 
 pub fn update_party_crystals(
-    mut party_crystals_text_query: Query<&mut Text, With<PartyCrystalsText>>,
-    party_query: Query<(&Party, &DataBindings), Changed<Party>>,
+    mut data_binding_update: DataBindingUpdate<&Party, &mut Text, Changed<Party>>,
 ) {
-    for (party, bindings) in &party_query {
-        let mut party_crystals_text_iter = party_crystals_text_query.iter_many_mut(bindings);
-        while let Some(mut text) = party_crystals_text_iter.fetch_next() {
-            text.sections[0].value = format!("{}", party.crystals);
-        }
-    }
+    data_binding_update.for_each(|party, text| {
+        text.sections[0].value = format!("{}", party.crystals);
+    });
 }
 
 pub fn handle_party_display_interaction(

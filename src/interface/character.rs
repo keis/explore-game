@@ -1,6 +1,5 @@
 use super::{
     color::{NORMAL, SELECTED},
-    databinding::{DataBindingExt, DataBindings},
     stat::spawn_stat_display,
     InterfaceAssets,
 };
@@ -11,6 +10,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_mod_picking::prelude::Pickable;
+use expl_databinding::{DataBindingExt, DataBindingUpdate};
 
 #[derive(Component)]
 pub struct CharacterList;
@@ -162,32 +162,32 @@ pub fn update_character_list(
 
 #[allow(clippy::type_complexity)]
 pub fn update_character_selection(
-    mut character_display_query: Query<&mut BackgroundColor, With<CharacterDisplay>>,
-    selection_query: Query<(&Selection, &DataBindings), (With<Character>, Changed<Selection>)>,
+    mut data_binding_update: DataBindingUpdate<
+        &Selection,
+        &mut BackgroundColor,
+        (Changed<Selection>, With<Character>),
+    >,
 ) {
-    for (selection, bindings) in &selection_query {
-        let mut character_display_iter = character_display_query.iter_many_mut(bindings);
-        while let Some(mut background_color) = character_display_iter.fetch_next() {
-            *background_color = if selection.is_selected {
-                SELECTED
-            } else {
-                NORMAL
-            }
-            .into();
+    data_binding_update.for_each(|selection, background_color| {
+        **background_color = if selection.is_selected {
+            SELECTED
+        } else {
+            NORMAL
         }
-    }
+        .into();
+    });
 }
 
 pub fn update_character_health(
-    mut health_text_query: Query<&mut Text, With<HealthText>>,
-    health_query: Query<(&Health, &DataBindings), Changed<Health>>,
+    mut data_binding_update: DataBindingUpdate<
+        &Health,
+        &mut Text,
+        (Changed<Health>, With<Character>),
+    >,
 ) {
-    for (health, bindings) in &health_query {
-        let mut health_text_iter = health_text_query.iter_many_mut(bindings);
-        while let Some(mut text) = health_text_iter.fetch_next() {
-            text.sections[0].value = format!("{}", health.0);
-        }
-    }
+    data_binding_update.for_each(|health, text| {
+        text.sections[0].value = format!("{}", health.0);
+    });
 }
 
 pub fn handle_character_display_interaction(

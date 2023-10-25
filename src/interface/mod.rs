@@ -10,7 +10,6 @@ mod assets;
 mod camp;
 mod character;
 mod color;
-mod databinding;
 mod menu;
 mod party;
 mod shell;
