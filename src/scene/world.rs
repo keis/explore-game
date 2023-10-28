@@ -1,0 +1,177 @@
+use super::save;
+use crate::{
+    actor::{CharacterBundle, GroupCommandsExt, PartyBundle, PartyParams},
+    map::{MapCommandsExt, MapLayout, MapPosition, PresenceLayer, ZoneLayer},
+    map_generator::{GenerateMapTask, MapPrototype, MapSeed},
+    structure::{PortalBundle, PortalParams, SpawnerBundle, SpawnerParams},
+    terrain::{CrystalDeposit, Terrain, ZoneBundle, ZoneParams},
+    turn::Turn,
+};
+use bevy::prelude::*;
+use expl_hexgrid::{layout::GridLayout, HexCoord};
+use expl_wfc::{Seed, SeedType};
+use std::collections::HashMap;
+
+pub fn create_map_seed(mut commands: Commands, seed_query: Query<&MapSeed>) {
+    if seed_query.is_empty() {
+        commands.spawn(MapSeed(Seed::new(SeedType::Square(30, 24))));
+    }
+}
+
+pub fn reset_turn_counter(mut turn: ResMut<Turn>) {
+    **turn = 1;
+}
+
+pub fn cleanup_map_generation_task(
+    mut commands: Commands,
+    generate_map_task_query: Query<Entity, With<GenerateMapTask>>,
+) {
+    for task_entity in &generate_map_task_query {
+        commands.entity(task_entity).despawn();
+    }
+}
+
+pub fn fluff_loaded_map(
+    mut commands: Commands,
+    map_query: Query<(Entity, &MapLayout)>,
+    zone_query: Query<(&MapPosition, Entity), With<Terrain>>,
+) {
+    let Ok((entity, &MapLayout(layout))) = map_query.get_single() else {
+        return;
+    };
+    let zone_lookup: HashMap<HexCoord, _> = zone_query
+        .iter()
+        .map(|(&MapPosition(p), e)| (p, e))
+        .collect();
+    let tiles = layout.iter().map(|coord| zone_lookup[&coord]).collect();
+    commands
+        .entity(entity)
+        .insert((ZoneLayer::new(layout, tiles), PresenceLayer::new(layout)));
+}
+
+pub fn spawn_generated_map(
+    mut commands: Commands,
+    mut zone_params: ZoneParams,
+    map_prototype_query: Query<&MapPrototype>,
+) {
+    let Ok(prototype) = map_prototype_query.get_single() else {
+        return;
+    };
+    let tiles = prototype
+        .tiles
+        .iter()
+        .map(|(position, zoneproto)| {
+            let mut zone = commands.spawn((
+                Name::new(format!("Zone {}", position)),
+                save::Save,
+                ZoneBundle::new(position, zoneproto).with_fluff(&mut zone_params),
+            ));
+
+            if zoneproto.crystals {
+                zone.insert(CrystalDeposit { amount: 20 });
+            }
+
+            zone.id()
+        })
+        .collect();
+    commands.spawn((
+        Name::new("Game map"),
+        save::Save,
+        MapLayout(prototype.tiles.layout),
+        ZoneLayer::new(prototype.tiles.layout, tiles),
+        PresenceLayer::new(prototype.tiles.layout),
+    ));
+}
+
+pub fn spawn_portal(
+    mut commands: Commands,
+    mut portal_params: PortalParams,
+    map_prototype_query: Query<&MapPrototype>,
+    map_query: Query<Entity, With<PresenceLayer>>,
+) {
+    let Ok(prototype) = map_prototype_query.get_single() else {
+        return;
+    };
+    let Ok(map_entity) = map_query.get_single() else {
+        return;
+    };
+    commands
+        .entity(map_entity)
+        .with_presence(prototype.portal_position, |location| {
+            location.spawn((
+                Name::new("Portal"),
+                save::Save,
+                PortalBundle::new(prototype.portal_position).with_fluff(&mut portal_params),
+            ));
+        });
+}
+
+pub fn spawn_spawner(
+    mut commands: Commands,
+    mut spawner_params: SpawnerParams,
+    map_prototype_query: Query<&MapPrototype>,
+    map_query: Query<Entity, With<PresenceLayer>>,
+) {
+    let Ok(prototype) = map_prototype_query.get_single() else {
+        return;
+    };
+    let Ok(map_entity) = map_query.get_single() else {
+        return;
+    };
+    commands
+        .entity(map_entity)
+        .with_presence(prototype.spawner_position, |location| {
+            location.spawn((
+                Name::new("EnemySpawner"),
+                save::Save,
+                SpawnerBundle::new(prototype.spawner_position).with_fluff(&mut spawner_params),
+            ));
+        });
+}
+
+pub fn spawn_party(
+    mut commands: Commands,
+    mut party_params: PartyParams,
+    map_prototype_query: Query<&MapPrototype>,
+    map_query: Query<Entity, With<PresenceLayer>>,
+) {
+    let Ok(prototype) = map_prototype_query.get_single() else {
+        return;
+    };
+    let Ok(map_entity) = map_query.get_single() else {
+        return;
+    };
+    let character1 = commands
+        .spawn((
+            save::Save,
+            Name::new("Alice"),
+            CharacterBundle::new(String::from("Alice")),
+        ))
+        .id();
+    let character2 = commands
+        .spawn((
+            save::Save,
+            Name::new("Bob"),
+            CharacterBundle::new(String::from("Bob")),
+        ))
+        .id();
+    let character3 = commands
+        .spawn((
+            save::Save,
+            Name::new("Carol"),
+            CharacterBundle::new(String::from("Carol")),
+        ))
+        .id();
+    commands
+        .entity(map_entity)
+        .with_presence(prototype.party_position, |location| {
+            location
+                .spawn((
+                    Name::new("Party"),
+                    save::Save,
+                    PartyBundle::new(prototype.party_position, String::from("Alpha Group"), 1)
+                        .with_fluff(&mut party_params),
+                ))
+                .add_members(&[character1, character2, character3]);
+        });
+}
