@@ -8,6 +8,13 @@ use std::path::PathBuf;
 
 pub use moonshine_save::prelude::{LoadSet, Save};
 
+#[derive(Resource)]
+pub struct Loaded;
+
+pub fn mark_as_loaded(world: &mut World) {
+    world.insert_resource(Loaded);
+}
+
 pub fn save_location() -> PathBuf {
     AppDirs::new(Some("explore-game"), true)
         .map(|appdirs| appdirs.data_dir.join("save-state.ron"))
