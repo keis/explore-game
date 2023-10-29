@@ -57,6 +57,7 @@ pub fn filter_with_enabled_components<Filter: ReadOnlyWorldQuery>(
     components.allow::<input::Selection>();
     components.allow::<inventory::Inventory>();
     components.allow::<map::Fog>();
+    components.allow::<map::FogRevealer>();
     components.allow::<map::MapLayout>();
     components.allow::<map::MapPosition>();
     components.allow::<map::MapPresence>();

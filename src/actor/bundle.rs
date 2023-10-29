@@ -4,7 +4,7 @@ use crate::{
     combat::{Attack, Health},
     input::{Selection, SelectionBundle},
     inventory::Inventory,
-    map::{HexCoord, MapPresence, Offset, ViewRadius},
+    map::{FogRevealer, HexCoord, MapPresence, Offset, ViewRadius},
     path::PathGuided,
     terrain::HeightQuery,
 };
@@ -48,6 +48,7 @@ pub struct PartyBundle {
     offset: Offset,
     view_radius: ViewRadius,
     slide: Slide,
+    fog_revealer: FogRevealer,
 }
 
 #[derive(Bundle, Default)]

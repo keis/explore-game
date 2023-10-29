@@ -6,14 +6,15 @@ pub struct MapPlugin;
 
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<MapPosition>()
+        app.register_type::<Fog>()
+            .register_type::<FogRevealer>()
             .register_type::<HexCoord>()
-            .register_type::<SquareGridLayout>()
+            .register_type::<MapLayout>()
+            .register_type::<MapPosition>()
             .register_type::<MapPresence>()
             .register_type::<Offset>()
+            .register_type::<SquareGridLayout>()
             .register_type::<ViewRadius>()
-            .register_type::<MapLayout>()
-            .register_type::<Fog>()
             .add_systems(Startup, insert_hex_assets)
             .add_systems(
                 Update,

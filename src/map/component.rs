@@ -13,6 +13,10 @@ pub struct Fog {
     pub explored: bool,
 }
 
+#[derive(Component, Reflect, Copy, Clone, Default, Debug)]
+#[reflect(Component)]
+pub struct FogRevealer;
+
 #[derive(Component, Reflect, Debug, Default, Deref)]
 #[reflect(Component)]
 pub struct MapPosition(pub HexCoord);

@@ -5,7 +5,7 @@ use crate::{
     combat::FloatingTextSource,
     input::SelectionBundle,
     inventory::Inventory,
-    map::{Fog, HexCoord, MapPresence, Offset, ViewRadius},
+    map::{Fog, FogRevealer, HexCoord, MapPresence, Offset, ViewRadius},
     material::TerrainMaterial,
     terrain::HeightQuery,
 };
@@ -83,6 +83,7 @@ pub struct CampBundle {
     offset: Offset,
     view_radius: ViewRadius,
     fog: Fog,
+    fog_revealer: FogRevealer,
 }
 
 #[derive(Bundle, Default)]

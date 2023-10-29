@@ -1,5 +1,4 @@
 use super::{asset::*, command::*, component::*, event::*, hex::*};
-use crate::actor::Enemy;
 use bevy::prelude::*;
 
 pub fn insert_hex_assets(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
@@ -40,7 +39,7 @@ pub fn log_moves(
 }
 
 pub fn update_zone_visibility(
-    view_query: Query<(&MapPresence, &ViewRadius), Without<Enemy>>,
+    view_query: Query<(&MapPresence, &ViewRadius), With<FogRevealer>>,
     mut zone_query: Query<(&MapPosition, &mut Fog)>,
 ) {
     for (position, mut fog) in zone_query.iter_mut() {
