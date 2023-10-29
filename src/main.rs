@@ -19,7 +19,7 @@ use explore_game::{
     map_generator::{MapGeneratorPlugin, MapSeed},
     material::MaterialPlugins,
     path::PathPlugin,
-    scene::ScenePlugin,
+    scene::{ScenePlugin, SceneSet, SceneState},
     structure::StructurePlugin,
     terrain::TerrainPlugin,
     turn::TurnPlugin,
@@ -89,7 +89,10 @@ fn main() {
         ))
         .add_plugins((
             MapGeneratorPlugin,
-            MapPlugin,
+            MapPlugin {
+                setup_schedule: OnEnter(SceneState::Active),
+                setup_set: SceneSet::Populate,
+            },
             PathPlugin,
             ScenePlugin,
             StructurePlugin,

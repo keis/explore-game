@@ -1,4 +1,4 @@
-use super::{component::*, system::*};
+use super::{asset::*, component::*, system::*};
 use crate::scene::{SceneSet, SceneState};
 use bevy::prelude::*;
 
@@ -17,6 +17,7 @@ impl Plugin for TerrainPlugin {
             .register_type::<ZoneDecorationDetail>()
             .register_type::<ZoneDecorations>()
             .register_type::<ZoneDecorationTree>()
+            .add_systems(Startup, insert_hex_assets)
             .add_systems(
                 Update,
                 (

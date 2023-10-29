@@ -1,7 +1,7 @@
-use super::component::*;
+use super::{asset::HexAssets, component::*};
 use crate::{
     assets::MainAssets,
-    map::{Fog, HexAssets, HexCoord, MapPosition},
+    map::{Fog, HexCoord, MapPosition},
     map_generator::ZonePrototype,
     material::{TerrainMaterial, WaterMaterial, ZoneMaterial},
 };

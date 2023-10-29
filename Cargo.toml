@@ -24,7 +24,6 @@ expl_hexgrid = { path = "crates/expl_hexgrid", features = ["bevy-reflect"] }
 expl_wfc = { path = "crates/expl_wfc" }
 futures-lite = "1"
 glam = "0.24"
-hexasphere = "9"
 interpolation = "0.3"
 itertools = "0.11"
 leafwing-input-manager = { version = "0.10", default-features = false, features = ["egui"] }
@@ -43,6 +42,7 @@ moonshine-save = ">=0.3.2, <0.4"
 platform-dirs = "0.3"
 expl_databinding = { version = "0.1.0", path = "crates/expl_databinding" }
 serde = "1.0"
+expl_hexagon = { version = "0.1.0", path = "crates/expl_hexagon" }
 
 [dev-dependencies]
 rstest = { version = "0.18.2", default-features = false }

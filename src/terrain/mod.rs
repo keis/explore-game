@@ -1,3 +1,4 @@
+mod asset;
 mod bundle;
 mod component;
 mod plugin;

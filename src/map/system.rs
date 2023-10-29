@@ -1,15 +1,5 @@
-use super::{asset::*, command::*, component::*, event::*, hex::*};
-use crate::actor::Enemy;
+use super::{command::*, component::*, event::*};
 use bevy::prelude::*;
-
-pub fn insert_hex_assets(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
-    commands.insert_resource(HexAssets {
-        mesh: meshes.add(Mesh::from(Hexagon {
-            radius: 1.0,
-            subdivisions: 2,
-        })),
-    });
-}
 
 pub fn log_moves(
     mut map_events: EventReader<MapEvent>,
@@ -40,7 +30,7 @@ pub fn log_moves(
 }
 
 pub fn update_zone_visibility(
-    view_query: Query<(&MapPresence, &ViewRadius), Without<Enemy>>,
+    view_query: Query<(&MapPresence, &ViewRadius), With<FogRevealer>>,
     mut zone_query: Query<(&MapPosition, &mut Fog)>,
 ) {
     for (position, mut fog) in zone_query.iter_mut() {
