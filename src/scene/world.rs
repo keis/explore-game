@@ -3,9 +3,10 @@ use crate::{
     actor::{CharacterBundle, GroupCommandsExt, PartyBundle, PartyParams},
     map::{MapCommandsExt, MapLayout, MapPosition, PresenceLayer, ZoneLayer},
     map_generator::{GenerateMapTask, MapPrototype, MapSeed},
-    structure::{PortalBundle, PortalParams, SpawnerBundle, SpawnerParams},
+    structure::{PortalBundle, PortalParams, SafeHavenBundle, SpawnerBundle, SpawnerParams},
     terrain::{CrystalDeposit, Terrain, ZoneBundle, ZoneParams},
     turn::Turn,
+    ExplError,
 };
 use bevy::prelude::*;
 use expl_hexgrid::{layout::GridLayout, HexCoord};
@@ -35,10 +36,8 @@ pub fn fluff_loaded_map(
     mut commands: Commands,
     map_query: Query<(Entity, &MapLayout)>,
     zone_query: Query<(&MapPosition, Entity), With<Terrain>>,
-) {
-    let Ok((entity, &MapLayout(layout))) = map_query.get_single() else {
-        return;
-    };
+) -> Result<(), ExplError> {
+    let (entity, &MapLayout(layout)) = map_query.get_single()?;
     let zone_lookup: HashMap<HexCoord, _> = zone_query
         .iter()
         .map(|(&MapPosition(p), e)| (p, e))
@@ -47,16 +46,16 @@ pub fn fluff_loaded_map(
     commands
         .entity(entity)
         .insert((ZoneLayer::new(layout, tiles), PresenceLayer::new(layout)));
+
+    Ok(())
 }
 
 pub fn spawn_generated_map(
     mut commands: Commands,
     mut zone_params: ZoneParams,
     map_prototype_query: Query<&MapPrototype>,
-) {
-    let Ok(prototype) = map_prototype_query.get_single() else {
-        return;
-    };
+) -> Result<(), ExplError> {
+    let prototype = map_prototype_query.get_single()?;
     let tiles = prototype
         .tiles
         .iter()
@@ -81,6 +80,8 @@ pub fn spawn_generated_map(
         ZoneLayer::new(prototype.tiles.layout, tiles),
         PresenceLayer::new(prototype.tiles.layout),
     ));
+
+    Ok(())
 }
 
 pub fn spawn_portal(
@@ -88,13 +89,10 @@ pub fn spawn_portal(
     mut portal_params: PortalParams,
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
-) {
-    let Ok(prototype) = map_prototype_query.get_single() else {
-        return;
-    };
-    let Ok(map_entity) = map_query.get_single() else {
-        return;
-    };
+) -> Result<(), ExplError> {
+    let prototype = map_prototype_query.get_single()?;
+    let map_entity = map_query.get_single()?;
+
     commands
         .entity(map_entity)
         .with_presence(prototype.portal_position, |location| {
@@ -104,6 +102,8 @@ pub fn spawn_portal(
                 PortalBundle::new(prototype.portal_position).with_fluff(&mut portal_params),
             ));
         });
+
+    Ok(())
 }
 
 pub fn spawn_spawner(
@@ -111,13 +111,10 @@ pub fn spawn_spawner(
     mut spawner_params: SpawnerParams,
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
-) {
-    let Ok(prototype) = map_prototype_query.get_single() else {
-        return;
-    };
-    let Ok(map_entity) = map_query.get_single() else {
-        return;
-    };
+) -> Result<(), ExplError> {
+    let prototype = map_prototype_query.get_single()?;
+    let map_entity = map_query.get_single()?;
+
     commands
         .entity(map_entity)
         .with_presence(prototype.spawner_position, |location| {
@@ -127,6 +124,8 @@ pub fn spawn_spawner(
                 SpawnerBundle::new(prototype.spawner_position).with_fluff(&mut spawner_params),
             ));
         });
+
+    Ok(())
 }
 
 pub fn spawn_party(
@@ -134,13 +133,10 @@ pub fn spawn_party(
     mut party_params: PartyParams,
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
-) {
-    let Ok(prototype) = map_prototype_query.get_single() else {
-        return;
-    };
-    let Ok(map_entity) = map_query.get_single() else {
-        return;
-    };
+) -> Result<(), ExplError> {
+    let prototype = map_prototype_query.get_single()?;
+    let map_entity = map_query.get_single()?;
+
     let character1 = commands
         .spawn((
             save::Save,
@@ -174,4 +170,21 @@ pub fn spawn_party(
                 ))
                 .add_members(&[character1, character2, character3]);
         });
+
+    Ok(())
+}
+
+pub fn spawn_safe_haven(
+    mut commands: Commands,
+    map_prototype_query: Query<&MapPrototype>,
+) -> Result<(), ExplError> {
+    // Check for existence of map prototype
+    let _prototype = map_prototype_query.get_single()?;
+
+    commands.spawn((
+        save::Save,
+        Name::new("Safe Haven"),
+        SafeHavenBundle::default(),
+    ));
+    Ok(())
 }

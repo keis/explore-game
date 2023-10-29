@@ -28,6 +28,7 @@ impl Plugin for InputPlugin {
             Update,
             (
                 handle_deselect.run_if(action_just_pressed(Action::Deselect)),
+                handle_enter_portal.run_if(action_just_pressed(Action::EnterPortal)),
                 handle_select_next.run_if(action_just_pressed(Action::SelectNext)),
                 handle_resume_move.run_if(action_just_pressed(Action::ResumeMove)),
                 handle_camp.run_if(action_just_pressed(Action::Camp)),

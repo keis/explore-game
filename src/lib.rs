@@ -9,6 +9,7 @@ mod error;
 pub mod input;
 pub mod inspector;
 pub mod interface;
+pub mod inventory;
 pub mod map;
 pub mod map_generator;
 pub mod material;

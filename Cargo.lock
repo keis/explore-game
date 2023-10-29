@@ -2305,6 +2305,7 @@ dependencies = [
  "platform-dirs",
  "rand",
  "rstest",
+ "serde",
  "smallvec",
  "splines",
  "thiserror",

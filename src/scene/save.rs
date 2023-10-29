@@ -1,4 +1,4 @@
-use crate::{actor, combat, input, map, structure, terrain, turn};
+use crate::{actor, combat, input, inventory, map, structure, terrain, turn};
 use bevy::{ecs::query::ReadOnlyWorldQuery, prelude::*};
 use moonshine_save::save::{
     finish, into_file, save_scene, EntityFilter, SaveFilter, SavePipeline, SaveSet,
@@ -46,15 +46,16 @@ pub fn filter_with_enabled_components<Filter: ReadOnlyWorldQuery>(
     components.allow::<Name>();
     components.allow::<Save>();
     components.allow::<actor::Character>();
-    components.allow::<actor::Movement>();
     components.allow::<actor::Enemy>();
     components.allow::<actor::Group>();
     components.allow::<actor::GroupMember>();
+    components.allow::<actor::Movement>();
     components.allow::<actor::Party>();
     components.allow::<actor::Slide>();
     components.allow::<combat::Attack>();
     components.allow::<combat::Health>();
     components.allow::<input::Selection>();
+    components.allow::<inventory::Inventory>();
     components.allow::<map::Fog>();
     components.allow::<map::MapLayout>();
     components.allow::<map::MapPosition>();
@@ -63,6 +64,7 @@ pub fn filter_with_enabled_components<Filter: ReadOnlyWorldQuery>(
     components.allow::<map::ViewRadius>();
     components.allow::<structure::Camp>();
     components.allow::<structure::Portal>();
+    components.allow::<structure::SafeHaven>();
     components.allow::<structure::Spawner>();
     components.allow::<terrain::CrystalDeposit>();
     components.allow::<terrain::Height>();

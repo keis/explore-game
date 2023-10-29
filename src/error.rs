@@ -28,4 +28,6 @@ pub enum ExplError {
     InvalidPartySplit,
     #[error("not enough supplies")]
     MissingSupplies,
+    #[error("inventory item not found")]
+    InventoryItemNotFound,
 }

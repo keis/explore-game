@@ -6,6 +6,7 @@ use super::{
 use crate::{
     actor::{Character, Group},
     input::{Action, ActionState, Selection},
+    inventory::Inventory,
     map::MapEvent,
     structure::Camp,
 };
@@ -58,6 +59,7 @@ fn spawn_camp_display(
     parent: &mut ChildBuilder,
     entity: Entity,
     camp: &Camp,
+    inventory: &Inventory,
     assets: &Res<InterfaceAssets>,
 ) {
     parent
@@ -93,7 +95,7 @@ fn spawn_camp_display(
                     entity,
                     CampCrystalsText,
                     assets.crystals_icon.clone(),
-                    format!("{}", camp.crystals),
+                    format!("{}", inventory.count_item(Inventory::CRYSTAL)),
                 );
             });
         });
@@ -115,11 +117,11 @@ pub fn update_camp_list(
     mut commands: Commands,
     assets: Res<InterfaceAssets>,
     camp_list_query: Query<Entity, With<CampList>>,
-    camp_query: Query<(Entity, &Camp)>,
+    camp_query: Query<(Entity, &Camp, &Inventory)>,
     camp_display_query: Query<(Entity, &CampDisplay)>,
 ) {
     let camp_list = camp_list_query.single();
-    for (entity, camp) in camp_query.iter() {
+    for (entity, camp, inventory) in camp_query.iter() {
         if camp_display_query
             .iter()
             .any(|(_, display)| display.camp == entity)
@@ -127,11 +129,11 @@ pub fn update_camp_list(
             continue;
         }
         commands.get_or_spawn(camp_list).with_children(|parent| {
-            spawn_camp_display(parent, entity, camp, &assets);
+            spawn_camp_display(parent, entity, camp, inventory, &assets);
         });
     }
 
-    let camp_entities: Vec<Entity> = camp_query.iter().map(|(e, _)| e).collect();
+    let camp_entities: Vec<Entity> = camp_query.iter().map(|(e, _, _)| e).collect();
     for (display_entity, display) in camp_display_query.iter() {
         if !camp_entities.iter().any(|&entity| display.camp == entity) {
             commands.entity(display_entity).despawn_recursive();
@@ -158,10 +160,14 @@ pub fn update_camp_selection(
 }
 
 pub fn update_camp_crystals(
-    mut data_binding_update: DataBindingUpdate<&Camp, &mut Text, Changed<Camp>>,
+    mut data_binding_update: DataBindingUpdate<
+        &Inventory,
+        &mut Text,
+        (Changed<Inventory>, With<Camp>),
+    >,
 ) {
-    data_binding_update.for_each(|camp, text| {
-        text.sections[0].value = format!("{}", camp.crystals);
+    data_binding_update.for_each(|inventory, text| {
+        text.sections[0].value = format!("{}", inventory.count_item(Inventory::CRYSTAL));
     });
 }
 

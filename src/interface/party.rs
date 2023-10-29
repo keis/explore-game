@@ -6,6 +6,7 @@ use super::{
 use crate::{
     actor::{Character, Group, Movement, Party},
     input::{Action, ActionState, Selection},
+    inventory::Inventory,
 };
 use bevy::prelude::*;
 use bevy_mod_picking::prelude::Pickable;
@@ -64,6 +65,7 @@ fn spawn_party_display(
     party: &Party,
     movement: &Movement,
     group: &Group,
+    inventory: &Inventory,
     assets: &Res<InterfaceAssets>,
 ) {
     parent
@@ -116,7 +118,7 @@ fn spawn_party_display(
                     entity,
                     PartyCrystalsText,
                     assets.crystals_icon.clone(),
-                    format!("{}", party.crystals),
+                    format!("{}", inventory.count_item(Inventory::CRYSTAL)),
                 );
             });
         });
@@ -133,11 +135,11 @@ pub fn update_party_list(
     mut commands: Commands,
     assets: Res<InterfaceAssets>,
     party_list_query: Query<Entity, With<PartyList>>,
-    party_query: Query<(Entity, &Party, &Group, &Movement)>,
+    party_query: Query<(Entity, &Party, &Group, &Movement, &Inventory)>,
     party_display_query: Query<(Entity, &PartyDisplay)>,
 ) {
     let party_list = party_list_query.single();
-    for (entity, party, group, party_movement) in party_query.iter() {
+    for (entity, party, group, party_movement, inventory) in party_query.iter() {
         if party_display_query
             .iter()
             .any(|(_, display)| display.party == entity)
@@ -145,14 +147,22 @@ pub fn update_party_list(
             continue;
         }
         commands.get_or_spawn(party_list).with_children(|parent| {
-            spawn_party_display(parent, entity, party, party_movement, group, &assets);
+            spawn_party_display(
+                parent,
+                entity,
+                party,
+                party_movement,
+                group,
+                inventory,
+                &assets,
+            );
         });
     }
 
     let party_entities: Vec<Entity> = party_query
         .iter()
-        .filter(|(_, _, g, _)| !g.members.is_empty())
-        .map(|(e, _, _, _)| e)
+        .filter(|(_, _, g, _, _)| !g.members.is_empty())
+        .map(|(e, _, _, _, _)| e)
         .collect();
     for (display_entity, display) in party_display_query.iter() {
         if !party_entities.iter().any(|&entity| display.party == entity) {
@@ -201,10 +211,14 @@ pub fn update_party_size(
 }
 
 pub fn update_party_crystals(
-    mut data_binding_update: DataBindingUpdate<&Party, &mut Text, Changed<Party>>,
+    mut data_binding_update: DataBindingUpdate<
+        &Inventory,
+        &mut Text,
+        (Changed<Inventory>, With<Party>),
+    >,
 ) {
-    data_binding_update.for_each(|party, text| {
-        text.sections[0].value = format!("{}", party.crystals);
+    data_binding_update.for_each(|inventory, text| {
+        text.sections[0].value = format!("{}", inventory.count_item(Inventory::CRYSTAL));
     });
 }
 

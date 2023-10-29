@@ -4,6 +4,7 @@ use crate::{
     assets::MainAssets,
     combat::FloatingTextSource,
     input::SelectionBundle,
+    inventory::Inventory,
     map::{Fog, HexCoord, MapPresence, Offset, ViewRadius},
     material::TerrainMaterial,
     terrain::HeightQuery,
@@ -76,6 +77,7 @@ pub type CampParams<'w> = (Res<'w, MainAssets>, ResMut<'w, Assets<TerrainMateria
 #[derive(Bundle, Default)]
 pub struct CampBundle {
     camp: Camp,
+    inventory: Inventory,
     presence: MapPresence,
     group: Group,
     offset: Offset,
@@ -91,10 +93,11 @@ pub struct CampFluffBundle {
 }
 
 impl CampBundle {
-    pub fn new(position: HexCoord, camp: Camp) -> Self {
+    pub fn new(position: HexCoord, name: String, inventory: Inventory) -> Self {
         Self {
-            camp,
+            camp: Camp { name },
             presence: MapPresence { position },
+            inventory,
             ..default()
         }
     }
@@ -190,4 +193,11 @@ impl PortalFluffBundle {
             },
         }
     }
+}
+
+#[derive(Bundle, Default)]
+pub struct SafeHavenBundle {
+    safe_haven: SafeHaven,
+    inventory: Inventory,
+    group: Group,
 }

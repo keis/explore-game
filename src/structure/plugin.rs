@@ -13,6 +13,7 @@ impl Plugin for StructurePlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Camp>()
             .register_type::<Portal>()
+            .register_type::<SafeHaven>()
             .register_type::<Spawner>()
             .add_systems(Update, (update_camp_view_radius, update_portal_effect))
             .add_systems(

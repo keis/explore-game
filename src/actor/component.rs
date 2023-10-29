@@ -21,8 +21,6 @@ pub struct Enemy;
 #[reflect(Component)]
 pub struct Party {
     pub name: String,
-    pub supplies: u32,
-    pub crystals: u32,
 }
 
 #[derive(Component, Reflect, Default, Debug)]

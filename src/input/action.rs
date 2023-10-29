@@ -19,6 +19,7 @@ pub enum Action {
     CollectCrystals,
     CreateParty,
     Deselect,
+    EnterPortal,
     MergeParty,
     MultiSelect,
     NextTurn,
@@ -30,12 +31,12 @@ pub enum Action {
     PanCameraRight,
     PanCameraUp,
     ResumeMove,
+    Save,
     SelectNext,
     SplitParty,
-    ToggleMainMenu,
     ToggleInspector,
+    ToggleMainMenu,
     ZoomCamera,
-    Save,
 }
 
 pub fn magic_cancel(
@@ -68,6 +69,15 @@ pub fn handle_deselect(mut selection_query: Query<&mut Selection>) {
         if selection.is_selected {
             selection.is_selected = false;
         }
+    }
+}
+
+pub fn handle_enter_portal(
+    party_query: Query<(Entity, &Selection), With<Party>>,
+    mut game_action_queue: ResMut<GameActionQueue>,
+) {
+    for (entity, _) in party_query.iter().filter(|(_, s)| s.is_selected) {
+        game_action_queue.add(GameAction::EnterPortal(entity));
     }
 }
 

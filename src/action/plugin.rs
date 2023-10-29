@@ -56,6 +56,7 @@ impl Plugin for ActionPlugin {
                         .pipe(warn)
                         .run_if(has_current_action),
                     handle_open_portal.pipe(warn).run_if(has_current_action),
+                    handle_enter_portal.pipe(warn).run_if(has_current_action),
                     handle_slide_stopped
                         .run_if(on_event::<SlideEvent>())
                         .after(handle_move),

@@ -195,8 +195,16 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         parent,
                         &assets,
                         ActionButton(Action::OpenPortal),
-                        assets.portal_icon.clone(),
+                        assets.magic_swirl_icon.clone(),
                         "Open portal",
+                        None::<&str>,
+                    );
+                    spawn_toolbar_icon(
+                        parent,
+                        &assets,
+                        ActionButton(Action::EnterPortal),
+                        assets.portal_icon.clone(),
+                        "Enter portal",
                         None::<&str>,
                     );
                 });
