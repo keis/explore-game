@@ -36,7 +36,7 @@ impl<'w, 's> PathFinder<'w, 's> {
 #[cfg(test)]
 mod tests {
     use super::{HexCoord, PathFinder};
-    use crate::map::tests::app;
+    use crate::test_fixture::app;
     use bevy::prelude::*;
     use rstest::*;
 

@@ -18,7 +18,7 @@ pub use selection::{Deselect, NextSelectionQuery, Select, Selection, SelectionBu
 mod tests {
     use super::{action::handle_select_next, Action, ActionState, Selection};
     use crate::{
-        actor::Movement, camera::CameraControl, map::tests::spawn_game_map, map::MapPresence,
+        actor::Movement, camera::CameraControl, map::MapPresence, test_fixture::spawn_game_map,
     };
     use bevy::prelude::*;
     use rstest::*;

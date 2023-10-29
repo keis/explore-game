@@ -19,4 +19,7 @@ pub mod structure;
 pub mod terrain;
 pub mod turn;
 
+#[cfg(test)]
+pub mod test_fixture;
+
 pub use error::ExplError;
