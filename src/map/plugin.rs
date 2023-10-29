@@ -26,7 +26,6 @@ where
             .register_type::<Offset>()
             .register_type::<SquareGridLayout>()
             .register_type::<ViewRadius>()
-            .add_systems(Startup, insert_hex_assets)
             .add_systems(
                 Update,
                 (

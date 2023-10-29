@@ -2245,6 +2245,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "expl_hexagon"
+version = "0.1.0"
+dependencies = [
+ "bevy_render",
+ "glam",
+ "hexasphere",
+]
+
+[[package]]
 name = "expl_hexgrid"
 version = "0.1.0"
 dependencies = [
@@ -2291,11 +2300,11 @@ dependencies = [
  "bevy_sprite3d",
  "clap",
  "expl_databinding",
+ "expl_hexagon",
  "expl_hexgrid",
  "expl_wfc",
  "futures-lite",
  "glam",
- "hexasphere",
  "interpolation 0.3.0",
  "itertools 0.11.0",
  "leafwing-input-manager",

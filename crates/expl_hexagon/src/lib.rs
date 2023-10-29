@@ -1,4 +1,7 @@
-use bevy::{prelude::*, render::mesh::Indices, render::mesh::PrimitiveTopology};
+use bevy_render::{
+    mesh::{Indices, PrimitiveTopology},
+    prelude::*,
+};
 use glam::Vec3A;
 use hexasphere::{interpolation, BaseShape, Subdivided, Triangle};
 use std::iter;
