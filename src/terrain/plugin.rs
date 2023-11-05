@@ -17,6 +17,7 @@ impl Plugin for TerrainPlugin {
             .register_type::<ZoneDecorationDetail>()
             .register_type::<ZoneDecorations>()
             .register_type::<ZoneDecorationTree>()
+            .register_type::<[f32; 6]>()
             .add_systems(Startup, insert_hex_assets)
             .add_systems(
                 Update,
