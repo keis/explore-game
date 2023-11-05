@@ -134,8 +134,8 @@ pub fn generate_map(seed: Seed) -> Result<MapPrototype, ExplError> {
             })
             .collect();
         let zone = &mut prototype[coord];
-        zone.outer_amp = Outer::new(zone.height_amp, &neighbour_amp);
-        zone.outer_base = Outer::new(zone.height_base, &neighbour_base);
+        zone.outer_amp = Outer::new(&neighbour_amp);
+        zone.outer_base = Outer::new(&neighbour_base);
     }
     Ok(MapPrototype {
         tiles: prototype,

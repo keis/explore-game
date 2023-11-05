@@ -11,6 +11,7 @@ impl Plugin for TerrainPlugin {
             .register_type::<Height>()
             .register_type::<Option<ZoneDecorationDetail>>()
             .register_type::<Outer>()
+            .register_type::<OuterVisible>()
             .register_type::<Terrain>()
             .register_type::<Vec<ZoneDecorationDetail>>()
             .register_type::<ZoneDecorationCrystals>()
@@ -18,6 +19,7 @@ impl Plugin for TerrainPlugin {
             .register_type::<ZoneDecorations>()
             .register_type::<ZoneDecorationTree>()
             .register_type::<[f32; 6]>()
+            .register_type::<[bool; 6]>()
             .add_systems(Startup, insert_hex_assets)
             .add_systems(
                 Update,

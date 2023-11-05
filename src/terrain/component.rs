@@ -5,7 +5,10 @@ use rand::{
     distributions::{Distribution, Standard},
     Rng,
 };
-use std::{cmp::min, ops::Index};
+use std::{
+    cmp::min,
+    ops::{Index, IndexMut},
+};
 
 #[derive(Component, Reflect, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, Ord, PartialOrd)]
 #[reflect(Component)]
@@ -96,25 +99,26 @@ pub struct Water;
 pub struct Outer([f32; 6]);
 
 impl Outer {
-    pub fn new(self_value: f32, neighbour_values: &[f32]) -> Self {
+    pub fn new(neighbour_values: &[f32]) -> Self {
         let mut data = <[f32; 6]>::default();
-        for i in 0..=5 {
-            let min_value = self_value
-                .min(neighbour_values[i])
-                .min(neighbour_values[(i + 1) % 6]);
-            let max_value = self_value
-                .max(neighbour_values[i])
-                .max(neighbour_values[(i + 1) % 6]);
-
-            data[i] = if min_value < 0.0 && max_value < 0.0 {
-                max_value
-            } else if min_value < 0.0 {
-                0.0
-            } else {
-                min_value
-            };
-        }
+        data[..6].copy_from_slice(&neighbour_values[..6]);
         Self(data)
+    }
+
+    fn corner(&self, self_value: f32, idx: usize) -> f32 {
+        let a = self[idx];
+        let b = self[(idx + 1) % 6];
+
+        let min_value = self_value.min(a).min(b);
+        let max_value = self_value.max(a).max(b);
+
+        if min_value < 0.0 && max_value < 0.0 {
+            max_value
+        } else if min_value < 0.0 {
+            0.0
+        } else {
+            min_value
+        }
     }
 }
 
@@ -123,6 +127,12 @@ impl Index<usize> for Outer {
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
+    }
+}
+
+impl IndexMut<usize> for Outer {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.0[index]
     }
 }
 
@@ -146,12 +156,21 @@ pub struct OuterVisible(pub [bool; 6]);
 pub struct Height {
     pub height_amp: f32,
     pub height_base: f32,
+    #[reflect(skip_serializing)]
     pub outer_amp: Outer,
+    #[reflect(skip_serializing)]
     pub outer_base: Outer,
 }
 
 impl Height {
     const HEX_RADIUS_RATIO: f32 = 0.866_025_4;
+
+    fn corner(&self, idx: usize) -> (f32, f32) {
+        (
+            self.outer_amp.corner(self.height_amp, idx),
+            self.outer_base.corner(self.height_base, idx),
+        )
+    }
 
     pub(super) fn amp_and_base(&self, local_position: Vec2) -> (f32, f32) {
         let dc = local_position.length();
@@ -163,19 +182,19 @@ impl Height {
         } else if da < db {
             if local_position.x > 0.0 {
                 if local_position.y > 0.0 {
-                    (self.outer_amp[0], self.outer_base[0])
+                    self.corner(0)
                 } else {
-                    (self.outer_amp[5], self.outer_base[5])
+                    self.corner(5)
                 }
             } else if local_position.y > 0.0 {
-                (self.outer_amp[2], self.outer_base[2])
+                self.corner(2)
             } else {
-                (self.outer_amp[3], self.outer_base[3])
+                self.corner(3)
             }
         } else if local_position.y > 0.0 {
-            (self.outer_amp[1], self.outer_base[1])
+            self.corner(1)
         } else {
-            (self.outer_amp[4], self.outer_base[4])
+            self.corner(4)
         }
     }
 

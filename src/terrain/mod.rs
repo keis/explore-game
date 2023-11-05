@@ -21,8 +21,8 @@ mod tests {
         let height = Height {
             height_amp: 0.5,
             height_base: 0.2,
-            outer_amp: Outer::new(0.5, &[0.1, 0.2, 0.3, 0.5, 0.3, 0.2]),
-            outer_base: Outer::new(0.2, &[0.0, 0.1, 0.1, 0.2, 0.2, 0.0]),
+            outer_amp: Outer::new(&[0.1, 0.2, 0.3, 0.5, 0.3, 0.2]),
+            outer_base: Outer::new(&[0.0, 0.1, 0.1, 0.2, 0.2, 0.0]),
         };
 
         assert_abs_diff_eq!(
@@ -31,8 +31,8 @@ mod tests {
             epsilon = 0.01
         );
         assert_abs_diff_eq!(
-            height.height_at(Vec2::new(0.8, 0.45), Vec2::new(0.8, 0.45)),
-            0.07,
+            height.height_at(Vec2::new(0.85, 0.45), Vec2::new(0.85, 0.45)),
+            0.08,
             epsilon = 0.01
         );
         assert_abs_diff_eq!(
@@ -52,15 +52,15 @@ mod tests {
         let height = Height {
             height_amp: 0.5,
             height_base: 0.2,
-            outer_amp: Outer::new(0.5, &[0.3, 0.2, 0.3, 0.5, 0.3, 0.2]),
-            outer_base: Outer::new(0.2, &[0.3, 0.1, 0.1, 0.2, 0.2, 0.0]),
+            outer_amp: Outer::new(&[0.3, 0.2, 0.3, 0.5, 0.3, 0.2]),
+            outer_base: Outer::new(&[0.3, 0.1, 0.1, 0.2, 0.2, 0.0]),
         };
 
         let (amp, base) = height.amp_and_base(Vec2::splat(0.0));
         assert_abs_diff_eq!(amp, 0.5, epsilon = 0.001);
         assert_abs_diff_eq!(base, 0.2, epsilon = 0.001);
 
-        let (amp, base) = height.amp_and_base(Vec2::new(0.8, 0.45));
+        let (amp, base) = height.amp_and_base(Vec2::new(0.85, 0.45));
         assert_abs_diff_eq!(amp, 0.2, epsilon = 0.001);
         assert_abs_diff_eq!(base, 0.1, epsilon = 0.001);
 

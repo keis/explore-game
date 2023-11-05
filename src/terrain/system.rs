@@ -1,9 +1,10 @@
 use super::{bundle::*, component::*};
 use crate::{
-    map::{Fog, MapEvent, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
+    map::{Fog, MapEvent, MapLayout, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     structure::Camp,
 };
 use bevy::prelude::*;
+use expl_hexgrid::Grid;
 
 pub fn despawn_empty_crystal_deposit(
     mut commands: Commands,
@@ -76,17 +77,33 @@ pub fn show_decorations_behind_camp(
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn fluff_zone(
     mut commands: Commands,
     mut zone_params: ZoneParams,
-    map_query: Query<&ZoneLayer>,
-    zone_query: Query<(Entity, &Terrain, &MapPosition, &Height, &Fog), Without<GlobalTransform>>,
+    map_query: Query<(&MapLayout, &ZoneLayer)>,
+    mut zone_query: ParamSet<(
+        Query<(&MapPosition, &Height), Without<GlobalTransform>>,
+        Query<(Entity, &Terrain, &MapPosition, &mut Height, &Fog), Without<GlobalTransform>>,
+    )>,
     neighbour_zone_query: Query<&Fog>,
 ) {
-    let Ok(zone_layer) = map_query.get_single() else {
+    let Ok((&MapLayout(layout), zone_layer)) = map_query.get_single() else {
         return;
     };
-    for (entity, terrain, position, height, fog) in &zone_query {
+
+    let mut height_grid = Grid::<_, (f32, f32)>::new(layout);
+    for (position, height) in &zone_query.p0() {
+        height_grid[position.0] = (height.height_amp, height.height_base);
+    }
+
+    for (entity, terrain, position, mut height, fog) in &mut zone_query.p1() {
+        for (idx, coord) in position.0.neighbours().enumerate() {
+            let (amp, base) = height_grid.get(coord).unwrap_or(&(0.0, 0.0));
+            height.outer_amp[idx] = *amp;
+            height.outer_base[idx] = *base;
+        }
+
         let outer_visible = if fog.explored {
             OuterVisible([true; 6])
         } else {
@@ -101,6 +118,7 @@ pub fn fluff_zone(
                 if fog.explored {
                     bits[idx % 6] = true;
                     bits[(idx + 5) % 6] = true;
+                    bits[(idx + 1) % 6] = true;
                 }
             }
             OuterVisible(bits)
@@ -109,7 +127,7 @@ pub fn fluff_zone(
             &mut zone_params,
             position,
             terrain,
-            height,
+            &height,
             fog,
             outer_visible,
         ));
@@ -190,6 +208,7 @@ pub fn update_outer_visible(
                 }
                 neighbour_outer_visible.0[(idx + 2) % 6] = true;
                 neighbour_outer_visible.0[(idx + 3) % 6] = true;
+                neighbour_outer_visible.0[(idx + 4) % 6] = true;
             }
         }
     }
