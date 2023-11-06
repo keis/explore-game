@@ -6,9 +6,7 @@ use crate::{
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_mod_picking::{
     highlight::InitialHighlight,
-    prelude::{
-        GlobalHighlight, Highlight, PickHighlight, Pickable, PickingInteraction, RaycastPickTarget,
-    },
+    prelude::{GlobalHighlight, Highlight, PickHighlight, Pickable, PickingInteraction},
 };
 
 #[derive(Component, Reflect, Debug, Default, Clone)]
@@ -23,7 +21,6 @@ pub struct SelectionBundle {
     pub picking_interaction: PickingInteraction,
     pub selection: Selection,
     pub highlight: PickHighlight,
-    pub raycast_pick_target: RaycastPickTarget,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
