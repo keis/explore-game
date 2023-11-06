@@ -7,7 +7,7 @@ license = "ISC"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy_reflect = { version = "0.11", optional = true }
+bevy_reflect = { version = "0.12", optional = true }
 disjoint-hash-set = "1.0.0"
 glam = ">=0.22, <0.25"
 itertools = "0.11"
