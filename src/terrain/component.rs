@@ -120,6 +120,21 @@ impl Outer {
             min_value
         }
     }
+
+    fn edge(&self, self_value: f32, idx: usize) -> f32 {
+        let a = self[idx];
+
+        let min_value = self_value.min(a);
+        let max_value = self_value.max(a);
+
+        if min_value < 0.0 && max_value < 0.0 {
+            max_value
+        } else if min_value < 0.0 {
+            0.0
+        } else {
+            min_value
+        }
+    }
 }
 
 impl Index<usize> for Outer {
@@ -163,8 +178,6 @@ pub struct Height {
 }
 
 impl Height {
-    const HEX_RADIUS_RATIO: f32 = 0.866_025_4;
-
     fn corner(&self, idx: usize) -> (f32, f32) {
         (
             self.outer_amp.corner(self.height_amp, idx),
@@ -172,29 +185,68 @@ impl Height {
         )
     }
 
-    pub(super) fn amp_and_base(&self, local_position: Vec2) -> (f32, f32) {
-        let dc = local_position.length();
-        let da = (local_position.abs() - Vec2::new(Self::HEX_RADIUS_RATIO, 0.5)).length();
-        let db = (local_position.abs() - Vec2::new(0.0, 1.0)).length();
+    fn edge(&self, idx: usize) -> (f32, f32) {
+        (
+            self.outer_amp.edge(self.height_amp, idx),
+            self.outer_base.edge(self.height_base, idx),
+        )
+    }
 
-        if dc < 0.7 {
-            (self.height_amp, self.height_base)
-        } else if da < db {
-            if local_position.x > 0.0 {
-                if local_position.y > 0.0 {
+    pub(super) fn amp_and_base(&self, local_position: Vec2) -> (f32, f32) {
+        // TODO: This could could be simplified by using the fact that the hexagon is symmetrical
+        // in both X and Y
+        if local_position.y >= 0.9 {
+            // South corner
+            self.corner(1)
+        } else if local_position.y <= -0.9 {
+            // North Corner
+            self.corner(4)
+        } else if local_position.x > 0.0 {
+            if local_position.y > local_position.x * -0.5 + 0.9 {
+                // South-East Corner or South-East Edge
+                if local_position.x > 0.8 {
                     self.corner(0)
                 } else {
-                    self.corner(5)
+                    self.edge(1)
                 }
-            } else if local_position.y > 0.0 {
-                self.corner(2)
+            } else if local_position.y < local_position.x * 0.5 - 0.9 {
+                // North-East Corner or North-East Edge
+                if local_position.x > 0.8 {
+                    self.corner(5)
+                } else {
+                    self.edge(5)
+                }
+            } else if local_position.x > 0.8 {
+                // East Edge
+                self.edge(0)
             } else {
-                self.corner(3)
+                // Internal
+                (self.height_amp, self.height_base)
             }
-        } else if local_position.y > 0.0 {
-            self.corner(1)
+        } else if local_position.x < 0.0 {
+            if local_position.y > -local_position.x * -0.5 + 0.9 {
+                // South-West Corner or South-West Edge
+                if local_position.x < -0.8 {
+                    self.corner(2)
+                } else {
+                    self.edge(2)
+                }
+            } else if local_position.y < -local_position.x * 0.5 - 0.9 {
+                // North-West Corner or North-West Edge
+                if local_position.x < -0.8 {
+                    self.corner(3)
+                } else {
+                    self.edge(4)
+                }
+            } else if local_position.x < 0.8 {
+                // West Edge
+                self.edge(3)
+            } else {
+                // Internal
+                (self.height_amp, self.height_base)
+            }
         } else {
-            self.corner(4)
+            (self.height_amp, self.height_base)
         }
     }
 

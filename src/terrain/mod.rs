@@ -41,8 +41,8 @@ mod tests {
             epsilon = 0.01
         );
         assert_abs_diff_eq!(
-            height.height_at(Vec2::new(0.8, 0.0), Vec2::new(0.8, 0.0)),
-            0.069,
+            height.height_at(Vec2::new(0.85, 0.0), Vec2::new(0.85, 0.0)),
+            0.06,
             epsilon = 0.01
         );
     }
@@ -60,7 +60,7 @@ mod tests {
         assert_abs_diff_eq!(amp, 0.5, epsilon = 0.001);
         assert_abs_diff_eq!(base, 0.2, epsilon = 0.001);
 
-        let (amp, base) = height.amp_and_base(Vec2::new(0.85, 0.45));
+        let (amp, base) = height.amp_and_base(Vec2::new(0.85, 0.48));
         assert_abs_diff_eq!(amp, 0.2, epsilon = 0.001);
         assert_abs_diff_eq!(base, 0.1, epsilon = 0.001);
 
@@ -72,9 +72,8 @@ mod tests {
         assert_abs_diff_eq!(amp, 0.2, epsilon = 0.001);
         assert_abs_diff_eq!(base, 0.0, epsilon = 0.001);
 
-        // TODO: Should really be the edge 0.3
-        let (amp, base) = height.amp_and_base(Vec2::new(0.8, 0.2));
-        assert_abs_diff_eq!(amp, 0.2, epsilon = 0.001);
-        assert_abs_diff_eq!(base, 0.1, epsilon = 0.001);
+        let (amp, base) = height.amp_and_base(Vec2::new(0.85, 0.2));
+        assert_abs_diff_eq!(amp, 0.3, epsilon = 0.001);
+        assert_abs_diff_eq!(base, 0.2, epsilon = 0.001);
     }
 }

@@ -69,58 +69,116 @@ fn corner(self_value: f32, a_value: f32, b_value: f32) -> f32 {
     return result;
 }
 
-fn amp_and_base(position: vec2<f32>) -> vec2<f32> {
-    var dc = length(position);
-    var da = length(abs(position) - vec2<f32>(0.8660254, 0.5));
-    var db = length(abs(position) - vec2<f32>(0.0, 1.0));
-    var result: vec2<f32>;
+fn edge(self_value: f32, a_value: f32) -> f32 {
+    var min_value = min(self_value, a_value);
+    var max_value = max(self_value, a_value);
+    var result: f32;
 
-    if dc < 0.7 {
-        if uniform_data.explored == 1u {
-            result = vec2<f32>(uniform_data.height_amp, uniform_data.height_base);
-        } else {
-            result = vec2<f32>(0.0, 0.0);
-        }
-    } else if da < db {
-        if position.x > 0.0 {
-            if position.y > 0.0 {
-                result = vec2<f32>(
+    if min_value < 0.0 && max_value < 0.0 {
+        result = max_value;
+    } else if min_value < 0.0 {
+        result = 0.0;
+    } else {
+        result = min_value;
+    }
+
+    return result;
+}
+
+fn amp_and_base(position: vec2<f32>) -> vec2<f32> {
+    // South corner
+    if position.y >= 0.9 {
+        return vec2<f32>(
+            corner(uniform_data.height_amp, uniform_data.outer_amp_se, uniform_data.outer_amp_sw),
+            corner(uniform_data.height_base, uniform_data.outer_base_se, uniform_data.outer_base_sw),
+        );
+    }
+
+    // North Corner
+    if position.y <= -0.9 {
+        return vec2<f32>(
+            corner(uniform_data.height_amp, uniform_data.outer_amp_nw, uniform_data.outer_amp_ne),
+            corner(uniform_data.height_base, uniform_data.outer_base_nw, uniform_data.outer_base_ne),
+        );
+    }
+
+    if position.x > 0.0 {
+        // South-East Corner or South-East Edge
+        if position.y > position.x * -0.5 + 0.9 {
+            if position.x > 0.8 {
+                return vec2<f32>(
                     corner(uniform_data.height_amp, uniform_data.outer_amp_e, uniform_data.outer_amp_se),
                     corner(uniform_data.height_base, uniform_data.outer_base_e, uniform_data.outer_base_se),
                 );
-            } else {
-                result = vec2<f32>(
+            }
+            return vec2<f32>(
+                edge(uniform_data.height_amp, uniform_data.outer_amp_se),
+                edge(uniform_data.height_base, uniform_data.outer_base_se),
+            );
+        }
+        // North-East Corner or North-East Edge
+        if position.y < position.x * 0.5 - 0.9 {
+            if position.x > 0.8 {
+                return vec2<f32>(
                     corner(uniform_data.height_amp, uniform_data.outer_amp_ne, uniform_data.outer_amp_e),
                     corner(uniform_data.height_base, uniform_data.outer_base_ne, uniform_data.outer_base_e),
                 );
             }
-        } else {
-            if position.y > 0.0 {
-                result = vec2<f32>(
-                    corner(uniform_data.height_amp, uniform_data.outer_amp_sw, uniform_data.outer_amp_w),
-                    corner(uniform_data.height_base, uniform_data.outer_base_sw, uniform_data.outer_base_w),
-                );
-            } else {
-                result = vec2<f32>(
-                    corner(uniform_data.height_amp, uniform_data.outer_amp_w, uniform_data.outer_amp_nw),
-                    corner(uniform_data.height_base, uniform_data.outer_base_w, uniform_data.outer_base_nw),
-                );
-            }
-        }
-    } else {
-        if position.y > 0.0 {
-            result = vec2<f32>(
-                corner(uniform_data.height_amp, uniform_data.outer_amp_se, uniform_data.outer_amp_sw),
-                corner(uniform_data.height_base, uniform_data.outer_base_se, uniform_data.outer_base_sw),
+            return vec2<f32>(
+                edge(uniform_data.height_amp, uniform_data.outer_amp_ne),
+                edge(uniform_data.height_base, uniform_data.outer_base_ne),
             );
-        } else {
-            result = vec2<f32>(
-                corner(uniform_data.height_amp, uniform_data.outer_amp_nw, uniform_data.outer_amp_ne),
-                corner(uniform_data.height_base, uniform_data.outer_base_nw, uniform_data.outer_base_ne),
+        }
+        // East Edge
+        if position.x > 0.8 {
+            return vec2<f32>(
+                edge(uniform_data.height_amp, uniform_data.outer_amp_e),
+                edge(uniform_data.height_base, uniform_data.outer_base_e),
             );
         }
     }
-    return result;
+
+    if position.x < 0.0 {
+        // South-West Corner or South-West Edge
+        if position.y > -position.x * -0.5 + 0.9 {
+            if position.x < -0.8 {
+                return vec2<f32>(
+                    corner(uniform_data.height_amp, uniform_data.outer_amp_w, uniform_data.outer_amp_sw),
+                    corner(uniform_data.height_base, uniform_data.outer_base_w, uniform_data.outer_base_sw),
+                );
+            }
+            return vec2<f32>(
+                edge(uniform_data.height_amp, uniform_data.outer_amp_sw),
+                edge(uniform_data.height_base, uniform_data.outer_base_sw),
+            );
+        }
+        // North-West Corner or North-West Edge
+        if position.y < -position.x * 0.5 - 0.9 {
+            if position.x < -0.8 {
+                return vec2<f32>(
+                    corner(uniform_data.height_amp, uniform_data.outer_amp_nw, uniform_data.outer_amp_w),
+                    corner(uniform_data.height_base, uniform_data.outer_base_nw, uniform_data.outer_base_w),
+                );
+            }
+            return vec2<f32>(
+                edge(uniform_data.height_amp, uniform_data.outer_amp_nw),
+                edge(uniform_data.height_base, uniform_data.outer_base_nw),
+            );
+        }
+        // West Edge
+        if position.x < -0.8 {
+            return vec2<f32>(
+                edge(uniform_data.height_amp, uniform_data.outer_amp_w),
+                edge(uniform_data.height_base, uniform_data.outer_base_w),
+            );
+        }
+    }
+
+    // Internal
+    if uniform_data.explored == 1u {
+        return vec2<f32>(uniform_data.height_amp, uniform_data.height_base);
+    }
+    return vec2<f32>(0.0, 0.0);
 }
 
 fn height_at(position: vec2<f32>, world_position: vec2<f32>) -> f32 {
