@@ -1,6 +1,5 @@
 use crate::camera::{CameraBounds, CameraControl};
 use bevy::prelude::*;
-use bevy_mod_picking::prelude::RaycastPickCamera;
 
 pub fn spawn_camera(mut commands: Commands) {
     let translation = Vec3::new(30.0, 10.0, 30.0);
@@ -17,6 +16,5 @@ pub fn spawn_camera(mut commands: Commands) {
             gap: 1.0,
         },
         CameraControl::default(),
-        RaycastPickCamera::default(),
     ));
 }

@@ -6,7 +6,7 @@ use crate::{
     material::{TerrainMaterial, WaterMaterial, ZoneMaterial},
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
-use bevy_mod_picking::prelude::{Pickable, PickingInteraction, RaycastPickTarget};
+use bevy_mod_picking::prelude::{Pickable, PickingInteraction};
 use glam::Vec3Swizzles;
 
 pub type ZoneDecorationParams<'w> = (Res<'w, MainAssets>, ResMut<'w, Assets<TerrainMaterial>>);
@@ -139,7 +139,6 @@ pub struct ZoneBundle {
 #[derive(Bundle, Default)]
 pub struct ZoneFluffBundle {
     pickable: Pickable,
-    raycast_pick_target: RaycastPickTarget,
     interaction: PickingInteraction,
     not_shadow_caster: NotShadowCaster,
     material_mesh_bundle: MaterialMeshBundle<ZoneMaterial>,
