@@ -26,7 +26,7 @@ futures-lite = "2"
 glam = "0.24"
 interpolation = "0.3"
 itertools = "0.11"
-leafwing-input-manager = { version = "0.10", default-features = false, features = ["egui"] }
+leafwing-input-manager = { version = "0.11", default-features = false, features = ["egui"] }
 noisy_bevy = "0.4"
 pathfinding = "4"
 rand = "0.8"
