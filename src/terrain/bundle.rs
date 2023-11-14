@@ -151,8 +151,8 @@ impl ZoneBundle {
         let height = Height {
             height_amp: prototype.height_amp,
             height_base: prototype.height_base,
-            outer_amp: prototype.outer_amp.into(),
-            outer_base: prototype.outer_base.into(),
+            outer_amp: prototype.outer_amp,
+            outer_base: prototype.outer_base,
         };
         let mut filliter = prototype.random_fill.iter();
         Self {

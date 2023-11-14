@@ -1,4 +1,7 @@
-use crate::{terrain::Terrain, ExplError};
+use crate::{
+    terrain::{Outer, Terrain},
+    ExplError,
+};
 use bevy::{prelude::*, tasks::Task};
 use expl_hexgrid::{layout::SquareGridLayout, Grid, HexCoord};
 use expl_wfc::Seed;
@@ -10,8 +13,8 @@ pub struct ZonePrototype {
     pub crystals: bool,
     pub height_amp: f32,
     pub height_base: f32,
-    pub outer_amp: [f32; 6],
-    pub outer_base: [f32; 6],
+    pub outer_amp: Outer,
+    pub outer_base: Outer,
 }
 
 #[derive(Component)]

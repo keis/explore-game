@@ -12,17 +12,19 @@ struct UniformData {
     hover: u32,
     height_amp: f32,
     height_base: f32,
+    // Outer amplifier
+    outer_amp_e: f32,
     outer_amp_se: f32,
-    outer_amp_s: f32,
     outer_amp_sw: f32,
+    outer_amp_w: f32,
     outer_amp_nw: f32,
-    outer_amp_n: f32,
     outer_amp_ne: f32,
+    // Outer base
+    outer_base_e: f32,
     outer_base_se: f32,
-    outer_base_s: f32,
     outer_base_sw: f32,
+    outer_base_w: f32,
     outer_base_nw: f32,
-    outer_base_n: f32,
     outer_base_ne: f32,
 }
 
@@ -51,50 +53,138 @@ struct Vertex {
 #endif
 };
 
-fn height_at(position: vec2<f32>, world_position: vec2<f32>) -> f32 {
-    var amp: f32;
-    var base: f32;
-    var dc = length(position);
-    var da = length(abs(position) - vec2<f32>(0.8660254, 0.5));
-    var db = length(abs(position) - vec2<f32>(0.0, 1.0));
-    if dc < 0.7 {
-        if uniform_data.explored == 1u {
-            amp = uniform_data.height_amp;
-            base = uniform_data.height_base;
-        } else {
-            amp = 0.0;
-            base = 0.0;
-        }
-    } else if da < db {
-        if position.x > 0.0 {
-            if position.y > 0.0 {
-                amp = uniform_data.outer_amp_se;
-                base = uniform_data.outer_base_se;
-            } else {
-                amp = uniform_data.outer_amp_ne;
-                base = uniform_data.outer_base_ne;
-            }
-        } else {
-            if position.y > 0.0 {
-                amp = uniform_data.outer_amp_sw;
-                base = uniform_data.outer_base_sw;
-            } else {
-                amp = uniform_data.outer_amp_nw;
-                base = uniform_data.outer_base_nw;
-            }
-        }
+fn corner(self_value: f32, a_value: f32, b_value: f32) -> f32 {
+    var min_value = min(self_value, min(a_value, b_value));
+    var max_value = max(self_value, max(a_value, b_value));
+    var result: f32;
+
+    if min_value < 0.0 && max_value < 0.0 {
+        result = max_value;
+    } else if min_value < 0.0 {
+        result = 0.0;
     } else {
-        if position.y > 0.0 {
-            amp = uniform_data.outer_amp_s;
-            base = uniform_data.outer_base_s;
-        } else {
-            amp = uniform_data.outer_amp_n;
-            base = uniform_data.outer_base_n;
+        result = min_value;
+    }
+
+    return result;
+}
+
+fn edge(self_value: f32, a_value: f32) -> f32 {
+    var min_value = min(self_value, a_value);
+    var max_value = max(self_value, a_value);
+    var result: f32;
+
+    if min_value < 0.0 && max_value < 0.0 {
+        result = max_value;
+    } else if min_value < 0.0 {
+        result = 0.0;
+    } else {
+        result = min_value;
+    }
+
+    return result;
+}
+
+fn amp_and_base(position: vec2<f32>) -> vec2<f32> {
+    // South corner
+    if position.y >= 0.9 {
+        return vec2<f32>(
+            corner(uniform_data.height_amp, uniform_data.outer_amp_se, uniform_data.outer_amp_sw),
+            corner(uniform_data.height_base, uniform_data.outer_base_se, uniform_data.outer_base_sw),
+        );
+    }
+
+    // North Corner
+    if position.y <= -0.9 {
+        return vec2<f32>(
+            corner(uniform_data.height_amp, uniform_data.outer_amp_nw, uniform_data.outer_amp_ne),
+            corner(uniform_data.height_base, uniform_data.outer_base_nw, uniform_data.outer_base_ne),
+        );
+    }
+
+    if position.x > 0.0 {
+        // South-East Corner or South-East Edge
+        if position.y > position.x * -0.5 + 0.9 {
+            if position.x > 0.8 {
+                return vec2<f32>(
+                    corner(uniform_data.height_amp, uniform_data.outer_amp_e, uniform_data.outer_amp_se),
+                    corner(uniform_data.height_base, uniform_data.outer_base_e, uniform_data.outer_base_se),
+                );
+            }
+            return vec2<f32>(
+                edge(uniform_data.height_amp, uniform_data.outer_amp_se),
+                edge(uniform_data.height_base, uniform_data.outer_base_se),
+            );
+        }
+        // North-East Corner or North-East Edge
+        if position.y < position.x * 0.5 - 0.9 {
+            if position.x > 0.8 {
+                return vec2<f32>(
+                    corner(uniform_data.height_amp, uniform_data.outer_amp_ne, uniform_data.outer_amp_e),
+                    corner(uniform_data.height_base, uniform_data.outer_base_ne, uniform_data.outer_base_e),
+                );
+            }
+            return vec2<f32>(
+                edge(uniform_data.height_amp, uniform_data.outer_amp_ne),
+                edge(uniform_data.height_base, uniform_data.outer_base_ne),
+            );
+        }
+        // East Edge
+        if position.x > 0.8 {
+            return vec2<f32>(
+                edge(uniform_data.height_amp, uniform_data.outer_amp_e),
+                edge(uniform_data.height_base, uniform_data.outer_base_e),
+            );
         }
     }
 
+    if position.x < 0.0 {
+        // South-West Corner or South-West Edge
+        if position.y > -position.x * -0.5 + 0.9 {
+            if position.x < -0.8 {
+                return vec2<f32>(
+                    corner(uniform_data.height_amp, uniform_data.outer_amp_w, uniform_data.outer_amp_sw),
+                    corner(uniform_data.height_base, uniform_data.outer_base_w, uniform_data.outer_base_sw),
+                );
+            }
+            return vec2<f32>(
+                edge(uniform_data.height_amp, uniform_data.outer_amp_sw),
+                edge(uniform_data.height_base, uniform_data.outer_base_sw),
+            );
+        }
+        // North-West Corner or North-West Edge
+        if position.y < -position.x * 0.5 - 0.9 {
+            if position.x < -0.8 {
+                return vec2<f32>(
+                    corner(uniform_data.height_amp, uniform_data.outer_amp_nw, uniform_data.outer_amp_w),
+                    corner(uniform_data.height_base, uniform_data.outer_base_nw, uniform_data.outer_base_w),
+                );
+            }
+            return vec2<f32>(
+                edge(uniform_data.height_amp, uniform_data.outer_amp_nw),
+                edge(uniform_data.height_base, uniform_data.outer_base_nw),
+            );
+        }
+        // West Edge
+        if position.x < -0.8 {
+            return vec2<f32>(
+                edge(uniform_data.height_amp, uniform_data.outer_amp_w),
+                edge(uniform_data.height_base, uniform_data.outer_base_w),
+            );
+        }
+    }
+
+    // Internal
+    if uniform_data.explored == 1u {
+        return vec2<f32>(uniform_data.height_amp, uniform_data.height_base);
+    }
+    return vec2<f32>(0.0, 0.0);
+}
+
+fn height_at(position: vec2<f32>, world_position: vec2<f32>) -> f32 {
+    var k = amp_and_base(position);
     var noise = (1.0 + simplex_noise_2d(world_position)) / 2.0;
-    return base + noise * amp;
+    return k.y + noise * k.x;
 }
 
 @vertex

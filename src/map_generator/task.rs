@@ -1,5 +1,8 @@
 use super::{MapPrototype, ZonePrototype};
-use crate::{terrain::Terrain, ExplError};
+use crate::{
+    terrain::{Outer, Terrain},
+    ExplError,
+};
 use bevy::prelude::*;
 use expl_hexgrid::{
     layout::{HexagonalGridLayout, SquareGridLayout},
@@ -131,39 +134,8 @@ pub fn generate_map(seed: Seed) -> Result<MapPrototype, ExplError> {
             })
             .collect();
         let zone = &mut prototype[coord];
-        for i in 0..=5 {
-            let min_amp = zone
-                .height_amp
-                .min(neighbour_amp[i])
-                .min(neighbour_amp[(i + 1) % 6]);
-            let max_amp = zone
-                .height_amp
-                .max(neighbour_amp[i])
-                .max(neighbour_amp[(i + 1) % 6]);
-            zone.outer_amp[i] = if min_amp < 0.0 && max_amp < 0.0 {
-                max_amp
-            } else if min_amp < 0.0 {
-                0.0
-            } else {
-                min_amp
-            };
-
-            let min_base = zone
-                .height_base
-                .min(neighbour_base[i])
-                .min(neighbour_base[(i + 1) % 6]);
-            let max_base = zone
-                .height_base
-                .max(neighbour_base[i])
-                .max(neighbour_base[(i + 1) % 6]);
-            zone.outer_base[i] = if min_base < 0.0 && max_base < 0.0 {
-                max_base
-            } else if min_base < 0.0 {
-                0.0
-            } else {
-                min_base
-            };
-        }
+        zone.outer_amp = Outer::new(&neighbour_amp);
+        zone.outer_base = Outer::new(&neighbour_base);
     }
     Ok(MapPrototype {
         tiles: prototype,
