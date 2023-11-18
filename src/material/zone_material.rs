@@ -24,15 +24,15 @@ impl Plugin for ZoneMaterialPlugin {
 #[uuid = "05f50382-7218-4860-8c4c-06dbd66694db"]
 #[uniform(4, ZoneMaterialUniform)]
 pub struct ZoneMaterial {
-    #[texture(0)]
-    #[sampler(1)]
-    pub terrain_texture: Option<Handle<Image>>,
     #[texture(2)]
     #[sampler(3)]
     pub cloud_texture: Option<Handle<Image>>,
     pub visible: bool,
     pub explored: bool,
     pub hover: bool,
+    pub color_a: Color,
+    pub color_b: Color,
+    pub color_c: Color,
     pub height_amp: f32,
     pub height_base: f32,
     pub outer_amp: [f32; 6],
@@ -48,15 +48,29 @@ impl ZoneMaterial {
         fog: &Fog,
         outer_visible: &OuterVisible,
     ) -> Self {
-        let terrain_texture = match terrain {
-            Terrain::Ocean => Some(assets.ocean_texture.clone()),
-            Terrain::Mountain => Some(assets.mountain_texture.clone()),
-            Terrain::Forest => Some(assets.grass_texture.clone()),
+        let colors = match terrain {
+            Terrain::Ocean => (
+                Color::rgb(0.290, 0.388, 0.443),
+                Color::rgb(0.443, 0.549, 0.631),
+                Color::rgb(0.325, 0.427, 0.490),
+            ),
+            Terrain::Mountain => (
+                Color::rgb(0.357, 0.255, 0.114),
+                Color::rgb(0.259, 0.184, 0.067),
+                Color::rgb(0.584, 0.498, 0.271),
+            ),
+            Terrain::Forest => (
+                Color::rgb(0.122, 0.333, 0.094),
+                Color::rgb(0.329, 0.412, 0.118),
+                Color::rgb(0.145, 0.353, 0.010),
+            ),
         };
 
         Self {
             cloud_texture: Some(assets.cloud_texture.clone()),
-            terrain_texture,
+            color_a: colors.0,
+            color_b: colors.1,
+            color_c: colors.2,
             visible: fog.visible,
             explored: fog.explored,
             height_amp: height.height_amp,
@@ -74,6 +88,9 @@ pub struct ZoneMaterialUniform {
     pub visible: u32,
     pub explored: u32,
     pub hover: u32,
+    pub color_a: Vec4,
+    pub color_b: Vec4,
+    pub color_c: Vec4,
     pub height_amp: f32,
     pub height_base: f32,
     // Outer amplifier
@@ -98,6 +115,9 @@ impl From<&ZoneMaterial> for ZoneMaterialUniform {
             visible: zone_material.visible as u32,
             explored: zone_material.explored as u32,
             hover: zone_material.hover as u32,
+            color_a: zone_material.color_a.as_linear_rgba_f32().into(),
+            color_b: zone_material.color_b.as_linear_rgba_f32().into(),
+            color_c: zone_material.color_c.as_linear_rgba_f32().into(),
             height_amp: zone_material.height_amp,
             height_base: zone_material.height_base,
             outer_amp_e: zone_material.amp_for(0),
