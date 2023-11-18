@@ -3,18 +3,17 @@
 #import bevy_pbr::pbr_types STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT
 #import bevy_pbr::mesh_vertex_output MeshVertexOutput
 #import bevy_core_pipeline::tonemapping tone_mapping
+#import noisy_bevy fbm_simplex_2d
 
 struct UniformData {
     visible: u32,
     explored: u32,
     hover: u32,
-    height: f32,
+    color_a: vec4<f32>,
+    color_b: vec4<f32>,
+    color_c: vec4<f32>,
 }
 
-@group(1) @binding(0)
-var terrain_texture: texture_2d<f32>;
-@group(1) @binding(1)
-var terrain_texture_sampler: sampler;
 @group(1) @binding(2)
 var cloud_texture: texture_2d<f32>;
 @group(1) @binding(3)
@@ -24,6 +23,13 @@ var<uniform> uniform_data: UniformData;
 
 fn modulo(a: f32, n: f32) -> f32 {
     return a - n * floor(a / n);
+}
+
+fn noise(uv: vec2<f32>) -> f32 {
+    var octaves = 2;
+    var lacunarity = 4.0;
+    var gain = 0.5;
+    return fbm_simplex_2d(uv, octaves, lacunarity, gain);
 }
 
 @fragment
@@ -36,8 +42,26 @@ fn fragment(@builtin(front_facing) is_front: bool, mesh: MeshVertexOutput) -> @l
         modulo(mesh.world_position.x * 0.3, 1.0),
         modulo(mesh.world_position.z * 0.3, 1.0)
     );
-    output_color = output_color * textureSample(terrain_texture, terrain_texture_sampler, world_uv);
+
+    var floor_world_uv = floor(mesh.world_position.xz * 16.0) / 16.0;
+    var noise = noise(floor_world_uv) + 1.0;
+    let frac = 1.0 / 3.0;
+    if noise > frac * 5.0 {
+        output_color = output_color * uniform_data.color_a;
+    } else if noise > frac * 4.0 {
+        output_color = output_color * uniform_data.color_b;
+    } else if noise > frac * 3.0 {
+        output_color = output_color * uniform_data.color_c;
+    } else if noise > frac * 2.0 {
+        output_color = output_color * mix(uniform_data.color_a, uniform_data.color_b, 0.5);
+    } else if noise > frac * 1.0 {
+        output_color = output_color * mix(uniform_data.color_a, uniform_data.color_c, 0.5);
+    } else {
+        output_color = output_color * mix(uniform_data.color_b, uniform_data.color_c, 0.5);
+    }
+
     output_color = mix(output_color, vec4<f32>(1.0, 1.0, 1.0, 1.0), clamp(mesh.world_position.y - 0.3, 0.0, 1.0) * 2.0);
+
     var cloud_uv = vec2<f32>(
         modulo(world_uv.x + cos(globals.time * 0.01), 1.0),
         modulo(world_uv.y + sin(globals.time * 0.01), 1.0)

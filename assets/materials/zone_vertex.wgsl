@@ -10,6 +10,9 @@ struct UniformData {
     visible: u32,
     explored: u32,
     hover: u32,
+    color_a: vec4<f32>,
+    color_b: vec4<f32>,
+    color_c: vec4<f32>,
     height_amp: f32,
     height_base: f32,
     // Outer amplifier
