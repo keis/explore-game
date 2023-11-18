@@ -39,7 +39,9 @@ impl Plugin for ScenePlugin {
             )
             .add_systems(
                 Update, // PreUpdate
-                save_into_file(save_location()).run_if(action_just_pressed(Action::Save)),
+                save_with::<With<Save>, _, _>(filter_with_enabled_components)
+                    .into_file(save_location())
+                    .run_if(action_just_pressed(Action::Save)),
             )
             .add_systems(
                 Update,
