@@ -118,7 +118,7 @@ pub enum CombatEvent {
 }
 
 pub fn combat_log(mut combat_events: EventReader<CombatEvent>, combat_query: Query<&Combat>) {
-    for event in &mut combat_events {
+    for event in combat_events.read() {
         match event {
             CombatEvent::Initiate(entity) => {
                 let Ok(combat) = combat_query.get(*entity) else {
@@ -162,7 +162,7 @@ pub fn initiate_combat(
     let Ok(presence_layer) = map_query.get_single() else {
         return;
     };
-    for event in &mut map_events {
+    for event in map_events.read() {
         let MapEvent::PresenceMoved { position, .. } = event else {
             continue;
         };
@@ -269,7 +269,7 @@ pub fn spawn_damage_text(
     mut combat_events: EventReader<CombatEvent>,
     mut combat_query: Query<&mut FloatingTextSource, With<Combat>>,
 ) {
-    for event in &mut combat_events {
+    for event in combat_events.read() {
         match event {
             CombatEvent::FriendDamage(entity, damage) => {
                 let Ok(mut floating_text_source) = combat_query.get_mut(*entity) else {

@@ -79,7 +79,7 @@ pub fn handle_slide_stopped(
     let Ok(map_entity) = map_query.get_single() else {
         return;
     };
-    for _ in &mut events {
+    for _ in events.read() {
         let Some(GameAction::Move(e, next)) = queue.current else {
             return;
         };
@@ -103,7 +103,7 @@ pub fn follow_path(
 
     pathguided.advance();
 
-    if combat_events.iter().count() > 0 {
+    if combat_events.read().count() > 0 {
         return;
     }
 

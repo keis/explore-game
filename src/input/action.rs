@@ -7,11 +7,11 @@ use crate::{
     map::{MapPresence, PresenceLayer},
     structure::Camp,
 };
-use bevy::{prelude::*, reflect::TypePath};
+use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 use smallvec::SmallVec;
 
-#[derive(Actionlike, TypePath, PartialEq, Eq, Clone, Copy, Hash, Debug)]
+#[derive(Actionlike, Reflect, PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum Action {
     BreakCamp,
     Camp,

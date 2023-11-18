@@ -21,7 +21,7 @@ pub fn handle_zone_click_events(
         return;
     }
 
-    for event in &mut events {
+    for event in events.read() {
         if event.event.button != PointerButton::Primary {
             continue;
         }

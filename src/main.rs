@@ -1,6 +1,4 @@
-use bevy::{
-    asset::ChangeWatcher, log::LogPlugin, prelude::*, utils::Duration, window::PresentMode,
-};
+use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
 use clap::Parser;
 use expl_wfc::Seed;
@@ -62,11 +60,7 @@ fn main() {
                     filter: "wgpu=error,bevy_ecs::event=error".to_string(),
                     ..default()
                 })
-                .set(ImagePlugin::default_nearest())
-                .set(AssetPlugin {
-                    watch_for_changes: ChangeWatcher::with_delay(Duration::from_millis(200)),
-                    ..default()
-                }),
+                .set(ImagePlugin::default_nearest()),
         )
         .add_plugins(MaterialPlugins)
         .add_state::<AssetState>()

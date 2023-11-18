@@ -13,7 +13,7 @@ impl Plugin for PortalMaterialPlugin {
     }
 }
 
-#[derive(AsBindGroup, TypeUuid, TypePath, Clone, Default)]
+#[derive(Asset, AsBindGroup, TypeUuid, TypePath, Clone, Default)]
 #[uuid = "30c885f0-3baa-4267-b48c-41062f7fe7b5"]
 #[uniform(0, PortalMaterialUniform)]
 pub struct PortalMaterial {

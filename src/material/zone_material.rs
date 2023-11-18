@@ -20,7 +20,7 @@ impl Plugin for ZoneMaterialPlugin {
     }
 }
 
-#[derive(AsBindGroup, TypeUuid, TypePath, Clone, Default)]
+#[derive(Asset, AsBindGroup, TypeUuid, TypePath, Clone, Default)]
 #[uuid = "05f50382-7218-4860-8c4c-06dbd66694db"]
 #[uniform(4, ZoneMaterialUniform)]
 pub struct ZoneMaterial {

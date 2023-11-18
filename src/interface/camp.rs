@@ -107,7 +107,7 @@ pub fn run_if_any_camp_changed(
     mut map_events: EventReader<MapEvent>,
 ) -> bool {
     let removed_event_count = map_events
-        .iter()
+        .read()
         .filter(|e| matches!(e, MapEvent::PresenceRemoved { .. }))
         .count();
     !(camp_query.is_empty() && removed_event_count == 0)

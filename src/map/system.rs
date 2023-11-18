@@ -9,7 +9,7 @@ pub fn log_moves(
     let Ok(presence_layer) = presence_layer_query.get_single() else {
         return;
     };
-    for event in &mut map_events {
+    for event in map_events.read() {
         if let MapEvent::PresenceMoved {
             presence: entity,
             position,

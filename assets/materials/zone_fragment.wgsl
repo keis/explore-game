@@ -1,9 +1,11 @@
-#import bevy_pbr::mesh_view_bindings view, globals
-#import bevy_pbr::pbr_functions as fns
-#import bevy_pbr::pbr_types STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT
-#import bevy_pbr::mesh_vertex_output MeshVertexOutput
-#import bevy_core_pipeline::tonemapping tone_mapping
-#import noisy_bevy fbm_simplex_2d
+#import bevy_pbr::{
+    mesh_view_bindings::{view, globals},
+    forward_io::VertexOutput,
+    pbr_functions as fns,
+    pbr_types::{STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT, PbrInput, pbr_input_new},
+}
+#import bevy_core_pipeline::tonemapping::tone_mapping
+#import noisy_bevy::fbm_simplex_2d
 
 struct UniformData {
     visible: u32,
@@ -33,7 +35,7 @@ fn noise(uv: vec2<f32>) -> f32 {
 }
 
 @fragment
-fn fragment(@builtin(front_facing) is_front: bool, mesh: MeshVertexOutput) -> @location(0) vec4<f32> {
+fn fragment(@builtin(front_facing) is_front: bool, mesh: VertexOutput) -> @location(0) vec4<f32> {
     var output_color = vec4<f32>(1.0, 1.0, 1.0, 1.0);
 #ifdef VERTEX_COLORS
     output_color = output_color * mesh.color
@@ -81,21 +83,24 @@ fn fragment(@builtin(front_facing) is_front: bool, mesh: MeshVertexOutput) -> @l
         output_color = mix(output_color, vec4<f32>(0.863, 0.969, 0.710, 1.0), c);
     }
 
-    var pbr_input: fns::PbrInput = fns::pbr_input_new();
+    var pbr_input: PbrInput = pbr_input_new();
+
+    let double_sided = (pbr_input.material.flags & STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0u;
 
     pbr_input.material.base_color = output_color;
-
     pbr_input.frag_coord = mesh.position;
     pbr_input.world_position = mesh.world_position;
     pbr_input.is_orthographic = view.projection[3].w == 1.0;
     pbr_input.world_normal = fns::prepare_world_normal(
         mesh.world_normal,
-        (pbr_input.material.flags & STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0u,
+        double_sided,
         is_front
     );
     pbr_input.N = fns::apply_normal_mapping(
         pbr_input.material.flags,
         pbr_input.world_normal,
+        double_sided,
+        is_front,
         #ifdef VERTEX_TANGENTS
         #ifdef STANDARDMATERIAL_NORMAL_MAP
         mesh.world_tangent,
@@ -107,7 +112,7 @@ fn fragment(@builtin(front_facing) is_front: bool, mesh: MeshVertexOutput) -> @l
     pbr_input.V = fns::calculate_view(mesh.world_position, pbr_input.is_orthographic);
     //pbr_input.flags = mesh.flags;
 
-    output_color = fns::pbr(pbr_input);
+    output_color = fns::apply_pbr_lighting(pbr_input);
 
 #ifdef TONEMAP_IN_SHADER
     output_color = tone_mapping(output_color, view.color_grading);

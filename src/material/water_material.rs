@@ -13,7 +13,7 @@ impl Plugin for WaterMaterialPlugin {
     }
 }
 
-#[derive(AsBindGroup, TypeUuid, TypePath, Clone, Default)]
+#[derive(Asset, AsBindGroup, TypeUuid, TypePath, Clone, Default)]
 #[uuid = "ce8eb070-dbb0-44c1-a1c5-d4a6ac9f4033"]
 #[uniform(0, WaterMaterialUniform)]
 pub struct WaterMaterial {
