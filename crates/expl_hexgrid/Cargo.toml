@@ -10,7 +10,7 @@ license = "ISC"
 bevy_reflect = { version = "0.11", optional = true }
 disjoint-hash-set = "1.0.0"
 glam = ">=0.22, <0.25"
-itertools = "0.11"
+itertools = "0.12"
 serde_with = "3.0"
 thiserror = "1.0"
 
