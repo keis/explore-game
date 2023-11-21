@@ -125,7 +125,7 @@ pub fn handle_move_to(
     };
 
     let (presence, party_movement, mut pathguided) = presence_query.get_mut(e)?;
-    let Some((path, _length)) = path_finder.find_path(presence.position, goal) else {
+    let Some((path, _length)) = path_finder.get()?.find_path(presence.position, goal) else {
         return Ok(());
     };
     pathguided.path(path);

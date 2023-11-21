@@ -1,6 +1,7 @@
 use crate::{
     map::{HexCoord, ZoneLayer},
     terrain::Terrain,
+    ExplError,
 };
 use bevy::{ecs::system::SystemParam, prelude::*};
 use pathfinding::prelude::astar;
@@ -12,24 +13,39 @@ pub struct PathFinder<'w, 's> {
 }
 
 impl<'w, 's> PathFinder<'w, 's> {
+    pub fn get(&self) -> Result<BoundPathFinder, ExplError> {
+        Ok(BoundPathFinder {
+            zone_layer: self.map_query.get_single()?,
+            terrain_query: &self.terrain_query,
+        })
+    }
+}
+
+pub struct BoundPathFinder<'w, 's> {
+    zone_layer: &'s ZoneLayer,
+    terrain_query: &'s Query<'w, 's, &'static Terrain>,
+}
+
+impl<'w, 's> BoundPathFinder<'w, 's> {
     pub fn find_path(&self, start: HexCoord, goal: HexCoord) -> Option<(Vec<HexCoord>, u32)> {
-        let zone_layer = self.map_query.single();
         astar(
             &start,
             |p| {
                 p.neighbours()
-                    .filter(&|c: &HexCoord| {
-                        zone_layer
-                            .get(*c)
-                            .and_then(|&entity| self.terrain_query.get(entity).ok())
-                            .map_or(false, |zone| zone.is_walkable())
-                    })
+                    .filter(|&c| self.is_walkable(c))
                     .map(|p| (p, 1))
                     .collect::<Vec<(HexCoord, u32)>>()
             },
             |p| p.distance(goal),
             |p| *p == goal,
         )
+    }
+
+    pub fn is_walkable(&self, position: HexCoord) -> bool {
+        self.zone_layer
+            .get(position)
+            .and_then(|&entity| self.terrain_query.get(entity).ok())
+            .map_or(false, |zone| zone.is_walkable())
     }
 }
 
@@ -55,7 +71,7 @@ mod tests {
         params_query: Query<(Entity, &Start, &Goal)>,
     ) {
         let (entity, start, goal) = params_query.single();
-        if let Some(path) = path_finder.find_path(start.0, goal.0) {
+        if let Some(path) = path_finder.get().unwrap().find_path(start.0, goal.0) {
             commands.entity(entity).insert(Path(path.0, path.1));
         } else {
             println!("WHAT");
