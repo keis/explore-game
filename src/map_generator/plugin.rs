@@ -9,7 +9,9 @@ impl Plugin for MapGeneratorPlugin {
         app.add_systems(
             Update,
             (
-                start_map_generation.run_if(in_state(SceneState::Reset)),
+                start_map_generation
+                    .map(bevy::utils::warn)
+                    .run_if(in_state(SceneState::Reset)),
                 watch_map_generation_task
                     .run_if(in_state(AssetState::Loaded))
                     .run_if(in_state(SceneState::Reset)),

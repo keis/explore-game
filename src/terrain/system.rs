@@ -1,7 +1,8 @@
-use super::{bundle::*, component::*};
+use super::{asset::*, bundle::*, component::*, system_param::*};
 use crate::{
     map::{Fog, MapEvent, MapLayout, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     structure::Camp,
+    ExplError,
 };
 use bevy::prelude::*;
 use expl_hexgrid::Grid;
@@ -81,16 +82,16 @@ pub fn show_decorations_behind_camp(
 pub fn fluff_zone(
     mut commands: Commands,
     mut zone_params: ZoneParams,
+    terrain_codex: TerrainCodex,
     map_query: Query<(&MapLayout, &ZoneLayer)>,
     mut zone_query: ParamSet<(
         Query<(&MapPosition, &Height), Without<GlobalTransform>>,
-        Query<(Entity, &Terrain, &MapPosition, &mut Height, &Fog), Without<GlobalTransform>>,
+        Query<(Entity, &TerrainId, &MapPosition, &mut Height, &Fog), Without<GlobalTransform>>,
     )>,
     neighbour_zone_query: Query<&Fog>,
-) {
-    let Ok((&MapLayout(layout), zone_layer)) = map_query.get_single() else {
-        return;
-    };
+) -> Result<(), ExplError> {
+    let (&MapLayout(layout), zone_layer) = map_query.get_single()?;
+    let terrain_codex = terrain_codex.get()?;
 
     let mut height_grid = Grid::<_, (f32, f32)>::new(layout);
     for (position, height) in &zone_query.p0() {
@@ -125,6 +126,7 @@ pub fn fluff_zone(
         };
         commands.entity(entity).insert(ZoneFluffBundle::new(
             &mut zone_params,
+            terrain_codex,
             position,
             terrain,
             &height,
@@ -132,13 +134,14 @@ pub fn fluff_zone(
             outer_visible,
         ));
     }
+    Ok(())
 }
 
 pub fn decorate_zone(
     mut commands: Commands,
     zone_query: Query<(
         Entity,
-        &Terrain,
+        &TerrainId,
         &MapPosition,
         &Height,
         &Fog,
@@ -146,40 +149,54 @@ pub fn decorate_zone(
     )>,
     mut zone_decoration_params: ZoneDecorationParams,
     mut water_params: WaterParams,
-) {
-    for (entity, terrain, position, height, fog, zone_decorations) in &zone_query {
+    terrain_codex: TerrainCodex,
+) -> Result<(), ExplError> {
+    let terrain_codex = terrain_codex.get()?;
+    for (entity, terrain_id, position, height, fog, zone_decorations) in &zone_query {
+        let terrain = &terrain_codex[terrain_id];
         commands.entity(entity).with_children(|parent| {
-            if let Some(ZoneDecorationDetail(pos, scale)) = zone_decorations.crystal_detail {
-                parent.spawn((
-                    Name::new("Crystal"),
-                    ZoneDecorationCrystalsBundle::new(
-                        &mut zone_decoration_params,
-                        height,
-                        fog,
-                        **position,
-                        pos,
-                        scale,
-                    ),
-                ));
-            }
-            for ZoneDecorationDetail(pos, scale) in &zone_decorations.tree_details {
-                parent.spawn((
-                    Name::new("Tree"),
-                    ZoneDecorationTreeBundle::new(
-                        &mut zone_decoration_params,
-                        height,
-                        fog,
-                        **position,
-                        *pos,
-                        *scale,
-                    ),
-                ));
-            }
-            if *terrain == Terrain::Ocean {
-                parent.spawn((Name::new("Water"), WaterBundle::new(&mut water_params)));
+            for decoration in &terrain.decoration {
+                match decoration {
+                    TerrainDecoration::Crystal => {
+                        if let Some(ZoneDecorationDetail(pos, scale)) =
+                            zone_decorations.crystal_detail
+                        {
+                            parent.spawn((
+                                Name::new("Crystal"),
+                                ZoneDecorationCrystalsBundle::new(
+                                    &mut zone_decoration_params,
+                                    height,
+                                    fog,
+                                    **position,
+                                    pos,
+                                    scale,
+                                ),
+                            ));
+                        }
+                    }
+                    TerrainDecoration::Tree => {
+                        for ZoneDecorationDetail(pos, scale) in &zone_decorations.tree_details {
+                            parent.spawn((
+                                Name::new("Tree"),
+                                ZoneDecorationTreeBundle::new(
+                                    &mut zone_decoration_params,
+                                    height,
+                                    fog,
+                                    **position,
+                                    *pos,
+                                    *scale,
+                                ),
+                            ));
+                        }
+                    }
+                    TerrainDecoration::Water => {
+                        parent.spawn((Name::new("Water"), WaterBundle::new(&mut water_params)));
+                    }
+                }
             }
         });
     }
+    Ok(())
 }
 
 pub fn update_outer_visible(

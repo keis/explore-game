@@ -1,20 +1,20 @@
 use super::{MapPrototype, ZonePrototype};
 use crate::{
-    terrain::{Outer, Terrain},
+    terrain::{Outer, Terrain, TerrainDecoration},
     ExplError,
 };
 use bevy::prelude::*;
+use expl_codex::{Codex, Id};
 use expl_hexgrid::{
     layout::{HexagonalGridLayout, SquareGridLayout},
     spiral, Grid, GridLayout, HexCoord,
 };
 use expl_wfc::{
-    tile::extract_tiles, tile::standard_tile_transforms, util::wrap_grid, util::LoadGrid,
+    tile::extract_tiles, tile::standard_tile_transforms, util::wrap_grid, util::LoadGridWith,
     Generator, Seed, Template,
 };
 use rand::{seq::SliceRandom, Rng};
-use std::fs::File;
-use std::io;
+use std::{collections::HashMap, fs::File, io};
 
 fn random_in_circle<R: Rng>(rng: &mut R, radius: f32) -> Vec2 {
     let max_r = radius * radius;
@@ -42,10 +42,16 @@ fn random_fill(fixed: Vec<(Vec2, f32)>) -> Vec<(Vec2, f32)> {
     result
 }
 
-pub fn generate_map(seed: Seed) -> Result<MapPrototype, ExplError> {
+pub fn generate_map(terrain_codex: &Codex<Terrain>, seed: Seed) -> Result<MapPrototype, ExplError> {
     info!("Generating map with seed {} ...", seed);
+    let terrain_lookup: HashMap<char, Id<Terrain>> = terrain_codex
+        .iter()
+        .map(|(id, t)| (t.symbol, *id))
+        .collect();
     let mut file = io::BufReader::new(File::open("assets/maps/test.txt")?);
-    let input = Grid::<HexagonalGridLayout, Terrain>::load(&mut file)?;
+    let input = Grid::<HexagonalGridLayout, Id<Terrain>>::load_with(&mut file, |c| {
+        terrain_lookup.get(&c).copied().ok_or(0)
+    })?;
     let wrapped_input = wrap_grid(input);
     let transforms = standard_tile_transforms();
     let template = Template::from_tiles(extract_tiles(&wrapped_input, &transforms));
@@ -53,14 +59,14 @@ pub fn generate_map(seed: Seed) -> Result<MapPrototype, ExplError> {
 
     while generator.step().is_some() {}
     info!("Generated map!");
-    let terrain: Grid<SquareGridLayout, Terrain> = generator.export()?;
+    let terrain: Grid<SquareGridLayout, Id<Terrain>> = generator.export()?;
     let mut rng = generator.rand();
 
     let party_position = spiral(terrain.layout.center())
         .find(|&c| {
             terrain
                 .get(c)
-                .map_or(false, |&terrain| terrain != Terrain::Ocean)
+                .map_or(false, |terrain| terrain_codex[terrain].allow_walking)
         })
         .ok_or(ExplError::CouldNotPlaceParty)?;
 
@@ -68,9 +74,9 @@ pub fn generate_map(seed: Seed) -> Result<MapPrototype, ExplError> {
         terrain.layout.center() + *HexCoord::NEIGHBOUR_OFFSETS.choose(&mut rng).unwrap() * 3,
     )
     .find(|&c| {
-        terrain.get(c).map_or(false, |&terrain| {
-            terrain != Terrain::Ocean && terrain != Terrain::Mountain
-        })
+        terrain
+            .get(c)
+            .map_or(false, |terrain| terrain_codex[terrain].allow_structure)
     })
     .ok_or(ExplError::CouldNotPlacePortal)?;
 
@@ -78,39 +84,38 @@ pub fn generate_map(seed: Seed) -> Result<MapPrototype, ExplError> {
         terrain.layout.center() + *HexCoord::NEIGHBOUR_OFFSETS.choose(&mut rng).unwrap() * 4,
     )
     .find(|&c| {
-        terrain.get(c).map_or(false, |&terrain| {
-            terrain != Terrain::Ocean && terrain != Terrain::Mountain
-        })
+        terrain
+            .get(c)
+            .map_or(false, |terrain| terrain_codex[terrain].allow_structure)
     })
     .ok_or(ExplError::CouldNotPlaceSpawner)?;
 
     let mut prototype = Grid::with_data(
         terrain.layout,
-        terrain.iter().map(|(coord, &terrain)| match terrain {
-            Terrain::Forest => ZonePrototype {
-                terrain,
-                random_fill: if coord == portal_position {
+        terrain.iter().map(|(coord, &terrain)| {
+            let terrain_data = &terrain_codex[&terrain];
+            let with_trees = terrain_data.decoration.contains(&TerrainDecoration::Tree);
+            let with_crystals = terrain_data
+                .decoration
+                .contains(&TerrainDecoration::Crystal);
+            let random_fill = if with_trees || with_crystals {
+                if coord == portal_position {
                     random_fill(vec![(Vec2::ZERO, 0.3)])
                 } else {
                     random_fill(vec![])
-                },
-                crystals: rng.gen_range(0..8) == 0,
-                height_amp: 0.1,
-                height_base: 0.0,
-                ..default()
-            },
-            Terrain::Mountain => ZonePrototype {
+                }
+            } else {
+                Vec::default()
+            };
+            let crystals = with_crystals && rng.gen_range(0..8) == 0;
+            ZonePrototype {
                 terrain,
-                height_amp: 0.5,
-                height_base: 0.1,
+                random_fill,
+                crystals,
+                height_amp: terrain_codex[&terrain].height_amp,
+                height_base: terrain_codex[&terrain].height_base,
                 ..default()
-            },
-            Terrain::Ocean => ZonePrototype {
-                terrain,
-                height_amp: -0.2,
-                height_base: -0.5,
-                ..default()
-            },
+            }
         }),
     );
     let layout = prototype.layout;

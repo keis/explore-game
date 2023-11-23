@@ -9,7 +9,7 @@ use crate::{
     path::{PathFinder, PathGuided},
     scene::save,
     structure::{Camp, CampBundle, CampParams, Portal, SafeHaven},
-    terrain::{CrystalDeposit, HeightQuery, Terrain},
+    terrain::{CrystalDeposit, HeightQuery, TerrainCodex, TerrainId},
     ExplError,
 };
 use bevy::prelude::*;
@@ -153,27 +153,30 @@ pub fn handle_resume_move(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn handle_make_camp(
     queue: ResMut<GameActionQueue>,
     mut commands: Commands,
     mut spawn_camp_params: CampParams,
     map_query: Query<(Entity, &ZoneLayer, &PresenceLayer)>,
-    terrain_query: Query<&Terrain>,
+    terrain_query: Query<&TerrainId>,
     mut party_query: Query<(&mut Inventory, &Group, &MapPresence), With<Party>>,
     camp_query: Query<&Camp>,
+    terrain_codex: TerrainCodex,
 ) -> Result<(), ExplError> {
     let Some(GameAction::MakeCamp(party_entity)) = queue.current else {
         return Ok(());
     };
+    let terrain_codex = terrain_codex.get()?;
 
     let (mut party_inventory, group, presence) = party_query.get_mut(party_entity)?;
     let (map_entity, zone_layer, presence_layer) = map_query.get_single()?;
-    let terrain = zone_layer
+    let terrain_id = zone_layer
         .get(presence.position)
         .ok_or(ExplError::OutOfBounds)
         .and_then(|&e| terrain_query.get(e).map_err(ExplError::from))?;
 
-    if *terrain == Terrain::Mountain {
+    if !terrain_codex[terrain_id].allow_structure {
         return Err(ExplError::InvalidLocation("bad terrain".to_string()));
     }
 

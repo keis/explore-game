@@ -1,4 +1,4 @@
-use super::{asset::HexAssets, component::*};
+use super::{asset::*, component::*};
 use crate::{
     assets::MainAssets,
     map::{Fog, HexCoord, MapPosition},
@@ -129,7 +129,7 @@ pub type ZoneParams<'w> = (
 
 #[derive(Bundle, Default)]
 pub struct ZoneBundle {
-    terrain: Terrain,
+    terrain: TerrainId,
     height: Height,
     fog: Fog,
     position: MapPosition,
@@ -147,7 +147,7 @@ pub struct ZoneFluffBundle {
 
 impl ZoneBundle {
     pub fn new(position: HexCoord, prototype: &ZonePrototype) -> Self {
-        let terrain = prototype.terrain;
+        let terrain = TerrainId(prototype.terrain);
         let height = Height {
             height_amp: prototype.height_amp,
             height_base: prototype.height_base,
@@ -175,10 +175,15 @@ impl ZoneBundle {
         }
     }
 
-    pub fn with_fluff(self, zone_params: &mut ZoneParams) -> (Self, ZoneFluffBundle) {
+    pub fn with_fluff(
+        self,
+        zone_params: &mut ZoneParams,
+        terrain_codex: &Codex<Terrain>,
+    ) -> (Self, ZoneFluffBundle) {
         let outer_visible = OuterVisible::default();
         let fluff = ZoneFluffBundle::new(
             zone_params,
+            terrain_codex,
             &self.position,
             &self.terrain,
             &self.height,
@@ -192,8 +197,9 @@ impl ZoneBundle {
 impl ZoneFluffBundle {
     pub fn new(
         (main_assets, hex_assets, zone_materials): &mut ZoneParams,
+        terrain_codex: &Codex<Terrain>,
         position: &MapPosition,
-        terrain: &Terrain,
+        terrain: &TerrainId,
         height: &Height,
         fog: &Fog,
         outer_visible: OuterVisible,
@@ -203,6 +209,7 @@ impl ZoneFluffBundle {
                 mesh: hex_assets.mesh.clone(),
                 material: zone_materials.add(ZoneMaterial::new(
                     main_assets,
+                    terrain_codex,
                     terrain,
                     height,
                     fog,

@@ -1,7 +1,7 @@
 use crate::{
     assets::MainAssets,
     map::Fog,
-    terrain::{Height, OuterVisible, Terrain},
+    terrain::{Codex, Height, OuterVisible, Terrain, TerrainId},
 };
 use bevy::{
     prelude::*,
@@ -43,34 +43,19 @@ pub struct ZoneMaterial {
 impl ZoneMaterial {
     pub fn new(
         assets: &Res<MainAssets>,
-        terrain: &Terrain,
+        terrain_codex: &Codex<Terrain>,
+        terrain: &TerrainId,
         height: &Height,
         fog: &Fog,
         outer_visible: &OuterVisible,
     ) -> Self {
-        let colors = match terrain {
-            Terrain::Ocean => (
-                Color::rgb(0.290, 0.388, 0.443),
-                Color::rgb(0.443, 0.549, 0.631),
-                Color::rgb(0.325, 0.427, 0.490),
-            ),
-            Terrain::Mountain => (
-                Color::rgb(0.357, 0.255, 0.114),
-                Color::rgb(0.259, 0.184, 0.067),
-                Color::rgb(0.584, 0.498, 0.271),
-            ),
-            Terrain::Forest => (
-                Color::rgb(0.122, 0.333, 0.094),
-                Color::rgb(0.329, 0.412, 0.118),
-                Color::rgb(0.145, 0.353, 0.010),
-            ),
-        };
+        let terrain_data = &terrain_codex[terrain];
 
         Self {
             cloud_texture: Some(assets.cloud_texture.clone()),
-            color_a: colors.0,
-            color_b: colors.1,
-            color_c: colors.2,
+            color_a: terrain_data.color_a,
+            color_b: terrain_data.color_b,
+            color_c: terrain_data.color_c,
             visible: fog.visible,
             explored: fog.explored,
             height_amp: height.height_amp,

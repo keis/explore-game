@@ -1,5 +1,10 @@
-use crate::{map::ZoneLayer, terrain::Terrain};
+use crate::{
+    assets::CodexAssets,
+    map::ZoneLayer,
+    terrain::{Terrain, TerrainId},
+};
 use bevy::prelude::*;
+use expl_codex::Codex;
 use expl_hexgrid::layout::SquareGridLayout;
 use rstest::*;
 
@@ -7,15 +12,15 @@ pub fn spawn_game_map(app: &mut App) -> Entity {
     let tiles = app
         .world
         .spawn_batch(vec![
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Forest,
-            Terrain::Ocean,
-            Terrain::Ocean,
-            Terrain::Forest,
-            Terrain::Mountain,
-            Terrain::Mountain,
-            Terrain::Mountain,
+            TerrainId::from_tag("forest"),
+            TerrainId::from_tag("forest"),
+            TerrainId::from_tag("forest"),
+            TerrainId::from_tag("ocean"),
+            TerrainId::from_tag("ocean"),
+            TerrainId::from_tag("forest"),
+            TerrainId::from_tag("mountain"),
+            TerrainId::from_tag("mountain"),
+            TerrainId::from_tag("mountain"),
         ])
         .collect();
     app.world
@@ -30,8 +35,43 @@ pub fn spawn_game_map(app: &mut App) -> Entity {
 }
 
 #[fixture]
-pub fn app() -> App {
+pub fn default_terrain_codex() -> Codex<Terrain> {
+    Codex::from_iter(vec![
+        (
+            "forest",
+            Terrain {
+                symbol: '%',
+                allow_walking: true,
+                ..default()
+            },
+        ),
+        (
+            "ocean",
+            Terrain {
+                symbol: '~',
+                allow_walking: false,
+                ..default()
+            },
+        ),
+        (
+            "mountain",
+            Terrain {
+                symbol: '^',
+                allow_walking: true,
+                ..default()
+            },
+        ),
+    ])
+}
+
+#[fixture]
+pub fn app(default_terrain_codex: Codex<Terrain>) -> App {
     let mut app = App::new();
+    let mut terrain_codex_assets: Assets<Codex<Terrain>> = Assets::default();
+    let terrain_codex = terrain_codex_assets.add(default_terrain_codex);
+    let codex_assets = CodexAssets { terrain_codex };
+    app.world.insert_resource(terrain_codex_assets);
+    app.world.insert_resource(codex_assets);
     spawn_game_map(&mut app);
     app
 }

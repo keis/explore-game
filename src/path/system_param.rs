@@ -1,6 +1,6 @@
 use crate::{
     map::{HexCoord, ZoneLayer},
-    terrain::Terrain,
+    terrain::{Codex, Terrain, TerrainCodex, TerrainId},
     ExplError,
 };
 use bevy::{ecs::system::SystemParam, prelude::*};
@@ -9,13 +9,15 @@ use pathfinding::prelude::astar;
 #[derive(SystemParam)]
 pub struct PathFinder<'w, 's> {
     map_query: Query<'w, 's, &'static ZoneLayer>,
-    terrain_query: Query<'w, 's, &'static Terrain>,
+    terrain_query: Query<'w, 's, &'static TerrainId>,
+    terrain_codex: TerrainCodex<'w>,
 }
 
 impl<'w, 's> PathFinder<'w, 's> {
     pub fn get(&self) -> Result<BoundPathFinder, ExplError> {
         Ok(BoundPathFinder {
             zone_layer: self.map_query.get_single()?,
+            terrain_codex: self.terrain_codex.get()?,
             terrain_query: &self.terrain_query,
         })
     }
@@ -23,7 +25,8 @@ impl<'w, 's> PathFinder<'w, 's> {
 
 pub struct BoundPathFinder<'w, 's> {
     zone_layer: &'s ZoneLayer,
-    terrain_query: &'s Query<'w, 's, &'static Terrain>,
+    terrain_codex: &'s Codex<Terrain>,
+    terrain_query: &'s Query<'w, 's, &'static TerrainId>,
 }
 
 impl<'w, 's> BoundPathFinder<'w, 's> {
@@ -45,7 +48,9 @@ impl<'w, 's> BoundPathFinder<'w, 's> {
         self.zone_layer
             .get(position)
             .and_then(|&entity| self.terrain_query.get(entity).ok())
-            .map_or(false, |zone| zone.is_walkable())
+            .map_or(false, |terrain_id| {
+                self.terrain_codex[terrain_id].allow_walking
+            })
     }
 }
 

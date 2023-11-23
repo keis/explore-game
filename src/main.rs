@@ -5,7 +5,7 @@ use expl_wfc::Seed;
 use explore_game::{
     action::ActionPlugin,
     actor::ActorPlugin,
-    assets::{AssetState, MainAssets},
+    assets::{AssetState, CodexAssets, MainAssets},
     camera::CameraControlPlugin,
     combat::CombatPlugin,
     enemy::EnemyPlugin,
@@ -94,5 +94,6 @@ fn main() {
             LoadingState::new(AssetState::Loading).continue_to_state(AssetState::Loaded),
         )
         .add_collection_to_loading_state::<_, MainAssets>(AssetState::Loading)
+        .add_collection_to_loading_state::<_, CodexAssets>(AssetState::Loading)
         .run();
 }

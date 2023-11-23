@@ -1,61 +1,18 @@
-use crate::ExplError;
+use super::asset::{Id, Terrain};
 use bevy::prelude::*;
 use noisy_bevy::simplex_noise_2d;
-use rand::{
-    distributions::{Distribution, Standard},
-    Rng,
-};
 use std::{
     cmp::min,
     ops::{Index, IndexMut},
 };
 
-#[derive(Component, Reflect, Copy, Clone, Debug, Eq, PartialEq, Hash, Default, Ord, PartialOrd)]
+#[derive(Component, Reflect, Default, Deref)]
 #[reflect(Component)]
-pub enum Terrain {
-    #[default]
-    Ocean,
-    Mountain,
-    Forest,
-}
+pub struct TerrainId(pub Id<Terrain>);
 
-impl Terrain {
-    pub fn is_walkable(&self) -> bool {
-        *self != Terrain::Ocean
-    }
-}
-
-impl Distribution<Terrain> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Terrain {
-        match rng.gen_range(0..=2) {
-            0 => Terrain::Ocean,
-            1 => Terrain::Mountain,
-            2 => Terrain::Forest,
-            _ => Terrain::Ocean,
-        }
-    }
-}
-
-impl From<Terrain> for char {
-    fn from(terrain: Terrain) -> Self {
-        match terrain {
-            Terrain::Forest => '%',
-            Terrain::Mountain => '^',
-            Terrain::Ocean => '~',
-        }
-    }
-}
-
-impl TryFrom<char> for Terrain {
-    type Error = ExplError;
-
-    fn try_from(c: char) -> Result<Terrain, Self::Error> {
-        match c {
-            '%' => Ok(Terrain::Forest),
-            '^' => Ok(Terrain::Mountain),
-            '~' => Ok(Terrain::Ocean),
-            _ => Err(ExplError::UnknownTerrainCharacter),
-        }
+impl TerrainId {
+    pub fn from_tag(tag: &str) -> Self {
+        Self(Id::from_tag(tag))
     }
 }
 

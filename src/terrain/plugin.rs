@@ -6,13 +6,16 @@ pub struct TerrainPlugin;
 
 impl Plugin for TerrainPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<CrystalDeposit>()
+        app.init_asset::<Codex<Terrain>>()
+            .init_asset_loader::<CodexLoader<Terrain>>()
+            .register_type::<CrystalDeposit>()
             .register_type::<Height>()
             .register_type::<Height>()
             .register_type::<Option<ZoneDecorationDetail>>()
             .register_type::<Outer>()
             .register_type::<OuterVisible>()
-            .register_type::<Terrain>()
+            .register_type::<TerrainId>()
+            .register_type::<Id<Terrain>>()
             .register_type::<Vec<ZoneDecorationDetail>>()
             .register_type::<ZoneDecorationCrystals>()
             .register_type::<ZoneDecorationDetail>()
@@ -33,8 +36,10 @@ impl Plugin for TerrainPlugin {
             .add_systems(
                 OnEnter(SceneState::Active),
                 (
-                    fluff_zone.in_set(SceneSet::Populate),
-                    decorate_zone.in_set(SceneSet::Populate),
+                    fluff_zone.map(bevy::utils::warn).in_set(SceneSet::Populate),
+                    decorate_zone
+                        .map(bevy::utils::warn)
+                        .in_set(SceneSet::Populate),
                 ),
             );
     }
