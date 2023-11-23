@@ -46,6 +46,7 @@ serde = "1.0"
 smallvec = "1.11"
 splines = { version = "4", features = ["glam"] }
 thiserror = "1.0.50"
+expl_codex = { version = "0.1.0", path = "crates/expl_codex" }
 
 [dev-dependencies]
 approx = "0.5"
