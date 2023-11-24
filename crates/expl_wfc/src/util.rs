@@ -20,6 +20,15 @@ pub trait DumpGrid {
     fn dump<W: io::Write>(&self, writer: &mut W) -> io::Result<()>;
 }
 
+pub trait LoadGridWith: Sized {
+    type Error;
+    type Item;
+
+    fn load_with<R: BufRead, F, E>(buf: &mut R, load_item: F) -> Result<Self, Self::Error>
+    where
+        F: Fn(char) -> Result<Self::Item, E>;
+}
+
 pub trait LoadGrid: Sized {
     type Error;
 
@@ -73,10 +82,14 @@ impl<Item: Into<char> + Copy, T: DumpGridWith<Item = Item>> DumpGrid for T {
     }
 }
 
-impl<Item: TryFrom<char> + Clone + Default> LoadGrid for Grid<HexagonalGridLayout, Item> {
+impl<Item: Clone + Default> LoadGridWith for Grid<HexagonalGridLayout, Item> {
     type Error = WFCError;
+    type Item = Item;
 
-    fn load<R: BufRead>(buf: &mut R) -> Result<Self, Self::Error> {
+    fn load_with<R: BufRead, F, E>(buf: &mut R, load_item: F) -> Result<Self, Self::Error>
+    where
+        F: Fn(char) -> Result<Self::Item, E>,
+    {
         let lines: Vec<_> = buf.lines().collect::<Result<_, _>>()?;
         let layout = HexagonalGridLayout {
             radius: (lines.len() / 2 + 1) as i32,
@@ -89,9 +102,10 @@ impl<Item: TryFrom<char> + Clone + Default> LoadGrid for Grid<HexagonalGridLayou
                 line.chars()
                     .skip(((lineno + 1) as i32 - layout.radius).unsigned_abs() as usize + 1)
                     .step_by(2)
+                    .zip(std::iter::repeat(r))
                     .enumerate()
-                    .map(move |(colno, c)| {
-                        c.try_into()
+                    .map(|(colno, (c, r))| {
+                        load_item(c)
                             .map(|d| {
                                 (
                                     HexCoord::new(-layout.radius - r.min(0) + colno as i32 + 1, r),
@@ -105,6 +119,14 @@ impl<Item: TryFrom<char> + Clone + Default> LoadGrid for Grid<HexagonalGridLayou
         let mut grid = Self::new(layout);
         grid.extend(data);
         Ok(grid)
+    }
+}
+
+impl<Item: TryFrom<char> + Clone + Default> LoadGrid for Grid<HexagonalGridLayout, Item> {
+    type Error = WFCError;
+
+    fn load<R: BufRead>(buf: &mut R) -> Result<Self, Self::Error> {
+        LoadGridWith::load_with(buf, |char| char.try_into())
     }
 }
 
@@ -126,8 +148,9 @@ pub fn wrap_grid<Item: Default + Clone + Copy>(
 
 #[cfg(test)]
 mod tests {
-    use super::{DumpGrid, LoadGrid};
+    use super::{DumpGrid, LoadGrid, LoadGridWith};
     use crate::WFCError;
+    use expl_hexgrid::HexCoord;
     use expl_hexgrid::{layout::HexagonalGridLayout, Grid};
     use std::fs::File;
     use std::io::{BufReader, BufWriter};
@@ -164,13 +187,31 @@ mod tests {
     }
 
     #[test]
-    fn load_sample_grid() {
-        let mut file = BufReader::new(File::open("res/test.txt").unwrap());
-        let grid = Grid::<HexagonalGridLayout, Terrain>::load(&mut file).unwrap();
+    fn load_sample_grid() -> Result<(), WFCError> {
+        let mut file = BufReader::new(File::open("res/test.txt")?);
+        let grid = Grid::<HexagonalGridLayout, Terrain>::load(&mut file)?;
+
         assert_eq!(grid.layout.radius, 5);
+        assert_eq!(grid[HexCoord::ZERO], Terrain::Mountain);
+
         let mut writer = BufWriter::new(Vec::new());
         grid.dump(&mut writer).unwrap();
         let string = String::from_utf8(writer.into_inner().unwrap()).unwrap();
         assert_eq!(string.len(), 152);
+
+        Ok(())
+    }
+
+    #[test]
+    fn load_sample_grid_transformed() -> Result<(), WFCError> {
+        let mut file = BufReader::new(File::open("res/test.txt")?);
+        let grid = Grid::<HexagonalGridLayout, Terrain>::load_with(&mut file, |_| {
+            Ok::<_, &str>(Terrain::Forest)
+        })?;
+
+        assert_eq!(grid.layout.radius, 5);
+        assert_eq!(grid[HexCoord::ZERO], Terrain::Forest);
+
+        Ok(())
     }
 }
