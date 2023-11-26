@@ -24,7 +24,6 @@ use explore_game::{
 };
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
-pub const ASPECT_RATIO: f32 = 16.0 / 9.0;
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -34,7 +33,6 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
-    let height = 900.0;
 
     App::new()
         .insert_resource(ClearColor(CLEAR))
@@ -47,10 +45,8 @@ fn main() {
             DefaultPlugins
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        resolution: (height * ASPECT_RATIO, height).into(),
                         title: "Explore Game".to_string(),
                         present_mode: PresentMode::Fifo,
-                        resizable: false,
                         ..default()
                     }),
                     ..default()
