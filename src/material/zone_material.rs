@@ -1,5 +1,5 @@
 use crate::{
-    assets::MainAssets,
+    assets::{AssetState, CodexAssets, MainAssets},
     map::Fog,
     terrain::{Codex, Height, OuterVisible, Terrain, TerrainId},
 };
@@ -9,6 +9,7 @@ use bevy::{
     render::render_resource::*,
 };
 use bevy_mod_picking::prelude::PickingInteraction;
+use expl_codex::Id;
 
 #[derive(Default)]
 pub struct ZoneMaterialPlugin;
@@ -16,7 +17,15 @@ pub struct ZoneMaterialPlugin;
 impl Plugin for ZoneMaterialPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<ZoneMaterial>::default())
-            .add_systems(Update, apply_to_material);
+            .add_systems(
+                Update,
+                (
+                    update_from_terrain_codex
+                        .run_if(on_event::<AssetEvent<Codex<Terrain>>>())
+                        .run_if(in_state(AssetState::Loaded)),
+                    apply_to_material,
+                ),
+            );
     }
 }
 
@@ -27,6 +36,7 @@ pub struct ZoneMaterial {
     #[texture(2)]
     #[sampler(3)]
     pub cloud_texture: Option<Handle<Image>>,
+    pub terrain: Id<Terrain>,
     pub visible: bool,
     pub explored: bool,
     pub hover: bool,
@@ -52,6 +62,7 @@ impl ZoneMaterial {
         let terrain_data = &terrain_codex[terrain];
 
         Self {
+            terrain: **terrain,
             cloud_texture: Some(assets.cloud_texture.clone()),
             color_a: terrain_data.color_a,
             color_b: terrain_data.color_b,
@@ -174,5 +185,32 @@ fn apply_to_material(
         material.explored = fog.explored;
         material.hover = matches!(interaction, PickingInteraction::Hovered);
         material.outer_visible = **outer_visible;
+    }
+}
+
+fn update_from_terrain_codex(
+    codex_assets: Res<CodexAssets>,
+    mut codex_events: EventReader<AssetEvent<Codex<Terrain>>>,
+    terrain_codex_assets: Res<Assets<Codex<Terrain>>>,
+    material_query: Query<&Handle<ZoneMaterial>>,
+    mut zone_material_assets: ResMut<Assets<ZoneMaterial>>,
+) {
+    for event in codex_events.read() {
+        let AssetEvent::Modified { id: asset_id } = event else {
+            continue;
+        };
+        if *asset_id == codex_assets.terrain_codex.id() {
+            let terrain_codex = terrain_codex_assets
+                .get(codex_assets.terrain_codex.clone())
+                .unwrap();
+            for material_handle in &material_query {
+                let zone_material = zone_material_assets.get_mut(material_handle).unwrap();
+                let terrain_data = &terrain_codex[&zone_material.terrain];
+
+                zone_material.color_a = terrain_data.color_a;
+                zone_material.color_b = terrain_data.color_b;
+                zone_material.color_c = terrain_data.color_c;
+            }
+        }
     }
 }
