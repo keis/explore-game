@@ -15,7 +15,7 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-bevy_asset_loader = "0.17"
+bevy_asset_loader = "0.18"
 bevy_mod_picking = { version = "0.16", features = ["backend_egui"] }
 bevy_obj = "0.11"
 bevy = { version = "0.11", features = ["wayland", "dynamic_linking"] }
