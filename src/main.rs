@@ -1,27 +1,7 @@
 use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
-use bevy_asset_loader::prelude::*;
 use clap::Parser;
 use expl_wfc::Seed;
-use explore_game::{
-    action::ActionPlugin,
-    actor::ActorPlugin,
-    assets::{AssetState, CodexAssets, MainAssets},
-    camera::CameraControlPlugin,
-    combat::CombatPlugin,
-    enemy::EnemyPlugin,
-    input::InputPlugin,
-    inspector::InspectorPlugin,
-    interface::InterfacePlugin,
-    inventory::InventoryPlugin,
-    map::MapPlugin,
-    map_generator::{MapGeneratorPlugin, MapSeed},
-    material::MaterialPlugins,
-    path::PathPlugin,
-    scene::{ScenePlugin, SceneSet, SceneState},
-    structure::StructurePlugin,
-    terrain::TerrainPlugin,
-    turn::TurnPlugin,
-};
+use explore_game::{map_generator::MapSeed, material::MaterialPlugins, plugins::ExplPlugins};
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
 
@@ -58,42 +38,6 @@ fn main() {
                 })
                 .set(ImagePlugin::default_nearest()),
         )
-        .add_plugins(MaterialPlugins)
-        .add_state::<AssetState>()
-        .add_plugins((
-            bevy_mod_billboard::prelude::BillboardPlugin,
-            bevy_mod_outline::OutlinePlugin,
-            bevy_obj::ObjPlugin,
-            bevy_sprite3d::Sprite3dPlugin,
-            noisy_bevy::NoisyShaderPlugin,
-        ))
-        .add_plugins((
-            ActionPlugin,
-            ActorPlugin,
-            CameraControlPlugin,
-            CombatPlugin,
-            InputPlugin,
-            InspectorPlugin,
-            InterfacePlugin,
-            InventoryPlugin,
-        ))
-        .add_plugins((
-            MapGeneratorPlugin,
-            MapPlugin {
-                setup_schedule: OnEnter(SceneState::Active),
-                setup_set: SceneSet::Populate,
-            },
-            PathPlugin,
-            ScenePlugin,
-            StructurePlugin,
-            TerrainPlugin,
-            TurnPlugin,
-            EnemyPlugin,
-        ))
-        .add_loading_state(
-            LoadingState::new(AssetState::Loading).continue_to_state(AssetState::Loaded),
-        )
-        .add_collection_to_loading_state::<_, MainAssets>(AssetState::Loading)
-        .add_collection_to_loading_state::<_, CodexAssets>(AssetState::Loading)
+        .add_plugins((ExplPlugins, MaterialPlugins))
         .run();
 }
