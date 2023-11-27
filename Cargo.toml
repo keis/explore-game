@@ -32,7 +32,7 @@ pathfinding = "4"
 rand = "0.8"
 smallvec = "1.11"
 splines = { version = "4", features = ["glam"] }
-bevy_mod_outline = "0.5"
+bevy_mod_outline = "0.6"
 bevy_sprite3d = "2.6"
 bevy-inspector-egui = "0.19"
 bevy_egui = "0.21"
