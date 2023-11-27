@@ -9,6 +9,15 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      # Group bevy and bevy plugins together
+      bevy:
+        patterns:
+          - "bevy*"
+          - "leafwing-input-manager"
+          - "moonshine-save"
+          - "noisy_bevy"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
