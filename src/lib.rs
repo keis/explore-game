@@ -6,6 +6,7 @@ pub mod cleanup;
 pub mod combat;
 pub mod enemy;
 mod error;
+pub mod floating_text;
 pub mod input;
 pub mod inspector;
 pub mod interface;

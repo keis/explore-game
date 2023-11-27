@@ -2,7 +2,7 @@ use super::component::*;
 use crate::{
     actor::Group,
     assets::MainAssets,
-    combat::FloatingTextSource,
+    floating_text::FloatingTextSource,
     input::SelectionBundle,
     inventory::Inventory,
     map::{Fog, FogRevealer, HexCoord, MapPresence, Offset, ViewRadius},

@@ -2,6 +2,7 @@ use crate::{
     action::ActionSet,
     actor::{Character, Enemy, Group, GroupCommandsExt, GroupMember},
     assets::{AssetState, MainAssets},
+    floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     map::{HexCoord, MapEvent, PresenceLayer},
 };
 use bevy::{prelude::*, time::common_conditions::on_timer};
@@ -9,10 +10,6 @@ use bevy_sprite3d::{Sprite3d, Sprite3dBundle, Sprite3dParams};
 use core::{ops::Range, time::Duration};
 use rand::Rng;
 use smallvec::SmallVec;
-
-mod floating_text;
-use floating_text::{float_and_fade, spawn_floating_text};
-pub use floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource};
 
 pub struct CombatPlugin;
 
@@ -35,8 +32,6 @@ impl Plugin for CombatPlugin {
                     spawn_damage_text,
                     despawn_no_health.after(combat_round),
                     finish_combat.after(despawn_no_health),
-                    float_and_fade,
-                    spawn_floating_text.run_if(on_timer(Duration::from_millis(100))),
                 )
                     .run_if(in_state(AssetState::Loaded)),
             );

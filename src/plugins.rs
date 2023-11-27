@@ -5,6 +5,7 @@ use crate::{
     camera::CameraControlPlugin,
     combat::CombatPlugin,
     enemy::EnemyPlugin,
+    floating_text::FloatingTextPlugin,
     input::InputPlugin,
     inspector::InspectorPlugin,
     interface::InterfacePlugin,
@@ -38,6 +39,7 @@ impl PluginGroup for ExplPlugins {
             .add(CameraControlPlugin)
             .add(CombatPlugin)
             .add(EnemyPlugin)
+            .add(FloatingTextPlugin)
             .add(InputPlugin)
             .add(InspectorPlugin)
             .add(InterfacePlugin)
