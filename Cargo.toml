@@ -27,7 +27,7 @@ glam = "0.24"
 interpolation = "0.3"
 itertools = "0.12"
 leafwing-input-manager = { version = "0.10", default-features = false, features = ["egui"] }
-noisy_bevy = "0.4"
+noisy_bevy = "0.5"
 pathfinding = "4"
 rand = "0.8"
 smallvec = "1.11"
