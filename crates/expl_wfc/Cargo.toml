@@ -9,7 +9,7 @@ bench = false
 
 [dependencies]
 bincode = "1.3"
-data-encoding = "2.4"
+data-encoding = "2.5"
 expl_hexgrid = { path = "../expl_hexgrid" }
 fixedbitset = "0.4"
 rand = "0.8"
