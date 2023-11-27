@@ -33,7 +33,7 @@ rand = "0.8"
 smallvec = "1.11"
 splines = { version = "4", features = ["glam"] }
 bevy_mod_outline = "0.5"
-bevy_sprite3d = "2.6"
+bevy_sprite3d = "2.7"
 bevy-inspector-egui = "0.19"
 bevy_egui = "0.21"
 bevy_mod_billboard = "0.4"
