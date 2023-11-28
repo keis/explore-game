@@ -2,6 +2,7 @@ mod assets;
 mod camp;
 mod character;
 mod color;
+mod game_over;
 mod menu;
 mod party;
 mod plugin;

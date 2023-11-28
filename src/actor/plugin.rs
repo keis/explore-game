@@ -11,6 +11,7 @@ impl Plugin for ActorPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SlideEvent>()
             .register_type::<Character>()
+            .register_type::<Corpse>()
             .register_type::<Movement>()
             .register_type::<Enemy>()
             .register_type::<Group>()

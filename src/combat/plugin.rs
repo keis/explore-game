@@ -22,8 +22,8 @@ impl Plugin for CombatPlugin {
                     combat_round.run_if(on_timer(Duration::from_millis(600))),
                     combat_log,
                     spawn_damage_text,
-                    despawn_no_health.after(combat_round),
-                    finish_combat.after(despawn_no_health),
+                    make_corpses.after(combat_round),
+                    finish_combat.after(make_corpses),
                 )
                     .run_if(in_state(AssetState::Loaded)),
             );

@@ -9,8 +9,10 @@ pub use moonshine_save::prelude::{save_with, LoadSet, Save};
 #[derive(Resource)]
 pub struct Loaded;
 
-pub fn mark_as_loaded(world: &mut World) {
-    world.insert_resource(Loaded);
+pub fn maybe_mark_as_loaded(world: &mut World) {
+    if world.query::<&map::MapLayout>().iter(world).len() != 0 {
+        world.insert_resource(Loaded);
+    }
 }
 
 pub fn save_location() -> PathBuf {
@@ -24,6 +26,7 @@ pub fn filter_with_enabled_components() -> SaveFilter {
         .allow::<Name>()
         .allow::<Save>()
         .allow::<actor::Character>()
+        .allow::<actor::Corpse>()
         .allow::<actor::Enemy>()
         .allow::<actor::Group>()
         .allow::<actor::GroupMember>()

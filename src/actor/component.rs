@@ -29,6 +29,10 @@ pub struct Movement {
     pub points: u32,
 }
 
+#[derive(Component, Reflect, Default, Debug)]
+#[reflect(Component)]
+pub struct Corpse;
+
 #[derive(Component, Reflect, Default)]
 #[reflect(Component, MapEntities)]
 pub struct Group {

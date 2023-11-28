@@ -1,6 +1,6 @@
 use super::{bundle::*, component::*, event::*};
 use crate::{
-    actor::{Character, Enemy, Group, GroupCommandsExt, GroupMember},
+    actor::{Character, Corpse, Enemy, Group, GroupCommandsExt, GroupMember},
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     map::{MapEvent, PresenceLayer},
 };
@@ -111,25 +111,31 @@ pub fn combat_round(
     }
 }
 
-pub fn despawn_no_health(
+#[allow(clippy::type_complexity)]
+pub fn make_corpses(
     mut commands: Commands,
-    health_query: Query<(Entity, &Health, Option<&GroupMember>)>,
+    health_query: Query<(Entity, &Health, Option<&GroupMember>, Option<&Enemy>), Without<Corpse>>,
 ) {
-    for (entity, health, maybe_member) in &health_query {
+    for (entity, health, maybe_member, maybe_enemy) in &health_query {
         if health.0 == 0 {
             info!("{:?} is dead", entity);
             if let Some(group) = maybe_member.and_then(|member| member.group) {
                 commands.entity(group).remove_members(&[entity]);
             }
-            commands.entity(entity).despawn();
+            if maybe_enemy.is_some() {
+                commands.entity(entity).despawn();
+            } else {
+                commands.entity(entity).insert(Corpse);
+            }
         }
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn finish_combat(
     mut commands: Commands,
     combat_query: Query<(Entity, &Combat)>,
-    friend_query: Query<Entity, (With<Character>, Without<Enemy>)>,
+    friend_query: Query<Entity, (With<Character>, Without<Corpse>, Without<Enemy>)>,
     foe_query: Query<Entity, (With<Enemy>, Without<Character>)>,
 ) {
     for (entity, combat) in &combat_query {

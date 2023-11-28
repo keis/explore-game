@@ -1,6 +1,5 @@
 use super::{
     color::{BACKGROUND, HOVERED, MENU, NORMAL, PRESSED},
-    shell::Shell,
     InterfaceAssets, InterfaceState,
 };
 use crate::{
@@ -106,24 +105,14 @@ pub fn spawn_menu(mut commands: Commands, assets: Res<InterfaceAssets>) {
         });
 }
 
-pub fn show_menu(
-    mut menu_layer_query: Query<&mut Visibility, With<MenuLayer>>,
-    mut shell_query: Query<&mut Visibility, (With<Shell>, Without<MenuLayer>)>,
-) {
+pub fn show_menu(mut menu_layer_query: Query<&mut Visibility, With<MenuLayer>>) {
     let mut menu_layer_visibility = menu_layer_query.single_mut();
-    let mut shell_visibility = shell_query.single_mut();
     *menu_layer_visibility = Visibility::Inherited;
-    *shell_visibility = Visibility::Hidden;
 }
 
-pub fn hide_menu(
-    mut menu_layer_query: Query<&mut Visibility, With<MenuLayer>>,
-    mut shell_query: Query<&mut Visibility, (With<Shell>, Without<MenuLayer>)>,
-) {
+pub fn hide_menu(mut menu_layer_query: Query<&mut Visibility, With<MenuLayer>>) {
     let mut menu_layer_visibility = menu_layer_query.single_mut();
-    let mut shell_visibility = shell_query.single_mut();
     *menu_layer_visibility = Visibility::Hidden;
-    *shell_visibility = Visibility::Inherited;
 }
 
 pub fn handle_toggle_main_menu(
@@ -134,6 +123,7 @@ pub fn handle_toggle_main_menu(
         InterfaceState::Hidden => InterfaceState::Menu,
         InterfaceState::Menu => InterfaceState::Shell,
         InterfaceState::Shell => InterfaceState::Menu,
+        InterfaceState::GameOver => InterfaceState::GameOver,
     });
 }
 
@@ -156,24 +146,24 @@ pub fn menu_item_interaction_effect(
 pub fn handle_resume(
     interaction_query: Query<&Interaction, (With<MenuItemResume>, Changed<Interaction>)>,
     scene_state: Res<State<SceneState>>,
-    mut next_state: ResMut<NextState<InterfaceState>>,
+    mut next_interface_state: ResMut<NextState<InterfaceState>>,
 ) {
     if let Ok(Interaction::Pressed) = interaction_query.get_single() {
         if *scene_state.get() != SceneState::Active {
             warn!("Can't resume; No active game");
             return;
         }
-        next_state.set(InterfaceState::Shell);
+        next_interface_state.set(InterfaceState::Shell);
     }
 }
 
 pub fn handle_new_game(
     interaction_query: Query<&Interaction, (With<MenuItemNewGame>, Changed<Interaction>)>,
-    mut next_state: ResMut<NextState<InterfaceState>>,
+    mut next_interface_state: ResMut<NextState<InterfaceState>>,
     mut next_scene_state: ResMut<NextState<SceneState>>,
 ) {
     if let Ok(Interaction::Pressed) = interaction_query.get_single() {
-        next_state.set(InterfaceState::Shell);
+        next_interface_state.set(InterfaceState::Shell);
         next_scene_state.set(SceneState::Reset);
     }
 }
