@@ -1,7 +1,7 @@
 use crate::{
-    assets::MainAssets,
+    assets::{AssetState, CodexAssets, MainAssets},
     map::Fog,
-    terrain::{Height, OuterVisible, Terrain},
+    terrain::{Codex, Height, OuterVisible, Terrain, TerrainId},
 };
 use bevy::{
     prelude::*,
@@ -9,6 +9,7 @@ use bevy::{
     render::render_resource::*,
 };
 use bevy_mod_picking::prelude::PickingInteraction;
+use expl_codex::Id;
 
 #[derive(Default)]
 pub struct ZoneMaterialPlugin;
@@ -16,7 +17,15 @@ pub struct ZoneMaterialPlugin;
 impl Plugin for ZoneMaterialPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<ZoneMaterial>::default())
-            .add_systems(Update, apply_to_material);
+            .add_systems(
+                Update,
+                (
+                    update_from_terrain_codex
+                        .run_if(on_event::<AssetEvent<Codex<Terrain>>>())
+                        .run_if(in_state(AssetState::Loaded)),
+                    apply_to_material,
+                ),
+            );
     }
 }
 
@@ -27,6 +36,7 @@ pub struct ZoneMaterial {
     #[texture(2)]
     #[sampler(3)]
     pub cloud_texture: Option<Handle<Image>>,
+    pub terrain: Id<Terrain>,
     pub visible: bool,
     pub explored: bool,
     pub hover: bool,
@@ -43,34 +53,20 @@ pub struct ZoneMaterial {
 impl ZoneMaterial {
     pub fn new(
         assets: &Res<MainAssets>,
-        terrain: &Terrain,
+        terrain_codex: &Codex<Terrain>,
+        terrain: &TerrainId,
         height: &Height,
         fog: &Fog,
         outer_visible: &OuterVisible,
     ) -> Self {
-        let colors = match terrain {
-            Terrain::Ocean => (
-                Color::rgb(0.290, 0.388, 0.443),
-                Color::rgb(0.443, 0.549, 0.631),
-                Color::rgb(0.325, 0.427, 0.490),
-            ),
-            Terrain::Mountain => (
-                Color::rgb(0.357, 0.255, 0.114),
-                Color::rgb(0.259, 0.184, 0.067),
-                Color::rgb(0.584, 0.498, 0.271),
-            ),
-            Terrain::Forest => (
-                Color::rgb(0.122, 0.333, 0.094),
-                Color::rgb(0.329, 0.412, 0.118),
-                Color::rgb(0.145, 0.353, 0.010),
-            ),
-        };
+        let terrain_data = &terrain_codex[terrain];
 
         Self {
+            terrain: **terrain,
             cloud_texture: Some(assets.cloud_texture.clone()),
-            color_a: colors.0,
-            color_b: colors.1,
-            color_c: colors.2,
+            color_a: terrain_data.color_a,
+            color_b: terrain_data.color_b,
+            color_c: terrain_data.color_c,
             visible: fog.visible,
             explored: fog.explored,
             height_amp: height.height_amp,
@@ -189,5 +185,32 @@ fn apply_to_material(
         material.explored = fog.explored;
         material.hover = matches!(interaction, PickingInteraction::Hovered);
         material.outer_visible = **outer_visible;
+    }
+}
+
+fn update_from_terrain_codex(
+    codex_assets: Res<CodexAssets>,
+    mut codex_events: EventReader<AssetEvent<Codex<Terrain>>>,
+    terrain_codex_assets: Res<Assets<Codex<Terrain>>>,
+    material_query: Query<&Handle<ZoneMaterial>>,
+    mut zone_material_assets: ResMut<Assets<ZoneMaterial>>,
+) {
+    for event in codex_events.read() {
+        let AssetEvent::Modified { id: asset_id } = event else {
+            continue;
+        };
+        if *asset_id == codex_assets.terrain_codex.id() {
+            let terrain_codex = terrain_codex_assets
+                .get(codex_assets.terrain_codex.clone())
+                .unwrap();
+            for material_handle in &material_query {
+                let zone_material = zone_material_assets.get_mut(material_handle).unwrap();
+                let terrain_data = &terrain_codex[&zone_material.terrain];
+
+                zone_material.color_a = terrain_data.color_a;
+                zone_material.color_b = terrain_data.color_b;
+                zone_material.color_c = terrain_data.color_c;
+            }
+        }
     }
 }

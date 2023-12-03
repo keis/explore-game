@@ -4,7 +4,7 @@ use crate::{
     map::{MapCommandsExt, MapLayout, MapPosition, PresenceLayer, ZoneLayer},
     map_generator::{GenerateMapTask, MapPrototype, MapSeed},
     structure::{PortalBundle, PortalParams, SafeHavenBundle, SpawnerBundle, SpawnerParams},
-    terrain::{CrystalDeposit, Terrain, ZoneBundle, ZoneParams},
+    terrain::{CrystalDeposit, TerrainCodex, TerrainId, ZoneBundle, ZoneParams},
     turn::Turn,
     ExplError,
 };
@@ -35,7 +35,7 @@ pub fn cleanup_map_generation_task(
 pub fn fluff_loaded_map(
     mut commands: Commands,
     map_query: Query<(Entity, &MapLayout)>,
-    zone_query: Query<(&MapPosition, Entity), With<Terrain>>,
+    zone_query: Query<(&MapPosition, Entity), With<TerrainId>>,
 ) -> Result<(), ExplError> {
     let (entity, &MapLayout(layout)) = map_query.get_single()?;
     let zone_lookup: HashMap<HexCoord, _> = zone_query
@@ -54,8 +54,10 @@ pub fn spawn_generated_map(
     mut commands: Commands,
     mut zone_params: ZoneParams,
     map_prototype_query: Query<&MapPrototype>,
+    terrain_codex: TerrainCodex,
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.get_single()?;
+    let terrain_codex = terrain_codex.get()?;
     let tiles = prototype
         .tiles
         .iter()
@@ -63,7 +65,7 @@ pub fn spawn_generated_map(
             let mut zone = commands.spawn((
                 Name::new(format!("Zone {}", position)),
                 save::Save,
-                ZoneBundle::new(position, zoneproto).with_fluff(&mut zone_params),
+                ZoneBundle::new(position, zoneproto).with_fluff(&mut zone_params, terrain_codex),
             ));
 
             if zoneproto.crystals {

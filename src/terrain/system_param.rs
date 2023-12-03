@@ -1,5 +1,12 @@
-use super::component::Height;
-use crate::map::{HexCoord, ZoneLayer};
+use super::{
+    asset::{Codex, Terrain},
+    component::Height,
+};
+use crate::{
+    assets::CodexAssets,
+    map::{HexCoord, ZoneLayer},
+    ExplError,
+};
 use bevy::{ecs::system::SystemParam, prelude::*};
 use glam::Vec3Swizzles;
 
@@ -23,5 +30,19 @@ impl<'w, 's> HeightQuery<'w, 's> {
 
     pub fn adjust(&self, point: Vec3) -> Vec3 {
         Vec3::new(point.x, self.get(point), point.z)
+    }
+}
+
+#[derive(SystemParam)]
+pub struct TerrainCodex<'w> {
+    codex_assets: Res<'w, CodexAssets>,
+    terrain_codex_assets: Res<'w, Assets<Codex<Terrain>>>,
+}
+
+impl<'w> TerrainCodex<'w> {
+    pub fn get(&self) -> Result<&Codex<Terrain>, ExplError> {
+        self.terrain_codex_assets
+            .get(self.codex_assets.terrain_codex.clone())
+            .ok_or(ExplError::MissingCodex)
     }
 }

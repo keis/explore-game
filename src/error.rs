@@ -30,4 +30,6 @@ pub enum ExplError {
     MissingSupplies,
     #[error("inventory item not found")]
     InventoryItemNotFound,
+    #[error("missing codex")]
+    MissingCodex,
 }

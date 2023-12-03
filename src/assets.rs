@@ -1,3 +1,4 @@
+use crate::terrain::{Codex, Terrain};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
@@ -28,4 +29,10 @@ pub struct MainAssets {
     pub portal_mesh: Handle<Mesh>,
     #[asset(path = "icons/swords-emblem.png")]
     pub swords_emblem_icon: Handle<Image>,
+}
+
+#[derive(AssetCollection, Resource)]
+pub struct CodexAssets {
+    #[asset(path = "codex/default.terrain.toml")]
+    pub terrain_codex: Handle<Codex<Terrain>>,
 }

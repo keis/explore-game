@@ -7,7 +7,9 @@ impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             OnEnter(TurnState::System),
-            move_enemy.run_if(in_state(SceneState::Active)),
+            move_enemy
+                .map(bevy::utils::warn)
+                .run_if(in_state(SceneState::Active)),
         );
     }
 }
