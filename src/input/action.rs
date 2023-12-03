@@ -3,7 +3,7 @@ use crate::{
     action::{GameAction, GameActionQueue},
     actor::{Character, Group, Party},
     camera::{CameraControl, CameraTarget},
-    interface::MenuLayer,
+    interface::InterfaceState,
     map::{MapPresence, PresenceLayer},
     structure::Camp,
 };
@@ -41,17 +41,15 @@ pub enum Action {
 
 pub fn magic_cancel(
     mut action_state: ResMut<ActionState<Action>>,
-    menu_layer_query: Query<&Visibility, With<MenuLayer>>,
+    interface_state: Res<State<InterfaceState>>,
     selection_query: Query<&Selection>,
 ) {
     let actiondata = action_state.action_data(Action::Cancel).clone();
 
     // Close menu
-    if let Ok(menu_layer_visibility) = menu_layer_query.get_single() {
-        if *menu_layer_visibility == Visibility::Inherited {
-            action_state.set_action_data(Action::ToggleMainMenu, actiondata);
-            return;
-        }
+    if *interface_state == InterfaceState::Menu {
+        action_state.set_action_data(Action::ToggleMainMenu, actiondata);
+        return;
     }
 
     // Deselect
