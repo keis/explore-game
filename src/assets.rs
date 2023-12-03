@@ -13,8 +13,6 @@ pub enum AssetState {
 pub struct MainAssets {
     #[asset(path = "textures/cloud.png")]
     pub cloud_texture: Handle<Image>,
-    #[asset(path = "textures/forest.png")]
-    pub forest_texture: Handle<Image>,
     #[asset(path = "models/indicator.obj")]
     pub indicator_mesh: Handle<Mesh>,
     #[asset(path = "models/tent.obj")]

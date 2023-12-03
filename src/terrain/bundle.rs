@@ -33,7 +33,9 @@ impl ZoneDecorationCrystalsBundle {
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: main_assets.crystals_mesh.clone(),
                 material: terrain_materials.add(TerrainMaterial {
-                    color: Color::rgba(0.7, 0.4, 0.4, 0.777),
+                    color_a: Color::rgba(0.7, 0.4, 0.4, 0.777),
+                    color_b: Color::rgba(0.6, 0.3, 0.3, 0.777),
+                    color_c: Color::rgba(0.7, 0.3, 0.3, 0.777),
                     ..default()
                 }),
                 visibility: if fog.explored {
@@ -75,7 +77,9 @@ impl ZoneDecorationTreeBundle {
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: main_assets.pine_mesh.clone(),
                 material: terrain_materials.add(TerrainMaterial {
-                    texture: Some(main_assets.forest_texture.clone()),
+                    color_a: Color::rgb(0.3, 0.7, 0.4),
+                    color_b: Color::rgb(0.3, 0.6, 0.3),
+                    color_c: Color::rgb(0.3, 0.4, 0.3),
                     ..default()
                 }),
                 visibility: if fog.explored {

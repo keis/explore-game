@@ -17,19 +17,20 @@ impl Plugin for TerrainMaterialPlugin {
 
 #[derive(Asset, AsBindGroup, TypeUuid, TypePath, Clone, Default)]
 #[uuid = "f3c06773-d878-40b4-8f00-f39b82513c81"]
-#[uniform(2, TerrainMaterialUniform)]
+#[uniform(0, TerrainMaterialUniform)]
 pub struct TerrainMaterial {
-    #[texture(0)]
-    #[sampler(1)]
-    pub texture: Option<Handle<Image>>,
-    pub color: Color,
+    pub color_a: Color,
+    pub color_b: Color,
+    pub color_c: Color,
     pub visible: bool,
     pub explored: bool,
 }
 
 #[derive(Clone, Default, ShaderType)]
 pub struct TerrainMaterialUniform {
-    pub color: Vec4,
+    pub color_a: Vec4,
+    pub color_b: Vec4,
+    pub color_c: Vec4,
     pub visible: u32,
     pub explored: u32,
 }
@@ -37,7 +38,9 @@ pub struct TerrainMaterialUniform {
 impl From<&TerrainMaterial> for TerrainMaterialUniform {
     fn from(terrain_material: &TerrainMaterial) -> Self {
         Self {
-            color: terrain_material.color.as_linear_rgba_f32().into(),
+            color_a: terrain_material.color_a.as_linear_rgba_f32().into(),
+            color_b: terrain_material.color_b.as_linear_rgba_f32().into(),
+            color_c: terrain_material.color_c.as_linear_rgba_f32().into(),
             visible: terrain_material.visible as u32,
             explored: terrain_material.explored as u32,
         }
