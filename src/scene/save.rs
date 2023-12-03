@@ -1,12 +1,10 @@
 use crate::{actor, combat, input, inventory, map, structure, terrain, turn};
-use bevy::{ecs::query::ReadOnlyWorldQuery, prelude::*};
-use moonshine_save::save::{
-    finish, into_file, save_scene, EntityFilter, SaveFilter, SavePipeline, SaveSet,
-};
+use bevy::prelude::*;
+use moonshine_save::save::SaveFilter;
 use platform_dirs::AppDirs;
 use std::path::PathBuf;
 
-pub use moonshine_save::prelude::{LoadSet, Save};
+pub use moonshine_save::prelude::{save_with, LoadSet, Save};
 
 #[derive(Resource)]
 pub struct Loaded;
@@ -21,64 +19,43 @@ pub fn save_location() -> PathBuf {
         .unwrap()
 }
 
-pub fn save_into_file(intopath: impl Into<PathBuf>) -> SavePipeline {
-    let path: PathBuf = intopath.into();
-    let parent = path.parent().unwrap().to_path_buf();
-    ensure_save_directory(parent)
-        .pipe(warn)
-        .pipe(filter_with_enabled_components::<With<Save>>)
-        .pipe(save_scene)
-        .pipe(into_file(path))
-        .pipe(finish)
-        .in_set(SaveSet::Save)
-}
+pub fn filter_with_enabled_components() -> SaveFilter {
+    let components = SceneFilter::deny_all()
+        .allow::<Name>()
+        .allow::<Save>()
+        .allow::<actor::Character>()
+        .allow::<actor::Enemy>()
+        .allow::<actor::Group>()
+        .allow::<actor::GroupMember>()
+        .allow::<actor::Movement>()
+        .allow::<actor::Party>()
+        .allow::<actor::Slide>()
+        .allow::<combat::Attack>()
+        .allow::<combat::Health>()
+        .allow::<input::Selection>()
+        .allow::<inventory::Inventory>()
+        .allow::<map::Fog>()
+        .allow::<map::FogRevealer>()
+        .allow::<map::MapLayout>()
+        .allow::<map::MapPosition>()
+        .allow::<map::MapPresence>()
+        .allow::<map::Offset>()
+        .allow::<map::ViewRadius>()
+        .allow::<structure::Camp>()
+        .allow::<structure::Portal>()
+        .allow::<structure::SafeHaven>()
+        .allow::<structure::Spawner>()
+        .allow::<terrain::CrystalDeposit>()
+        .allow::<terrain::Height>()
+        .allow::<terrain::Terrain>()
+        .allow::<terrain::ZoneDecorations>()
+        .allow::<Transform>();
 
-pub fn ensure_save_directory(parent: PathBuf) -> impl Fn() -> std::io::Result<()> {
-    move || std::fs::create_dir_all(&parent)
-}
-
-pub fn filter_with_enabled_components<Filter: ReadOnlyWorldQuery>(
-    entities: Query<Entity, Filter>,
-) -> SaveFilter {
-    let entities = EntityFilter::allow(&entities);
-
-    let mut components = SceneFilter::deny_all();
-    components.allow::<Name>();
-    components.allow::<Save>();
-    components.allow::<actor::Character>();
-    components.allow::<actor::Enemy>();
-    components.allow::<actor::Group>();
-    components.allow::<actor::GroupMember>();
-    components.allow::<actor::Movement>();
-    components.allow::<actor::Party>();
-    components.allow::<actor::Slide>();
-    components.allow::<combat::Attack>();
-    components.allow::<combat::Health>();
-    components.allow::<input::Selection>();
-    components.allow::<inventory::Inventory>();
-    components.allow::<map::Fog>();
-    components.allow::<map::FogRevealer>();
-    components.allow::<map::MapLayout>();
-    components.allow::<map::MapPosition>();
-    components.allow::<map::MapPresence>();
-    components.allow::<map::Offset>();
-    components.allow::<map::ViewRadius>();
-    components.allow::<structure::Camp>();
-    components.allow::<structure::Portal>();
-    components.allow::<structure::SafeHaven>();
-    components.allow::<structure::Spawner>();
-    components.allow::<terrain::CrystalDeposit>();
-    components.allow::<terrain::Height>();
-    components.allow::<terrain::Terrain>();
-    components.allow::<terrain::ZoneDecorations>();
-    components.allow::<Transform>();
-
-    let mut resources = SceneFilter::deny_all();
-    resources.allow::<turn::Turn>();
+    let resources = SceneFilter::deny_all().allow::<turn::Turn>();
 
     SaveFilter {
-        entities,
         components,
         resources,
+        ..default()
     }
 }

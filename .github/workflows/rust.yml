@@ -31,15 +31,16 @@ jobs:
       with:
         toolchain: 1.73.0
         components: clippy
-    - uses: Leafwing-Studios/cargo-cache@v1
+    - uses: rui314/setup-mold@v1
     - name: Install dependencies
       run: |
-        sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
+        sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang
         sudo apt-get clean
+    - uses: Leafwing-Studios/cargo-cache@v1
     - name: Test
       run: cargo test
     - name: Clippy
-      uses: sksat/action-clippy@v0.3.0
+      uses: keis/action-clippy@sudo
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         filter_mode: nofilter

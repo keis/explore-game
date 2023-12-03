@@ -1,10 +1,10 @@
-#import bevy_pbr::mesh_bindings mesh
-#import bevy_pbr::mesh_functions as mesh_functions
-#import bevy_pbr::mesh_vertex_output MeshVertexOutput
-#import noisy_bevy simplex_noise_2d
-
-// NOTE: Bindings must come before functions that use them!
-#import bevy_pbr::mesh_functions
+#import bevy_pbr::{
+  mesh_functions,
+  forward_io::{Vertex, VertexOutput},
+  view_transformations::position_world_to_clip,
+}
+#import bevy_render::instance_index::get_instance_index
+#import noisy_bevy::simplex_noise_2d
 
 struct UniformData {
     visible: u32,
@@ -33,28 +33,6 @@ struct UniformData {
 
 @group(1) @binding(4)
 var<uniform> uniform_data: UniformData;
-
-struct Vertex {
-#ifdef VERTEX_POSITIONS
-    @location(0) position: vec3<f32>,
-#endif
-#ifdef VERTEX_NORMALS
-    @location(1) normal: vec3<f32>,
-#endif
-#ifdef VERTEX_UVS
-    @location(2) uv: vec2<f32>,
-#endif
-#ifdef VERTEX_TANGENTS
-    @location(3) tangent: vec4<f32>,
-#endif
-#ifdef VERTEX_COLORS
-    @location(4) color: vec4<f32>,
-#endif
-#ifdef SKINNED
-    @location(5) joint_indices: vec4<u32>,
-    @location(6) joint_weights: vec4<f32>,
-#endif
-};
 
 fn corner(self_value: f32, a_value: f32, b_value: f32) -> f32 {
     var min_value = min(self_value, min(a_value, b_value));
@@ -191,26 +169,29 @@ fn height_at(position: vec2<f32>, world_position: vec2<f32>) -> f32 {
 }
 
 @vertex
-fn vertex(vertex: Vertex) -> MeshVertexOutput {
-    var out: MeshVertexOutput;
+fn vertex(vertex: Vertex) -> VertexOutput {
+    var out: VertexOutput;
 
 #ifdef SKINNED
-    var model = bevy_pbr::skinningt::skin_model(vertex.joint_indices, vertex.joint_weights);
+    var model = bevy_pbr::skinning::skin_model(vertex.joint_indices, vertex.joint_weights);
 #else
-    var model = mesh.model;
+    var model = mesh_functions::get_model_matrix(vertex.instance_index);
 #endif
 
 #ifdef VERTEX_NORMALS
 #ifdef SKINNED
     out.world_normal = bevy_pbr::skinning::skin_normals(model, vertex.normal);
 #else
-    out.world_normal = mesh_functions::mesh_normal_local_to_world(vertex.normal);
+    out.world_normal = mesh_functions::mesh_normal_local_to_world(
+        vertex.normal,
+        get_instance_index(vertex.instance_index)
+    );
 #endif
 #endif
 
 #ifdef VERTEX_POSITIONS
     out.world_position = mesh_functions::mesh_position_local_to_world(model, vec4<f32>(vertex.position, 1.0));
-    out.position = mesh_functions::mesh_position_world_to_clip(out.world_position);
+    out.position = position_world_to_clip(out.world_position.xyz);
 #endif
 
 #ifdef VERTEX_UVS
@@ -232,8 +213,9 @@ fn vertex(vertex: Vertex) -> MeshVertexOutput {
     let b = height_at(vertex.position.xz + offset.zy, worldxz + offset.zy);
     let c = height_at(vertex.position.xz + offset.yx, worldxz + offset.yx);
     let d = height_at(vertex.position.xz + offset.yz, worldxz + offset.yz);
+
     out.world_normal = normalize(vec3<f32>((a - b) / 2.0, 1.0, (c - d) / 2.0));
-    out.position = mesh_functions::mesh_position_world_to_clip(out.world_position);
+    out.position = position_world_to_clip(out.world_position.xyz);
 
     return out;
 }

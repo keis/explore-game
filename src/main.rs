@@ -1,6 +1,4 @@
-use bevy::{
-    asset::ChangeWatcher, log::LogPlugin, prelude::*, utils::Duration, window::PresentMode,
-};
+use bevy::{log::LogPlugin, prelude::*, window::PresentMode};
 use bevy_asset_loader::prelude::*;
 use clap::Parser;
 use expl_wfc::Seed;
@@ -26,7 +24,6 @@ use explore_game::{
 };
 
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
-pub const ASPECT_RATIO: f32 = 16.0 / 9.0;
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -36,7 +33,6 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
-    let height = 900.0;
 
     App::new()
         .insert_resource(ClearColor(CLEAR))
@@ -49,10 +45,8 @@ fn main() {
             DefaultPlugins
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        resolution: (height * ASPECT_RATIO, height).into(),
                         title: "Explore Game".to_string(),
                         present_mode: PresentMode::Fifo,
-                        resizable: false,
                         ..default()
                     }),
                     ..default()
@@ -62,11 +56,7 @@ fn main() {
                     filter: "wgpu=error,bevy_ecs::event=error".to_string(),
                     ..default()
                 })
-                .set(ImagePlugin::default_nearest())
-                .set(AssetPlugin {
-                    watch_for_changes: ChangeWatcher::with_delay(Duration::from_millis(200)),
-                    ..default()
-                }),
+                .set(ImagePlugin::default_nearest()),
         )
         .add_plugins(MaterialPlugins)
         .add_state::<AssetState>()

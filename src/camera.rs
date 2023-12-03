@@ -205,13 +205,10 @@ mod tests {
             ),
         );
 
-        let mut time = Time::default();
-        time.update();
-        app.insert_resource(time);
+        app.init_resource::<Time>();
 
         let mut time = app.world.resource_mut::<Time>();
-        let last_update = time.last_update().unwrap();
-        time.update_with_instant(last_update + Duration::from_millis(10));
+        time.advance_by(Duration::from_millis(10));
 
         app.insert_resource(ActionState::<Action>::default());
 
@@ -241,8 +238,7 @@ mod tests {
 
         for _ in 0..100 {
             let mut time = app.world.resource_mut::<Time>();
-            let last_update = time.last_update().unwrap();
-            time.update_with_instant(last_update + Duration::from_millis(100));
+            time.advance_by(Duration::from_millis(100));
             app.update()
         }
 
@@ -337,8 +333,7 @@ mod tests {
 
         for _ in 0..100 {
             let mut time = app.world.resource_mut::<Time>();
-            let last_update = time.last_update().unwrap();
-            time.update_with_instant(last_update + Duration::from_millis(100));
+            time.advance_by(Duration::from_millis(100));
             app.update()
         }
 

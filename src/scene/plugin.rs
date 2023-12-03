@@ -39,7 +39,9 @@ impl Plugin for ScenePlugin {
             )
             .add_systems(
                 Update, // PreUpdate
-                save_into_file(save_location()).run_if(action_just_pressed(Action::Save)),
+                save_with::<With<Save>, _, _>(filter_with_enabled_components)
+                    .into_file(save_location())
+                    .run_if(action_just_pressed(Action::Save)),
             )
             .add_systems(
                 Update,
@@ -59,16 +61,18 @@ impl Plugin for ScenePlugin {
             .add_systems(
                 OnEnter(SceneState::Active),
                 (
-                    fluff_loaded_map.pipe(warn).in_set(SceneSet::InitialSetup),
+                    fluff_loaded_map
+                        .map(bevy::utils::warn)
+                        .in_set(SceneSet::InitialSetup),
                     spawn_generated_map
-                        .pipe(warn)
+                        .map(bevy::utils::warn)
                         .in_set(SceneSet::InitialSetup),
                     apply_deferred.in_set(SceneSet::CommandFlush),
                     (
-                        spawn_party.pipe(warn),
-                        spawn_portal.pipe(warn),
-                        spawn_spawner.pipe(warn),
-                        spawn_safe_haven.pipe(warn),
+                        spawn_party.map(bevy::utils::warn),
+                        spawn_portal.map(bevy::utils::warn),
+                        spawn_spawner.map(bevy::utils::warn),
+                        spawn_safe_haven.map(bevy::utils::warn),
                     )
                         .in_set(SceneSet::Populate),
                     cleanup_map_generation_task.in_set(SceneSet::Cleanup),

@@ -56,7 +56,7 @@ pub fn show_decorations_behind_camp(
     let Ok((map, presence_layer)) = map_query.get_single() else {
         return;
     };
-    for event in &mut events {
+    for event in events.read() {
         let MapEvent::PresenceRemoved { position, .. } = event else {
             continue;
         };
