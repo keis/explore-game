@@ -6,7 +6,7 @@ use crate::{
 use bevy::prelude::*;
 use moonshine_save::load::load_from_file;
 
-use super::{camera::*, light::*, save::*, world::*};
+use super::{camera::*, light::*, save::*, score::*, world::*};
 
 pub struct ScenePlugin;
 
@@ -30,12 +30,7 @@ impl Plugin for ScenePlugin {
             )
             .add_systems(
                 Startup,
-                (
-                    spawn_camera,
-                    spawn_light,
-                    load_from_file(save_location()),
-                    mark_as_loaded.in_set(LoadSet::PostLoad),
-                ),
+                (spawn_camera, spawn_light, load_from_file(save_location())),
             )
             .add_systems(
                 Update, // PreUpdate
@@ -45,10 +40,16 @@ impl Plugin for ScenePlugin {
             )
             .add_systems(
                 Update,
-                (move_to_active
-                    .run_if(in_state(AssetState::Loaded))
-                    .run_if(in_state(SceneState::Setup))
-                    .run_if(has_resource::<Loaded>),),
+                (
+                    maybe_mark_as_loaded
+                        .run_if(in_state(AssetState::Loaded))
+                        .run_if(in_state(SceneState::Setup)),
+                    move_to_active
+                        .run_if(in_state(AssetState::Loaded))
+                        .run_if(in_state(SceneState::Setup))
+                        .run_if(has_resource::<Loaded>),
+                    game_over.run_if(in_state(SceneState::Active)),
+                ),
             )
             .add_systems(
                 OnEnter(SceneState::Reset),
@@ -95,6 +96,7 @@ pub enum SceneState {
     Setup,
     Reset,
     Active,
+    GameOver,
 }
 
 fn has_resource<R: Resource>(resource: Option<Res<R>>) -> bool {

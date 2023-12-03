@@ -251,6 +251,16 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
         });
 }
 
+pub fn show_shell(mut shell_query: Query<&mut Visibility, With<Shell>>) {
+    let mut shell_visibility = shell_query.single_mut();
+    *shell_visibility = Visibility::Inherited;
+}
+
+pub fn hide_shell(mut shell_query: Query<&mut Visibility, With<Shell>>) {
+    let mut shell_visibility = shell_query.single_mut();
+    *shell_visibility = Visibility::Hidden;
+}
+
 pub fn update_turn_text(mut turn_text_query: Query<&mut Text, With<TurnText>>, turn: Res<Turn>) {
     if turn.is_changed() {
         for mut text in turn_text_query.iter_mut() {

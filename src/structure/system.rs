@@ -1,7 +1,8 @@
 use super::{bundle::*, component::*};
 use crate::{
     actor::{EnemyBundle, EnemyParams, Group},
-    combat::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource, Health},
+    combat::Health,
+    floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     map::{Fog, MapCommandsExt, MapPresence, Offset, PresenceLayer, ViewRadius},
     material::PortalMaterial,
     scene::save,
