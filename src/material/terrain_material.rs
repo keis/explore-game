@@ -1,9 +1,10 @@
-use crate::map::Fog;
+use crate::{map::Fog, terrain::Decoration};
 use bevy::{
     prelude::*,
     reflect::{TypePath, TypeUuid},
     render::render_resource::*,
 };
+use expl_codex::{Codex, Id};
 
 #[derive(Default)]
 pub struct TerrainMaterialPlugin;
@@ -24,6 +25,24 @@ pub struct TerrainMaterial {
     pub color_c: Color,
     pub visible: bool,
     pub explored: bool,
+}
+
+impl TerrainMaterial {
+    pub fn from_decoration(
+        decoration_codex: &Codex<Decoration>,
+        decoration_id: &Id<Decoration>,
+        fog: &Fog,
+    ) -> Self {
+        let decoration_data = &decoration_codex[decoration_id];
+
+        Self {
+            color_a: decoration_data.color_a,
+            color_b: decoration_data.color_b,
+            color_c: decoration_data.color_c,
+            visible: fog.visible,
+            explored: fog.explored,
+        }
+    }
 }
 
 #[derive(Clone, Default, ShaderType)]

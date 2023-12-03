@@ -1,5 +1,5 @@
 use super::{
-    asset::{Codex, Terrain},
+    asset::{Codex, Decoration, Terrain},
     component::Height,
 };
 use crate::{
@@ -43,6 +43,20 @@ impl<'w> TerrainCodex<'w> {
     pub fn get(&self) -> Result<&Codex<Terrain>, ExplError> {
         self.terrain_codex_assets
             .get(self.codex_assets.terrain_codex.clone())
+            .ok_or(ExplError::MissingCodex)
+    }
+}
+
+#[derive(SystemParam)]
+pub struct DecorationCodex<'w> {
+    codex_assets: Res<'w, CodexAssets>,
+    decoration_codex_assets: Res<'w, Assets<Codex<Decoration>>>,
+}
+
+impl<'w> DecorationCodex<'w> {
+    pub fn get(&self) -> Result<&Codex<Decoration>, ExplError> {
+        self.decoration_codex_assets
+            .get(self.codex_assets.decoration_codex.clone())
             .ok_or(ExplError::MissingCodex)
     }
 }

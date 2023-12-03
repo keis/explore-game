@@ -150,41 +150,45 @@ pub fn decorate_zone(
     mut zone_decoration_params: ZoneDecorationParams,
     mut water_params: WaterParams,
     terrain_codex: TerrainCodex,
+    decoration_codex: DecorationCodex,
 ) -> Result<(), ExplError> {
     let terrain_codex = terrain_codex.get()?;
+    let decoration_codex = decoration_codex.get()?;
     for (entity, terrain_id, position, height, fog, zone_decorations) in &zone_query {
         let terrain = &terrain_codex[terrain_id];
         commands.entity(entity).with_children(|parent| {
             for decoration in &terrain.decoration {
                 match decoration {
                     TerrainDecoration::Crystal => {
-                        if let Some(ZoneDecorationDetail(pos, scale)) =
-                            zone_decorations.crystal_detail
-                        {
+                        if let Some(detail) = &zone_decorations.crystal_detail {
                             parent.spawn((
                                 Name::new("Crystal"),
-                                ZoneDecorationCrystalsBundle::new(
+                                ZoneDecorationBundle::new(
+                                    ZoneDecorationCrystals,
+                                    Id::from_tag("crystal"),
                                     &mut zone_decoration_params,
+                                    decoration_codex,
                                     height,
                                     fog,
                                     **position,
-                                    pos,
-                                    scale,
+                                    detail,
                                 ),
                             ));
                         }
                     }
                     TerrainDecoration::Tree => {
-                        for ZoneDecorationDetail(pos, scale) in &zone_decorations.tree_details {
+                        for detail in &zone_decorations.tree_details {
                             parent.spawn((
                                 Name::new("Tree"),
-                                ZoneDecorationTreeBundle::new(
+                                ZoneDecorationBundle::new(
+                                    ZoneDecorationTree,
+                                    Id::from_tag("tree"),
                                     &mut zone_decoration_params,
+                                    decoration_codex,
                                     height,
                                     fog,
                                     **position,
-                                    *pos,
-                                    *scale,
+                                    detail,
                                 ),
                             ));
                         }

@@ -31,7 +31,10 @@ impl CrystalDeposit {
 }
 
 #[derive(Reflect, Default, Debug)]
-pub struct ZoneDecorationDetail(pub Vec2, pub f32);
+pub struct ZoneDecorationDetail {
+    pub relative: Vec2,
+    pub scale: f32,
+}
 
 #[derive(Component, Reflect, Default, Debug)]
 #[reflect(Component)]

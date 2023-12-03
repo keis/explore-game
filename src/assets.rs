@@ -1,4 +1,4 @@
-use crate::terrain::{Codex, Terrain};
+use crate::terrain::{Codex, Decoration, Terrain};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
@@ -19,10 +19,6 @@ pub struct MainAssets {
     pub tent_mesh: Handle<Mesh>,
     #[asset(path = "models/blob.obj")]
     pub blob_mesh: Handle<Mesh>,
-    #[asset(path = "models/pine.obj")]
-    pub pine_mesh: Handle<Mesh>,
-    #[asset(path = "models/crystals.obj")]
-    pub crystals_mesh: Handle<Mesh>,
     #[asset(path = "models/portal.obj")]
     pub portal_mesh: Handle<Mesh>,
     #[asset(path = "icons/swords-emblem.png")]
@@ -33,6 +29,8 @@ pub struct MainAssets {
 pub struct CodexAssets {
     #[asset(path = "codex/default.terrain.toml")]
     pub terrain_codex: Handle<Codex<Terrain>>,
+    #[asset(path = "codex/default.decoration.toml")]
+    pub decoration_codex: Handle<Codex<Decoration>>,
 }
 
 pub struct AssetsPlugin;
