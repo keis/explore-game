@@ -54,9 +54,11 @@ impl SpawnerFluffBundle {
                 mesh: main_assets.portal_mesh.clone(),
                 material: terrain_materials.add(TerrainMaterial {
                     color: Color::rgb(0.8, 0.32, 0.3),
+                    visible: fog.visible,
+                    explored: fog.explored,
                     ..default()
                 }),
-                visibility: if fog.visible {
+                visibility: if fog.explored {
                     Visibility::Inherited
                 } else {
                     Visibility::Hidden
@@ -104,7 +106,7 @@ impl CampBundle {
     }
 
     pub fn with_fluff(self, camp_params: &mut CampParams) -> (Self, CampFluffBundle) {
-        let fluff = CampFluffBundle::new(camp_params, &self.presence, &self.offset);
+        let fluff = CampFluffBundle::new(camp_params, &self.presence, &self.offset, &self.fog);
         (self, fluff)
     }
 }
@@ -114,14 +116,15 @@ impl CampFluffBundle {
         (main_assets, terrain_materials): &mut CampParams,
         presence: &MapPresence,
         offset: &Offset,
+        fog: &Fog,
     ) -> Self {
         Self {
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: main_assets.tent_mesh.clone(),
                 material: terrain_materials.add(TerrainMaterial {
                     color: Color::rgb(0.631, 0.596, 0.165),
-                    visible: true,
-                    explored: true,
+                    visible: fog.visible,
+                    explored: fog.explored,
                     ..default()
                 }),
                 transform: Transform::from_translation(Vec3::from(presence.position) + offset.0)
@@ -178,9 +181,11 @@ impl PortalFluffBundle {
                 mesh: main_assets.portal_mesh.clone(),
                 material: terrain_materials.add(TerrainMaterial {
                     color: Color::rgb(0.4, 0.42, 0.4),
+                    visible: fog.visible,
+                    explored: fog.explored,
                     ..default()
                 }),
-                visibility: if fog.visible {
+                visibility: if fog.explored {
                     Visibility::Inherited
                 } else {
                     Visibility::Hidden

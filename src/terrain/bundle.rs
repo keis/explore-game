@@ -36,7 +36,7 @@ impl ZoneDecorationCrystalsBundle {
                     color: Color::rgba(0.7, 0.4, 0.4, 0.777),
                     ..default()
                 }),
-                visibility: if fog.visible {
+                visibility: if fog.explored {
                     Visibility::Inherited
                 } else {
                     Visibility::Hidden
@@ -78,7 +78,7 @@ impl ZoneDecorationTreeBundle {
                     texture: Some(main_assets.forest_texture.clone()),
                     ..default()
                 }),
-                visibility: if fog.visible {
+                visibility: if fog.explored {
                     Visibility::Inherited
                 } else {
                     Visibility::Hidden
