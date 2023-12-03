@@ -1,5 +1,6 @@
 use super::component::*;
 use bevy::app::Plugin;
+use expl_codex::Id;
 use std::collections::HashMap;
 
 pub struct InventoryPlugin;

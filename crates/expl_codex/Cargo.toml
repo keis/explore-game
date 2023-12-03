@@ -1,0 +1,16 @@
+[package]
+name = "expl_codex"
+version = "0.1.0"
+edition = "2021"
+license = "ISC"
+
+[dependencies]
+bevy_asset = "0.12"
+bevy_reflect = "0.12"
+serde = "1.0"
+thiserror = ">=1.0.50,<2"
+toml = "0.8"
+
+[dev-dependencies]
+bevy_app = "0.12"
+bevy_core = "0.12"

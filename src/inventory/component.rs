@@ -1,67 +1,10 @@
 use crate::ExplError;
 pub use bevy::{prelude::*, reflect::TypePath};
-use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    hash::{Hash, Hasher},
-    marker::PhantomData,
-};
+use expl_codex::Id;
+use std::collections::HashMap;
 
 #[derive(Reflect, Clone, Copy, Eq, PartialEq, Debug)]
 pub struct Item;
-
-#[derive(Reflect, Serialize, Deserialize, Clone, Copy, Debug)]
-#[reflect(Hash, PartialEq, Serialize, Deserialize)]
-pub struct Id<T> {
-    value: u64,
-
-    #[reflect(ignore)]
-    #[serde(skip)]
-    _phantom: PhantomData<T>,
-}
-
-impl<T> Id<T> {
-    const HASH_P: u64 = 53;
-    const HASH_M: u64 = 1_000_000_009;
-
-    pub const fn new(value: u64) -> Self {
-        Self {
-            value,
-            _phantom: PhantomData,
-        }
-    }
-
-    pub const fn from_tag(tag: &str) -> Self {
-        Self::new(Self::hash_bytes(tag.as_bytes()))
-    }
-
-    const fn hash_bytes(bytes: &[u8]) -> u64 {
-        let len = bytes.len();
-        let mut value = 0;
-        let mut ppow = 1;
-        let mut i = 0;
-        while i < len {
-            value = (value + (bytes[i] as u64 + 1) * ppow) % Self::HASH_M;
-            ppow = (ppow * Self::HASH_P) % Self::HASH_M;
-            i += 1;
-        }
-        value
-    }
-}
-
-impl<T> Eq for Id<T> {}
-
-impl<T> PartialEq for Id<T> {
-    fn eq(&self, other: &Self) -> bool {
-        self.value == other.value
-    }
-}
-
-impl<T> Hash for Id<T> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.value.hash(state);
-    }
-}
 
 #[derive(Component, Reflect, Clone, Debug, Default)]
 #[reflect(Component)]
