@@ -5,6 +5,7 @@
   pbr_types::{STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT, PbrInput, pbr_input_new},
 }
 #import bevy_core_pipeline::tonemapping::tone_mapping
+#import "materials/common.wgsl"::modulo;
 
 struct UniformData {
     color: vec4<f32>,
@@ -18,10 +19,6 @@ var terrain_texture: texture_2d<f32>;
 var terrain_texture_sampler: sampler;
 @group(1) @binding(2)
 var<uniform> uniform_data: UniformData;
-
-fn modulo(a: f32, n: f32) -> f32 {
-    return a - n * floor(a / n);
-}
 
 @fragment
 fn fragment(@builtin(front_facing) is_front: bool, mesh: VertexOutput) -> @location(0) vec4<f32> {
