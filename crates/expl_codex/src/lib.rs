@@ -12,11 +12,11 @@ use std::{
 };
 
 mod loader;
-pub use loader::{CodexLoader, CodexSource, Error};
+pub use loader::{CodexLoader, CodexSource, Error, FromWithLoadContext};
 
 /// Identifier with a phantom binding to a specific type.
 ///
-/// The id is created from a string tag by computing a hash which is also used to define equality
+/// The id is created from a string tag by computing a hash which is also used to define equality.
 /// ```
 /// use expl_codex::Id;
 ///
@@ -128,7 +128,7 @@ impl<T> Id<T> {
     }
 }
 
-/// Defines a codex of data entries identified by `Id<Entry>`
+/// Defines a codex of data entries identified by [`Id<Entry>`]
 #[derive(Asset, TypePath, Clone, Debug)]
 pub struct Codex<Entry>
 where
@@ -137,6 +137,7 @@ where
     lookup: Arc<HashMap<Id<Entry>, Entry>>,
 }
 
+/// Used to assemble [Codex] instances.
 pub struct CodexBuilder<Entry>
 where
     Entry: fmt::Debug + TypePath + Send + Sync,
@@ -221,13 +222,20 @@ mod tests {
             memory::{Dir, MemoryAssetReader},
             AssetSource, AssetSourceId,
         },
-        AssetApp, AssetPlugin, AssetServer, Assets, Handle,
+        AssetApp, AssetPlugin, AssetServer, Assets, Handle, LoadContext,
     };
     use bevy_core::TaskPoolPlugin;
     use std::path::Path;
 
     #[derive(Debug, TypePath, Deserialize)]
+    struct RawMenuItem {
+        value: u32,
+        text: String,
+    }
+
+    #[derive(Debug, TypePath)]
     struct MenuItem {
+        source: String,
         value: u32,
         text: String,
     }
@@ -235,6 +243,7 @@ mod tests {
     impl MenuItem {
         pub fn new(value: u32) -> Self {
             Self {
+                source: String::from("<code>"),
                 value,
                 text: String::from("standard text"),
             }
@@ -243,6 +252,16 @@ mod tests {
 
     impl CodexSource for MenuItem {
         const EXTENSION: &'static str = "menu.toml";
+    }
+
+    impl FromWithLoadContext<RawMenuItem> for MenuItem {
+        fn from_with_load_context(raw: RawMenuItem, load_context: &mut LoadContext) -> Self {
+            Self {
+                source: String::from(load_context.path().to_str().unwrap()),
+                value: raw.value,
+                text: raw.text,
+            }
+        }
     }
 
     const SPAM: Id<MenuItem> = Id::from_tag("spam");
@@ -300,7 +319,7 @@ text = 'some other text'
         )
         .add_plugins((TaskPoolPlugin::default(), AssetPlugin::default()))
         .init_asset::<Codex<MenuItem>>()
-        .register_asset_loader(CodexLoader::<MenuItem>::default());
+        .register_asset_loader(CodexLoader::<RawMenuItem, MenuItem>::default());
         let asset_server = app.world.resource::<AssetServer>().clone();
 
         let handle: Handle<Codex<MenuItem>> = asset_server.load("some.menu.toml");
@@ -316,6 +335,7 @@ text = 'some other text'
                 assert_eq!(codex.iter().count(), 2);
                 assert_eq!(codex[&SPAM].value, 13);
                 assert_eq!(codex[&SPAM].text, String::from("some text"));
+                assert_eq!(codex[&SPAM].source, String::from("some.menu.toml"));
                 break;
             }
         }
