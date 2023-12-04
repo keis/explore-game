@@ -5,12 +5,12 @@ edition = "2021"
 license = "ISC"
 
 [dependencies]
-bevy_asset = "0.12"
-bevy_reflect = "0.12"
-serde = "1.0"
-thiserror = ">=1.0.50,<2"
+bevy_asset = { workspace = true }
+bevy_reflect = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
 toml = "0.8"
 
 [dev-dependencies]
-bevy_app = "0.12"
-bevy_core = "0.12"
+bevy_app = { workspace = true }
+bevy_core = { workspace = true }

@@ -2,6 +2,21 @@
 members = [".", "crates/*"]
 default-members = [".", "crates/*"]
 
+[workspace.dependencies]
+bevy_app = "0.12"
+bevy_asset = "0.12"
+bevy_core = "0.12"
+bevy_ecs = "0.12"
+bevy_reflect = "0.12"
+bevy_render = "0.12"
+clap = "4.4"
+glam = "0.24"
+itertools = "0.12"
+rand = "0.8"
+serde = "1.0"
+smallvec = "1.11"
+thiserror = "1.0.50"
+
 [package]
 name = "explore_game"
 version = "0.1.0"
@@ -27,25 +42,25 @@ bevy_mod_picking = { version = "0.17", features = ["backend_egui"] }
 bevy_obj = "0.12"
 bevy_sprite3d = "2.7"
 bevy = { version = "0.12", features = ["wayland", "dynamic_linking", "file_watcher"] }
-clap = { version = "4", features = ["derive"] }
+clap = { workspace = true, features = ["derive"] }
 expl_databinding = { version = "0.1.0", path = "crates/expl_databinding" }
 expl_hexagon = { version = "0.1.0", path = "crates/expl_hexagon" }
 expl_hexgrid = { path = "crates/expl_hexgrid", features = ["bevy-reflect"] }
 expl_wfc = { path = "crates/expl_wfc" }
 futures-lite = "2"
-glam = "0.24"
+glam = { workspace = true }
 interpolation = "0.3"
-itertools = "0.12"
+itertools = { workspace = true }
 leafwing-input-manager = { version = "0.11.1", features = ["egui"] }
 moonshine-save = "0.3.4"
 noisy_bevy = "0.5"
 pathfinding = "4"
 platform-dirs = "0.3"
-rand = "0.8"
-serde = "1.0"
-smallvec = "1.11"
+rand = { workspace = true }
+serde = { workspace = true }
+smallvec = { workspace = true }
 splines = { version = "4", features = ["glam"] }
-thiserror = "1.0.50"
+thiserror = { workspace = true }
 expl_codex = { version = "0.1.0", path = "crates/expl_codex" }
 
 [dev-dependencies]
