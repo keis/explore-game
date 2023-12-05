@@ -229,6 +229,16 @@ mod tests {
     #[derive(Debug, TypePath, Deserialize)]
     struct MenuItem {
         value: u32,
+        text: String,
+    }
+
+    impl MenuItem {
+        pub fn new(value: u32) -> Self {
+            Self {
+                value,
+                text: String::from("standard text"),
+            }
+        }
     }
 
     impl CodexSource for MenuItem {
@@ -238,9 +248,11 @@ mod tests {
     const SPAM: Id<MenuItem> = Id::from_tag("spam");
     const CODEXFILE: &str = "[spam]
 value = 13
+text = 'some text'
 
 [egg]
 value = 37
+text = 'some other text'
         ";
 
     #[test]
@@ -254,11 +266,11 @@ value = 37
     #[test]
     fn codex_from_iter() {
         let codex: Codex<MenuItem> = Codex::from_iter(vec![
-            ("spam", MenuItem { value: 10 }),
-            ("bacon", MenuItem { value: 11 }),
-            ("spam", MenuItem { value: 12 }),
-            ("spam", MenuItem { value: 13 }),
-            ("egg", MenuItem { value: 14 }),
+            ("spam", MenuItem::new(10)),
+            ("bacon", MenuItem::new(11)),
+            ("spam", MenuItem::new(12)),
+            ("spam", MenuItem::new(13)),
+            ("egg", MenuItem::new(14)),
         ]);
 
         assert_eq!(codex[&SPAM].value, 13);
@@ -267,8 +279,8 @@ value = 37
     #[test]
     fn codex_build() {
         let codex: Codex<MenuItem> = Codex::builder_with_capacity(0)
-            .add("spam", MenuItem { value: 10 })
-            .add("bacon", MenuItem { value: 11 })
+            .add("spam", MenuItem::new(10))
+            .add("bacon", MenuItem::new(11))
             .build();
 
         assert_eq!(codex[&SPAM].value, 10);
@@ -303,6 +315,7 @@ value = 37
             {
                 assert_eq!(codex.iter().count(), 2);
                 assert_eq!(codex[&SPAM].value, 13);
+                assert_eq!(codex[&SPAM].text, String::from("some text"));
                 break;
             }
         }
