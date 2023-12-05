@@ -1,10 +1,7 @@
 use super::Codex;
 use bevy_asset::{io::Reader, AssetLoader, AsyncReadExt, BoxedFuture, LoadContext};
 use bevy_reflect::TypePath;
-use serde::{
-    de::{Deserializer, MapAccess, Visitor},
-    Deserialize,
-};
+use serde::de::{Deserialize, DeserializeSeed, Deserializer, MapAccess, Visitor};
 use std::{fmt, marker::PhantomData};
 use thiserror::Error;
 
@@ -18,23 +15,75 @@ pub enum Error {
     TomlError(#[from] toml::de::Error),
 }
 
-/// Visitor that modifies how a `Codex` is deserialized from a map like structure by replacing the
-/// string keys with the hashed `Id` identifiers
-struct CodexVisitor<Entry> {
-    _phantom: PhantomData<Entry>,
+/// Data that is contained in a codex.
+pub trait CodexSource: Send + Sync + 'static {
+    /// Specifices the file extension for codex.
+    const EXTENSION: &'static str;
 }
 
-impl<Entry> Default for CodexVisitor<Entry> {
-    fn default() -> Self {
+/// Defines how an asset is processed from some raw definition using the LoadContext.
+pub trait FromWithLoadContext<T> {
+    fn from_with_load_context(raw: T, load_context: &mut LoadContext) -> Self;
+}
+
+impl<T> FromWithLoadContext<T> for T {
+    fn from_with_load_context(raw: T, _load_context: &mut LoadContext) -> Self {
+        raw
+    }
+}
+
+/// Deserializer for Codex that keeps the LoadContext as state.
+struct CodexDeserializer<'a, 'c, RawEntry, Entry> {
+    load_context: &'a mut LoadContext<'c>,
+    _phantom: PhantomData<(RawEntry, Entry)>,
+}
+
+impl<'a, 'c, RawEntry, Entry> CodexDeserializer<'a, 'c, RawEntry, Entry> {
+    pub fn with_load_context(load_context: &'a mut LoadContext<'c>) -> Self {
         Self {
+            load_context,
             _phantom: PhantomData,
         }
     }
 }
 
-impl<'de, Entry> Visitor<'de> for CodexVisitor<Entry>
+impl<'de, RawEntry, Entry> DeserializeSeed<'de> for CodexDeserializer<'_, '_, RawEntry, Entry>
 where
-    Entry: fmt::Debug + TypePath + Send + Sync + Deserialize<'de>,
+    RawEntry: Deserialize<'de>,
+    Entry: std::fmt::Debug + TypePath + Send + Sync + FromWithLoadContext<RawEntry>,
+{
+    type Value = Codex<Entry>;
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_map(CodexVisitor::<RawEntry, Entry>::with_load_context(
+            self.load_context,
+        ))
+    }
+}
+
+/// Visitor that modifies how a `Codex` is deserialized from a map like structure by replacing the
+/// string keys with the hashed `Id` identifiers, and the value by converting from the raw form to
+/// the final entry value type.
+struct CodexVisitor<'a, 'c, RawEntry, Entry> {
+    load_context: &'a mut LoadContext<'c>,
+    _phantom: PhantomData<(RawEntry, Entry)>,
+}
+
+impl<'a, 'c, RawEntry, Entry> CodexVisitor<'a, 'c, RawEntry, Entry> {
+    fn with_load_context(load_context: &'a mut LoadContext<'c>) -> Self {
+        Self {
+            load_context,
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl<'a, 'c, 'de, RawEntry, Entry> Visitor<'de> for CodexVisitor<'a, 'c, RawEntry, Entry>
+where
+    RawEntry: Deserialize<'de>,
+    Entry: fmt::Debug + TypePath + Send + Sync + FromWithLoadContext<RawEntry>,
 {
     type Value = Codex<Entry>;
 
@@ -48,37 +97,23 @@ where
     {
         let mut codex_builder = Codex::builder_with_capacity(access.size_hint().unwrap_or(0));
 
-        while let Some((key, value)) = access.next_entry::<String, _>()? {
-            codex_builder = codex_builder.add(key.as_str(), value);
+        while let Some((key, value)) = access.next_entry::<String, RawEntry>()? {
+            codex_builder = codex_builder.add(
+                key.as_str(),
+                Entry::from_with_load_context(value, self.load_context),
+            );
         }
 
         Ok(codex_builder.build())
     }
 }
 
-impl<'de, Entry> Deserialize<'de> for Codex<Entry>
-where
-    Entry: std::fmt::Debug + TypePath + Send + Sync + Deserialize<'de>,
-{
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_map(CodexVisitor::default())
-    }
-}
-
-/// Specifices the file extension for codex of this entry type.
-pub trait CodexSource: Send + Sync + 'static {
-    const EXTENSION: &'static str;
-}
-
 /// Loads codex assets from TOML-files
-pub struct CodexLoader<Entry> {
-    _phantom_data: PhantomData<Entry>,
+pub struct CodexLoader<RawEntry, Entry = RawEntry> {
+    _phantom_data: PhantomData<(RawEntry, Entry)>,
 }
 
-impl<Entry> Default for CodexLoader<Entry> {
+impl<RawEntry, Entry> Default for CodexLoader<RawEntry, Entry> {
     fn default() -> Self {
         Self {
             _phantom_data: PhantomData,
@@ -86,29 +121,31 @@ impl<Entry> Default for CodexLoader<Entry> {
     }
 }
 
-impl<T> AssetLoader for CodexLoader<T>
+impl<RawEntry, Entry> AssetLoader for CodexLoader<RawEntry, Entry>
 where
-    T: CodexSource + std::fmt::Debug + TypePath + Send + Sync + for<'de> Deserialize<'de>,
+    Entry: CodexSource + std::fmt::Debug + TypePath + Send + Sync + FromWithLoadContext<RawEntry>,
+    RawEntry: Send + Sync + for<'de> Deserialize<'de> + 'static,
 {
-    type Asset = Codex<T>;
+    type Asset = Codex<Entry>;
     type Settings = ();
     type Error = Error;
 
     fn extensions(&self) -> &[&str] {
-        &[T::EXTENSION]
+        &[Entry::EXTENSION]
     }
 
     fn load<'a>(
         &'a self,
         reader: &'a mut Reader,
         _settings: &'a (),
-        _load_context: &'a mut LoadContext,
+        load_context: &'a mut LoadContext<'_>,
     ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
             let strdata = std::str::from_utf8(&bytes)?;
-            let codex: Self::Asset = toml::de::from_str(strdata)?;
+            let codex: Self::Asset = CodexDeserializer::with_load_context(load_context)
+                .deserialize(toml::de::Deserializer::new(strdata))?;
             Ok(codex)
         })
     }

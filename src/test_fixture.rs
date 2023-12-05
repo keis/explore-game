@@ -69,7 +69,10 @@ pub fn app(default_terrain_codex: Codex<Terrain>) -> App {
     let mut app = App::new();
     let mut terrain_codex_assets: Assets<Codex<Terrain>> = Assets::default();
     let terrain_codex = terrain_codex_assets.add(default_terrain_codex);
-    let codex_assets = CodexAssets { terrain_codex };
+    let codex_assets = CodexAssets {
+        terrain_codex,
+        decoration_codex: Handle::default(),
+    };
     app.world.insert_resource(terrain_codex_assets);
     app.world.insert_resource(codex_assets);
     spawn_game_map(&mut app);

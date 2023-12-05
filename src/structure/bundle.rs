@@ -53,10 +53,13 @@ impl SpawnerFluffBundle {
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: main_assets.portal_mesh.clone(),
                 material: terrain_materials.add(TerrainMaterial {
-                    color: Color::rgb(0.8, 0.32, 0.3),
-                    ..default()
+                    color_a: Color::rgb(0.8, 0.32, 0.3),
+                    color_b: Color::rgb(0.7, 0.32, 0.4),
+                    color_c: Color::rgb(0.6, 0.29, 0.3),
+                    visible: fog.visible,
+                    explored: fog.explored,
                 }),
-                visibility: if fog.visible {
+                visibility: if fog.explored {
                     Visibility::Inherited
                 } else {
                     Visibility::Hidden
@@ -104,7 +107,7 @@ impl CampBundle {
     }
 
     pub fn with_fluff(self, camp_params: &mut CampParams) -> (Self, CampFluffBundle) {
-        let fluff = CampFluffBundle::new(camp_params, &self.presence, &self.offset);
+        let fluff = CampFluffBundle::new(camp_params, &self.presence, &self.offset, &self.fog);
         (self, fluff)
     }
 }
@@ -114,15 +117,17 @@ impl CampFluffBundle {
         (main_assets, terrain_materials): &mut CampParams,
         presence: &MapPresence,
         offset: &Offset,
+        fog: &Fog,
     ) -> Self {
         Self {
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: main_assets.tent_mesh.clone(),
                 material: terrain_materials.add(TerrainMaterial {
-                    color: Color::rgb(0.631, 0.596, 0.165),
-                    visible: true,
-                    explored: true,
-                    ..default()
+                    color_a: Color::rgb(0.631, 0.596, 0.165),
+                    color_b: Color::rgb(0.531, 0.622, 0.195),
+                    color_c: Color::rgb(0.571, 0.520, 0.125),
+                    visible: fog.visible,
+                    explored: fog.explored,
                 }),
                 transform: Transform::from_translation(Vec3::from(presence.position) + offset.0)
                     .with_rotation(Quat::from_rotation_y(1.0))
@@ -177,10 +182,13 @@ impl PortalFluffBundle {
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: main_assets.portal_mesh.clone(),
                 material: terrain_materials.add(TerrainMaterial {
-                    color: Color::rgb(0.4, 0.42, 0.4),
-                    ..default()
+                    color_a: Color::rgb(0.4, 0.42, 0.4),
+                    color_b: Color::rgb(0.42, 0.4, 0.4),
+                    color_c: Color::rgb(0.4, 0.4, 0.42),
+                    visible: fog.visible,
+                    explored: fog.explored,
                 }),
-                visibility: if fog.visible {
+                visibility: if fog.explored {
                     Visibility::Inherited
                 } else {
                     Visibility::Hidden

@@ -9,86 +9,49 @@ use bevy::{pbr::NotShadowCaster, prelude::*};
 use bevy_mod_picking::prelude::{Pickable, PickingInteraction};
 use glam::Vec3Swizzles;
 
-pub type ZoneDecorationParams<'w> = (Res<'w, MainAssets>, ResMut<'w, Assets<TerrainMaterial>>);
+pub type ZoneDecorationParams<'w> = ResMut<'w, Assets<TerrainMaterial>>;
 
 #[derive(Bundle)]
-pub struct ZoneDecorationCrystalsBundle {
+pub struct ZoneDecorationBundle<Tag: Component> {
     fog: Fog,
-    zone_decoration_crystals: ZoneDecorationCrystals,
+    tag: Tag,
     material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
 }
 
-impl ZoneDecorationCrystalsBundle {
+#[allow(clippy::too_many_arguments)]
+impl<Tag: Component> ZoneDecorationBundle<Tag> {
     pub fn new(
-        (main_assets, terrain_materials): &mut ZoneDecorationParams,
+        tag: Tag,
+        decoration_id: Id<Decoration>,
+        terrain_materials: &mut ZoneDecorationParams,
+        decoration_codex: &Codex<Decoration>,
         height: &Height,
         fog: &Fog,
         position: HexCoord,
-        relative: Vec2,
-        scale: f32,
+        detail: &ZoneDecorationDetail,
     ) -> Self {
-        Self {
-            fog: Fog::default(),
-            zone_decoration_crystals: ZoneDecorationCrystals,
-            material_mesh_bundle: MaterialMeshBundle {
-                mesh: main_assets.crystals_mesh.clone(),
-                material: terrain_materials.add(TerrainMaterial {
-                    color: Color::rgba(0.7, 0.4, 0.4, 0.777),
-                    ..default()
-                }),
-                visibility: if fog.visible {
-                    Visibility::Inherited
-                } else {
-                    Visibility::Hidden
-                },
-                transform: Transform::from_translation(Vec3::new(
-                    relative.x,
-                    height.height_at(relative, Vec3::from(position).xz() + relative),
-                    relative.y,
-                ))
-                .with_scale(Vec3::splat(scale * 0.3)),
-                ..default()
-            },
-        }
-    }
-}
-
-#[derive(Bundle)]
-pub struct ZoneDecorationTreeBundle {
-    fog: Fog,
-    zone_decoration_tree: ZoneDecorationTree,
-    material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
-}
-
-impl ZoneDecorationTreeBundle {
-    pub fn new(
-        (main_assets, terrain_materials): &mut ZoneDecorationParams,
-        height: &Height,
-        fog: &Fog,
-        position: HexCoord,
-        relative: Vec2,
-        scale: f32,
-    ) -> Self {
+        let decoration = &decoration_codex[&decoration_id];
         Self {
             fog: *fog,
-            zone_decoration_tree: ZoneDecorationTree,
+            tag,
             material_mesh_bundle: MaterialMeshBundle {
-                mesh: main_assets.pine_mesh.clone(),
-                material: terrain_materials.add(TerrainMaterial {
-                    texture: Some(main_assets.forest_texture.clone()),
-                    ..default()
-                }),
-                visibility: if fog.visible {
+                mesh: decoration.mesh.clone(),
+                material: terrain_materials.add(TerrainMaterial::from_decoration(
+                    decoration_codex,
+                    &decoration_id,
+                    fog,
+                )),
+                visibility: if fog.explored {
                     Visibility::Inherited
                 } else {
                     Visibility::Hidden
                 },
                 transform: Transform::from_translation(Vec3::new(
-                    relative.x,
-                    height.height_at(relative, Vec3::from(position).xz() + relative),
-                    relative.y,
+                    detail.relative.x,
+                    height.height_at(detail.relative, Vec3::from(position).xz() + detail.relative),
+                    detail.relative.y,
                 ))
-                .with_scale(Vec3::splat(scale * 0.5)),
+                .with_scale(Vec3::splat(detail.scale * decoration.scale)),
                 ..default()
             },
         }
@@ -163,12 +126,12 @@ impl ZoneBundle {
                 crystal_detail: if prototype.crystals {
                     filliter
                         .next()
-                        .map(|(pos, scale)| ZoneDecorationDetail(*pos, *scale))
+                        .map(|&(relative, scale)| ZoneDecorationDetail { relative, scale })
                 } else {
                     None
                 },
                 tree_details: filliter
-                    .map(|(pos, scale)| ZoneDecorationDetail(*pos, *scale))
+                    .map(|&(relative, scale)| ZoneDecorationDetail { relative, scale })
                     .collect(),
             },
             ..default()

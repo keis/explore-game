@@ -3,6 +3,7 @@
     forward_io::VertexOutput
 }
 #import noisy_bevy::fbm_simplex_2d
+#import "materials/common.wgsl"::modulo;
 
 struct UniformData {
     color: vec4<f32>,
@@ -10,10 +11,6 @@ struct UniformData {
 
 @group(1) @binding(0)
 var<uniform> uniform_data: UniformData;
-
-fn modulo(a: f32, n: f32) -> f32 {
-    return a - n * floor(a / n);
-}
 
 @fragment
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {

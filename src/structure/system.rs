@@ -39,12 +39,18 @@ pub fn fluff_portal(
 pub fn fluff_camp(
     mut commands: Commands,
     mut camp_params: CampParams,
-    camp_query: Query<(Entity, &MapPresence, &Offset), (With<Camp>, Without<GlobalTransform>)>,
+    camp_query: Query<
+        (Entity, &MapPresence, &Offset, &Fog),
+        (With<Camp>, Without<GlobalTransform>),
+    >,
 ) {
-    for (entity, presence, offset) in &camp_query {
-        commands
-            .entity(entity)
-            .insert(CampFluffBundle::new(&mut camp_params, presence, offset));
+    for (entity, presence, offset, fog) in &camp_query {
+        commands.entity(entity).insert(CampFluffBundle::new(
+            &mut camp_params,
+            presence,
+            offset,
+            fog,
+        ));
     }
 }
 

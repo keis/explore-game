@@ -7,7 +7,9 @@ pub struct TerrainPlugin;
 impl Plugin for TerrainPlugin {
     fn build(&self, app: &mut App) {
         app.init_asset::<Codex<Terrain>>()
+            .init_asset::<Codex<Decoration>>()
             .init_asset_loader::<CodexLoader<Terrain>>()
+            .init_asset_loader::<CodexLoader<RawDecoration, Decoration>>()
             .register_type::<CrystalDeposit>()
             .register_type::<Height>()
             .register_type::<Height>()
