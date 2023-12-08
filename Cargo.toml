@@ -36,13 +36,14 @@ opt-level = 3
 bevy_asset_loader = "0.18"
 bevy_egui = "0.23"
 bevy-inspector-egui = "0.21"
-bevy_mod_billboard = { git = "https://github.com/robtfm/bevy_mod_billboard/", version = "0.4.1", branch = "bevy12" }
+bevy_mod_billboard = { version = "0.5.1" }
 bevy_mod_outline = "0.6"
 bevy_mod_picking = { version = "0.17", features = ["backend_egui"] }
 bevy_obj = "0.12"
 bevy_sprite3d = "2.7"
 bevy = { version = "0.12", features = ["wayland", "dynamic_linking", "file_watcher"] }
 clap = { workspace = true, features = ["derive"] }
+expl_codex = { version = "0.1.0", path = "crates/expl_codex" }
 expl_databinding = { version = "0.1.0", path = "crates/expl_databinding" }
 expl_hexagon = { version = "0.1.0", path = "crates/expl_hexagon" }
 expl_hexgrid = { path = "crates/expl_hexgrid", features = ["bevy-reflect"] }
@@ -61,7 +62,6 @@ serde = { workspace = true }
 smallvec = { workspace = true }
 splines = { version = "4", features = ["glam"] }
 thiserror = { workspace = true }
-expl_codex = { version = "0.1.0", path = "crates/expl_codex" }
 
 [dev-dependencies]
 approx = "0.5"
