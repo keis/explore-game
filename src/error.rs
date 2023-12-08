@@ -10,6 +10,8 @@ pub enum ExplError {
     QueryEntityError(#[from] bevy::ecs::query::QueryEntityError),
     #[error(transparent)]
     QuerySingleError(#[from] bevy::ecs::query::QuerySingleError),
+    #[error(transparent)]
+    LoadDirectError(#[from] Box<bevy::asset::LoadDirectError>),
     #[error("could not place portal")]
     CouldNotPlacePortal,
     #[error("could not place spawner")]
@@ -32,4 +34,6 @@ pub enum ExplError {
     InventoryItemNotFound,
     #[error("missing codex")]
     MissingCodex,
+    #[error("missing template")]
+    MissingTemplate,
 }

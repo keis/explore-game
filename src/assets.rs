@@ -1,4 +1,7 @@
-use crate::terrain::{Codex, Decoration, Terrain};
+use crate::{
+    map_generator::MapTemplate,
+    terrain::{Codex, Decoration, Terrain},
+};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
@@ -23,6 +26,8 @@ pub struct MainAssets {
     pub portal_mesh: Handle<Mesh>,
     #[asset(path = "icons/swords-emblem.png")]
     pub swords_emblem_icon: Handle<Image>,
+    #[asset(path = "maps/default.template.txt")]
+    pub map_template: Handle<MapTemplate>,
 }
 
 #[derive(AssetCollection, Resource)]
