@@ -1,20 +1,13 @@
-use super::{MapPrototype, ZonePrototype};
+use super::{MapPrototype, MapTemplate, ZonePrototype};
 use crate::{
     terrain::{Outer, Terrain, TerrainDecoration},
     ExplError,
 };
 use bevy::prelude::*;
 use expl_codex::{Codex, Id};
-use expl_hexgrid::{
-    layout::{HexagonalGridLayout, SquareGridLayout},
-    spiral, Grid, GridLayout, HexCoord,
-};
-use expl_wfc::{
-    tile::extract_tiles, tile::standard_tile_transforms, util::wrap_grid, util::LoadGridWith,
-    Generator, Seed, Template,
-};
+use expl_hexgrid::{layout::SquareGridLayout, spiral, Grid, GridLayout, HexCoord};
+use expl_wfc::{Generator, Seed};
 use rand::{seq::SliceRandom, Rng};
-use std::{collections::HashMap, fs::File, io};
 
 fn random_in_circle<R: Rng>(rng: &mut R, radius: f32) -> Vec2 {
     let max_r = radius * radius;
@@ -42,20 +35,13 @@ fn random_fill(fixed: Vec<(Vec2, f32)>) -> Vec<(Vec2, f32)> {
     result
 }
 
-pub fn generate_map(terrain_codex: &Codex<Terrain>, seed: Seed) -> Result<MapPrototype, ExplError> {
+pub fn generate_map(
+    terrain_codex: &Codex<Terrain>,
+    template: &MapTemplate,
+    seed: Seed,
+) -> Result<MapPrototype, ExplError> {
     info!("Generating map with seed {} ...", seed);
-    let terrain_lookup: HashMap<char, Id<Terrain>> = terrain_codex
-        .iter()
-        .map(|(id, t)| (t.symbol, *id))
-        .collect();
-    let mut file = io::BufReader::new(File::open("assets/maps/test.txt")?);
-    let input = Grid::<HexagonalGridLayout, Id<Terrain>>::load_with(&mut file, |c| {
-        terrain_lookup.get(&c).copied().ok_or(0)
-    })?;
-    let wrapped_input = wrap_grid(input);
-    let transforms = standard_tile_transforms();
-    let template = Template::from_tiles(extract_tiles(&wrapped_input, &transforms));
-    let mut generator = Generator::new_with_seed(&template, seed)?;
+    let mut generator = Generator::new_with_seed(template, seed)?;
 
     while generator.step().is_some() {}
     info!("Generated map!");
