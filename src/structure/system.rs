@@ -1,11 +1,12 @@
-use super::{bundle::*, component::*};
+use super::{bundle::*, component::*, system_param::*};
 use crate::{
     actor::{EnemyBundle, EnemyParams, Group},
     combat::Health,
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
-    map::{Fog, MapCommandsExt, MapPresence, Offset, PresenceLayer, ViewRadius},
+    map::{Fog, MapCommandsExt, MapPresence, PresenceLayer, ViewRadius},
     material::PortalMaterial,
     scene::save,
+    ExplError,
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
 
@@ -13,45 +14,57 @@ use bevy::{pbr::NotShadowCaster, prelude::*};
 pub fn fluff_spawner(
     mut commands: Commands,
     mut spawner_params: SpawnerParams,
+    structure_codex: StructureCodex,
     spawner_query: Query<(Entity, &MapPresence, &Fog), (With<Spawner>, Without<GlobalTransform>)>,
-) {
+) -> Result<(), ExplError> {
+    let structure_codex = structure_codex.get()?;
     for (entity, presence, fog) in &spawner_query {
-        commands
-            .entity(entity)
-            .insert(SpawnerFluffBundle::new(&mut spawner_params, presence, fog));
+        commands.entity(entity).insert(SpawnerFluffBundle::new(
+            &mut spawner_params,
+            structure_codex,
+            presence,
+            fog,
+        ));
     }
+    Ok(())
 }
 
 #[allow(clippy::type_complexity)]
 pub fn fluff_portal(
     mut commands: Commands,
     mut portal_params: PortalParams,
+    structure_codex: StructureCodex,
     portal_query: Query<(Entity, &MapPresence, &Fog), (With<Portal>, Without<GlobalTransform>)>,
-) {
+) -> Result<(), ExplError> {
+    let structure_codex = structure_codex.get()?;
     for (entity, presence, fog) in &portal_query {
-        commands
-            .entity(entity)
-            .insert(PortalFluffBundle::new(&mut portal_params, presence, fog));
+        commands.entity(entity).insert(PortalFluffBundle::new(
+            &mut portal_params,
+            structure_codex,
+            presence,
+            fog,
+        ));
     }
+    Ok(())
 }
 
 #[allow(clippy::type_complexity)]
 pub fn fluff_camp(
     mut commands: Commands,
     mut camp_params: CampParams,
-    camp_query: Query<
-        (Entity, &MapPresence, &Offset, &Fog),
-        (With<Camp>, Without<GlobalTransform>),
-    >,
-) {
-    for (entity, presence, offset, fog) in &camp_query {
+    structure_codex: StructureCodex,
+    camp_query: Query<(Entity, &MapPresence, &Fog), (With<Camp>, Without<GlobalTransform>)>,
+) -> Result<(), ExplError> {
+    let structure_codex = structure_codex.get()?;
+    for (entity, presence, fog) in &camp_query {
         commands.entity(entity).insert(CampFluffBundle::new(
             &mut camp_params,
+            structure_codex,
             presence,
-            offset,
             fog,
         ));
     }
+    Ok(())
 }
 
 pub fn charge_spawner(mut spawner_query: Query<&mut Spawner>) {

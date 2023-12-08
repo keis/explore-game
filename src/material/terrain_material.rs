@@ -1,4 +1,4 @@
-use crate::{map::Fog, terrain::Decoration};
+use crate::{map::Fog, structure::Structure, terrain::Decoration};
 use bevy::{
     prelude::*,
     reflect::{TypePath, TypeUuid},
@@ -39,6 +39,22 @@ impl TerrainMaterial {
             color_a: decoration_data.color_a,
             color_b: decoration_data.color_b,
             color_c: decoration_data.color_c,
+            visible: fog.visible,
+            explored: fog.explored,
+        }
+    }
+
+    pub fn from_structure(
+        structure_codex: &Codex<Structure>,
+        structure_id: &Id<Structure>,
+        fog: &Fog,
+    ) -> Self {
+        let structure_data = &structure_codex[structure_id];
+
+        Self {
+            color_a: structure_data.color_a,
+            color_b: structure_data.color_b,
+            color_c: structure_data.color_c,
             visible: fog.visible,
             explored: fog.explored,
         }

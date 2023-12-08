@@ -1,9 +1,11 @@
 use crate::{
     map_generator::MapTemplate,
-    terrain::{Codex, Decoration, Terrain},
+    structure::Structure,
+    terrain::{Decoration, Terrain},
 };
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
+use expl_codex::Codex;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, States, Default)]
 pub enum AssetState {
@@ -18,12 +20,8 @@ pub struct MainAssets {
     pub cloud_texture: Handle<Image>,
     #[asset(path = "models/indicator.obj")]
     pub indicator_mesh: Handle<Mesh>,
-    #[asset(path = "models/tent.obj")]
-    pub tent_mesh: Handle<Mesh>,
     #[asset(path = "models/blob.obj")]
     pub blob_mesh: Handle<Mesh>,
-    #[asset(path = "models/portal.obj")]
-    pub portal_mesh: Handle<Mesh>,
     #[asset(path = "icons/swords-emblem.png")]
     pub swords_emblem_icon: Handle<Image>,
     #[asset(path = "maps/default.template.txt")]
@@ -36,6 +34,8 @@ pub struct CodexAssets {
     pub terrain_codex: Handle<Codex<Terrain>>,
     #[asset(path = "codex/default.decoration.toml")]
     pub decoration_codex: Handle<Codex<Decoration>>,
+    #[asset(path = "codex/default.structure.toml")]
+    pub structure_codex: Handle<Codex<Structure>>,
 }
 
 pub struct AssetsPlugin;
