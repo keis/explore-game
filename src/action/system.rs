@@ -8,7 +8,7 @@ use crate::{
     map::{Fog, MapCommandsExt, MapPresence, Offset, PresenceLayer, ZoneLayer},
     path::{PathFinder, PathGuided},
     scene::save,
-    structure::{Camp, CampBundle, CampParams, Portal, SafeHaven, StructureCodex},
+    structure::{Camp, CampBundle, Portal, SafeHaven, StructureCodex, StructureParams},
     terrain::{CrystalDeposit, HeightQuery, TerrainCodex, TerrainId},
     ExplError,
 };
@@ -157,7 +157,7 @@ pub fn handle_resume_move(
 pub fn handle_make_camp(
     queue: ResMut<GameActionQueue>,
     mut commands: Commands,
-    mut spawn_camp_params: CampParams,
+    mut structure_params: StructureParams,
     map_query: Query<(Entity, &ZoneLayer, &PresenceLayer)>,
     terrain_query: Query<&TerrainId>,
     mut party_query: Query<(&mut Inventory, &Group, &MapPresence), With<Party>>,
@@ -204,7 +204,7 @@ pub fn handle_make_camp(
                     Name::new("Camp"),
                     save::Save,
                     CampBundle::new(position, String::from("New camp"), camp_inventory)
-                        .with_fluff(&mut spawn_camp_params, structure_codex),
+                        .with_fluff(&mut structure_params, structure_codex),
                 ))
                 .add_members(&group.members);
         });

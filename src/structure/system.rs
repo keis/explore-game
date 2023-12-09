@@ -11,55 +11,18 @@ use crate::{
 use bevy::{pbr::NotShadowCaster, prelude::*};
 
 #[allow(clippy::type_complexity)]
-pub fn fluff_spawner(
+pub fn fluff_structure(
     mut commands: Commands,
-    mut spawner_params: SpawnerParams,
+    mut structure_params: StructureParams,
     structure_codex: StructureCodex,
-    spawner_query: Query<(Entity, &MapPresence, &Fog), (With<Spawner>, Without<GlobalTransform>)>,
+    structure_query: Query<(Entity, &StructureId, &MapPresence, &Fog), Without<GlobalTransform>>,
 ) -> Result<(), ExplError> {
     let structure_codex = structure_codex.get()?;
-    for (entity, presence, fog) in &spawner_query {
-        commands.entity(entity).insert(SpawnerFluffBundle::new(
-            &mut spawner_params,
+    for (entity, structure_id, presence, fog) in &structure_query {
+        commands.entity(entity).insert(StructureFluffBundle::new(
+            &mut structure_params,
             structure_codex,
-            presence,
-            fog,
-        ));
-    }
-    Ok(())
-}
-
-#[allow(clippy::type_complexity)]
-pub fn fluff_portal(
-    mut commands: Commands,
-    mut portal_params: PortalParams,
-    structure_codex: StructureCodex,
-    portal_query: Query<(Entity, &MapPresence, &Fog), (With<Portal>, Without<GlobalTransform>)>,
-) -> Result<(), ExplError> {
-    let structure_codex = structure_codex.get()?;
-    for (entity, presence, fog) in &portal_query {
-        commands.entity(entity).insert(PortalFluffBundle::new(
-            &mut portal_params,
-            structure_codex,
-            presence,
-            fog,
-        ));
-    }
-    Ok(())
-}
-
-#[allow(clippy::type_complexity)]
-pub fn fluff_camp(
-    mut commands: Commands,
-    mut camp_params: CampParams,
-    structure_codex: StructureCodex,
-    camp_query: Query<(Entity, &MapPresence, &Fog), (With<Camp>, Without<GlobalTransform>)>,
-) -> Result<(), ExplError> {
-    let structure_codex = structure_codex.get()?;
-    for (entity, presence, fog) in &camp_query {
-        commands.entity(entity).insert(CampFluffBundle::new(
-            &mut camp_params,
-            structure_codex,
+            **structure_id,
             presence,
             fog,
         ));
