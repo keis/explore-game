@@ -3,7 +3,7 @@ use crate::{
     actor::{CharacterBundle, GroupCommandsExt, PartyBundle, PartyParams},
     map::{MapCommandsExt, MapLayout, MapPosition, PresenceLayer, ZoneLayer},
     map_generator::{GenerateMapTask, MapPrototype, MapSeed},
-    structure::{PortalBundle, PortalParams, SafeHavenBundle, SpawnerBundle, SpawnerParams},
+    structure::{PortalBundle, SafeHavenBundle, SpawnerBundle, StructureCodex, StructureParams},
     terrain::{CrystalDeposit, TerrainCodex, TerrainId, ZoneBundle, ZoneParams},
     turn::Turn,
     ExplError,
@@ -88,12 +88,14 @@ pub fn spawn_generated_map(
 
 pub fn spawn_portal(
     mut commands: Commands,
-    mut portal_params: PortalParams,
+    mut structure_params: StructureParams,
+    structure_codex: StructureCodex,
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.get_single()?;
     let map_entity = map_query.get_single()?;
+    let structure_codex = structure_codex.get()?;
 
     commands
         .entity(map_entity)
@@ -101,7 +103,8 @@ pub fn spawn_portal(
             location.spawn((
                 Name::new("Portal"),
                 save::Save,
-                PortalBundle::new(prototype.portal_position).with_fluff(&mut portal_params),
+                PortalBundle::new(prototype.portal_position)
+                    .with_fluff(&mut structure_params, structure_codex),
             ));
         });
 
@@ -110,12 +113,14 @@ pub fn spawn_portal(
 
 pub fn spawn_spawner(
     mut commands: Commands,
-    mut spawner_params: SpawnerParams,
+    mut structure_params: StructureParams,
+    structure_codex: StructureCodex,
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.get_single()?;
     let map_entity = map_query.get_single()?;
+    let structure_codex = structure_codex.get()?;
 
     commands
         .entity(map_entity)
@@ -123,7 +128,8 @@ pub fn spawn_spawner(
             location.spawn((
                 Name::new("EnemySpawner"),
                 save::Save,
-                SpawnerBundle::new(prototype.spawner_position).with_fluff(&mut spawner_params),
+                SpawnerBundle::new(prototype.spawner_position)
+                    .with_fluff(&mut structure_params, structure_codex),
             ));
         });
 

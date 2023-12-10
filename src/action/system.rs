@@ -8,7 +8,7 @@ use crate::{
     map::{Fog, MapCommandsExt, MapPresence, Offset, PresenceLayer, ZoneLayer},
     path::{PathFinder, PathGuided},
     scene::save,
-    structure::{Camp, CampBundle, CampParams, Portal, SafeHaven},
+    structure::{Camp, CampBundle, Portal, SafeHaven, StructureCodex, StructureParams},
     terrain::{CrystalDeposit, HeightQuery, TerrainCodex, TerrainId},
     ExplError,
 };
@@ -157,17 +157,19 @@ pub fn handle_resume_move(
 pub fn handle_make_camp(
     queue: ResMut<GameActionQueue>,
     mut commands: Commands,
-    mut spawn_camp_params: CampParams,
+    mut structure_params: StructureParams,
     map_query: Query<(Entity, &ZoneLayer, &PresenceLayer)>,
     terrain_query: Query<&TerrainId>,
     mut party_query: Query<(&mut Inventory, &Group, &MapPresence), With<Party>>,
     camp_query: Query<&Camp>,
     terrain_codex: TerrainCodex,
+    structure_codex: StructureCodex,
 ) -> Result<(), ExplError> {
     let Some(GameAction::MakeCamp(party_entity)) = queue.current else {
         return Ok(());
     };
     let terrain_codex = terrain_codex.get()?;
+    let structure_codex = structure_codex.get()?;
 
     let (mut party_inventory, group, presence) = party_query.get_mut(party_entity)?;
     let (map_entity, zone_layer, presence_layer) = map_query.get_single()?;
@@ -202,7 +204,7 @@ pub fn handle_make_camp(
                     Name::new("Camp"),
                     save::Save,
                     CampBundle::new(position, String::from("New camp"), camp_inventory)
-                        .with_fluff(&mut spawn_camp_params),
+                        .with_fluff(&mut structure_params, structure_codex),
                 ))
                 .add_members(&group.members);
         });
