@@ -1,6 +1,5 @@
 use super::{asset::*, component::*};
 use crate::{
-    assets::MainAssets,
     map::{Fog, HexCoord, MapPosition},
     map_generator::ZonePrototype,
     material::{TerrainMaterial, WaterMaterial, ZoneMaterial},
@@ -84,11 +83,7 @@ impl WaterBundle {
     }
 }
 
-pub type ZoneParams<'w> = (
-    Res<'w, MainAssets>,
-    Res<'w, HexAssets>,
-    ResMut<'w, Assets<ZoneMaterial>>,
-);
+pub type ZoneParams<'w> = (Res<'w, HexAssets>, ResMut<'w, Assets<ZoneMaterial>>);
 
 #[derive(Bundle, Default)]
 pub struct ZoneBundle {
@@ -159,7 +154,7 @@ impl ZoneBundle {
 
 impl ZoneFluffBundle {
     pub fn new(
-        (main_assets, hex_assets, zone_materials): &mut ZoneParams,
+        (hex_assets, zone_materials): &mut ZoneParams,
         terrain_codex: &Codex<Terrain>,
         position: &MapPosition,
         terrain: &TerrainId,
@@ -171,7 +166,6 @@ impl ZoneFluffBundle {
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: hex_assets.mesh.clone(),
                 material: zone_materials.add(ZoneMaterial::new(
-                    main_assets,
                     terrain_codex,
                     terrain,
                     height,

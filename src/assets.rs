@@ -16,8 +16,6 @@ pub enum AssetState {
 
 #[derive(AssetCollection, Resource)]
 pub struct MainAssets {
-    #[asset(path = "textures/cloud.png")]
-    pub cloud_texture: Handle<Image>,
     #[asset(path = "models/blob.obj")]
     pub blob_mesh: Handle<Mesh>,
     #[asset(path = "models/heather-shield.obj")]
