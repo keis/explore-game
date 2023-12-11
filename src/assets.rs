@@ -18,10 +18,10 @@ pub enum AssetState {
 pub struct MainAssets {
     #[asset(path = "textures/cloud.png")]
     pub cloud_texture: Handle<Image>,
-    #[asset(path = "models/indicator.obj")]
-    pub indicator_mesh: Handle<Mesh>,
     #[asset(path = "models/blob.obj")]
     pub blob_mesh: Handle<Mesh>,
+    #[asset(path = "models/heather-shield.obj")]
+    pub shield_mesh: Handle<Mesh>,
     #[asset(path = "icons/swords-emblem.png")]
     pub swords_emblem_icon: Handle<Image>,
     #[asset(path = "maps/default.template.txt")]

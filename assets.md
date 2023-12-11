@@ -25,3 +25,5 @@
   - assets/pine.blend
 * By rubberduck under CC0 (https://opengameart.org/content/simple-3d-crystals-unwrapped-simple-texture)
   - assets/crystals.blend
+* By TigerUppercut under CC0 (https://opengameart.org/content/heather-shield)
+  - assets/heather-shield

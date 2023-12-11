@@ -33,7 +33,7 @@ impl CharacterBundle {
 }
 
 pub type PartyParams<'w, 's> = (
-    ResMut<'w, Assets<Mesh>>,
+    Res<'w, MainAssets>,
     ResMut<'w, Assets<StandardMaterial>>,
     HeightQuery<'w, 's>,
 );
@@ -45,7 +45,6 @@ pub struct PartyBundle {
     presence: MapPresence,
     group: Group,
     movement: Movement,
-    offset: Offset,
     view_radius: ViewRadius,
     slide: Slide,
     fog_revealer: FogRevealer,
@@ -57,42 +56,42 @@ pub struct PartyFluffBundle {
     path_guided: PathGuided,
     pbr_bundle: PbrBundle,
     outline_bundle: OutlineBundle,
+    offset: Offset,
 }
 
 impl PartyBundle {
     pub fn new(position: HexCoord, name: String, supplies: u32) -> Self {
         let presence = MapPresence { position };
-        let offset = Offset(Vec3::new(0.0, 0.1, 0.0));
         let mut inventory = Inventory::default();
         inventory.add_item(Inventory::SUPPLY, supplies);
         Self {
             party: Party { name },
             inventory,
             presence,
-            offset,
             ..default()
         }
     }
 
     pub fn with_fluff(self, party_params: &mut PartyParams) -> (Self, PartyFluffBundle) {
-        let fluff = PartyFluffBundle::new(party_params, &self.presence, &self.offset);
+        let fluff = PartyFluffBundle::new(party_params, &self.presence);
         (self, fluff)
     }
 }
 
 impl PartyFluffBundle {
     pub fn new(
-        (meshes, standard_materials, height_query): &mut PartyParams,
+        (main_assets, standard_materials, height_query): &mut PartyParams,
         presence: &MapPresence,
-        offset: &Offset,
     ) -> Self {
+        let offset = Offset(Vec3::new(0.0, 0.5, 0.0));
         Self {
             pbr_bundle: PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Cube { size: 0.2 })),
+                mesh: main_assets.shield_mesh.clone(),
                 material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
                 transform: Transform::from_translation(
                     height_query.adjust(presence.position.into()) + offset.0,
-                ),
+                )
+                .with_scale(Vec3::splat(0.1)),
                 ..default()
             },
             outline_bundle: OutlineBundle {
@@ -103,6 +102,7 @@ impl PartyFluffBundle {
                 },
                 ..default()
             },
+            offset,
             ..default()
         }
     }
@@ -117,7 +117,6 @@ pub type EnemyParams<'w, 's> = (
 #[derive(Bundle, Default)]
 pub struct EnemyBundle {
     enemy: Enemy,
-    offset: Offset,
     presence: MapPresence,
     view_radius: ViewRadius,
     slide: Slide,
@@ -127,6 +126,7 @@ pub struct EnemyBundle {
 
 #[derive(Bundle, Default)]
 pub struct EnemyFluffBundle {
+    offset: Offset,
     pbr_bundle: PbrBundle,
     outline_bundle: OutlineBundle,
 }
@@ -134,9 +134,7 @@ pub struct EnemyFluffBundle {
 impl EnemyBundle {
     pub fn new(position: HexCoord) -> Self {
         let presence = MapPresence { position };
-        let offset = Offset(Vec3::new(0.0, 0.05, 0.0));
         Self {
-            offset,
             presence,
             view_radius: ViewRadius(3),
             attack: Attack { low: 1, high: 10 },
@@ -146,7 +144,7 @@ impl EnemyBundle {
     }
 
     pub fn with_fluff(self, enemy_params: &mut EnemyParams) -> (Self, EnemyFluffBundle) {
-        let fluff = EnemyFluffBundle::new(enemy_params, &self.presence, &self.offset);
+        let fluff = EnemyFluffBundle::new(enemy_params, &self.presence);
         (self, fluff)
     }
 }
@@ -155,8 +153,8 @@ impl EnemyFluffBundle {
     pub fn new(
         (main_assets, standard_materials, height_query): &mut EnemyParams,
         presence: &MapPresence,
-        offset: &Offset,
     ) -> Self {
+        let offset = Offset(Vec3::new(0.0, 0.05, 0.0));
         Self {
             pbr_bundle: PbrBundle {
                 mesh: main_assets.blob_mesh.clone(),
@@ -176,6 +174,7 @@ impl EnemyFluffBundle {
                 },
                 ..default()
             },
+            offset,
         }
     }
 }
