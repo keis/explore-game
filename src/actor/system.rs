@@ -15,26 +15,26 @@ pub fn reset_movement_points(mut movement_query: Query<&mut Movement>) {
 #[allow(clippy::type_complexity)]
 pub fn fluff_enemy(
     mut commands: Commands,
-    enemy_query: Query<(Entity, &MapPresence, &Offset), (With<Enemy>, Without<GlobalTransform>)>,
+    enemy_query: Query<(Entity, &MapPresence), (With<Enemy>, Without<GlobalTransform>)>,
     mut enemy_params: EnemyParams,
 ) {
-    for (entity, presence, offset) in &enemy_query {
+    for (entity, presence) in &enemy_query {
         commands
             .entity(entity)
-            .insert(EnemyFluffBundle::new(&mut enemy_params, presence, offset));
+            .insert(EnemyFluffBundle::new(&mut enemy_params, presence));
     }
 }
 
 #[allow(clippy::type_complexity)]
 pub fn fluff_party(
     mut commands: Commands,
-    party_query: Query<(Entity, &MapPresence, &Offset), (With<Party>, Without<GlobalTransform>)>,
+    party_query: Query<(Entity, &MapPresence), (With<Party>, Without<GlobalTransform>)>,
     mut party_params: PartyParams,
 ) {
-    for (entity, presence, offset) in &party_query {
+    for (entity, presence) in &party_query {
         commands
             .entity(entity)
-            .insert(PartyFluffBundle::new(&mut party_params, presence, offset));
+            .insert(PartyFluffBundle::new(&mut party_params, presence));
     }
 }
 

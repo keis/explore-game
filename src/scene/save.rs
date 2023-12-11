@@ -42,7 +42,6 @@ pub fn filter_with_enabled_components() -> SaveFilter {
         .allow::<map::MapLayout>()
         .allow::<map::MapPosition>()
         .allow::<map::MapPresence>()
-        .allow::<map::Offset>()
         .allow::<map::ViewRadius>()
         .allow::<structure::Camp>()
         .allow::<structure::Portal>()
