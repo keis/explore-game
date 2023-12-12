@@ -1,5 +1,5 @@
 use crate::{
-    assets::{AssetState, CodexAssets, MainAssets},
+    assets::{AssetState, CodexAssets},
     map::Fog,
     terrain::{Codex, Height, OuterVisible, Terrain, TerrainId},
 };
@@ -33,9 +33,6 @@ impl Plugin for ZoneMaterialPlugin {
 #[uuid = "05f50382-7218-4860-8c4c-06dbd66694db"]
 #[uniform(4, ZoneMaterialUniform)]
 pub struct ZoneMaterial {
-    #[texture(2)]
-    #[sampler(3)]
-    pub cloud_texture: Option<Handle<Image>>,
     pub terrain: Id<Terrain>,
     pub visible: bool,
     pub explored: bool,
@@ -52,7 +49,6 @@ pub struct ZoneMaterial {
 
 impl ZoneMaterial {
     pub fn new(
-        assets: &Res<MainAssets>,
         terrain_codex: &Codex<Terrain>,
         terrain: &TerrainId,
         height: &Height,
@@ -63,7 +59,6 @@ impl ZoneMaterial {
 
         Self {
             terrain: **terrain,
-            cloud_texture: Some(assets.cloud_texture.clone()),
             color_a: terrain_data.color_a,
             color_b: terrain_data.color_b,
             color_c: terrain_data.color_c,

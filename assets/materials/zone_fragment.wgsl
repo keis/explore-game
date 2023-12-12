@@ -5,7 +5,7 @@
     pbr_types::{STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT, PbrInput, pbr_input_new},
 }
 #import bevy_core_pipeline::tonemapping::tone_mapping
-#import noisy_bevy::fbm_simplex_2d
+#import noisy_bevy::fbm_simplex_2d;
 #import "materials/common.wgsl"::{pixel_noise, modulo};
 
 struct UniformData {
@@ -24,28 +24,31 @@ var cloud_texture_sampler: sampler;
 @group(1) @binding(4)
 var<uniform> uniform_data: UniformData;
 
+fn cloud_noise(world_uv: vec2<f32>) -> vec4<f32> {
+    let octaves = 1;
+    let lacunarity = 2.0;
+    let gain = 0.5;
+    let cloud_uv = vec2<f32>(
+        world_uv.x + cos(globals.time * 0.03),
+        world_uv.y + sin(globals.time * 0.03),
+    );
+    let noise = fbm_simplex_2d(cloud_uv, octaves, lacunarity, gain);
+    return vec4<f32>(1.0, 1.0, 1.0, (noise + 1.3) / 3.0);
+}
+
 @fragment
 fn fragment(@builtin(front_facing) is_front: bool, mesh: VertexOutput) -> @location(0) vec4<f32> {
-    var output_color = vec4<f32>(1.0, 1.0, 1.0, 1.0);
+    var output_color = vec4<f32>(1.0);
 #ifdef VERTEX_COLORS
     output_color = output_color * mesh.color
 #endif
-    var world_uv = vec2<f32>(
-        modulo(mesh.world_position.x * 0.3, 1.0),
-        modulo(mesh.world_position.z * 0.3, 1.0)
-    );
-
     output_color = output_color * pixel_noise(mesh.world_position.xz, uniform_data.color_a, uniform_data.color_b, uniform_data.color_c);
 
-    output_color = mix(output_color, vec4<f32>(1.0, 1.0, 1.0, 1.0), clamp(mesh.world_position.y - 0.3, 0.0, 1.0) * 2.0);
+    output_color = mix(output_color, vec4<f32>(1.0), clamp(mesh.world_position.y - 0.3, 0.0, 1.0) * 2.0);
 
-    var cloud_uv = vec2<f32>(
-        modulo(world_uv.x + cos(globals.time * 0.01), 1.0),
-        modulo(world_uv.y + sin(globals.time * 0.01), 1.0)
-    );
-    var cloud_color = textureSample(cloud_texture, cloud_texture_sampler, cloud_uv);
+    var cloud_color = cloud_noise(mesh.world_position.xz);
     if uniform_data.visible == 0u {
-        output_color = mix(output_color, vec4<f32>(cloud_color.xyz, 1.0), cloud_color[3] * 0.7);
+        output_color = mix(output_color, cloud_color, cloud_color[3]);
     }
 
     if uniform_data.explored == 0u {
@@ -81,7 +84,7 @@ fn fragment(@builtin(front_facing) is_front: bool, mesh: VertexOutput) -> @locat
         mesh.world_tangent,
         #endif
         #endif
-        world_uv,
+        mesh.uv,
         view.mip_bias,
     );
     pbr_input.V = fns::calculate_view(mesh.world_position, pbr_input.is_orthographic);
