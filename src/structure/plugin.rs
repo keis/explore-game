@@ -1,11 +1,11 @@
-use bevy::prelude::*;
-
 use super::{asset::*, component::*, system::*};
 use crate::{
     assets::AssetState,
     scene::{SceneSet, SceneState},
     turn::TurnState,
 };
+use bevy::prelude::*;
+use expl_codex::{Codex, CodexLoader, Id};
 
 pub struct StructurePlugin;
 
@@ -29,7 +29,7 @@ impl Plugin for StructurePlugin {
             .add_systems(OnEnter(TurnState::Player), heal_characters)
             .add_systems(
                 OnEnter(TurnState::System),
-                (charge_spawner, spawn_enemy)
+                (charge_spawner, spawn_enemy.map(bevy::utils::warn))
                     .run_if(in_state(AssetState::Loaded))
                     .chain(),
             );

@@ -1,16 +1,21 @@
-use super::{component::*, event::*, system::*};
+use super::{asset::*, component::*, event::*, system::*};
 use crate::{
     scene::{SceneSet, SceneState},
     turn::TurnState,
 };
 use bevy::prelude::*;
+use expl_codex::{Codex, CodexLoader, Id};
 
 pub struct ActorPlugin;
 
 impl Plugin for ActorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<SlideEvent>()
+        app.init_asset::<Codex<Creature>>()
+            .init_asset_loader::<CodexLoader<RawCreature, Creature>>()
+            .add_event::<SlideEvent>()
             .register_type::<Character>()
+            .register_type::<CreatureId>()
+            .register_type::<Id<Creature>>()
             .register_type::<Corpse>()
             .register_type::<Movement>()
             .register_type::<Enemy>()
@@ -24,7 +29,11 @@ impl Plugin for ActorPlugin {
             )
             .add_systems(
                 OnEnter(SceneState::Active),
-                (fluff_party, fluff_enemy).in_set(SceneSet::Populate),
+                (
+                    fluff_party.map(bevy::utils::warn),
+                    fluff_creature.map(bevy::utils::warn),
+                )
+                    .in_set(SceneSet::Populate),
             )
             .add_systems(
                 Update,

@@ -1,5 +1,6 @@
-use super::asset::{Id, Terrain};
+use super::asset::Terrain;
 use bevy::prelude::*;
+use expl_codex::Id;
 use noisy_bevy::simplex_noise_2d;
 use std::{
     cmp::min,

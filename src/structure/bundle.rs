@@ -1,6 +1,6 @@
 use super::{asset::*, component::*};
 use crate::{
-    actor::Group,
+    actor::{Creature, Group},
     floating_text::FloatingTextSource,
     input::SelectionBundle,
     inventory::Inventory,
@@ -9,6 +9,7 @@ use crate::{
     terrain::HeightQuery,
 };
 use bevy::prelude::*;
+use expl_codex::{Codex, Id};
 
 pub type StructureParams<'w, 's> = (ResMut<'w, Assets<TerrainMaterial>>, HeightQuery<'w, 's>);
 
@@ -63,10 +64,14 @@ pub struct SpawnerBundle {
 }
 
 impl SpawnerBundle {
-    pub fn new(position: HexCoord) -> Self {
+    pub fn new(position: HexCoord, creature: Id<Creature>) -> Self {
         Self {
             structure_id: StructureId::from_tag("spawner"),
             presence: MapPresence { position },
+            spawner: Spawner {
+                creature,
+                ..default()
+            },
             ..default()
         }
     }

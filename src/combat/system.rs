@@ -96,11 +96,12 @@ pub fn combat_round(
         };
         let mut target_iter = target_query.iter_many_mut(&combat.initiative_order);
         while let Some((mut health, maybe_target_enemy)) = target_iter.fetch_next() {
-            if health.0 == 0 || maybe_attacker_enemy.is_some() == maybe_target_enemy.is_some() {
+            if health.current == 0 || maybe_attacker_enemy.is_some() == maybe_target_enemy.is_some()
+            {
                 continue;
             }
-            let damage = rng.gen_range(attack.range()).min(health.0);
-            health.0 -= damage;
+            let damage = rng.gen_range(attack.range()).min(health.current);
+            health.current -= damage;
             combat_events.send(if maybe_target_enemy.is_some() {
                 CombatEvent::EnemyDamage(entity, damage)
             } else {
@@ -121,7 +122,7 @@ pub fn make_corpses(
         return;
     };
     for (entity, health, maybe_member, maybe_enemy) in &health_query {
-        if health.0 == 0 {
+        if health.current == 0 {
             info!("{:?} is dead", entity);
             if let Some(group) = maybe_member.and_then(|member| member.group) {
                 commands.entity(group).remove_members(&[entity]);

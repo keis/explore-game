@@ -1,25 +1,34 @@
-use super::{bundle::*, component::*, event::*};
+use super::{bundle::*, component::*, event::*, system_param::*};
 use crate::{
     map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     terrain::HeightQuery,
+    ExplError,
 };
 use bevy::prelude::*;
+use expl_codex::Id;
 use interpolation::Ease;
 
 pub fn reset_movement_points(mut movement_query: Query<&mut Movement>) {
     for mut movement in movement_query.iter_mut() {
-        movement.points = 2;
+        movement.reset();
     }
 }
 
 #[allow(clippy::type_complexity)]
-pub fn fluff_enemy(
+pub fn fluff_creature(
     mut commands: Commands,
-    enemy_query: Query<(Entity, &MapPresence), (With<Enemy>, Without<GlobalTransform>)>,
-    mut enemy_params: EnemyParams,
-) {
-    for (entity, presence) in &enemy_query {
-        let (fluff_bundle, child_bundle) = EnemyFluffBundle::new(&mut enemy_params, presence);
+    creature_codex: CreatureCodex,
+    creature_query: Query<(Entity, &CreatureId, &MapPresence), Without<GlobalTransform>>,
+    mut creature_params: CreatureParams,
+) -> Result<(), ExplError> {
+    let creature_codex = creature_codex.get()?;
+    for (entity, creature_id, presence) in &creature_query {
+        let (fluff_bundle, child_bundle) = CreatureFluffBundle::new(
+            &mut creature_params,
+            creature_codex,
+            **creature_id,
+            presence,
+        );
         commands
             .entity(entity)
             .insert(fluff_bundle)
@@ -27,16 +36,21 @@ pub fn fluff_enemy(
                 parent.spawn(child_bundle);
             });
     }
+    Ok(())
 }
 
 #[allow(clippy::type_complexity)]
 pub fn fluff_party(
     mut commands: Commands,
+    creature_codex: CreatureCodex,
     party_query: Query<(Entity, &MapPresence), (With<Party>, Without<GlobalTransform>)>,
-    mut party_params: PartyParams,
-) {
+    mut party_params: CreatureParams,
+) -> Result<(), ExplError> {
+    let creature_id = Id::from_tag("warrior");
+    let creature_codex = creature_codex.get()?;
     for (entity, presence) in &party_query {
-        let (fluff_bundle, child_bundle) = PartyFluffBundle::new(&mut party_params, presence);
+        let (fluff_bundle, child_bundle) =
+            PartyFluffBundle::new(&mut party_params, creature_codex, creature_id, presence);
         commands
             .entity(entity)
             .insert(fluff_bundle)
@@ -44,6 +58,7 @@ pub fn fluff_party(
                 parent.spawn(child_bundle);
             });
     }
+    Ok(())
 }
 
 #[allow(clippy::type_complexity)]
@@ -109,9 +124,14 @@ pub fn derive_party_movement(
     movement_query: Query<&Movement, Without<Party>>,
 ) {
     for (group, mut party_movement) in party_query.iter_mut() {
-        party_movement.points = movement_query
+        party_movement.current = movement_query
             .iter_many(&group.members)
-            .map(|m| m.points)
+            .map(|m| m.current)
+            .min()
+            .unwrap_or(0);
+        party_movement.reset = movement_query
+            .iter_many(&group.members)
+            .map(|m| m.reset)
             .min()
             .unwrap_or(0);
     }

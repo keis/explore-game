@@ -1,4 +1,5 @@
 use crate::{
+    actor::Creature,
     map_generator::MapTemplate,
     structure::Structure,
     terrain::{Decoration, Terrain},
@@ -16,10 +17,6 @@ pub enum AssetState {
 
 #[derive(AssetCollection, Resource)]
 pub struct MainAssets {
-    #[asset(path = "models/blob.obj")]
-    pub blob_mesh: Handle<Mesh>,
-    #[asset(path = "models/heather-shield.obj")]
-    pub shield_mesh: Handle<Mesh>,
     #[asset(path = "icons/swords-emblem.png")]
     pub swords_emblem_icon: Handle<Image>,
     #[asset(path = "maps/default.template.txt")]
@@ -34,6 +31,8 @@ pub struct CodexAssets {
     pub decoration_codex: Handle<Codex<Decoration>>,
     #[asset(path = "codex/default.structure.toml")]
     pub structure_codex: Handle<Codex<Structure>>,
+    #[asset(path = "codex/default.creature.toml")]
+    pub creature_codex: Handle<Codex<Creature>>,
 }
 
 pub struct AssetsPlugin;

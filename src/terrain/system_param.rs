@@ -1,5 +1,5 @@
 use super::{
-    asset::{Codex, Decoration, Terrain},
+    asset::{Decoration, Terrain},
     component::Height,
 };
 use crate::{
@@ -8,6 +8,7 @@ use crate::{
     ExplError,
 };
 use bevy::{ecs::system::SystemParam, prelude::*};
+use expl_codex::Codex;
 use glam::Vec3Swizzles;
 
 #[derive(SystemParam)]

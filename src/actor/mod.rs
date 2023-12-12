@@ -1,15 +1,19 @@
+mod asset;
 mod bundle;
 mod command;
 mod component;
 mod event;
 mod plugin;
 mod system;
+mod system_param;
 
+pub use asset::*;
 pub use bundle::*;
 pub use command::GroupCommandsExt;
 pub use component::*;
 pub use event::*;
 pub use plugin::ActorPlugin;
+pub use system_param::CreatureCodex;
 
 #[cfg(test)]
 mod tests {
@@ -28,7 +32,13 @@ mod tests {
             .world
             .spawn((Party::default(), Group::default(), Movement::default()))
             .id();
-        let member_entity = app.world.spawn(Movement { points: 2 }).id();
+        let member_entity = app
+            .world
+            .spawn(Movement {
+                current: 2,
+                reset: 2,
+            })
+            .id();
         let addmembers = AddMembers {
             group: party_entity,
             members: SmallVec::from_slice(&[member_entity]),
@@ -85,11 +95,11 @@ mod tests {
             .world
             .query::<(&mut Movement, &GroupMember)>()
             .single_mut(&mut app.world);
-        movement.points = 3;
+        movement.current = 3;
 
         app.update();
 
         let (party_movement, _party) = app.world.query::<(&Movement, &Party)>().single(&app.world);
-        assert_eq!(party_movement.points, 3);
+        assert_eq!(party_movement.current, 3);
     }
 }

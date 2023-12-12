@@ -1,6 +1,6 @@
 use super::{bundle::*, component::*, system_param::*};
 use crate::{
-    actor::{EnemyBundle, EnemyParams, Group},
+    actor::{CreatureCodex, CreatureParams, EnemyBundle, Group},
     combat::Health,
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     map::{Fog, MapCommandsExt, MapPresence, PresenceLayer, ViewRadius},
@@ -39,13 +39,13 @@ pub fn charge_spawner(mut spawner_query: Query<&mut Spawner>) {
 pub fn spawn_enemy(
     mut commands: Commands,
     mut spawner_query: Query<(&MapPresence, &mut Spawner)>,
+    creature_codex: CreatureCodex,
     presence_query: Query<Entity, Without<Spawner>>,
     map_query: Query<(Entity, &PresenceLayer)>,
-    mut enemy_params: EnemyParams,
-) {
-    let Ok((map_entity, presence_layer)) = map_query.get_single() else {
-        return;
-    };
+    mut creature_params: CreatureParams,
+) -> Result<(), ExplError> {
+    let creature_codex = creature_codex.get()?;
+    let (map_entity, presence_layer) = map_query.get_single()?;
     for (presence, mut spawner) in &mut spawner_query {
         if spawner.charge >= 3
             && presence_query
@@ -56,7 +56,8 @@ pub fn spawn_enemy(
             spawner.charge -= 3;
             info!("Spawning enemy at {}", presence.position);
             let (fluff_bundle, child_bundle) =
-                EnemyBundle::new(presence.position).with_fluff(&mut enemy_params);
+                EnemyBundle::new(presence.position, creature_codex, spawner.creature)
+                    .with_fluff(&mut creature_params, creature_codex);
             commands
                 .entity(map_entity)
                 .with_presence(presence.position, |location| {
@@ -68,6 +69,8 @@ pub fn spawn_enemy(
                 });
         }
     }
+
+    Ok(())
 }
 
 pub fn update_portal_effect(

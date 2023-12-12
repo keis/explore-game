@@ -1,5 +1,7 @@
-use super::asset::{Id, Structure};
+use super::asset::Structure;
+use crate::actor::Creature;
 use bevy::prelude::*;
+use expl_codex::Id;
 
 #[derive(Component, Reflect, Default, Deref)]
 #[reflect(Component)]
@@ -10,6 +12,7 @@ impl StructureId {
         Self(Id::from_tag(tag))
     }
 }
+
 #[derive(Component, Reflect, Debug, Default)]
 #[reflect(Component)]
 pub struct Camp {
@@ -30,4 +33,5 @@ pub struct Portal {
 #[reflect(Component)]
 pub struct Spawner {
     pub charge: u8,
+    pub creature: Id<Creature>,
 }

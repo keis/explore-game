@@ -101,7 +101,7 @@ fn spawn_character_display(
                     entity,
                     HealthText,
                     assets.heart_shield_icon.clone(),
-                    format!("{}", health.0),
+                    format!("{}", health.current),
                 );
             });
         });
@@ -186,7 +186,7 @@ pub fn update_character_health(
     >,
 ) {
     data_binding_update.for_each(|health, text| {
-        text.sections[0].value = format!("{}", health.0);
+        text.sections[0].value = format!("{}", health.current);
     });
 }
 
