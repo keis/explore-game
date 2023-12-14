@@ -160,26 +160,61 @@ pub fn apply_selection_events(
 }
 
 #[allow(clippy::type_complexity)]
-pub fn update_highlight(
+pub fn update_selection_highlight(
     global_defaults: Res<GlobalHighlight<StandardMaterial>>,
+    selection_query: Query<(Entity, &PickingInteraction, &Selection), Changed<Selection>>,
+    children_query: Query<&Children>,
+    mut highlight_query: Query<(
+        &mut Handle<StandardMaterial>,
+        &InitialHighlight<StandardMaterial>,
+        Option<&Highlight<StandardMaterial>>,
+    )>,
+) {
+    for (entity, interaction, selection) in &selection_query {
+        for entity in iter::once(entity).chain(children_query.iter_descendants(entity)) {
+            let Ok((mut handle, initial_highlight, highlight)) = highlight_query.get_mut(entity)
+            else {
+                continue;
+            };
+            if let PickingInteraction::None = interaction {
+                *handle = if selection.is_selected {
+                    global_defaults.selected(&highlight)
+                } else {
+                    initial_highlight.initial.to_owned()
+                }
+            }
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn update_interaction_highlight(
+    global_defaults: Res<GlobalHighlight<StandardMaterial>>,
+    parent_query: Query<&Parent>,
+    selection_query: Query<&Selection>,
     mut interaction_query: Query<
         (
+            Entity,
             &mut Handle<StandardMaterial>,
-            &PickingInteraction,
-            &Selection,
             &InitialHighlight<StandardMaterial>,
             Option<&Highlight<StandardMaterial>>,
+            &PickingInteraction,
         ),
-        Or<(Changed<Selection>, Changed<PickingInteraction>)>,
+        Changed<PickingInteraction>,
     >,
 ) {
-    for (mut asset, interaction, selection, initial_highlight, highlight) in &mut interaction_query
-    {
+    for (entity, mut handle, initial_highlight, highlight, interaction) in &mut interaction_query {
         if let PickingInteraction::None = interaction {
-            *asset = if selection.is_selected {
-                global_defaults.selected(&highlight)
-            } else {
-                initial_highlight.initial.to_owned()
+            for entity in iter::once(entity).chain(parent_query.iter_ancestors(entity)) {
+                let Ok(selection) = selection_query.get(entity) else {
+                    continue;
+                };
+                *handle = if selection.is_selected {
+                    global_defaults.selected(&highlight)
+                } else {
+                    initial_highlight.initial.to_owned()
+                };
+                break;
             }
         }
     }

@@ -23,7 +23,6 @@ where
             .register_type::<MapLayout>()
             .register_type::<MapPosition>()
             .register_type::<MapPresence>()
-            .register_type::<Offset>()
             .register_type::<SquareGridLayout>()
             .register_type::<ViewRadius>()
             .add_systems(

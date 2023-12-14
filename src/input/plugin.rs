@@ -71,7 +71,10 @@ impl Plugin for InputPlugin {
                         .run_if(on_event::<Select>().or_else(on_event::<Deselect>())),
                 )
                     .after(handle_pointer_click_events),
-                update_highlight
+                update_selection_highlight
+                    .after(update_highlight_assets::<StandardMaterial>)
+                    .after(apply_selection_events),
+                update_interaction_highlight
                     .after(update_highlight_assets::<StandardMaterial>)
                     .after(apply_selection_events),
             )

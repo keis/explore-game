@@ -2,7 +2,7 @@ use super::{bundle::*, component::*, event::*};
 use crate::{
     actor::{Character, Corpse, Enemy, Group, GroupCommandsExt, GroupMember},
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
-    map::{MapEvent, PresenceLayer},
+    map::{MapCommandsExt, MapEvent, PresenceLayer},
 };
 use bevy::prelude::*;
 use rand::Rng;
@@ -114,8 +114,12 @@ pub fn combat_round(
 #[allow(clippy::type_complexity)]
 pub fn make_corpses(
     mut commands: Commands,
+    map_query: Query<Entity, With<PresenceLayer>>,
     health_query: Query<(Entity, &Health, Option<&GroupMember>, Option<&Enemy>), Without<Corpse>>,
 ) {
+    let Ok(map_entity) = map_query.get_single() else {
+        return;
+    };
     for (entity, health, maybe_member, maybe_enemy) in &health_query {
         if health.0 == 0 {
             info!("{:?} is dead", entity);
@@ -123,7 +127,7 @@ pub fn make_corpses(
                 commands.entity(group).remove_members(&[entity]);
             }
             if maybe_enemy.is_some() {
-                commands.entity(entity).despawn();
+                commands.entity(map_entity).despawn_presence(entity);
             } else {
                 commands.entity(entity).insert(Corpse);
             }

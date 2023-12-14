@@ -167,6 +167,6 @@ impl Command for DespawnPresence {
             }
         }
 
-        world.despawn(self.presence);
+        despawn_with_children_recursive(world, self.presence);
     }
 }

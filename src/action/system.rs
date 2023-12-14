@@ -5,7 +5,7 @@ use crate::{
     },
     combat::CombatEvent,
     inventory::Inventory,
-    map::{Fog, MapCommandsExt, MapPosition, MapPresence, Offset, PresenceLayer, ZoneLayer},
+    map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     path::PathGuided,
     scene::save,
     structure::{Camp, CampBundle, Portal, SafeHaven, StructureCodex, StructureParams},
@@ -41,7 +41,6 @@ pub fn handle_move(
             &mut Slide,
             &mut Transform,
             &MapPresence,
-            &Offset,
             Option<(&mut Movement, &Group)>,
         ),
         Without<MapPosition>,
@@ -55,7 +54,7 @@ pub fn handle_move(
     let Some(ref action) = queue.current else {
         return Ok(());
     };
-    let (mut slide, mut transform, presence, offset, maybe_movement) =
+    let (mut slide, mut transform, presence, maybe_movement) =
         party_query.get_mut(action.source)?;
     let (map_entity, zone_layer) = zone_layer_query.get_single()?;
     let (next_position, next_transform) = map_position_query.get(action.target()?)?;
@@ -79,12 +78,12 @@ pub fn handle_move(
 
     if source_fog.visible {
         slide.start = transform.translation;
-        slide.end = next_transform.translation + offset.0;
+        slide.end = next_transform.translation;
         slide.progress = 0.0;
 
         queue.wait();
     } else {
-        transform.translation = height_query.adjust(next_transform.translation) + offset.0;
+        transform.translation = height_query.adjust(next_transform.translation);
         commands
             .entity(map_entity)
             .move_presence(action.source, next_position.0);

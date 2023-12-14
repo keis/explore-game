@@ -1,6 +1,6 @@
 use super::{bundle::*, component::*, event::*};
 use crate::{
-    map::{Fog, MapCommandsExt, MapPosition, MapPresence, Offset, PresenceLayer, ZoneLayer},
+    map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     terrain::HeightQuery,
 };
 use bevy::prelude::*;
@@ -19,9 +19,13 @@ pub fn fluff_enemy(
     mut enemy_params: EnemyParams,
 ) {
     for (entity, presence) in &enemy_query {
+        let (fluff_bundle, child_bundle) = EnemyFluffBundle::new(&mut enemy_params, presence);
         commands
             .entity(entity)
-            .insert(EnemyFluffBundle::new(&mut enemy_params, presence));
+            .insert(fluff_bundle)
+            .with_children(|parent| {
+                parent.spawn(child_bundle);
+            });
     }
 }
 
@@ -32,9 +36,13 @@ pub fn fluff_party(
     mut party_params: PartyParams,
 ) {
     for (entity, presence) in &party_query {
+        let (fluff_bundle, child_bundle) = PartyFluffBundle::new(&mut party_params, presence);
         commands
             .entity(entity)
-            .insert(PartyFluffBundle::new(&mut party_params, presence));
+            .insert(fluff_bundle)
+            .with_children(|parent| {
+                parent.spawn(child_bundle);
+            });
     }
 }
 
@@ -112,12 +120,12 @@ pub fn derive_party_movement(
 const SLIDE_SPEED: f32 = 1.7;
 
 pub fn slide(
-    mut slide_query: Query<(&mut Transform, &mut Slide, &Offset)>,
+    mut slide_query: Query<(&mut Transform, &mut Slide)>,
     height_query: HeightQuery,
     mut events: EventWriter<SlideEvent>,
     time: Res<Time>,
 ) {
-    for (mut transform, mut slide, offset) in slide_query.iter_mut() {
+    for (mut transform, mut slide) in slide_query.iter_mut() {
         if slide.progress == 1.0 {
             continue;
         }
@@ -125,7 +133,7 @@ pub fn slide(
         let position = slide
             .start
             .lerp(slide.end, slide.progress.quadratic_in_out());
-        transform.translation = height_query.adjust(position) + offset.0;
+        transform.translation = height_query.adjust(position);
         if slide.progress == 1.0 {
             events.send(SlideEvent::Stopped);
         }

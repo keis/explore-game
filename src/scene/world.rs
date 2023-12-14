@@ -169,13 +169,14 @@ pub fn spawn_party(
     commands
         .entity(map_entity)
         .with_presence(prototype.party_position, |location| {
+            let (party_bundle, child_bundle) =
+                PartyBundle::new(prototype.party_position, String::from("Alpha Group"), 1)
+                    .with_fluff(&mut party_params);
             location
-                .spawn((
-                    Name::new("Party"),
-                    save::Save,
-                    PartyBundle::new(prototype.party_position, String::from("Alpha Group"), 1)
-                        .with_fluff(&mut party_params),
-                ))
+                .spawn((Name::new("Party"), save::Save, party_bundle))
+                .with_children(|parent| {
+                    parent.spawn(child_bundle);
+                })
                 .add_members(&[character1, character2, character3]);
         });
 
