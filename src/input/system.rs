@@ -1,8 +1,4 @@
-use super::{
-    action::{Action, ActionState},
-    component::*,
-    event::*,
-};
+use super::{action::*, component::*, event::*};
 use crate::{
     action::{GameAction, GameActionQueue},
     actor::Movement,
@@ -15,11 +11,98 @@ use crate::{
 use bevy::prelude::*;
 use bevy_mod_picking::{
     highlight::InitialHighlight,
-    prelude::{Click, GlobalHighlight, Highlight, PickingInteraction, Pointer, PointerButton},
+    prelude::{
+        Click, GlobalHighlight, Highlight, Out, Over, PickingInteraction, Pointer, PointerButton,
+    },
 };
+use std::iter;
 
-pub fn handle_zone_click_events(
-    mut events: EventReader<Pointer<Click>>,
+#[allow(clippy::too_many_arguments)]
+pub fn handle_pointer_click_events(
+    mut click_events: EventReader<Pointer<Click>>,
+    mut select_events: EventWriter<Select>,
+    mut deselect_events: EventWriter<Deselect>,
+    mut zone_activated_events: EventWriter<ZoneActivated>,
+    action_state: Res<ActionState<Action>>,
+    parent_query: Query<&Parent>,
+    zone_query: Query<Entity, With<MapPosition>>,
+    selection_query: Query<(Entity, &Selection)>,
+) {
+    for event in click_events.read() {
+        if event.event.button != PointerButton::Primary {
+            continue;
+        }
+        for entity in iter::once(event.target).chain(parent_query.iter_ancestors(event.target)) {
+            if zone_query.get(entity).is_ok() {
+                zone_activated_events.send(ZoneActivated(entity));
+                break;
+            } else if let Ok((entity, selection)) = selection_query.get(entity) {
+                if action_state.pressed(Action::MultiSelect) {
+                    if selection.is_selected {
+                        deselect_events.send(Deselect(entity));
+                    } else {
+                        select_events.send(Select(entity));
+                    }
+                } else {
+                    for (other_entity, selection) in &selection_query {
+                        if entity != other_entity && selection.is_selected {
+                            deselect_events.send(Deselect(other_entity));
+                        }
+                    }
+                    if !selection.is_selected {
+                        select_events.send(Select(entity));
+                    }
+                }
+                break;
+            }
+        }
+    }
+}
+
+pub fn handle_pointer_over_events(
+    mut events: EventReader<Pointer<Over>>,
+    mut zone_over_events: EventWriter<ZoneOver>,
+    mut selection_over_events: EventWriter<SelectionOver>,
+    parent_query: Query<&Parent>,
+    zone_query: Query<Entity, With<MapPosition>>,
+    selection_query: Query<Entity, With<Selection>>,
+) {
+    for event in events.read() {
+        for entity in iter::once(event.target).chain(parent_query.iter_ancestors(event.target)) {
+            if zone_query.get(entity).is_ok() {
+                zone_over_events.send(ZoneOver(entity));
+                break;
+            } else if selection_query.get(entity).is_ok() {
+                selection_over_events.send(SelectionOver(entity));
+                break;
+            }
+        }
+    }
+}
+
+pub fn handle_pointer_out_events(
+    mut events: EventReader<Pointer<Out>>,
+    mut zone_out_events: EventWriter<ZoneOut>,
+    mut selection_out_events: EventWriter<SelectionOut>,
+    parent_query: Query<&Parent>,
+    zone_query: Query<Entity, With<MapPosition>>,
+    selection_query: Query<Entity, With<Selection>>,
+) {
+    for event in events.read() {
+        for entity in iter::once(event.target).chain(parent_query.iter_ancestors(event.target)) {
+            if zone_query.get(entity).is_ok() {
+                zone_out_events.send(ZoneOut(entity));
+                break;
+            } else if selection_query.get(entity).is_ok() {
+                selection_out_events.send(SelectionOut(entity));
+                break;
+            }
+        }
+    }
+}
+
+pub fn apply_zone_activated_events(
+    mut events: EventReader<ZoneActivated>,
     mut presence_query: Query<(Entity, &MapPresence, &Movement, &mut PathGuided, &Selection)>,
     mut game_action_queue: ResMut<GameActionQueue>,
     zone_query: Query<Entity, With<TerrainId>>,
@@ -32,11 +115,8 @@ pub fn handle_zone_click_events(
         return Ok(());
     }
 
-    for event in events.read() {
-        if event.event.button != PointerButton::Primary {
-            continue;
-        }
-        let Ok(target) = zone_query.get(event.target) else {
+    for ZoneActivated(target) in events.read() {
+        let Ok(target) = zone_query.get(*target) else {
             continue;
         };
         for (entity, presence, movement, mut pathguided, _) in presence_query
@@ -57,39 +137,6 @@ pub fn handle_zone_click_events(
     }
 
     Ok(())
-}
-
-pub fn send_selection_events(
-    action_state: Res<ActionState<Action>>,
-    interaction_query: Query<
-        (Entity, &Selection, &PickingInteraction),
-        Changed<PickingInteraction>,
-    >,
-    selection_query: Query<(Entity, &Selection)>,
-    mut select_events: EventWriter<Select>,
-    mut deselect_events: EventWriter<Deselect>,
-) {
-    for (entity, selection, _) in interaction_query
-        .iter()
-        .filter(|(_, _, interaction)| matches!(interaction, PickingInteraction::Pressed))
-    {
-        if action_state.pressed(Action::MultiSelect) {
-            if selection.is_selected {
-                deselect_events.send(Deselect(entity));
-            } else {
-                select_events.send(Select(entity));
-            }
-        } else {
-            for (other_entity, selection) in &selection_query {
-                if entity != other_entity && selection.is_selected {
-                    deselect_events.send(Deselect(other_entity));
-                }
-            }
-            if !selection.is_selected {
-                select_events.send(Select(entity));
-            }
-        }
-    }
 }
 
 pub fn apply_selection_events(

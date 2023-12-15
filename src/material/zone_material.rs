@@ -1,5 +1,6 @@
 use crate::{
     assets::{AssetState, CodexAssets},
+    input::{ZoneOut, ZoneOver},
     map::Fog,
     terrain::{Codex, Height, OuterVisible, Terrain, TerrainId},
 };
@@ -8,7 +9,6 @@ use bevy::{
     reflect::{TypePath, TypeUuid},
     render::render_resource::*,
 };
-use bevy_mod_picking::prelude::PickingInteraction;
 use expl_codex::Id;
 
 #[derive(Default)]
@@ -23,6 +23,7 @@ impl Plugin for ZoneMaterialPlugin {
                     update_from_terrain_codex
                         .run_if(on_event::<AssetEvent<Codex<Terrain>>>())
                         .run_if(in_state(AssetState::Loaded)),
+                    update_hover.run_if(on_event::<ZoneOver>().or_else(on_event::<ZoneOut>())),
                     apply_to_material,
                 ),
             );
@@ -159,27 +160,43 @@ impl Material for ZoneMaterial {
 fn apply_to_material(
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     zone_query: Query<
-        (
-            &Fog,
-            &PickingInteraction,
-            &OuterVisible,
-            &Handle<ZoneMaterial>,
-        ),
-        Or<(
-            Changed<Fog>,
-            Changed<PickingInteraction>,
-            Changed<OuterVisible>,
-        )>,
+        (&Fog, &OuterVisible, &Handle<ZoneMaterial>),
+        Or<(Changed<Fog>, Changed<OuterVisible>)>,
     >,
 ) {
-    for (fog, interaction, outer_visible, handle) in &zone_query {
+    for (fog, outer_visible, handle) in &zone_query {
         let Some(material) = zone_materials.get_mut(handle) else {
             continue;
         };
         material.visible = fog.visible;
         material.explored = fog.explored;
-        material.hover = matches!(interaction, PickingInteraction::Hovered);
         material.outer_visible = **outer_visible;
+    }
+}
+
+fn update_hover(
+    mut out_events: EventReader<ZoneOut>,
+    mut over_events: EventReader<ZoneOver>,
+    mut zone_materials: ResMut<Assets<ZoneMaterial>>,
+    material_query: Query<&Handle<ZoneMaterial>>,
+) {
+    for ZoneOut(entity) in out_events.read() {
+        let Ok(handle) = material_query.get(*entity) else {
+            continue;
+        };
+        let Some(material) = zone_materials.get_mut(handle) else {
+            continue;
+        };
+        material.hover = false;
+    }
+    for ZoneOver(entity) in over_events.read() {
+        let Ok(handle) = material_query.get(*entity) else {
+            continue;
+        };
+        let Some(material) = zone_materials.get_mut(handle) else {
+            continue;
+        };
+        material.hover = true;
     }
 }
 

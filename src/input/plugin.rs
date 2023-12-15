@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use bevy_mod_picking::{
     backend::prelude::PickSet,
     highlight::update_highlight_assets,
-    prelude::{DebugPickingPlugin, DefaultPickingPlugins},
+    prelude::{Click, DebugPickingPlugin, DefaultPickingPlugins, Out, Over, Pointer},
 };
 use leafwing_input_manager::{
     common_conditions::action_just_pressed, plugin::InputManagerSystem, prelude::*,
@@ -23,6 +23,13 @@ impl Plugin for InputPlugin {
         .add_plugins(InputManagerPlugin::<Action>::default())
         .register_type::<Selection>()
         .init_resource::<ActionState<Action>>()
+        .add_event::<ZoneActivated>()
+        .add_event::<ZoneOver>()
+        .add_event::<ZoneOut>()
+        .add_event::<Select>()
+        .add_event::<Deselect>()
+        .add_event::<SelectionOver>()
+        .add_event::<SelectionOut>()
         .insert_resource(input_map())
         .add_systems(
             Update,
@@ -50,22 +57,25 @@ impl Plugin for InputPlugin {
                 .run_if(action_just_pressed(Action::Cancel)),
         )
         .add_systems(
-            Update,
-            handle_zone_click_events
-                .map(bevy::utils::warn)
+            PreUpdate,
+            (
+                (
+                    handle_pointer_click_events.run_if(on_event::<Pointer<Click>>()),
+                    handle_pointer_over_events.run_if(on_event::<Pointer<Over>>()),
+                    handle_pointer_out_events.run_if(on_event::<Pointer<Out>>()),
+                )
+                    .in_set(PickSet::Last),
+                (
+                    apply_zone_activated_events.map(bevy::utils::warn),
+                    apply_selection_events
+                        .run_if(on_event::<Select>().or_else(on_event::<Deselect>())),
+                )
+                    .after(handle_pointer_click_events),
+                update_highlight
+                    .after(update_highlight_assets::<StandardMaterial>)
+                    .after(apply_selection_events),
+            )
                 .run_if(in_state(SceneState::Active)),
-        )
-        .add_event::<Select>()
-        .add_event::<Deselect>()
-        .add_systems(
-            PreUpdate,
-            (send_selection_events, apply_selection_events).in_set(PickSet::PostFocus),
-        )
-        .add_systems(
-            PreUpdate,
-            update_highlight
-                .after(update_highlight_assets::<StandardMaterial>)
-                .in_set(PickSet::Last),
         );
     }
 }
