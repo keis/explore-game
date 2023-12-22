@@ -40,7 +40,7 @@ jobs:
     - name: Test
       run: cargo test
     - name: Clippy
-      uses: keis/action-clippy@sudo
+      uses: sksat/action-clippy@v0.3.0
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         filter_mode: nofilter
