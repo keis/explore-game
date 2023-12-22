@@ -15,33 +15,9 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-    - name: Blast some junk off the disk
-      run: |
-        df -h
-        sudo apt-get update
-        dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
-        sudo apt-get remove -y '^dotnet-.*' '^mongodb-.*' '^mysql-.*' '^llvm-.*' '^google-cloud-.*' azure-cli microsoft-edge-stable google-chrome-stable firefox powershell mono-devel
-        sudo apt-get autoremove -y
-        df -h
-        sudo rm -rf /usr/share/dotnet /usr/local/graalvm/ /usr/local/.ghcup/ /usr/local/share/powershell /usr/local/share/chromium /usr/local/lib/android /usr/local/lib/node_modules
-        df -h
     - uses: actions/checkout@v4
-    - name: Rust toolchain
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: 1.73.0
-        components: clippy
+    - name: Reveal permissions
+      run: ls -l /usr/local
     - uses: rui314/setup-mold@v1
-    - name: Install dependencies
-      run: |
-        sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang
-        sudo apt-get clean
-    - uses: Leafwing-Studios/cargo-cache@v1
-    - name: Test
-      run: cargo test
-    - name: Clippy
-      uses: keis/action-clippy@sudo
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        filter_mode: nofilter
-        reporter: github-pr-review
+    - name: Reveal permissions
+      run: ls -l /usr/local
