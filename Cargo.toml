@@ -34,7 +34,7 @@ opt-level = 3
 
 [dependencies]
 bevy_asset_loader = "0.18"
-bevy_egui = "0.23"
+bevy_egui = "0.24"
 bevy-inspector-egui = "0.21"
 bevy_mod_billboard = { version = "0.5.1" }
 bevy_mod_outline = "0.6"
