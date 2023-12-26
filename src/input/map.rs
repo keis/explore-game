@@ -43,7 +43,7 @@ pub fn handle_zone_click_events(
             pathguided.path(path.into_iter().map(|(_, e)| e));
             if movement.points > 0 {
                 if let Some(next) = pathguided.next() {
-                    game_action_queue.add(GameAction::Move(entity, *next));
+                    game_action_queue.add(GameAction::new_move(entity, *next));
                 }
             }
         }

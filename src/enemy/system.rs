@@ -34,7 +34,7 @@ pub fn move_enemy(
             {
                 continue;
             }
-            queue.add(GameAction::Move(entity, next_entity));
+            queue.add(GameAction::new_move(entity, next_entity));
         } else {
             let mut neighbours = HexCoord::NEIGHBOUR_OFFSETS;
             neighbours.shuffle(&mut rng);
@@ -47,7 +47,7 @@ pub fn move_enemy(
                         .next()
                         .is_none()
                 {
-                    queue.add(GameAction::Move(entity, next_entity));
+                    queue.add(GameAction::new_move(entity, next_entity));
                     break;
                 }
             }

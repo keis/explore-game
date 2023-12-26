@@ -10,7 +10,6 @@ use crate::{
 };
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
-use smallvec::SmallVec;
 
 #[derive(Actionlike, Reflect, PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum Action {
@@ -76,7 +75,7 @@ pub fn handle_enter_portal(
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
     for (entity, _) in party_query.iter().filter(|(_, s)| s.is_selected) {
-        game_action_queue.add(GameAction::EnterPortal(entity));
+        game_action_queue.add(GameAction::new_enter_portal(entity));
     }
 }
 
@@ -118,9 +117,9 @@ pub fn handle_camp(
             .iter_many(presence_layer.presence(presence.position))
             .next()
         {
-            game_action_queue.add(GameAction::EnterCamp(entity, camp_entity));
+            game_action_queue.add(GameAction::new_enter_camp(entity, camp_entity));
         } else {
-            game_action_queue.add(GameAction::MakeCamp(entity));
+            game_action_queue.add(GameAction::new_make_camp(entity));
         }
     }
 }
@@ -130,7 +129,7 @@ pub fn handle_break_camp(
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
     for (entity, _) in party_query.iter().filter(|(_, s)| s.is_selected) {
-        game_action_queue.add(GameAction::BreakCamp(entity));
+        game_action_queue.add(GameAction::new_break_camp(entity));
     }
 }
 
@@ -140,13 +139,13 @@ pub fn handle_create_party(
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
     for (entity, group, _) in camp_query.iter().filter(|(_, _, s)| s.is_selected) {
-        let selected: SmallVec<[Entity; 8]> = character_query
+        let selected: Vec<_> = character_query
             .iter_many(&group.members)
             .filter(|(_, s)| s.is_selected)
             .map(|(e, _)| e)
             .collect();
         if !selected.is_empty() {
-            game_action_queue.add(GameAction::CreatePartyFromCamp(entity, selected));
+            game_action_queue.add(GameAction::new_create_party_from_camp(entity, selected));
         }
     }
 }
@@ -157,13 +156,13 @@ pub fn handle_split_party(
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
     for (entity, group, _) in party_query.iter().filter(|(_, _, s)| s.is_selected) {
-        let selected: SmallVec<[Entity; 8]> = character_query
+        let selected: Vec<Entity> = character_query
             .iter_many(&group.members)
             .filter(|(_, s)| s.is_selected)
             .map(|(e, _)| e)
             .collect();
         if !selected.is_empty() {
-            game_action_queue.add(GameAction::SplitParty(entity, selected));
+            game_action_queue.add(GameAction::new_split_party(entity, selected));
         }
     }
 }
@@ -172,13 +171,12 @@ pub fn handle_merge_party(
     party_query: Query<(Entity, &Selection), With<Party>>,
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
-    let selected_parties: SmallVec<[Entity; 8]> = party_query
+    let mut selected_parties = party_query
         .iter()
         .filter(|(_, s)| s.is_selected)
-        .map(|(e, _)| e)
-        .collect();
-    if !selected_parties.is_empty() {
-        game_action_queue.add(GameAction::MergeParty(selected_parties));
+        .map(|(e, _)| e);
+    if let Some(source) = selected_parties.next() {
+        game_action_queue.add(GameAction::new_merge_party(source, selected_parties));
     }
 }
 
@@ -187,7 +185,7 @@ pub fn handle_collect_crystals(
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
     for (party, _) in party_query.iter().filter(|(_, s)| s.is_selected) {
-        game_action_queue.add(GameAction::CollectCrystals(party));
+        game_action_queue.add(GameAction::new_collect_crystals(party));
     }
 }
 
@@ -196,7 +194,7 @@ pub fn handle_open_portal(
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
     for (party, _) in party_query.iter().filter(|(_, s)| s.is_selected) {
-        game_action_queue.add(GameAction::OpenPortal(party));
+        game_action_queue.add(GameAction::new_open_portal(party));
     }
 }
 
@@ -206,7 +204,7 @@ pub fn handle_resume_move(
 ) {
     for (entity, path_guided, _) in party_query.iter().filter(|(_, _, s)| s.is_selected) {
         if let Some(next) = path_guided.next() {
-            game_action_queue.add(GameAction::Move(entity, *next));
+            game_action_queue.add(GameAction::new_move(entity, *next));
         }
     }
 }

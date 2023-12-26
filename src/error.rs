@@ -36,4 +36,6 @@ pub enum ExplError {
     MissingCodex,
     #[error("missing template")]
     MissingTemplate,
+    #[error("invalid action target")]
+    InvalidTarget,
 }
