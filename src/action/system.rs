@@ -5,8 +5,8 @@ use crate::{
     },
     combat::CombatEvent,
     inventory::Inventory,
-    map::{Fog, MapCommandsExt, MapPresence, Offset, PresenceLayer, ZoneLayer},
-    path::{PathFinder, PathGuided},
+    map::{Fog, MapCommandsExt, MapPosition, MapPresence, Offset, PresenceLayer, ZoneLayer},
+    path::PathGuided,
     scene::save,
     structure::{Camp, CampBundle, Portal, SafeHaven, StructureCodex, StructureParams},
     terrain::{CrystalDeposit, HeightQuery, TerrainCodex, TerrainId},
@@ -16,18 +16,23 @@ use bevy::prelude::*;
 use smallvec::SmallVec;
 
 #[allow(clippy::type_complexity)]
+#[allow(clippy::too_many_arguments)]
 pub fn handle_move(
     mut commands: Commands,
     mut queue: ResMut<GameActionQueue>,
-    mut party_query: Query<(
-        &mut Slide,
-        &mut Transform,
-        &MapPresence,
-        &Offset,
-        Option<(&mut Movement, &Group)>,
-    )>,
+    mut party_query: Query<
+        (
+            &mut Slide,
+            &mut Transform,
+            &MapPresence,
+            &Offset,
+            Option<(&mut Movement, &Group)>,
+        ),
+        Without<MapPosition>,
+    >,
     mut member_movement_query: Query<&mut Movement, Without<MapPresence>>,
     zone_layer_query: Query<(Entity, &ZoneLayer)>,
+    map_position_query: Query<(&MapPosition, &Transform)>,
     fog_query: Query<&Fog>,
     height_query: HeightQuery,
 ) -> Result<(), ExplError> {
@@ -38,6 +43,7 @@ pub fn handle_move(
     let (mut slide, mut transform, presence, offset, maybe_movement) =
         party_query.get_mut(entity)?;
     let (map_entity, zone_layer) = zone_layer_query.get_single()?;
+    let (next_position, next_transform) = map_position_query.get(next)?;
     let source_fog = zone_layer
         .get(presence.position)
         .ok_or(ExplError::OutOfBounds)
@@ -58,13 +64,15 @@ pub fn handle_move(
 
     if source_fog.visible {
         slide.start = transform.translation;
-        slide.end = Vec3::from(next) + offset.0;
+        slide.end = next_transform.translation + offset.0;
         slide.progress = 0.0;
 
         queue.wait();
     } else {
-        transform.translation = height_query.adjust(next.into()) + offset.0;
-        commands.entity(map_entity).move_presence(entity, next);
+        transform.translation = height_query.adjust(next_transform.translation) + offset.0;
+        commands
+            .entity(map_entity)
+            .move_presence(entity, next_position.0);
     }
 
     Ok(())
@@ -75,6 +83,7 @@ pub fn handle_slide_stopped(
     mut events: EventReader<SlideEvent>,
     mut queue: ResMut<GameActionQueue>,
     map_query: Query<Entity, With<PresenceLayer>>,
+    map_position_query: Query<&MapPosition>,
 ) {
     let Ok(map_entity) = map_query.get_single() else {
         return;
@@ -83,9 +92,12 @@ pub fn handle_slide_stopped(
         let Some(GameAction::Move(e, next)) = queue.current else {
             return;
         };
+        let Ok(next) = map_position_query.get(next) else {
+            return;
+        };
         queue.done();
 
-        commands.entity(map_entity).move_presence(e, next);
+        commands.entity(map_entity).move_presence(e, next.0);
     }
 }
 
@@ -113,44 +125,6 @@ pub fn follow_path(
             queue.add(GameAction::Move(e, *next));
         }
     }
-}
-
-pub fn handle_move_to(
-    mut queue: ResMut<GameActionQueue>,
-    mut presence_query: Query<(&MapPresence, &Movement, &mut PathGuided)>,
-    path_finder: PathFinder,
-) -> Result<(), ExplError> {
-    let Some(GameAction::MoveTo(e, goal)) = queue.current else {
-        return Ok(());
-    };
-
-    let (presence, party_movement, mut pathguided) = presence_query.get_mut(e)?;
-    let Some((path, _length)) = path_finder.get()?.find_path(presence.position, goal) else {
-        return Ok(());
-    };
-    pathguided.path(path);
-    if party_movement.points > 0 {
-        if let Some(next) = pathguided.next() {
-            queue.add(GameAction::Move(e, *next));
-        }
-    }
-    Ok(())
-}
-
-pub fn handle_resume_move(
-    mut queue: ResMut<GameActionQueue>,
-    path_guided_query: Query<&PathGuided>,
-) -> Result<(), ExplError> {
-    let Some(GameAction::ResumeMove(e)) = queue.current else {
-        return Ok(());
-    };
-
-    let pathguided = path_guided_query.get(e)?;
-
-    if let Some(next) = pathguided.next() {
-        queue.add(GameAction::Move(e, *next));
-    }
-    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]

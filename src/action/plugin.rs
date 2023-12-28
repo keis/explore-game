@@ -44,12 +44,6 @@ impl Plugin for ActionPlugin {
                     handle_move
                         .map(bevy::utils::warn)
                         .run_if(has_current_action),
-                    handle_move_to
-                        .map(bevy::utils::warn)
-                        .run_if(has_current_action),
-                    handle_resume_move
-                        .map(bevy::utils::warn)
-                        .run_if(has_current_action),
                     handle_make_camp
                         .map(bevy::utils::warn)
                         .run_if(has_current_action),

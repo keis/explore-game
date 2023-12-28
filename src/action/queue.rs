@@ -1,13 +1,11 @@
-use crate::{combat::Combat, map::HexCoord};
+use crate::combat::Combat;
 use bevy::prelude::*;
 use smallvec::SmallVec;
 use std::collections::VecDeque;
 
 #[derive(Clone, Debug)]
 pub enum GameAction {
-    Move(Entity, HexCoord),
-    MoveTo(Entity, HexCoord),
-    ResumeMove(Entity),
+    Move(Entity, Entity),
     MakeCamp(Entity),
     BreakCamp(Entity),
     EnterCamp(Entity, Entity),

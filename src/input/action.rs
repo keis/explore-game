@@ -5,6 +5,7 @@ use crate::{
     camera::{CameraControl, CameraTarget},
     interface::InterfaceState,
     map::{MapPresence, PresenceLayer},
+    path::PathGuided,
     structure::Camp,
 };
 use bevy::prelude::*;
@@ -200,10 +201,12 @@ pub fn handle_open_portal(
 }
 
 pub fn handle_resume_move(
-    party_query: Query<(Entity, &Selection), With<Party>>,
+    party_query: Query<(Entity, &PathGuided, &Selection), With<Party>>,
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
-    for (entity, _) in party_query.iter().filter(|(_, s)| s.is_selected) {
-        game_action_queue.add(GameAction::ResumeMove(entity));
+    for (entity, path_guided, _) in party_query.iter().filter(|(_, _, s)| s.is_selected) {
+        if let Some(next) = path_guided.next() {
+            game_action_queue.add(GameAction::Move(entity, *next));
+        }
     }
 }
