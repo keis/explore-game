@@ -19,7 +19,23 @@ pub struct ActionPlugin;
 
 impl Plugin for ActionPlugin {
     fn build(&self, app: &mut App) {
+        let game_action_systems = GameActionSystems::builder(&mut app.world)
+            .register_action(GameActionType::Move, handle_move)
+            .register_action(GameActionType::MakeCamp, handle_make_camp)
+            .register_action(GameActionType::BreakCamp, handle_break_camp)
+            .register_action(GameActionType::EnterCamp, handle_enter_camp)
+            .register_action(GameActionType::SplitParty, handle_split_party)
+            .register_action(GameActionType::MergeParty, handle_merge_party)
+            .register_action(
+                GameActionType::CreatePartyFromCamp,
+                handle_create_party_from_camp,
+            )
+            .register_action(GameActionType::CollectCrystals, handle_collect_crystals)
+            .register_action(GameActionType::OpenPortal, handle_open_portal)
+            .register_action(GameActionType::EnterPortal, handle_enter_portal)
+            .build();
         app.insert_resource(GameActionQueue::default())
+            .insert_resource(game_action_systems)
             .configure_sets(
                 Update,
                 (
@@ -41,43 +57,12 @@ impl Plugin for ActionPlugin {
             .add_systems(
                 Update,
                 (
-                    handle_move
-                        .map(bevy::utils::warn)
-                        .run_if(has_current_action),
-                    handle_move_to
-                        .map(bevy::utils::warn)
-                        .run_if(has_current_action),
-                    handle_resume_move
-                        .map(bevy::utils::warn)
-                        .run_if(has_current_action),
-                    handle_make_camp
-                        .map(bevy::utils::warn)
-                        .run_if(has_current_action),
-                    handle_break_camp
-                        .map(bevy::utils::warn)
-                        .run_if(has_current_action),
-                    handle_enter_camp
-                        .map(bevy::utils::warn)
-                        .run_if(has_current_action),
-                    handle_create_party_from_camp
-                        .map(bevy::utils::warn)
-                        .run_if(has_current_action),
-                    handle_split_party
-                        .map(bevy::utils::warn)
-                        .run_if(has_current_action),
-                    handle_merge_party.run_if(has_current_action),
-                    handle_collect_crystals
-                        .map(bevy::utils::warn)
-                        .run_if(has_current_action),
-                    handle_open_portal
-                        .map(bevy::utils::warn)
-                        .run_if(has_current_action),
-                    handle_enter_portal
+                    apply_action
                         .map(bevy::utils::warn)
                         .run_if(has_current_action),
                     handle_slide_stopped
                         .run_if(on_event::<SlideEvent>())
-                        .after(handle_move),
+                        .after(apply_action),
                 )
                     .in_set(ActionSet::Apply),
             )

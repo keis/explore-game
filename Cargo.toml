@@ -62,6 +62,7 @@ serde = { workspace = true }
 smallvec = { workspace = true }
 splines = { version = "4", features = ["glam"] }
 thiserror = { workspace = true }
+enum-map = "2.7.3"
 
 [dev-dependencies]
 approx = "0.5"

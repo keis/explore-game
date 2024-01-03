@@ -1,5 +1,5 @@
 use super::{action::*, map::handle_zone_click_events, selection::*};
-use crate::turn;
+use crate::{scene::SceneState, turn};
 use bevy::prelude::*;
 use bevy_mod_picking::{
     backend::prelude::PickSet,
@@ -49,7 +49,12 @@ impl Plugin for InputPlugin {
                 .after(InputManagerSystem::Update)
                 .run_if(action_just_pressed(Action::Cancel)),
         )
-        .add_systems(Update, handle_zone_click_events)
+        .add_systems(
+            Update,
+            handle_zone_click_events
+                .map(bevy::utils::warn)
+                .run_if(in_state(SceneState::Active)),
+        )
         .add_event::<Select>()
         .add_event::<Deselect>()
         .add_systems(

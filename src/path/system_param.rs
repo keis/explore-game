@@ -30,24 +30,27 @@ pub struct BoundPathFinder<'w, 's> {
 }
 
 impl<'w, 's> BoundPathFinder<'w, 's> {
-    pub fn find_path(&self, start: HexCoord, goal: HexCoord) -> Option<(Vec<HexCoord>, u32)> {
+    pub fn find_path(&self, start: HexCoord, goal: HexCoord) -> Option<Vec<(HexCoord, Entity)>> {
+        let start = self.zone_layer.get(start).map(|e| (start, *e)).unwrap();
         astar(
             &start,
-            |p| {
+            |(p, _)| {
                 p.neighbours()
-                    .filter(|&c| self.is_walkable(c))
-                    .map(|p| (p, 1))
-                    .collect::<Vec<(HexCoord, u32)>>()
+                    .filter_map(|p| self.zone_layer.get(p).map(|e| (p, *e)))
+                    .filter(|(_, e)| self.is_walkable(*e))
+                    .map(|r| (r, 1))
+                    .collect::<Vec<((HexCoord, Entity), u32)>>()
             },
-            |p| p.distance(goal),
-            |p| *p == goal,
+            |(p, _)| p.distance(goal),
+            |(p, _)| *p == goal,
         )
+        .map(|(path, _len)| path)
     }
 
-    pub fn is_walkable(&self, position: HexCoord) -> bool {
-        self.zone_layer
-            .get(position)
-            .and_then(|&entity| self.terrain_query.get(entity).ok())
+    pub fn is_walkable(&self, entity: Entity) -> bool {
+        self.terrain_query
+            .get(entity)
+            .ok()
             .map_or(false, |terrain_id| {
                 self.terrain_codex[terrain_id].allow_walking
             })
@@ -68,7 +71,7 @@ mod tests {
     struct Start(HexCoord);
 
     #[derive(Component, Debug)]
-    struct Path(Vec<HexCoord>, u32);
+    struct Path(Vec<(HexCoord, Entity)>);
 
     fn find_path_system(
         mut commands: Commands,
@@ -77,7 +80,7 @@ mod tests {
     ) {
         let (entity, start, goal) = params_query.single();
         if let Some(path) = path_finder.get().unwrap().find_path(start.0, goal.0) {
-            commands.entity(entity).insert(Path(path.0, path.1));
+            commands.entity(entity).insert(Path(path));
         } else {
             println!("WHAT");
         }
@@ -93,7 +96,7 @@ mod tests {
 
         let path = app.world.query::<&Path>().single(&app.world);
         println!("path {:?}", path.0);
-        assert_eq!(path.1, 1);
+        assert_eq!(path.0.len(), 2);
     }
 
     #[rstest]
@@ -106,6 +109,6 @@ mod tests {
 
         let path = app.world.query::<&Path>().single(&app.world);
         println!("path {:?}", path.0);
-        assert_eq!(path.1, 5);
+        assert_eq!(path.0.len(), 6);
     }
 }

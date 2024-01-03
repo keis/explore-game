@@ -7,6 +7,7 @@ use std::iter;
 pub fn update_path_display(
     path_guided_query: Query<(Entity, &PathGuided), Changed<PathGuided>>,
     path_display_query: Query<(Entity, &PathDisplay, &mut Handle<Mesh>)>,
+    transform_query: Query<&Transform>,
     mut path_display_params: PathDisplayParams,
     mut commands: Commands,
 ) {
@@ -21,14 +22,17 @@ pub fn update_path_display(
             continue;
         }
 
-        let start = path_guided.current().unwrap();
-        let mut prev: Vec3 = start.into();
-        let end = *path_guided.last().unwrap();
+        let start_entity = path_guided.current().unwrap();
+        let start = transform_query.get(start_entity).unwrap().translation;
+        let mut prev: Vec3 = start;
+        let end_entity = *path_guided.last().unwrap();
+        let end = transform_query.get(end_entity).unwrap().translation;
         let path = Path {
             spline: Spline::from_iter(
-                iter::once(Key::new(0.0, start.into(), Interpolation::default()))
-                    .chain(path_guided.path.iter().enumerate().map(|(idx, &pos)| {
-                        let new: Vec3 = pos.into();
+                iter::once(Key::new(0.0, start, Interpolation::default()))
+                    .chain(path_guided.path.iter().enumerate().map(|(idx, &entity)| {
+                        let transform = transform_query.get(entity).unwrap();
+                        let new: Vec3 = transform.translation;
                         let edge = prev + (new - prev) / 2.0;
                         let interpolation = Interpolation::Bezier(new);
                         prev = new;
@@ -38,11 +42,7 @@ pub fn update_path_display(
                             interpolation,
                         )
                     }))
-                    .chain(iter::once(Key::new(
-                        1.0,
-                        end.into(),
-                        Interpolation::default(),
-                    ))),
+                    .chain(iter::once(Key::new(1.0, end, Interpolation::default()))),
             ),
             steps: 16 * (path_guided.path.len() as u32 + 1),
             stroke: 0.05,

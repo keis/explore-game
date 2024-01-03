@@ -1,43 +1,64 @@
-use super::queue::{GameAction, GameActionQueue};
+use super::queue::{GameAction, GameActionQueue, GameActionSystems};
 use crate::{
     actor::{
         Group, GroupCommandsExt, Movement, Party, PartyBundle, PartyParams, Slide, SlideEvent,
     },
     combat::CombatEvent,
     inventory::Inventory,
-    map::{Fog, MapCommandsExt, MapPresence, Offset, PresenceLayer, ZoneLayer},
-    path::{PathFinder, PathGuided},
+    map::{Fog, MapCommandsExt, MapPosition, MapPresence, Offset, PresenceLayer, ZoneLayer},
+    path::PathGuided,
     scene::save,
     structure::{Camp, CampBundle, Portal, SafeHaven, StructureCodex, StructureParams},
     terrain::{CrystalDeposit, HeightQuery, TerrainCodex, TerrainId},
     ExplError,
 };
-use bevy::prelude::*;
+use bevy::{ecs::system::RegisteredSystemError, prelude::*};
 use smallvec::SmallVec;
 
+pub fn apply_action(world: &mut World) -> Result<(), RegisteredSystemError> {
+    let Some(systems) = world.get_resource::<GameActionSystems>() else {
+        return Ok(());
+    };
+    let Some(queue) = world.get_resource::<GameActionQueue>() else {
+        return Ok(());
+    };
+    let Some(ref action) = queue.current else {
+        return Ok(());
+    };
+    let Some(system) = systems.get(action.action_type) else {
+        return Ok(());
+    };
+    world.run_system(system)
+}
+
 #[allow(clippy::type_complexity)]
+#[allow(clippy::too_many_arguments)]
 pub fn handle_move(
     mut commands: Commands,
     mut queue: ResMut<GameActionQueue>,
-    mut party_query: Query<(
-        &mut Slide,
-        &mut Transform,
-        &MapPresence,
-        &Offset,
-        Option<(&mut Movement, &Group)>,
-    )>,
+    mut party_query: Query<
+        (
+            &mut Slide,
+            &mut Transform,
+            &MapPresence,
+            &Offset,
+            Option<(&mut Movement, &Group)>,
+        ),
+        Without<MapPosition>,
+    >,
     mut member_movement_query: Query<&mut Movement, Without<MapPresence>>,
     zone_layer_query: Query<(Entity, &ZoneLayer)>,
+    map_position_query: Query<(&MapPosition, &Transform)>,
     fog_query: Query<&Fog>,
     height_query: HeightQuery,
 ) -> Result<(), ExplError> {
-    let Some(GameAction::Move(entity, next)) = queue.current else {
+    let Some(ref action) = queue.current else {
         return Ok(());
     };
-
     let (mut slide, mut transform, presence, offset, maybe_movement) =
-        party_query.get_mut(entity)?;
+        party_query.get_mut(action.source)?;
     let (map_entity, zone_layer) = zone_layer_query.get_single()?;
+    let (next_position, next_transform) = map_position_query.get(action.target()?)?;
     let source_fog = zone_layer
         .get(presence.position)
         .ok_or(ExplError::OutOfBounds)
@@ -58,13 +79,15 @@ pub fn handle_move(
 
     if source_fog.visible {
         slide.start = transform.translation;
-        slide.end = Vec3::from(next) + offset.0;
+        slide.end = next_transform.translation + offset.0;
         slide.progress = 0.0;
 
         queue.wait();
     } else {
-        transform.translation = height_query.adjust(next.into()) + offset.0;
-        commands.entity(map_entity).move_presence(entity, next);
+        transform.translation = height_query.adjust(next_transform.translation) + offset.0;
+        commands
+            .entity(map_entity)
+            .move_presence(action.source, next_position.0);
     }
 
     Ok(())
@@ -75,17 +98,26 @@ pub fn handle_slide_stopped(
     mut events: EventReader<SlideEvent>,
     mut queue: ResMut<GameActionQueue>,
     map_query: Query<Entity, With<PresenceLayer>>,
+    map_position_query: Query<&MapPosition>,
 ) {
     let Ok(map_entity) = map_query.get_single() else {
         return;
     };
     for _ in events.read() {
-        let Some(GameAction::Move(e, next)) = queue.current else {
+        let Some(ref action) = queue.current else {
             return;
         };
-        queue.done();
+        let Ok(target) = action.target() else {
+            return;
+        };
+        let Ok(next) = map_position_query.get(target) else {
+            return;
+        };
 
-        commands.entity(map_entity).move_presence(e, next);
+        commands
+            .entity(map_entity)
+            .move_presence(action.source, next.0);
+        queue.done();
     }
 }
 
@@ -94,10 +126,10 @@ pub fn follow_path(
     mut combat_events: EventReader<CombatEvent>,
     mut path_guided_query: Query<(&Movement, &mut PathGuided)>,
 ) {
-    let Some(GameAction::Move(e, ..)) = queue.current else {
+    let Some(ref action) = queue.current else {
         return;
     };
-    let Ok((party_movement, mut pathguided)) = path_guided_query.get_mut(e) else {
+    let Ok((party_movement, mut pathguided)) = path_guided_query.get_mut(action.source) else {
         return;
     };
 
@@ -110,47 +142,10 @@ pub fn follow_path(
     // Keep moving if a path is set
     if party_movement.points > 0 {
         if let Some(next) = pathguided.next() {
-            queue.add(GameAction::Move(e, *next));
+            let action = GameAction::new_move(action.source, *next);
+            queue.add(action);
         }
     }
-}
-
-pub fn handle_move_to(
-    mut queue: ResMut<GameActionQueue>,
-    mut presence_query: Query<(&MapPresence, &Movement, &mut PathGuided)>,
-    path_finder: PathFinder,
-) -> Result<(), ExplError> {
-    let Some(GameAction::MoveTo(e, goal)) = queue.current else {
-        return Ok(());
-    };
-
-    let (presence, party_movement, mut pathguided) = presence_query.get_mut(e)?;
-    let Some((path, _length)) = path_finder.get()?.find_path(presence.position, goal) else {
-        return Ok(());
-    };
-    pathguided.path(path);
-    if party_movement.points > 0 {
-        if let Some(next) = pathguided.next() {
-            queue.add(GameAction::Move(e, *next));
-        }
-    }
-    Ok(())
-}
-
-pub fn handle_resume_move(
-    mut queue: ResMut<GameActionQueue>,
-    path_guided_query: Query<&PathGuided>,
-) -> Result<(), ExplError> {
-    let Some(GameAction::ResumeMove(e)) = queue.current else {
-        return Ok(());
-    };
-
-    let pathguided = path_guided_query.get(e)?;
-
-    if let Some(next) = pathguided.next() {
-        queue.add(GameAction::Move(e, *next));
-    }
-    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -165,13 +160,13 @@ pub fn handle_make_camp(
     terrain_codex: TerrainCodex,
     structure_codex: StructureCodex,
 ) -> Result<(), ExplError> {
-    let Some(GameAction::MakeCamp(party_entity)) = queue.current else {
+    let Some(ref action) = queue.current else {
         return Ok(());
     };
     let terrain_codex = terrain_codex.get()?;
     let structure_codex = structure_codex.get()?;
 
-    let (mut party_inventory, group, presence) = party_query.get_mut(party_entity)?;
+    let (mut party_inventory, group, presence) = party_query.get_mut(action.source)?;
     let (map_entity, zone_layer, presence_layer) = map_query.get_single()?;
     let terrain_id = zone_layer
         .get(presence.position)
@@ -218,11 +213,11 @@ pub fn handle_break_camp(
     map_query: Query<(Entity, &PresenceLayer)>,
     camp_query: Query<(Entity, &Group), With<Camp>>,
 ) -> Result<(), ExplError> {
-    let Some(GameAction::BreakCamp(e)) = queue.current else {
+    let Some(ref action) = queue.current else {
         return Ok(());
     };
 
-    let (mut inventory, presence) = party_query.get_mut(e)?;
+    let (mut inventory, presence) = party_query.get_mut(action.source)?;
     let (map_entity, presence_layer) = map_query.get_single()?;
     let (camp_entity, group) = camp_query
         .iter_many(presence_layer.presence(presence.position))
@@ -244,11 +239,12 @@ pub fn handle_enter_camp(
     mut party_query: Query<(&mut Inventory, &Group), (With<Party>, Without<Camp>)>,
     mut camp_query: Query<&mut Inventory, (With<Camp>, Without<Party>)>,
 ) -> Result<(), ExplError> {
-    let Some(GameAction::EnterCamp(party_entity, camp_entity)) = queue.current else {
+    let Some(ref action) = queue.current else {
         return Ok(());
     };
 
-    let (mut party_inventory, group) = party_query.get_mut(party_entity)?;
+    let (mut party_inventory, group) = party_query.get_mut(action.source)?;
+    let camp_entity = action.target()?;
     let mut camp_inventory = camp_query.get_mut(camp_entity)?;
 
     camp_inventory.take_all(&mut party_inventory);
@@ -264,12 +260,15 @@ pub fn handle_create_party_from_camp(
     mut camp_query: Query<(&mut Inventory, &MapPresence), With<Camp>>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
-    let Some(GameAction::CreatePartyFromCamp(camp_entity, characters)) = &queue.current else {
+    let Some(ref action) = queue.current else {
         return Ok(());
     };
 
-    info!("Creating party at camp {:?} {:?}", camp_entity, characters);
-    let (mut camp_inventory, presence) = camp_query.get_mut(*camp_entity).unwrap();
+    info!(
+        "Creating party at camp {:?} {:?}",
+        action.source, action.targets
+    );
+    let (mut camp_inventory, presence) = camp_query.get_mut(action.source)?;
     let map_entity = map_query.get_single()?;
 
     let new_supplies = camp_inventory.take_item(Inventory::SUPPLY, 1).unwrap_or(0);
@@ -284,7 +283,7 @@ pub fn handle_create_party_from_camp(
                     PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
                         .with_fluff(&mut party_params),
                 ))
-                .add_members(characters);
+                .add_members(&action.targets);
         });
 
     Ok(())
@@ -297,13 +296,13 @@ pub fn handle_split_party(
     mut party_query: Query<(&mut Inventory, &Group, &MapPresence), With<Party>>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
-    let Some(GameAction::SplitParty(party_entity, characters)) = &queue.current else {
+    let Some(ref action) = queue.current else {
         return Ok(());
     };
 
-    let (mut party_inventory, group, presence) = party_query.get_mut(*party_entity).unwrap();
+    let (mut party_inventory, group, presence) = party_query.get_mut(action.source)?;
     let map_entity = map_query.get_single()?;
-    if group.members.len() == characters.len() {
+    if group.members.len() == action.targets.len() {
         return Err(ExplError::InvalidPartySplit);
     }
 
@@ -319,7 +318,7 @@ pub fn handle_split_party(
                     PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
                         .with_fluff(&mut party_params),
                 ))
-                .add_members(characters);
+                .add_members(&action.targets);
         });
     Ok(())
 }
@@ -328,32 +327,28 @@ pub fn handle_merge_party(
     mut commands: Commands,
     queue: ResMut<GameActionQueue>,
     mut party_query: Query<(&mut Inventory, &Group, &MapPresence), With<Party>>,
-) {
-    let Some(GameAction::MergeParty(parties)) = &queue.current else {
-        return;
+) -> Result<(), ExplError> {
+    let Some(ref action) = queue.current else {
+        return Ok(());
     };
 
-    let [target, rest @ ..] = parties.as_slice() else {
-        return;
-    };
-    let target_position = party_query
-        .get(*target)
-        .map(|(_, _, p)| p.position)
-        .unwrap();
+    let source_position = party_query.get(action.source)?.2.position;
     let mut characters = SmallVec::<[Entity; 8]>::new();
     let mut inventory = Inventory::default();
-    let mut iter = party_query.iter_many_mut(rest);
+    let mut iter = party_query.iter_many_mut(&action.targets);
     while let Some((mut party_inventory, group, presence)) = iter.fetch_next() {
-        if presence.position != target_position {
+        if presence.position != source_position {
             info!("Skipping party in other location");
             continue;
         }
         inventory.take_all(&mut party_inventory);
         characters.append(&mut group.members.clone());
     }
-    let (mut party_inventory, _, _) = party_query.get_mut(*target).unwrap();
+    let (mut party_inventory, _, _) = party_query.get_mut(action.target()?)?;
     party_inventory.take_all(&mut inventory);
-    commands.entity(*target).add_members(&characters);
+    commands.entity(action.source).add_members(&characters);
+
+    Ok(())
 }
 
 pub fn handle_collect_crystals(
@@ -362,11 +357,11 @@ pub fn handle_collect_crystals(
     mut party_query: Query<(&mut Inventory, &MapPresence), With<Party>>,
     mut crystal_deposit_query: Query<&mut CrystalDeposit>,
 ) -> Result<(), ExplError> {
-    let Some(GameAction::CollectCrystals(party_entity)) = queue.current else {
+    let Some(ref action) = queue.current else {
         return Ok(());
     };
 
-    let (mut inventory, presence) = party_query.get_mut(party_entity)?;
+    let (mut inventory, presence) = party_query.get_mut(action.source)?;
     let zone_layer = map_query.get_single()?;
 
     let mut crystal_deposit = zone_layer
@@ -384,11 +379,11 @@ pub fn handle_open_portal(
     map_query: Query<&PresenceLayer>,
     mut portal_query: Query<&mut Portal>,
 ) -> Result<(), ExplError> {
-    let Some(GameAction::OpenPortal(party_entity)) = queue.current else {
+    let Some(ref action) = queue.current else {
         return Ok(());
     };
 
-    let presence = party_query.get(party_entity)?;
+    let presence = party_query.get(action.source)?;
     let presence_layer = map_query.get_single()?;
 
     let mut portal_iter = portal_query.iter_many_mut(presence_layer.presence(presence.position));
@@ -412,11 +407,11 @@ pub fn handle_enter_portal(
     mut party_query: Query<(&MapPresence, &Group, &mut Inventory), With<Party>>,
     mut safe_haven_query: Query<(Entity, &mut Inventory), (With<SafeHaven>, Without<Party>)>,
 ) -> Result<(), ExplError> {
-    let Some(GameAction::EnterPortal(party_entity)) = queue.current else {
+    let Some(ref action) = queue.current else {
         return Ok(());
     };
 
-    let (presence, group, mut party_inventory) = party_query.get_mut(party_entity)?;
+    let (presence, group, mut party_inventory) = party_query.get_mut(action.source)?;
     let presence_layer = map_query.get_single()?;
 
     let portal = portal_query
