@@ -1,18 +1,24 @@
 #![allow(clippy::type_complexity)]
 
 mod action;
-mod map;
+mod bundle;
+mod component;
+mod event;
 mod plugin;
-mod selection;
+mod system;
+mod system_param;
 
 pub use action::Action;
+pub use bundle::*;
+pub use component::*;
+pub use event::*;
 pub use leafwing_input_manager::{
     common_conditions::{action_just_pressed, action_toggle_active},
     plugin::InputManagerSystem,
     prelude::ActionState,
 };
 pub use plugin::InputPlugin;
-pub use selection::{Deselect, NextSelectionQuery, Select, Selection, SelectionBundle};
+pub use system_param::*;
 
 #[cfg(test)]
 mod tests {
