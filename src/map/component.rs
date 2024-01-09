@@ -27,10 +27,6 @@ pub struct MapPresence {
     pub position: HexCoord,
 }
 
-#[derive(Component, Reflect, Default)]
-#[reflect(Component)]
-pub struct Offset(pub Vec3);
-
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 pub struct ViewRadius(pub u32);

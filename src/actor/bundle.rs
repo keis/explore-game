@@ -4,12 +4,13 @@ use crate::{
     combat::{Attack, Health},
     input::{Selection, SelectionBundle},
     inventory::Inventory,
-    map::{FogRevealer, HexCoord, MapPresence, Offset, ViewRadius},
+    map::{FogRevealer, HexCoord, MapPresence, ViewRadius},
     path::PathGuided,
     terrain::HeightQuery,
 };
 use bevy::prelude::*;
 use bevy_mod_outline::{OutlineBundle, OutlineVolume};
+use bevy_mod_picking::prelude::PickHighlight;
 
 #[derive(Bundle, Default)]
 pub struct CharacterBundle {
@@ -54,9 +55,14 @@ pub struct PartyBundle {
 pub struct PartyFluffBundle {
     selection_bundle: SelectionBundle,
     path_guided: PathGuided,
+    spatial_bundle: SpatialBundle,
+}
+
+#[derive(Bundle)]
+pub struct PartyChildBundle {
     pbr_bundle: PbrBundle,
+    pick_highlight: PickHighlight,
     outline_bundle: OutlineBundle,
-    offset: Offset,
 }
 
 impl PartyBundle {
@@ -72,9 +78,12 @@ impl PartyBundle {
         }
     }
 
-    pub fn with_fluff(self, party_params: &mut PartyParams) -> (Self, PartyFluffBundle) {
-        let fluff = PartyFluffBundle::new(party_params, &self.presence);
-        (self, fluff)
+    pub fn with_fluff(
+        self,
+        party_params: &mut PartyParams,
+    ) -> ((Self, PartyFluffBundle), PartyChildBundle) {
+        let (fluff, child) = PartyFluffBundle::new(party_params, &self.presence);
+        ((self, fluff), child)
     }
 }
 
@@ -82,29 +91,36 @@ impl PartyFluffBundle {
     pub fn new(
         (main_assets, standard_materials, height_query): &mut PartyParams,
         presence: &MapPresence,
-    ) -> Self {
-        let offset = Offset(Vec3::new(0.0, 0.5, 0.0));
-        Self {
-            pbr_bundle: PbrBundle {
-                mesh: main_assets.shield_mesh.clone(),
-                material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
-                transform: Transform::from_translation(
-                    height_query.adjust(presence.position.into()) + offset.0,
-                )
-                .with_scale(Vec3::splat(0.1)),
-                ..default()
-            },
-            outline_bundle: OutlineBundle {
-                outline: OutlineVolume {
-                    visible: true,
-                    width: 2.0,
-                    colour: Color::rgb(0.155, 0.621, 0.586),
+    ) -> (Self, PartyChildBundle) {
+        let offset = Vec3::new(0.0, 0.5, 0.0);
+        (
+            Self {
+                spatial_bundle: SpatialBundle {
+                    transform: Transform::from_translation(
+                        height_query.adjust(presence.position.into()),
+                    ),
+                    ..default()
                 },
                 ..default()
             },
-            offset,
-            ..default()
-        }
+            PartyChildBundle {
+                pbr_bundle: PbrBundle {
+                    mesh: main_assets.shield_mesh.clone(),
+                    material: standard_materials.add(Color::rgb(0.165, 0.631, 0.596).into()),
+                    transform: Transform::from_translation(offset).with_scale(Vec3::splat(0.1)),
+                    ..default()
+                },
+                pick_highlight: PickHighlight,
+                outline_bundle: OutlineBundle {
+                    outline: OutlineVolume {
+                        visible: true,
+                        width: 2.0,
+                        colour: Color::rgb(0.155, 0.621, 0.586),
+                    },
+                    ..default()
+                },
+            },
+        )
     }
 }
 
@@ -126,7 +142,11 @@ pub struct EnemyBundle {
 
 #[derive(Bundle, Default)]
 pub struct EnemyFluffBundle {
-    offset: Offset,
+    spatial_bundle: SpatialBundle,
+}
+
+#[derive(Bundle, Default)]
+pub struct EnemyChildBundle {
     pbr_bundle: PbrBundle,
     outline_bundle: OutlineBundle,
 }
@@ -143,9 +163,12 @@ impl EnemyBundle {
         }
     }
 
-    pub fn with_fluff(self, enemy_params: &mut EnemyParams) -> (Self, EnemyFluffBundle) {
-        let fluff = EnemyFluffBundle::new(enemy_params, &self.presence);
-        (self, fluff)
+    pub fn with_fluff(
+        self,
+        enemy_params: &mut EnemyParams,
+    ) -> ((Self, EnemyFluffBundle), EnemyChildBundle) {
+        let (fluff, child) = EnemyFluffBundle::new(enemy_params, &self.presence);
+        ((self, fluff), child)
     }
 }
 
@@ -153,28 +176,35 @@ impl EnemyFluffBundle {
     pub fn new(
         (main_assets, standard_materials, height_query): &mut EnemyParams,
         presence: &MapPresence,
-    ) -> Self {
-        let offset = Offset(Vec3::new(0.0, 0.05, 0.0));
-        Self {
-            pbr_bundle: PbrBundle {
-                mesh: main_assets.blob_mesh.clone(),
-                material: standard_materials.add(Color::rgba(0.749, 0.584, 0.901, 0.666).into()),
-                transform: Transform::from_translation(
-                    height_query.adjust(presence.position.into()) + offset.0,
-                )
-                .with_scale(Vec3::splat(0.5)),
-                visibility: Visibility::Hidden,
-                ..default()
-            },
-            outline_bundle: OutlineBundle {
-                outline: OutlineVolume {
-                    visible: true,
-                    width: 2.0,
-                    colour: Color::rgb(0.739, 0.574, 0.891),
+    ) -> (Self, EnemyChildBundle) {
+        let offset = Vec3::new(0.0, 0.05, 0.0);
+        (
+            Self {
+                spatial_bundle: SpatialBundle {
+                    transform: Transform::from_translation(
+                        height_query.adjust(presence.position.into()),
+                    ),
+                    visibility: Visibility::Hidden,
+                    ..default()
                 },
-                ..default()
             },
-            offset,
-        }
+            EnemyChildBundle {
+                pbr_bundle: PbrBundle {
+                    mesh: main_assets.blob_mesh.clone(),
+                    material: standard_materials
+                        .add(Color::rgba(0.749, 0.584, 0.901, 0.666).into()),
+                    transform: Transform::from_translation(offset).with_scale(Vec3::splat(0.5)),
+                    ..default()
+                },
+                outline_bundle: OutlineBundle {
+                    outline: OutlineVolume {
+                        visible: true,
+                        width: 2.0,
+                        colour: Color::rgb(0.739, 0.574, 0.891),
+                    },
+                    ..default()
+                },
+            },
+        )
     }
 }

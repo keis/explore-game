@@ -55,14 +55,16 @@ pub fn spawn_enemy(
         {
             spawner.charge -= 3;
             info!("Spawning enemy at {}", presence.position);
+            let (fluff_bundle, child_bundle) =
+                EnemyBundle::new(presence.position).with_fluff(&mut enemy_params);
             commands
                 .entity(map_entity)
                 .with_presence(presence.position, |location| {
-                    location.spawn((
-                        Name::new("Enemy"),
-                        save::Save,
-                        EnemyBundle::new(presence.position).with_fluff(&mut enemy_params),
-                    ));
+                    location
+                        .spawn((Name::new("Enemy"), save::Save, fluff_bundle))
+                        .with_children(|parent| {
+                            parent.spawn(child_bundle);
+                        });
                 });
         }
     }
