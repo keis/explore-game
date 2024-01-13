@@ -1,6 +1,6 @@
 use super::save;
 use crate::{
-    actor::{CharacterBundle, GroupCommandsExt, PartyBundle, PartyParams},
+    actor::{CharacterBundle, CreatureCodex, CreatureParams, GroupCommandsExt, PartyBundle},
     map::{MapCommandsExt, MapLayout, MapPosition, PresenceLayer, ZoneLayer},
     map_generator::{GenerateMapTask, MapPrototype, MapSeed},
     structure::{PortalBundle, SafeHavenBundle, SpawnerBundle, StructureCodex, StructureParams},
@@ -9,6 +9,7 @@ use crate::{
     ExplError,
 };
 use bevy::prelude::*;
+use expl_codex::Id;
 use expl_hexgrid::{layout::GridLayout, HexCoord};
 use expl_wfc::{Seed, SeedType};
 use std::collections::HashMap;
@@ -128,7 +129,7 @@ pub fn spawn_spawner(
             location.spawn((
                 Name::new("EnemySpawner"),
                 save::Save,
-                SpawnerBundle::new(prototype.spawner_position)
+                SpawnerBundle::new(prototype.spawner_position, Id::from_tag("slime"))
                     .with_fluff(&mut structure_params, structure_codex),
             ));
         });
@@ -138,32 +139,34 @@ pub fn spawn_spawner(
 
 pub fn spawn_party(
     mut commands: Commands,
-    mut party_params: PartyParams,
+    mut party_params: CreatureParams,
+    creature_codex: CreatureCodex,
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.get_single()?;
     let map_entity = map_query.get_single()?;
+    let creature_codex = creature_codex.get()?;
 
     let character1 = commands
         .spawn((
             save::Save,
             Name::new("Alice"),
-            CharacterBundle::new(String::from("Alice")),
+            CharacterBundle::new(String::from("Alice"), creature_codex),
         ))
         .id();
     let character2 = commands
         .spawn((
             save::Save,
             Name::new("Bob"),
-            CharacterBundle::new(String::from("Bob")),
+            CharacterBundle::new(String::from("Bob"), creature_codex),
         ))
         .id();
     let character3 = commands
         .spawn((
             save::Save,
             Name::new("Carol"),
-            CharacterBundle::new(String::from("Carol")),
+            CharacterBundle::new(String::from("Carol"), creature_codex),
         ))
         .id();
     commands
@@ -171,7 +174,7 @@ pub fn spawn_party(
         .with_presence(prototype.party_position, |location| {
             let (party_bundle, child_bundle) =
                 PartyBundle::new(prototype.party_position, String::from("Alpha Group"), 1)
-                    .with_fluff(&mut party_params);
+                    .with_fluff(&mut party_params, creature_codex);
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
                 .with_children(|parent| {

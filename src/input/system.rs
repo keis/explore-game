@@ -128,7 +128,7 @@ pub fn apply_zone_activated_events(
                 continue;
             };
             pathguided.path(path.into_iter().map(|(_, e)| e));
-            if movement.points > 0 {
+            if movement.current > 0 {
                 if let Some(next) = pathguided.next() {
                     game_action_queue.add(GameAction::new_move(entity, *next));
                 }

@@ -27,6 +27,7 @@ pub fn filter_with_enabled_components() -> SaveFilter {
         .allow::<Save>()
         .allow::<actor::Character>()
         .allow::<actor::Corpse>()
+        .allow::<actor::CreatureId>()
         .allow::<actor::Enemy>()
         .allow::<actor::Group>()
         .allow::<actor::GroupMember>()

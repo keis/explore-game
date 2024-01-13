@@ -1,6 +1,7 @@
 use super::asset::*;
 use crate::{assets::CodexAssets, ExplError};
 use bevy::{ecs::system::SystemParam, prelude::*};
+use expl_codex::Codex;
 
 #[derive(SystemParam)]
 pub struct StructureCodex<'w> {

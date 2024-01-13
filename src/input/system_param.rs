@@ -15,7 +15,7 @@ impl<'w, 's> NextSelectionQuery<'w, 's> {
             if selection.is_selected {
                 selected = Some(entity);
             } else if let Some(movement) = m {
-                if selected.is_some() && movement.points > 0 {
+                if selected.is_some() && movement.current > 0 {
                     return Some(entity);
                 }
             }
@@ -26,7 +26,7 @@ impl<'w, 's> NextSelectionQuery<'w, 's> {
                 break;
             }
             if let Some(movement) = m {
-                if movement.points > 0 {
+                if movement.current > 0 {
                     if selected == Some(entity) {
                         return None;
                     }

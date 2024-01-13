@@ -1,7 +1,8 @@
 use super::queue::{GameAction, GameActionQueue, GameActionSystems};
 use crate::{
     actor::{
-        Group, GroupCommandsExt, Movement, Party, PartyBundle, PartyParams, Slide, SlideEvent,
+        CreatureCodex, CreatureParams, Group, GroupCommandsExt, Movement, Party, PartyBundle,
+        Slide, SlideEvent,
     },
     combat::CombatEvent,
     inventory::Inventory,
@@ -41,7 +42,8 @@ pub fn handle_move(
             &mut Slide,
             &mut Transform,
             &MapPresence,
-            Option<(&mut Movement, &Group)>,
+            &mut Movement,
+            Option<&Group>,
         ),
         Without<MapPosition>,
     >,
@@ -54,7 +56,7 @@ pub fn handle_move(
     let Some(ref action) = queue.current else {
         return Ok(());
     };
-    let (mut slide, mut transform, presence, maybe_movement) =
+    let (mut slide, mut transform, presence, mut movement, maybe_group) =
         party_query.get_mut(action.source)?;
     let (map_entity, zone_layer) = zone_layer_query.get_single()?;
     let (next_position, next_transform) = map_position_query.get(action.target()?)?;
@@ -63,16 +65,15 @@ pub fn handle_move(
         .ok_or(ExplError::OutOfBounds)
         .and_then(|&e| fog_query.get(e).map_err(ExplError::from))?;
 
-    // Movement is not tracked for enemies
-    if let Some((mut movement, group)) = maybe_movement {
-        if movement.points == 0 {
-            queue.clear();
-            return Err(ExplError::MoveWithoutMovementPoints);
-        }
-        movement.points -= 1;
+    if let Err(e) = movement.consume() {
+        queue.clear();
+        return Err(e);
+    }
+
+    if let Some(group) = maybe_group {
         let mut iter = member_movement_query.iter_many_mut(&group.members);
         while let Some(mut movement) = iter.fetch_next() {
-            movement.points -= 1;
+            movement.consume().unwrap();
         }
     }
 
@@ -139,7 +140,7 @@ pub fn follow_path(
     }
 
     // Keep moving if a path is set
-    if party_movement.points > 0 {
+    if party_movement.current > 0 {
         if let Some(next) = pathguided.next() {
             let action = GameAction::new_move(action.source, *next);
             queue.add(action);
@@ -255,14 +256,16 @@ pub fn handle_enter_camp(
 pub fn handle_create_party_from_camp(
     mut commands: Commands,
     queue: ResMut<GameActionQueue>,
-    mut party_params: PartyParams,
+    mut party_params: CreatureParams,
     mut camp_query: Query<(&mut Inventory, &MapPresence), With<Camp>>,
     map_query: Query<Entity, With<PresenceLayer>>,
+    creature_codex: CreatureCodex,
 ) -> Result<(), ExplError> {
     let Some(ref action) = queue.current else {
         return Ok(());
     };
 
+    let creature_codex = creature_codex.get()?;
     info!(
         "Creating party at camp {:?} {:?}",
         action.source, action.targets
@@ -280,7 +283,7 @@ pub fn handle_create_party_from_camp(
                     Name::new("Party"),
                     save::Save,
                     PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
-                        .with_fluff(&mut party_params),
+                        .with_fluff(&mut party_params, creature_codex),
                 ))
                 .add_members(&action.targets);
         });
@@ -291,14 +294,16 @@ pub fn handle_create_party_from_camp(
 pub fn handle_split_party(
     mut commands: Commands,
     queue: ResMut<GameActionQueue>,
-    mut party_params: PartyParams,
+    mut party_params: CreatureParams,
     mut party_query: Query<(&mut Inventory, &Group, &MapPresence), With<Party>>,
     map_query: Query<Entity, With<PresenceLayer>>,
+    creature_codex: CreatureCodex,
 ) -> Result<(), ExplError> {
     let Some(ref action) = queue.current else {
         return Ok(());
     };
 
+    let creature_codex = creature_codex.get()?;
     let (mut party_inventory, group, presence) = party_query.get_mut(action.source)?;
     let map_entity = map_query.get_single()?;
     if group.members.len() == action.targets.len() {
@@ -315,7 +320,7 @@ pub fn handle_split_party(
                     Name::new("Party"),
                     save::Save,
                     PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
-                        .with_fluff(&mut party_params),
+                        .with_fluff(&mut party_params, creature_codex),
                 ))
                 .add_members(&action.targets);
         });

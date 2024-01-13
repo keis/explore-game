@@ -6,6 +6,7 @@ use crate::{
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
 use bevy_mod_picking::prelude::{Pickable, PickingInteraction};
+use expl_codex::{Codex, Id};
 use glam::Vec3Swizzles;
 
 pub type ZoneDecorationParams<'w> = ResMut<'w, Assets<TerrainMaterial>>;

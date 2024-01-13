@@ -102,7 +102,7 @@ fn spawn_party_display(
                     entity,
                     PartyMovementPointsText,
                     assets.footsteps_icon.clone(),
-                    format!("{}", movement.points),
+                    format!("{}", movement.current),
                 );
                 spawn_stat_display(
                     parent,
@@ -198,7 +198,7 @@ pub fn update_party_movement_points(
     >,
 ) {
     data_binding_update.for_each(|movement, text| {
-        text.sections[0].value = format!("{}", movement.points);
+        text.sections[0].value = format!("{}", movement.current);
     });
 }
 

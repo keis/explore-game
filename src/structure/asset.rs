@@ -1,5 +1,5 @@
 use bevy::{asset::LoadContext, prelude::*};
-pub use expl_codex::{Codex, CodexLoader, CodexSource, FromWithLoadContext, Id};
+use expl_codex::{CodexSource, FromWithLoadContext};
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Default, Deserialize)]

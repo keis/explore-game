@@ -1,5 +1,6 @@
 use crate::map::HexCoord;
 use bevy::prelude::*;
+use serde::Deserialize;
 use smallvec::SmallVec;
 use std::ops::Range;
 
@@ -10,19 +11,22 @@ pub struct Combat {
     pub(super) initiative: usize,
 }
 
-#[derive(Component, Reflect, Default)]
+#[derive(Clone, Debug, Default, Component, Reflect, Deserialize)]
 #[reflect(Component)]
-pub struct Health(pub u16, pub u16);
+pub struct Health {
+    pub current: u16,
+    pub max: u16,
+}
 
 impl Health {
     pub fn heal(&mut self, amount: u16) -> u16 {
-        let healed = (self.1 - self.0).min(amount);
-        self.0 += healed;
+        let healed = (self.max - self.current).min(amount);
+        self.current += healed;
         healed
     }
 }
 
-#[derive(Component, Reflect, Default)]
+#[derive(Clone, Debug, Default, Component, Reflect, Deserialize)]
 #[reflect(Component)]
 pub struct Attack {
     pub low: u16,

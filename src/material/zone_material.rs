@@ -2,14 +2,14 @@ use crate::{
     assets::{AssetState, CodexAssets},
     input::{ZoneOut, ZoneOver},
     map::Fog,
-    terrain::{Codex, Height, OuterVisible, Terrain, TerrainId},
+    terrain::{Height, OuterVisible, Terrain, TerrainId},
 };
 use bevy::{
     prelude::*,
     reflect::{TypePath, TypeUuid},
     render::render_resource::*,
 };
-use expl_codex::Id;
+use expl_codex::{Codex, Id};
 
 #[derive(Default)]
 pub struct ZoneMaterialPlugin;

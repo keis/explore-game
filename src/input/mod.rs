@@ -40,14 +40,20 @@ mod tests {
                 position: (1, 1).into(),
             },
             Selection::default(),
-            Movement { points: 2 },
+            Movement {
+                current: 2,
+                reset: 2,
+            },
         ));
         app.world.spawn((
             MapPresence {
                 position: (2, 0).into(),
             },
             Selection::default(),
-            Movement { points: 2 },
+            Movement {
+                current: 2,
+                reset: 2,
+            },
         ));
         app
     }
