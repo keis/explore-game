@@ -3252,7 +3252,7 @@ version = "0.1.0"
 dependencies = [
  "bevy_render 0.13.2",
  "glam 0.24.2",
- "hexasphere 9.1.0",
+ "hexasphere 10.0.0",
 ]
 
 [[package]]
@@ -3733,7 +3733,7 @@ dependencies = [
  "presser",
  "thiserror",
  "winapi",
- "windows 0.52.0",
+ "windows 0.51.1",
 ]
 
 [[package]]
