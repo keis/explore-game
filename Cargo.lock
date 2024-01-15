@@ -929,7 +929,7 @@ version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "58ddc2b76783939c530178f88e5711a1b01044d7b02db4033e2eb8b43b6cf4ec"
 dependencies = [
- "glam",
+ "glam 0.24.2",
  "serde",
 ]
 
@@ -939,7 +939,7 @@ version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ec4962977a746d870170532fc92759e04d3dbcae8b7b82e7ca3bb83b1d75277"
 dependencies = [
- "glam",
+ "glam 0.24.2",
 ]
 
 [[package]]
@@ -1206,7 +1206,7 @@ dependencies = [
  "bevy_utils",
  "downcast-rs",
  "erased-serde",
- "glam",
+ "glam 0.24.2",
  "serde",
  "smallvec",
  "smol_str",
@@ -1256,7 +1256,7 @@ dependencies = [
  "downcast-rs",
  "encase",
  "futures-lite 1.13.0",
- "hexasphere",
+ "hexasphere 9.1.0",
  "image",
  "js-sys",
  "ktx2",
@@ -2280,7 +2280,7 @@ checksum = "8fce2eeef77fd4a293a54b62aa00ac9daebfbcda4bf8998c5a815635b004aa1c"
 dependencies = [
  "const_panic",
  "encase_derive",
- "glam",
+ "glam 0.24.2",
  "thiserror",
 ]
 
@@ -2436,8 +2436,8 @@ name = "expl_hexagon"
 version = "0.1.0"
 dependencies = [
  "bevy_render",
- "glam",
- "hexasphere",
+ "glam 0.24.2",
+ "hexasphere 10.0.0",
 ]
 
 [[package]]
@@ -2446,7 +2446,7 @@ version = "0.1.0"
 dependencies = [
  "bevy_reflect",
  "disjoint-hash-set",
- "glam",
+ "glam 0.24.2",
  "itertools 0.12.0",
  "serde_with",
  "thiserror",
@@ -2494,7 +2494,7 @@ dependencies = [
  "expl_hexgrid",
  "expl_wfc",
  "futures-lite 2.2.0",
- "glam",
+ "glam 0.24.2",
  "interpolation 0.3.0",
  "itertools 0.12.0",
  "leafwing-input-manager",
@@ -2763,6 +2763,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "glam"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "151665d9be52f9bb40fc7966565d39666f2d1e69233571b71b87791c7e0528b3"
+
+[[package]]
 name = "glob"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2957,7 +2963,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7cb3df16a7bcb1b5bc092abd55e14f77ca70aea14445026e264586fc62889a10"
 dependencies = [
  "constgebra",
- "glam",
+ "glam 0.24.2",
+]
+
+[[package]]
+name = "hexasphere"
+version = "10.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f33ddb7f7143d9e703c072e88b98cd8b9719f174137a671429351bd2ee43c02a"
+dependencies = [
+ "constgebra",
+ "glam 0.25.0",
 ]
 
 [[package]]
@@ -4764,7 +4780,7 @@ version = "4.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "228c4551e53c672e86439509545dd7ffcb966b6876c58b108e433a30e6117101"
 dependencies = [
- "glam",
+ "glam 0.24.2",
 ]
 
 [[package]]
