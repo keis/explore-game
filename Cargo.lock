@@ -4061,9 +4061,9 @@ checksum = "1e91099d4268b0e11973f036e885d652fb0b21fedcf69738c627f94db6a44f42"
 
 [[package]]
 name = "pathfinding"
-version = "4.8.1"
+version = "4.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b425bfb8934d227558811f4b8c94d6fe64c9069c1387deed0f586bc418271b2"
+checksum = "35df0d074a99be583b76dc771329be9f7be45ebae444d601285dc7a094c2ac0a"
 dependencies = [
  "deprecate-until",
  "fixedbitset",
