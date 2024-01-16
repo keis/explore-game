@@ -78,7 +78,7 @@ where
                 continue;
             };
             for (offset, compatible) in self.template.compatible_tiles(*tile) {
-                if neighbour + *offset == coord {
+                if neighbour + offset == coord {
                     alts.intersect_with(compatible);
                 }
             }
@@ -88,7 +88,7 @@ where
 
     pub fn propagate(&mut self, coord: HexCoord, tile: TileId) {
         for (offset, compatible) in self.template.compatible_tiles(tile) {
-            let neighbour = coord + *offset;
+            let neighbour = coord + offset;
             if let Some(neighbour_cell) = self.grid.get_mut(neighbour) {
                 neighbour_cell.retain(compatible);
                 if let Cell::Alternatives(num_alts, _) = neighbour_cell {
