@@ -7,6 +7,7 @@ use crate::{
 use bevy::{pbr::NotShadowCaster, prelude::*};
 use bevy_mod_picking::prelude::{Pickable, PickingInteraction};
 use expl_codex::{Codex, Id};
+use expl_hexgrid::Neighbours;
 use glam::Vec3Swizzles;
 
 pub type ZoneDecorationParams<'w> = ResMut<'w, Assets<TerrainMaterial>>;
@@ -89,7 +90,6 @@ pub type ZoneParams<'w> = (Res<'w, HexAssets>, ResMut<'w, Assets<ZoneMaterial>>)
 #[derive(Bundle, Default)]
 pub struct ZoneBundle {
     terrain: TerrainId,
-    height: Height,
     fog: Fog,
     position: MapPosition,
     zone_decorations: ZoneDecorations,
@@ -102,22 +102,16 @@ pub struct ZoneFluffBundle {
     not_shadow_caster: NotShadowCaster,
     material_mesh_bundle: MaterialMeshBundle<ZoneMaterial>,
     outer_visible: OuterVisible,
+    outer_terrain: OuterTerrain,
 }
 
 impl ZoneBundle {
     pub fn new(position: HexCoord, prototype: &ZonePrototype) -> Self {
         let terrain = TerrainId(prototype.terrain);
-        let height = Height {
-            height_amp: prototype.height_amp,
-            height_base: prototype.height_base,
-            outer_amp: prototype.outer_amp,
-            outer_base: prototype.outer_base,
-        };
         let mut filliter = prototype.random_fill.iter();
         Self {
             position: MapPosition(position),
             terrain,
-            height,
             zone_decorations: ZoneDecorations {
                 crystal_detail: if prototype.crystals {
                     filliter
@@ -138,6 +132,7 @@ impl ZoneBundle {
         self,
         zone_params: &mut ZoneParams,
         terrain_codex: &Codex<Terrain>,
+        outer_terrain: Neighbours<Id<Terrain>>,
     ) -> (Self, ZoneFluffBundle) {
         let outer_visible = OuterVisible::default();
         let fluff = ZoneFluffBundle::new(
@@ -145,9 +140,9 @@ impl ZoneBundle {
             terrain_codex,
             &self.position,
             &self.terrain,
-            &self.height,
             &self.fog,
             outer_visible,
+            outer_terrain,
         );
         (self, fluff)
     }
@@ -159,9 +154,9 @@ impl ZoneFluffBundle {
         terrain_codex: &Codex<Terrain>,
         position: &MapPosition,
         terrain: &TerrainId,
-        height: &Height,
         fog: &Fog,
         outer_visible: OuterVisible,
+        outer_terrain: Neighbours<Id<Terrain>>,
     ) -> Self {
         Self {
             material_mesh_bundle: MaterialMeshBundle {
@@ -169,14 +164,15 @@ impl ZoneFluffBundle {
                 material: zone_materials.add(ZoneMaterial::new(
                     terrain_codex,
                     terrain,
-                    height,
                     fog,
                     &outer_visible,
+                    &outer_terrain,
                 )),
                 transform: Transform::from_translation(position.0.into()),
                 ..default()
             },
             outer_visible,
+            outer_terrain: OuterTerrain(outer_terrain),
             ..default()
         }
     }

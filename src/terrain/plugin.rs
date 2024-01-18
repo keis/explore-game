@@ -15,8 +15,8 @@ impl Plugin for TerrainPlugin {
             .register_type::<Height>()
             .register_type::<Height>()
             .register_type::<Option<ZoneDecorationDetail>>()
-            .register_type::<Outer>()
             .register_type::<OuterVisible>()
+            .register_type::<OuterTerrain>()
             .register_type::<TerrainId>()
             .register_type::<Id<Terrain>>()
             .register_type::<Vec<ZoneDecorationDetail>>()
@@ -39,7 +39,7 @@ impl Plugin for TerrainPlugin {
             .add_systems(
                 OnEnter(SceneState::Active),
                 (
-                    fluff_zone.map(bevy::utils::warn).in_set(SceneSet::Populate),
+                    fluff_zone.map(bevy::utils::warn).in_set(SceneSet::Terrain),
                     decorate_zone
                         .map(bevy::utils::warn)
                         .in_set(SceneSet::Populate),

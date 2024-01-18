@@ -16,14 +16,15 @@ mod tests {
     use super::*;
     use approx::assert_abs_diff_eq;
     use bevy::prelude::*;
+    use expl_hexgrid::Neighbours;
 
     #[test]
     fn test_height() {
         let height = Height {
             height_amp: 0.5,
             height_base: 0.2,
-            outer_amp: Outer::new(&[0.1, 0.2, 0.3, 0.5, 0.3, 0.2]),
-            outer_base: Outer::new(&[0.0, 0.1, 0.1, 0.2, 0.2, 0.0]),
+            outer_amp: Neighbours::new([0.1, 0.2, 0.3, 0.5, 0.3, 0.2]),
+            outer_base: Neighbours::new([0.0, 0.1, 0.1, 0.2, 0.2, 0.0]),
         };
 
         assert_abs_diff_eq!(
@@ -53,8 +54,8 @@ mod tests {
         let height = Height {
             height_amp: 0.5,
             height_base: 0.2,
-            outer_amp: Outer::new(&[0.3, 0.2, 0.3, 0.5, 0.3, 0.2]),
-            outer_base: Outer::new(&[0.3, 0.1, 0.1, 0.2, 0.2, 0.0]),
+            outer_amp: Neighbours::new([0.3, 0.2, 0.3, 0.5, 0.3, 0.2]),
+            outer_base: Neighbours::new([0.3, 0.1, 0.1, 0.2, 0.2, 0.0]),
         };
 
         let (amp, base) = height.amp_and_base(Vec2::splat(0.0));

@@ -1,12 +1,9 @@
 use super::asset::Terrain;
 use bevy::prelude::*;
-use expl_codex::Id;
+use expl_codex::{Codex, Id};
 use expl_hexgrid::Neighbours;
 use noisy_bevy::simplex_noise_2d;
-use std::{
-    cmp::min,
-    ops::{Index, IndexMut},
-};
+use std::cmp::min;
 
 #[derive(Component, Reflect, Default, Deref)]
 #[reflect(Component)]
@@ -57,73 +54,8 @@ pub struct ZoneDecorationTree;
 #[reflect(Component)]
 pub struct Water;
 
-#[derive(Default, Reflect, Copy, Clone)]
-pub struct Outer([f32; 6]);
-
-impl Outer {
-    pub fn new(neighbour_values: &[f32]) -> Self {
-        let mut data = <[f32; 6]>::default();
-        data[..6].copy_from_slice(&neighbour_values[..6]);
-        Self(data)
-    }
-
-    fn corner(&self, self_value: f32, idx: usize) -> f32 {
-        let a = self[idx];
-        let b = self[(idx + 1) % 6];
-
-        let min_value = self_value.min(a).min(b);
-        let max_value = self_value.max(a).max(b);
-
-        if min_value < 0.0 && max_value < 0.0 {
-            max_value
-        } else if min_value < 0.0 {
-            0.0
-        } else {
-            min_value
-        }
-    }
-
-    fn edge(&self, self_value: f32, idx: usize) -> f32 {
-        let a = self[idx];
-
-        let min_value = self_value.min(a);
-        let max_value = self_value.max(a);
-
-        if min_value < 0.0 && max_value < 0.0 {
-            max_value
-        } else if min_value < 0.0 {
-            0.0
-        } else {
-            min_value
-        }
-    }
-}
-
-impl Index<usize> for Outer {
-    type Output = f32;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.0[index]
-    }
-}
-
-impl IndexMut<usize> for Outer {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.0[index]
-    }
-}
-
-impl From<[f32; 6]> for Outer {
-    fn from(value: [f32; 6]) -> Self {
-        Self(value)
-    }
-}
-
-impl From<Outer> for [f32; 6] {
-    fn from(value: Outer) -> Self {
-        value.0
-    }
-}
+#[derive(Component, Default, Deref, DerefMut, Reflect, Copy, Clone)]
+pub struct OuterTerrain(pub Neighbours<Id<Terrain>>);
 
 #[derive(Component, Default, Deref, DerefMut, Reflect, Copy, Clone)]
 pub struct OuterVisible(pub Neighbours<bool>);
@@ -138,29 +70,70 @@ impl OuterVisible {
     }
 }
 
-#[derive(Component, Reflect, Default, Copy, Clone)]
-#[reflect(Component)]
+#[derive(Reflect, Default, Copy, Clone)]
 pub struct Height {
     pub height_amp: f32,
     pub height_base: f32,
     #[reflect(skip_serializing)]
-    pub outer_amp: Outer,
+    pub outer_amp: Neighbours<f32>,
     #[reflect(skip_serializing)]
-    pub outer_base: Outer,
+    pub outer_base: Neighbours<f32>,
 }
 
 impl Height {
+    pub fn new(
+        terrain_codex: &Codex<Terrain>,
+        terrain_id: Id<Terrain>,
+        neighbours: &Neighbours<Id<Terrain>>,
+    ) -> Self {
+        Self {
+            height_amp: terrain_codex[&terrain_id].height_amp,
+            height_base: terrain_codex[&terrain_id].height_base,
+            outer_amp: neighbours.map(|terrain| terrain_codex[&terrain].height_amp),
+            outer_base: neighbours.map(|terrain| terrain_codex[&terrain].height_base),
+        }
+    }
+
+    fn clamp(min_value: f32, max_value: f32) -> f32 {
+        if min_value < 0.0 && max_value < 0.0 {
+            max_value
+        } else if min_value < 0.0 {
+            0.0
+        } else {
+            min_value
+        }
+    }
+
+    fn compute_corner(outer: &Neighbours<f32>, self_value: f32, idx: usize) -> f32 {
+        let a = outer[idx];
+        let b = outer[(idx + 1) % 6];
+
+        let min_value = self_value.min(a).min(b);
+        let max_value = self_value.max(a).max(b);
+
+        Height::clamp(min_value, max_value)
+    }
+
+    fn compute_edge(outer: &Neighbours<f32>, self_value: f32, idx: usize) -> f32 {
+        let a = outer[idx];
+
+        let min_value = self_value.min(a);
+        let max_value = self_value.max(a);
+
+        Height::clamp(min_value, max_value)
+    }
+
     fn corner(&self, idx: usize) -> (f32, f32) {
         (
-            self.outer_amp.corner(self.height_amp, idx),
-            self.outer_base.corner(self.height_base, idx),
+            Height::compute_corner(&self.outer_amp, self.height_amp, idx),
+            Height::compute_corner(&self.outer_base, self.height_base, idx),
         )
     }
 
     fn edge(&self, idx: usize) -> (f32, f32) {
         (
-            self.outer_amp.edge(self.height_amp, idx),
-            self.outer_base.edge(self.height_base, idx),
+            Height::compute_edge(&self.outer_amp, self.height_amp, idx),
+            Height::compute_edge(&self.outer_base, self.height_base, idx),
         )
     }
 
