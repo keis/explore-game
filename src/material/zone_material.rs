@@ -69,7 +69,7 @@ impl ZoneMaterial {
             height_base: height.height_base,
             outer_amp: height.outer_amp.into(),
             outer_base: height.outer_base.into(),
-            outer_visible: **outer_visible,
+            outer_visible: *outer_visible.values(),
             ..default()
         }
     }
@@ -170,7 +170,7 @@ fn apply_to_material(
         };
         material.visible = fog.visible;
         material.explored = fog.explored;
-        material.outer_visible = **outer_visible;
+        material.outer_visible = *outer_visible.values();
     }
 }
 

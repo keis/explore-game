@@ -1,6 +1,7 @@
 use super::asset::Terrain;
 use bevy::prelude::*;
 use expl_codex::Id;
+use expl_hexgrid::Neighbours;
 use noisy_bevy::simplex_noise_2d;
 use std::{
     cmp::min,
@@ -124,8 +125,18 @@ impl From<Outer> for [f32; 6] {
     }
 }
 
-#[derive(Component, Default, Deref, Reflect, Copy, Clone)]
-pub struct OuterVisible(pub [bool; 6]);
+#[derive(Component, Default, Deref, DerefMut, Reflect, Copy, Clone)]
+pub struct OuterVisible(pub Neighbours<bool>);
+
+impl OuterVisible {
+    pub fn with_data(data: [bool; 6]) -> Self {
+        Self(Neighbours::new(data))
+    }
+
+    pub fn all_visible() -> Self {
+        Self(Neighbours::new([true; 6]))
+    }
+}
 
 #[derive(Component, Reflect, Default, Copy, Clone)]
 #[reflect(Component)]

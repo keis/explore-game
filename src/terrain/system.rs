@@ -107,7 +107,7 @@ pub fn fluff_zone(
         }
 
         let outer_visible = if fog.explored {
-            OuterVisible([true; 6])
+            OuterVisible::all_visible()
         } else {
             let mut bits = [false; 6];
             for (idx, coord) in position.0.neighbours().enumerate() {
@@ -123,7 +123,7 @@ pub fn fluff_zone(
                     bits[(idx + 1) % 6] = true;
                 }
             }
-            OuterVisible(bits)
+            OuterVisible::with_data(bits)
         };
         commands.entity(entity).insert(ZoneFluffBundle::new(
             &mut zone_params,
@@ -217,7 +217,7 @@ pub fn update_outer_visible(
             let Ok((_, mut outer_visible)) = zone_query.get_mut(entity) else {
                 continue;
             };
-            outer_visible.0 = [true; 6];
+            *outer_visible = OuterVisible::all_visible();
 
             for (idx, coord) in position.0.neighbours().enumerate() {
                 let Some((neighbour_fog, mut neighbour_outer_visible)) =
@@ -228,9 +228,9 @@ pub fn update_outer_visible(
                 if neighbour_fog.explored {
                     continue;
                 }
-                neighbour_outer_visible.0[(idx + 2) % 6] = true;
-                neighbour_outer_visible.0[(idx + 3) % 6] = true;
-                neighbour_outer_visible.0[(idx + 4) % 6] = true;
+                neighbour_outer_visible[(idx + 2) % 6] = true;
+                neighbour_outer_visible[(idx + 3) % 6] = true;
+                neighbour_outer_visible[(idx + 4) % 6] = true;
             }
         }
     }
