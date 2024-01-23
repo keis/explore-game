@@ -39,11 +39,11 @@ pub struct AssetsPlugin;
 
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<AssetState>()
-            .add_loading_state(
-                LoadingState::new(AssetState::Loading).continue_to_state(AssetState::Loaded),
-            )
-            .add_collection_to_loading_state::<_, MainAssets>(AssetState::Loading)
-            .add_collection_to_loading_state::<_, CodexAssets>(AssetState::Loading);
+        app.add_state::<AssetState>().add_loading_state(
+            LoadingState::new(AssetState::Loading)
+                .continue_to_state(AssetState::Loaded)
+                .load_collection::<MainAssets>()
+                .load_collection::<CodexAssets>(),
+        );
     }
 }
