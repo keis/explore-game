@@ -83,7 +83,6 @@ pub fn show_decorations_behind_camp(
 pub fn fluff_zone(
     mut commands: Commands,
     mut zone_params: ZoneParams,
-    terrain_codex: TerrainCodex,
     map_query: Query<(&MapLayout, &ZoneLayer)>,
     mut zone_query: ParamSet<(
         Query<(&MapPosition, &TerrainId), Without<GlobalTransform>>,
@@ -92,7 +91,6 @@ pub fn fluff_zone(
     neighbour_fog_query: Query<&Fog>,
 ) -> Result<(), ExplError> {
     let (&MapLayout(layout), zone_layer) = map_query.get_single()?;
-    let terrain_codex = terrain_codex.get()?;
 
     let mut terrain_grid = Grid::<_, Id<Terrain>>::new(layout);
     for (position, terrain) in &zone_query.p0() {
@@ -127,7 +125,6 @@ pub fn fluff_zone(
 
         commands.entity(entity).insert(ZoneFluffBundle::new(
             &mut zone_params,
-            terrain_codex,
             position,
             terrain,
             fog,

@@ -5,33 +5,22 @@
 }
 #import bevy_render::instance_index::get_instance_index
 #import noisy_bevy::simplex_noise_2d
-
-struct UniformData {
-    visible: u32,
-    explored: u32,
-    hover: u32,
-    color_a: vec4<f32>,
-    color_b: vec4<f32>,
-    color_c: vec4<f32>,
-    height_amp: f32,
-    height_base: f32,
-    // Outer amplifier
-    outer_amp_e: f32,
-    outer_amp_se: f32,
-    outer_amp_sw: f32,
-    outer_amp_w: f32,
-    outer_amp_nw: f32,
-    outer_amp_ne: f32,
-    // Outer base
-    outer_base_e: f32,
-    outer_base_se: f32,
-    outer_base_sw: f32,
-    outer_base_w: f32,
-    outer_base_nw: f32,
-    outer_base_ne: f32,
+#import "materials/zone_types.wgsl"::{
+    UniformData,
+    TerrainData,
+    ZONE_FLAGS_EXPLORED_BIT,
+    ZONE_FLAGS_OUTER_VISIBLE_E_BIT,
+    ZONE_FLAGS_OUTER_VISIBLE_SE_BIT,
+    ZONE_FLAGS_OUTER_VISIBLE_SW_BIT,
+    ZONE_FLAGS_OUTER_VISIBLE_W_BIT,
+    ZONE_FLAGS_OUTER_VISIBLE_NW_BIT,
+    ZONE_FLAGS_OUTER_VISIBLE_NE_BIT
 }
 
-@group(1) @binding(4)
+@group(1) @binding(0)
+var<storage> terrain_data: array<TerrainData>;
+
+@group(1) @binding(1)
 var<uniform> uniform_data: UniformData;
 
 fn corner(self_value: f32, a_value: f32, b_value: f32) -> f32 {
@@ -67,19 +56,35 @@ fn edge(self_value: f32, a_value: f32) -> f32 {
 }
 
 fn amp_and_base(position: vec2<f32>) -> vec2<f32> {
+    let terrain = terrain_data[uniform_data.terrain_idx];
+
+    let outer_amp_e = select(0.0, terrain_data[uniform_data.outer_terrain_e].height_amp, (uniform_data.flags & ZONE_FLAGS_OUTER_VISIBLE_E_BIT) != 0u);
+    let outer_amp_se = select(0.0, terrain_data[uniform_data.outer_terrain_se].height_amp, (uniform_data.flags & ZONE_FLAGS_OUTER_VISIBLE_SE_BIT) != 0u);
+    let outer_amp_sw = select(0.0, terrain_data[uniform_data.outer_terrain_sw].height_amp, (uniform_data.flags & ZONE_FLAGS_OUTER_VISIBLE_SW_BIT) != 0u);
+    let outer_amp_w = select(0.0, terrain_data[uniform_data.outer_terrain_w].height_amp, (uniform_data.flags & ZONE_FLAGS_OUTER_VISIBLE_W_BIT) != 0u);
+    let outer_amp_nw = select(0.0, terrain_data[uniform_data.outer_terrain_nw].height_amp, (uniform_data.flags & ZONE_FLAGS_OUTER_VISIBLE_NW_BIT) != 0u);
+    let outer_amp_ne = select(0.0, terrain_data[uniform_data.outer_terrain_ne].height_amp, (uniform_data.flags & ZONE_FLAGS_OUTER_VISIBLE_NE_BIT) != 0u);
+
+    let outer_base_e = select(0.0, terrain_data[uniform_data.outer_terrain_e].height_base, (uniform_data.flags & ZONE_FLAGS_OUTER_VISIBLE_E_BIT) != 0u);
+    let outer_base_se = select(0.0, terrain_data[uniform_data.outer_terrain_se].height_base, (uniform_data.flags & ZONE_FLAGS_OUTER_VISIBLE_SE_BIT) != 0u);
+    let outer_base_sw = select(0.0, terrain_data[uniform_data.outer_terrain_sw].height_base, (uniform_data.flags & ZONE_FLAGS_OUTER_VISIBLE_SW_BIT) != 0u);
+    let outer_base_w = select(0.0, terrain_data[uniform_data.outer_terrain_w].height_base, (uniform_data.flags & ZONE_FLAGS_OUTER_VISIBLE_W_BIT) != 0u);
+    let outer_base_nw = select(0.0, terrain_data[uniform_data.outer_terrain_nw].height_base, (uniform_data.flags & ZONE_FLAGS_OUTER_VISIBLE_NW_BIT) != 0u);
+    let outer_base_ne = select(0.0, terrain_data[uniform_data.outer_terrain_ne].height_base, (uniform_data.flags & ZONE_FLAGS_OUTER_VISIBLE_NE_BIT) != 0u);
+
     // South corner
     if position.y >= 0.9 {
         return vec2<f32>(
-            corner(uniform_data.height_amp, uniform_data.outer_amp_se, uniform_data.outer_amp_sw),
-            corner(uniform_data.height_base, uniform_data.outer_base_se, uniform_data.outer_base_sw),
+            corner(terrain.height_amp, outer_amp_se, outer_amp_sw),
+            corner(terrain.height_base, outer_base_se, outer_base_sw),
         );
     }
 
     // North Corner
     if position.y <= -0.9 {
         return vec2<f32>(
-            corner(uniform_data.height_amp, uniform_data.outer_amp_nw, uniform_data.outer_amp_ne),
-            corner(uniform_data.height_base, uniform_data.outer_base_nw, uniform_data.outer_base_ne),
+            corner(terrain.height_amp, outer_amp_nw, outer_amp_ne),
+            corner(terrain.height_base, outer_base_nw, outer_base_ne),
         );
     }
 
@@ -88,33 +93,33 @@ fn amp_and_base(position: vec2<f32>) -> vec2<f32> {
         if position.y > position.x * -0.5 + 0.9 {
             if position.x > 0.8 {
                 return vec2<f32>(
-                    corner(uniform_data.height_amp, uniform_data.outer_amp_e, uniform_data.outer_amp_se),
-                    corner(uniform_data.height_base, uniform_data.outer_base_e, uniform_data.outer_base_se),
+                    corner(terrain.height_amp, outer_amp_e, outer_amp_se),
+                    corner(terrain.height_base, outer_base_e, outer_base_se),
                 );
             }
             return vec2<f32>(
-                edge(uniform_data.height_amp, uniform_data.outer_amp_se),
-                edge(uniform_data.height_base, uniform_data.outer_base_se),
+                edge(terrain.height_amp, outer_amp_se),
+                edge(terrain.height_base, outer_base_se),
             );
         }
         // North-East Corner or North-East Edge
         if position.y < position.x * 0.5 - 0.9 {
             if position.x > 0.8 {
                 return vec2<f32>(
-                    corner(uniform_data.height_amp, uniform_data.outer_amp_ne, uniform_data.outer_amp_e),
-                    corner(uniform_data.height_base, uniform_data.outer_base_ne, uniform_data.outer_base_e),
+                    corner(terrain.height_amp, outer_amp_ne, outer_amp_e),
+                    corner(terrain.height_base, outer_base_ne, outer_base_e),
                 );
             }
             return vec2<f32>(
-                edge(uniform_data.height_amp, uniform_data.outer_amp_ne),
-                edge(uniform_data.height_base, uniform_data.outer_base_ne),
+                edge(terrain.height_amp, outer_amp_ne),
+                edge(terrain.height_base, outer_base_ne),
             );
         }
         // East Edge
         if position.x > 0.8 {
             return vec2<f32>(
-                edge(uniform_data.height_amp, uniform_data.outer_amp_e),
-                edge(uniform_data.height_base, uniform_data.outer_base_e),
+                edge(terrain.height_amp, outer_amp_e),
+                edge(terrain.height_base, outer_base_e),
             );
         }
     }
@@ -124,40 +129,40 @@ fn amp_and_base(position: vec2<f32>) -> vec2<f32> {
         if position.y > -position.x * -0.5 + 0.9 {
             if position.x < -0.8 {
                 return vec2<f32>(
-                    corner(uniform_data.height_amp, uniform_data.outer_amp_w, uniform_data.outer_amp_sw),
-                    corner(uniform_data.height_base, uniform_data.outer_base_w, uniform_data.outer_base_sw),
+                    corner(terrain.height_amp, outer_amp_w, outer_amp_sw),
+                    corner(terrain.height_base, outer_base_w, outer_base_sw),
                 );
             }
             return vec2<f32>(
-                edge(uniform_data.height_amp, uniform_data.outer_amp_sw),
-                edge(uniform_data.height_base, uniform_data.outer_base_sw),
+                edge(terrain.height_amp, outer_amp_sw),
+                edge(terrain.height_base, outer_base_sw),
             );
         }
         // North-West Corner or North-West Edge
         if position.y < -position.x * 0.5 - 0.9 {
             if position.x < -0.8 {
                 return vec2<f32>(
-                    corner(uniform_data.height_amp, uniform_data.outer_amp_nw, uniform_data.outer_amp_w),
-                    corner(uniform_data.height_base, uniform_data.outer_base_nw, uniform_data.outer_base_w),
+                    corner(terrain.height_amp, outer_amp_nw, outer_amp_w),
+                    corner(terrain.height_base, outer_base_nw, outer_base_w),
                 );
             }
             return vec2<f32>(
-                edge(uniform_data.height_amp, uniform_data.outer_amp_nw),
-                edge(uniform_data.height_base, uniform_data.outer_base_nw),
+                edge(terrain.height_amp, outer_amp_nw),
+                edge(terrain.height_base, outer_base_nw),
             );
         }
         // West Edge
         if position.x < -0.8 {
             return vec2<f32>(
-                edge(uniform_data.height_amp, uniform_data.outer_amp_w),
-                edge(uniform_data.height_base, uniform_data.outer_base_w),
+                edge(terrain.height_amp, outer_amp_w),
+                edge(terrain.height_base, outer_base_w),
             );
         }
     }
 
     // Internal
-    if uniform_data.explored == 1u {
-        return vec2<f32>(uniform_data.height_amp, uniform_data.height_base);
+    if (uniform_data.flags & ZONE_FLAGS_EXPLORED_BIT) != 0u {
+        return vec2<f32>(terrain.height_amp, terrain.height_base);
     }
     return vec2<f32>(0.0, 0.0);
 }

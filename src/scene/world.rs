@@ -4,7 +4,7 @@ use crate::{
     map::{MapCommandsExt, MapLayout, MapPosition, PresenceLayer, ZoneLayer},
     map_generator::{GenerateMapTask, MapPrototype, MapSeed},
     structure::{PortalBundle, SafeHavenBundle, SpawnerBundle, StructureCodex, StructureParams},
-    terrain::{CrystalDeposit, TerrainCodex, TerrainId, ZoneBundle, ZoneParams},
+    terrain::{CrystalDeposit, TerrainId, ZoneBundle, ZoneParams},
     turn::Turn,
     ExplError,
 };
@@ -55,10 +55,8 @@ pub fn spawn_generated_map(
     mut commands: Commands,
     mut zone_params: ZoneParams,
     map_prototype_query: Query<&MapPrototype>,
-    terrain_codex: TerrainCodex,
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.get_single()?;
-    let terrain_codex = terrain_codex.get()?;
     let void = Id::from_tag("void");
     let tiles = prototype
         .tiles
@@ -73,11 +71,7 @@ pub fn spawn_generated_map(
             let mut zone = commands.spawn((
                 Name::new(format!("Zone {}", position)),
                 save::Save,
-                ZoneBundle::new(position, zoneproto).with_fluff(
-                    &mut zone_params,
-                    terrain_codex,
-                    neighbours,
-                ),
+                ZoneBundle::new(position, zoneproto).with_fluff(&mut zone_params, neighbours),
             ));
 
             if zoneproto.crystals {

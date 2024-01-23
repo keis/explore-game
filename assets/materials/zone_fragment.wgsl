@@ -7,21 +7,18 @@
 #import bevy_core_pipeline::tonemapping::tone_mapping
 #import noisy_bevy::fbm_simplex_2d;
 #import "materials/common.wgsl"::{pixel_noise, modulo};
-
-struct UniformData {
-    visible: u32,
-    explored: u32,
-    hover: u32,
-    color_a: vec4<f32>,
-    color_b: vec4<f32>,
-    color_c: vec4<f32>,
+#import "materials/zone_types.wgsl"::{
+    UniformData,
+    TerrainData,
+    ZONE_FLAGS_VISIBLE_BIT,
+    ZONE_FLAGS_EXPLORED_BIT,
+    ZONE_FLAGS_HOVER_BIT
 }
 
-@group(1) @binding(2)
-var cloud_texture: texture_2d<f32>;
-@group(1) @binding(3)
-var cloud_texture_sampler: sampler;
-@group(1) @binding(4)
+@group(1) @binding(0)
+var<storage> terrain_data: array<TerrainData>;
+
+@group(1) @binding(1)
 var<uniform> uniform_data: UniformData;
 
 fn cloud_noise(world_uv: vec2<f32>) -> vec4<f32> {
@@ -38,24 +35,26 @@ fn cloud_noise(world_uv: vec2<f32>) -> vec4<f32> {
 
 @fragment
 fn fragment(@builtin(front_facing) is_front: bool, mesh: VertexOutput) -> @location(0) vec4<f32> {
+    let terrain = terrain_data[uniform_data.terrain_idx];
+
     var output_color = vec4<f32>(1.0);
 #ifdef VERTEX_COLORS
     output_color = output_color * mesh.color
 #endif
-    output_color = output_color * pixel_noise(mesh.world_position.xz, uniform_data.color_a, uniform_data.color_b, uniform_data.color_c);
+    output_color = output_color * pixel_noise(mesh.world_position.xz, terrain.color_a, terrain.color_b, terrain.color_c);
 
     output_color = mix(output_color, vec4<f32>(1.0), clamp(mesh.world_position.y - 0.3, 0.0, 1.0) * 2.0);
 
     var cloud_color = cloud_noise(mesh.world_position.xz);
-    if uniform_data.visible == 0u {
+    if (uniform_data.flags & ZONE_FLAGS_VISIBLE_BIT) == 0u {
         output_color = mix(output_color, cloud_color, cloud_color[3]);
     }
 
-    if uniform_data.explored == 0u {
+    if (uniform_data.flags & ZONE_FLAGS_EXPLORED_BIT) == 0u {
         output_color = vec4<f32>(0.005, 0.005, 0.01, 1.0);
     }
 
-    if uniform_data.hover == 1u {
+    if (uniform_data.flags & ZONE_FLAGS_HOVER_BIT) != 0u {
         var d = length(mesh.uv - 0.5);
         var c = smoothstep(0.3, 0.5, d) * 0.7;
         output_color = mix(output_color, vec4<f32>(0.863, 0.969, 0.710, 1.0), c);
