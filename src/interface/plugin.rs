@@ -12,10 +12,11 @@ pub struct InterfacePlugin;
 impl Plugin for InterfacePlugin {
     fn build(&self, app: &mut App) {
         app.add_loading_state(
-            LoadingState::new(AssetState::Loading).continue_to_state(AssetState::Loaded),
+            LoadingState::new(AssetState::Loading)
+                .continue_to_state(AssetState::Loaded)
+                .load_collection::<InterfaceAssets>(),
         )
         .add_state::<InterfaceState>()
-        .add_collection_to_loading_state::<_, InterfaceAssets>(AssetState::Loading)
         .add_systems(
             OnEnter(AssetState::Loaded),
             (
