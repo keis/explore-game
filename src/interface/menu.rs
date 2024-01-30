@@ -67,6 +67,7 @@ fn spawn_menu_item(
 pub fn spawn_menu(mut commands: Commands, assets: Res<InterfaceAssets>) {
     commands
         .spawn((
+            Name::new("Menu Container"),
             NodeBundle {
                 style: Style {
                     width: Val::Percent(100.0),

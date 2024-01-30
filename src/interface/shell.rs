@@ -68,13 +68,147 @@ fn spawn_toolbar_icon(
         });
 }
 
+fn spawn_toolbar(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
+    parent
+        .spawn((
+            Name::new("Toolbar"),
+            NodeBundle {
+                style: Style {
+                    align_self: AlignSelf::FlexStart,
+                    padding: UiRect::all(Val::Px(2.0)),
+                    ..default()
+                },
+                ..default()
+            },
+        ))
+        .with_children(|parent| {
+            spawn_toolbar_icon(
+                parent,
+                assets,
+                ActionButton(Action::ResumeMove),
+                assets.arrow_icon.clone(),
+                "Resume move",
+                Some("<M>"),
+            );
+            spawn_toolbar_icon(
+                parent,
+                assets,
+                ActionButton(Action::Camp),
+                assets.campfire_icon.clone(),
+                "Make/Enter camp",
+                Some("<C>"),
+            );
+            spawn_toolbar_icon(
+                parent,
+                assets,
+                ActionButton(Action::BreakCamp),
+                assets.cancel_icon.clone(),
+                "Break camp",
+                None::<&str>,
+            );
+            spawn_toolbar_icon(
+                parent,
+                assets,
+                ActionButton(Action::CreateParty),
+                assets.knapsack_icon.clone(),
+                "Create party",
+                None::<&str>,
+            );
+            spawn_toolbar_icon(
+                parent,
+                assets,
+                ActionButton(Action::SplitParty),
+                assets.back_forth_icon.clone(),
+                "Split selected from party",
+                None::<&str>,
+            );
+            spawn_toolbar_icon(
+                parent,
+                assets,
+                ActionButton(Action::MergeParty),
+                assets.contract_icon.clone(),
+                "Merge selected parties",
+                None::<&str>,
+            );
+            spawn_toolbar_icon(
+                parent,
+                assets,
+                ActionButton(Action::CollectCrystals),
+                assets.crystals_icon.clone(),
+                "Collect crystals",
+                None::<&str>,
+            );
+            spawn_toolbar_icon(
+                parent,
+                assets,
+                ActionButton(Action::OpenPortal),
+                assets.magic_swirl_icon.clone(),
+                "Open portal",
+                None::<&str>,
+            );
+            spawn_toolbar_icon(
+                parent,
+                assets,
+                ActionButton(Action::EnterPortal),
+                assets.portal_icon.clone(),
+                "Enter portal",
+                None::<&str>,
+            );
+        });
+}
+
+fn spawn_next_turn_button(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
+    parent
+        .spawn((
+            Name::new("Next Turn Button"),
+            TooltipTarget,
+            ButtonBundle {
+                style: Style {
+                    width: Val::Px(200.0),
+                    height: Val::Px(60.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                background_color: Color::rgb(0.4, 0.9, 0.4).into(),
+                ..default()
+            },
+            ActionButton(Action::NextTurn),
+            TurnButton,
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                TurnText,
+                TextBundle::from_section(
+                    "Turn ?",
+                    TextStyle {
+                        font: assets.font.clone(),
+                        font_size: 32.0,
+                        color: Color::WHITE,
+                    },
+                )
+                .with_text_alignment(TextAlignment::Center)
+                .with_style(Style { ..default() }),
+            ));
+            spawn_tooltip(
+                parent,
+                assets,
+                TooltipPosition::Above,
+                "Next turn",
+                Some("<Return>"),
+            );
+        });
+}
+
 pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
     commands
         .spawn((
+            Name::new("Shell Container"),
             NodeBundle {
                 style: Style {
                     width: Val::Percent(100.0),
                     height: Val::Percent(100.0),
+                    flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::SpaceBetween,
                     ..default()
                 },
@@ -86,167 +220,85 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
             Shell,
         ))
         .with_children(|parent| {
-            parent.spawn((
-                ZoneText,
-                TextBundle::from_section(
-                    "Zone: ",
-                    TextStyle {
-                        font: assets.font.clone(),
-                        font_size: 32.0,
-                        color: Color::WHITE,
-                    },
-                )
-                .with_text_alignment(TextAlignment::Center)
-                .with_style(Style {
-                    align_self: AlignSelf::FlexEnd,
-                    position_type: PositionType::Absolute,
-                    top: Val::Px(5.0),
-                    right: Val::Px(15.0),
-                    ..default()
-                }),
-            ));
             parent
-                .spawn((NodeBundle::default(), Pickable::IGNORE))
+                .spawn((
+                    Name::new("Top"),
+                    NodeBundle {
+                        style: Style {
+                            width: Val::Percent(100.0),
+                            justify_content: JustifyContent::SpaceBetween,
+                            ..default()
+                        },
+                        focus_policy: FocusPolicy::Pass,
+                        ..default()
+                    },
+                    Pickable::IGNORE,
+                ))
                 .with_children(|parent| {
                     parent
+                        .spawn((NodeBundle::default(), Pickable::IGNORE))
+                        .with_children(|parent| {
+                            parent
+                                .spawn((
+                                    NodeBundle {
+                                        style: Style {
+                                            flex_direction: FlexDirection::Column,
+                                            ..default()
+                                        },
+                                        ..default()
+                                    },
+                                    Pickable::IGNORE,
+                                ))
+                                .with_children(|parent| {
+                                    parent.spawn(CampListBundle::default());
+                                    parent.spawn(PartyListBundle::default());
+                                });
+                            parent.spawn(CharacterListBundle::default());
+                        });
+                    spawn_toolbar(parent, &assets);
+                    parent
                         .spawn((
+                            Name::new("Zone Display"),
                             NodeBundle {
                                 style: Style {
-                                    flex_direction: FlexDirection::Column,
+                                    width: Val::Px(100.0),
+                                    justify_content: JustifyContent::End,
                                     ..default()
                                 },
                                 ..default()
                             },
-                            Pickable::IGNORE,
                         ))
                         .with_children(|parent| {
-                            parent.spawn(CampListBundle::default());
-                            parent.spawn(PartyListBundle::default());
+                            parent.spawn((
+                                ZoneText,
+                                TextBundle::from_section(
+                                    "Zone: ",
+                                    TextStyle {
+                                        font: assets.font.clone(),
+                                        font_size: 32.0,
+                                        color: Color::WHITE,
+                                    },
+                                )
+                                .with_text_alignment(TextAlignment::Center),
+                            ));
                         });
-                    parent.spawn(CharacterListBundle::default());
-                });
-            parent
-                .spawn(NodeBundle {
-                    style: Style {
-                        align_self: AlignSelf::FlexStart,
-                        padding: UiRect::all(Val::Px(2.0)),
-                        ..default()
-                    },
-                    ..default()
-                })
-                .with_children(|parent| {
-                    spawn_toolbar_icon(
-                        parent,
-                        &assets,
-                        ActionButton(Action::ResumeMove),
-                        assets.arrow_icon.clone(),
-                        "Resume move",
-                        Some("<M>"),
-                    );
-                    spawn_toolbar_icon(
-                        parent,
-                        &assets,
-                        ActionButton(Action::Camp),
-                        assets.campfire_icon.clone(),
-                        "Make/Enter camp",
-                        Some("<C>"),
-                    );
-                    spawn_toolbar_icon(
-                        parent,
-                        &assets,
-                        ActionButton(Action::BreakCamp),
-                        assets.cancel_icon.clone(),
-                        "Break camp",
-                        None::<&str>,
-                    );
-                    spawn_toolbar_icon(
-                        parent,
-                        &assets,
-                        ActionButton(Action::CreateParty),
-                        assets.knapsack_icon.clone(),
-                        "Create party",
-                        None::<&str>,
-                    );
-                    spawn_toolbar_icon(
-                        parent,
-                        &assets,
-                        ActionButton(Action::SplitParty),
-                        assets.back_forth_icon.clone(),
-                        "Split selected from party",
-                        None::<&str>,
-                    );
-                    spawn_toolbar_icon(
-                        parent,
-                        &assets,
-                        ActionButton(Action::MergeParty),
-                        assets.contract_icon.clone(),
-                        "Merge selected parties",
-                        None::<&str>,
-                    );
-                    spawn_toolbar_icon(
-                        parent,
-                        &assets,
-                        ActionButton(Action::CollectCrystals),
-                        assets.crystals_icon.clone(),
-                        "Collect crystals",
-                        None::<&str>,
-                    );
-                    spawn_toolbar_icon(
-                        parent,
-                        &assets,
-                        ActionButton(Action::OpenPortal),
-                        assets.magic_swirl_icon.clone(),
-                        "Open portal",
-                        None::<&str>,
-                    );
-                    spawn_toolbar_icon(
-                        parent,
-                        &assets,
-                        ActionButton(Action::EnterPortal),
-                        assets.portal_icon.clone(),
-                        "Enter portal",
-                        None::<&str>,
-                    );
                 });
             parent
                 .spawn((
-                    TooltipTarget,
-                    ButtonBundle {
+                    Name::new("Bottom"),
+                    NodeBundle {
                         style: Style {
-                            width: Val::Px(200.0),
-                            height: Val::Px(60.0),
-                            align_self: AlignSelf::FlexEnd,
-                            align_items: AlignItems::Center,
-                            justify_content: JustifyContent::Center,
+                            width: Val::Percent(100.0),
+                            justify_content: JustifyContent::FlexEnd,
                             ..default()
                         },
-                        background_color: Color::rgb(0.4, 0.9, 0.4).into(),
+                        focus_policy: FocusPolicy::Pass,
                         ..default()
                     },
-                    ActionButton(Action::NextTurn),
-                    TurnButton,
+                    Pickable::IGNORE,
                 ))
                 .with_children(|parent| {
-                    parent.spawn((
-                        TurnText,
-                        TextBundle::from_section(
-                            "Turn ?",
-                            TextStyle {
-                                font: assets.font.clone(),
-                                font_size: 32.0,
-                                color: Color::WHITE,
-                            },
-                        )
-                        .with_text_alignment(TextAlignment::Center)
-                        .with_style(Style { ..default() }),
-                    ));
-                    spawn_tooltip(
-                        parent,
-                        &assets,
-                        TooltipPosition::Above,
-                        "Next turn",
-                        Some("<Return>"),
-                    );
+                    spawn_next_turn_button(parent, &assets);
                 });
         });
 }
@@ -282,7 +334,7 @@ pub fn update_zone_text(
         .filter(|(_, interaction)| **interaction == PickingInteraction::Hovered)
     {
         for mut text in &mut zone_text_query {
-            text.sections[0].value = format!("{:?}", zone_position.0);
+            text.sections[0].value = format!("{}", zone_position.0);
         }
     }
 }
