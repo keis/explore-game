@@ -42,7 +42,9 @@ bevy_mod_picking = { version = "0.17", features = ["backend_egui"] }
 bevy_obj = "0.12"
 bevy_sprite3d = "2.7"
 bevy = { version = "0.12", features = ["wayland", "dynamic_linking", "file_watcher"] }
+bitflags = "2"
 clap = { workspace = true, features = ["derive"] }
+enum-map = "2.7.3"
 expl_codex = { version = "0.1.0", path = "crates/expl_codex" }
 expl_databinding = { version = "0.1.0", path = "crates/expl_databinding" }
 expl_hexagon = { version = "0.1.0", path = "crates/expl_hexagon" }
@@ -62,7 +64,6 @@ serde = { workspace = true }
 smallvec = { workspace = true }
 splines = { version = "4", features = ["glam"] }
 thiserror = { workspace = true }
-enum-map = "2.7.3"
 
 [dev-dependencies]
 approx = "0.5"

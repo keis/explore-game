@@ -2,12 +2,15 @@ use crate::{
     assets::{AssetState, CodexAssets},
     input::{ZoneOut, ZoneOver},
     map::Fog,
-    terrain::{Height, OuterVisible, Terrain, TerrainId},
+    terrain::{OuterVisible, Terrain, TerrainCodex, TerrainId},
 };
 use bevy::{
     prelude::*,
     reflect::{TypePath, TypeUuid},
-    render::render_resource::*,
+    render::{
+        render_resource::*,
+        renderer::{RenderDevice, RenderQueue},
+    },
 };
 use expl_codex::{Codex, Id};
 use expl_hexgrid::Neighbours;
@@ -18,6 +21,7 @@ pub struct ZoneMaterialPlugin;
 impl Plugin for ZoneMaterialPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<ZoneMaterial>::default())
+            .init_resource::<TerrainBuffer>()
             .add_systems(
                 Update,
                 (
@@ -27,124 +31,144 @@ impl Plugin for ZoneMaterialPlugin {
                     update_hover.run_if(on_event::<ZoneOver>().or_else(on_event::<ZoneOut>())),
                     apply_to_material,
                 ),
-            );
+            )
+            .add_systems(OnEnter(AssetState::Loaded), prepare_terrain_buffer);
     }
 }
 
-#[derive(Asset, AsBindGroup, TypeUuid, TypePath, Clone, Default)]
-#[uuid = "05f50382-7218-4860-8c4c-06dbd66694db"]
-#[uniform(4, ZoneMaterialUniform)]
-pub struct ZoneMaterial {
-    pub terrain: Id<Terrain>,
-    pub visible: bool,
-    pub explored: bool,
-    pub hover: bool,
-    pub color_a: Color,
-    pub color_b: Color,
-    pub color_c: Color,
-    pub height_amp: f32,
+#[derive(Clone, Default, ShaderType)]
+pub struct TerrainData {
     pub height_base: f32,
-    pub outer_amp: [f32; 6],
-    pub outer_base: [f32; 6],
-    pub outer_visible: [bool; 6],
+    pub height_amp: f32,
+    pub color_a: Vec4,
+    pub color_b: Vec4,
+    pub color_c: Vec4,
 }
 
-impl ZoneMaterial {
-    pub fn new(
-        terrain_codex: &Codex<Terrain>,
-        terrain: &TerrainId,
-        fog: &Fog,
-        outer_visible: &OuterVisible,
-        outer_terrain: &Neighbours<Id<Terrain>>,
-    ) -> Self {
-        let terrain_data = &terrain_codex[terrain];
-        let height = Height::new(terrain_codex, **terrain, outer_terrain);
-
+impl From<&Terrain> for TerrainData {
+    fn from(value: &Terrain) -> Self {
         Self {
-            terrain: **terrain,
-            color_a: terrain_data.color_a,
-            color_b: terrain_data.color_b,
-            color_c: terrain_data.color_c,
-            visible: fog.visible,
-            explored: fog.explored,
-            height_amp: height.height_amp,
-            height_base: height.height_base,
-            outer_amp: *height.outer_amp.values(),
-            outer_base: *height.outer_base.values(),
-            outer_visible: *outer_visible.values(),
-            ..default()
+            height_base: value.height_base,
+            height_amp: value.height_amp,
+            color_a: value.color_a.as_linear_rgba_f32().into(),
+            color_b: value.color_b.as_linear_rgba_f32().into(),
+            color_c: value.color_c.as_linear_rgba_f32().into(),
         }
+    }
+}
+
+bitflags::bitflags! {
+    #[repr(transparent)]
+    pub struct ZoneFlags: u32 {
+        const VISIBLE = 1;
+        const EXPLORED = 2;
+        const OUTER_VISIBLE_E = 4;
+        const OUTER_VISIBLE_SE = 8;
+        const OUTER_VISIBLE_SW = 16;
+        const OUTER_VISIBLE_W = 32;
+        const OUTER_VISIBLE_NW = 64;
+        const OUTER_VISIBLE_NE = 128;
+        const HOVER = 256;
+    }
+}
+
+impl From<&Fog> for ZoneFlags {
+    fn from(value: &Fog) -> Self {
+        let mut flags = ZoneFlags::empty();
+        flags.set(ZoneFlags::VISIBLE, value.visible);
+        flags.set(ZoneFlags::EXPLORED, value.explored);
+        flags
+    }
+}
+
+impl From<&OuterVisible> for ZoneFlags {
+    fn from(value: &OuterVisible) -> Self {
+        let mut flags = ZoneFlags::empty();
+        flags.set(ZoneFlags::OUTER_VISIBLE_E, value[0]);
+        flags.set(ZoneFlags::OUTER_VISIBLE_SE, value[1]);
+        flags.set(ZoneFlags::OUTER_VISIBLE_SW, value[2]);
+        flags.set(ZoneFlags::OUTER_VISIBLE_W, value[3]);
+        flags.set(ZoneFlags::OUTER_VISIBLE_NW, value[4]);
+        flags.set(ZoneFlags::OUTER_VISIBLE_NE, value[5]);
+        flags
     }
 }
 
 #[derive(Clone, Default, ShaderType)]
 pub struct ZoneMaterialUniform {
-    pub visible: u32,
-    pub explored: u32,
-    pub hover: u32,
-    pub color_a: Vec4,
-    pub color_b: Vec4,
-    pub color_c: Vec4,
-    pub height_amp: f32,
-    pub height_base: f32,
-    // Outer amplifier
-    pub outer_amp_e: f32,
-    pub outer_amp_se: f32,
-    pub outer_amp_sw: f32,
-    pub outer_amp_w: f32,
-    pub outer_amp_nw: f32,
-    pub outer_amp_ne: f32,
-    // Outer base
-    pub outer_base_e: f32,
-    pub outer_base_se: f32,
-    pub outer_base_sw: f32,
-    pub outer_base_w: f32,
-    pub outer_base_nw: f32,
-    pub outer_base_ne: f32,
+    terrain_idx: u32,
+    flags: u32,
+    // Outer terrain
+    outer_terrain_e: u32,
+    outer_terrain_se: u32,
+    outer_terrain_sw: u32,
+    outer_terrain_w: u32,
+    outer_terrain_nw: u32,
+    outer_terrain_ne: u32,
 }
 
-impl From<&ZoneMaterial> for ZoneMaterialUniform {
-    fn from(zone_material: &ZoneMaterial) -> Self {
-        Self {
-            visible: zone_material.visible as u32,
-            explored: zone_material.explored as u32,
-            hover: zone_material.hover as u32,
-            color_a: zone_material.color_a.as_linear_rgba_f32().into(),
-            color_b: zone_material.color_b.as_linear_rgba_f32().into(),
-            color_c: zone_material.color_c.as_linear_rgba_f32().into(),
-            height_amp: zone_material.height_amp,
-            height_base: zone_material.height_base,
-            outer_amp_e: zone_material.amp_for(0),
-            outer_amp_se: zone_material.amp_for(1),
-            outer_amp_sw: zone_material.amp_for(2),
-            outer_amp_w: zone_material.amp_for(3),
-            outer_amp_nw: zone_material.amp_for(4),
-            outer_amp_ne: zone_material.amp_for(5),
-            outer_base_e: zone_material.base_for(0),
-            outer_base_se: zone_material.base_for(1),
-            outer_base_sw: zone_material.base_for(2),
-            outer_base_w: zone_material.base_for(3),
-            outer_base_nw: zone_material.base_for(4),
-            outer_base_ne: zone_material.base_for(5),
-        }
-    }
+#[derive(Asset, AsBindGroup, TypeUuid, TypePath, Clone)]
+#[uuid = "05f50382-7218-4860-8c4c-06dbd66694db"]
+pub struct ZoneMaterial {
+    #[storage(0, read_only, buffer)]
+    terrain_data: Buffer,
+    #[uniform(1)]
+    uniform: ZoneMaterialUniform,
 }
 
 impl ZoneMaterial {
-    fn amp_for(&self, idx: usize) -> f32 {
-        if self.outer_visible[idx] {
-            self.outer_amp[idx]
-        } else {
-            0.0
+    pub fn new(
+        terrain: &TerrainId,
+        fog: &Fog,
+        outer_visible: &OuterVisible,
+        outer_terrain: &Neighbours<Id<Terrain>>,
+        terrain_buffer: &Res<TerrainBuffer>,
+    ) -> Self {
+        let terrain_idx = terrain_buffer.as_index(terrain).unwrap() as u32;
+        let outer_terrain_idx =
+            outer_terrain.map(|terrain| terrain_buffer.as_index(&terrain).unwrap() as u32);
+        Self {
+            terrain_data: terrain_buffer.data.buffer().unwrap().clone(),
+            uniform: ZoneMaterialUniform {
+                terrain_idx,
+                flags: (ZoneFlags::from(fog) | ZoneFlags::from(outer_visible)).bits(),
+                outer_terrain_e: outer_terrain_idx[0],
+                outer_terrain_se: outer_terrain_idx[1],
+                outer_terrain_sw: outer_terrain_idx[2],
+                outer_terrain_w: outer_terrain_idx[3],
+                outer_terrain_nw: outer_terrain_idx[4],
+                outer_terrain_ne: outer_terrain_idx[5],
+            },
         }
     }
 
-    fn base_for(&self, idx: usize) -> f32 {
-        if self.outer_visible[idx] {
-            self.outer_base[idx]
-        } else {
-            0.0
-        }
+    fn set_hover(&mut self, hover: bool) {
+        let mut flags = ZoneFlags::from_bits_retain(self.uniform.flags);
+        flags.set(ZoneFlags::HOVER, hover);
+        self.uniform.flags = flags.bits();
+    }
+
+    fn set_visible(&mut self, visible: bool) {
+        let mut flags = ZoneFlags::from_bits_retain(self.uniform.flags);
+        flags.set(ZoneFlags::VISIBLE, visible);
+        self.uniform.flags = flags.bits();
+    }
+
+    fn set_explored(&mut self, explored: bool) {
+        let mut flags = ZoneFlags::from_bits_retain(self.uniform.flags);
+        flags.set(ZoneFlags::EXPLORED, explored);
+        self.uniform.flags = flags.bits();
+    }
+
+    fn set_outer_visible(&mut self, outer_visible: Neighbours<bool>) {
+        let mut flags = ZoneFlags::from_bits_retain(self.uniform.flags);
+        flags.set(ZoneFlags::OUTER_VISIBLE_E, outer_visible[0]);
+        flags.set(ZoneFlags::OUTER_VISIBLE_SE, outer_visible[1]);
+        flags.set(ZoneFlags::OUTER_VISIBLE_SW, outer_visible[2]);
+        flags.set(ZoneFlags::OUTER_VISIBLE_W, outer_visible[3]);
+        flags.set(ZoneFlags::OUTER_VISIBLE_NW, outer_visible[4]);
+        flags.set(ZoneFlags::OUTER_VISIBLE_NE, outer_visible[5]);
+        self.uniform.flags = flags.bits();
     }
 }
 
@@ -155,6 +179,34 @@ impl Material for ZoneMaterial {
 
     fn vertex_shader() -> ShaderRef {
         "materials/zone_vertex.wgsl".into()
+    }
+}
+
+#[derive(Resource, Default)]
+pub struct TerrainBuffer {
+    keys: Vec<Id<Terrain>>,
+    data: StorageBuffer<Vec<TerrainData>>,
+}
+
+impl TerrainBuffer {
+    fn as_index(&self, terrain_id: &Id<Terrain>) -> Option<usize> {
+        self.keys.iter().position(|&key| key == *terrain_id)
+    }
+}
+
+impl<'a> Extend<(&'a Id<Terrain>, &'a Terrain)> for TerrainBuffer {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = (&'a Id<Terrain>, &'a Terrain)>,
+    {
+        for (terrain_id, terrain) in iter {
+            if let Some(position) = self.as_index(terrain_id) {
+                self.data.get_mut()[position] = terrain.into();
+            } else {
+                self.keys.push(*terrain_id);
+                self.data.get_mut().push(terrain.into());
+            }
+        }
     }
 }
 
@@ -170,9 +222,9 @@ fn apply_to_material(
         let Some(material) = zone_materials.get_mut(handle) else {
             continue;
         };
-        material.visible = fog.visible;
-        material.explored = fog.explored;
-        material.outer_visible = *outer_visible.values();
+        material.set_visible(fog.visible);
+        material.set_explored(fog.explored);
+        material.set_outer_visible(**outer_visible);
     }
 }
 
@@ -189,7 +241,7 @@ fn update_hover(
         let Some(material) = zone_materials.get_mut(handle) else {
             continue;
         };
-        material.hover = false;
+        material.set_hover(false);
     }
     for ZoneOver(entity) in over_events.read() {
         let Ok(handle) = material_query.get(*entity) else {
@@ -198,16 +250,32 @@ fn update_hover(
         let Some(material) = zone_materials.get_mut(handle) else {
             continue;
         };
-        material.hover = true;
+        material.set_hover(true);
     }
+}
+
+fn prepare_terrain_buffer(
+    mut terrain_buffer: ResMut<TerrainBuffer>,
+    terrain_codex: TerrainCodex,
+    render_device: Res<RenderDevice>,
+    render_queue: Res<RenderQueue>,
+) {
+    let Ok(terrain_codex) = terrain_codex.get() else {
+        return;
+    };
+    terrain_buffer.extend(terrain_codex.iter());
+    terrain_buffer
+        .data
+        .write_buffer(&render_device, &render_queue);
 }
 
 fn update_from_terrain_codex(
     codex_assets: Res<CodexAssets>,
     mut codex_events: EventReader<AssetEvent<Codex<Terrain>>>,
     terrain_codex_assets: Res<Assets<Codex<Terrain>>>,
-    material_query: Query<&Handle<ZoneMaterial>>,
-    mut zone_material_assets: ResMut<Assets<ZoneMaterial>>,
+    mut terrain_buffer: ResMut<TerrainBuffer>,
+    render_device: Res<RenderDevice>,
+    render_queue: Res<RenderQueue>,
 ) {
     for event in codex_events.read() {
         let AssetEvent::Modified { id: asset_id } = event else {
@@ -217,14 +285,10 @@ fn update_from_terrain_codex(
             let terrain_codex = terrain_codex_assets
                 .get(codex_assets.terrain_codex.clone())
                 .unwrap();
-            for material_handle in &material_query {
-                let zone_material = zone_material_assets.get_mut(material_handle).unwrap();
-                let terrain_data = &terrain_codex[&zone_material.terrain];
-
-                zone_material.color_a = terrain_data.color_a;
-                zone_material.color_b = terrain_data.color_b;
-                zone_material.color_c = terrain_data.color_c;
-            }
+            terrain_buffer.extend(terrain_codex.iter());
+            terrain_buffer
+                .data
+                .write_buffer(&render_device, &render_queue);
         }
     }
 }

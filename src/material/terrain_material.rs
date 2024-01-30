@@ -20,11 +20,11 @@ impl Plugin for TerrainMaterialPlugin {
 #[uuid = "f3c06773-d878-40b4-8f00-f39b82513c81"]
 #[uniform(0, TerrainMaterialUniform)]
 pub struct TerrainMaterial {
-    pub color_a: Color,
-    pub color_b: Color,
-    pub color_c: Color,
-    pub visible: bool,
-    pub explored: bool,
+    color_a: Color,
+    color_b: Color,
+    color_c: Color,
+    visible: bool,
+    explored: bool,
 }
 
 impl TerrainMaterial {
@@ -63,11 +63,11 @@ impl TerrainMaterial {
 
 #[derive(Clone, Default, ShaderType)]
 pub struct TerrainMaterialUniform {
-    pub color_a: Vec4,
-    pub color_b: Vec4,
-    pub color_c: Vec4,
-    pub visible: u32,
-    pub explored: u32,
+    color_a: Vec4,
+    color_b: Vec4,
+    color_c: Vec4,
+    visible: u32,
+    explored: u32,
 }
 
 impl From<&TerrainMaterial> for TerrainMaterialUniform {

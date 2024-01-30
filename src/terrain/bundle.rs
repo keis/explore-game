@@ -2,7 +2,7 @@ use super::{asset::*, component::*};
 use crate::{
     map::{Fog, HexCoord, MapPosition},
     map_generator::ZonePrototype,
-    material::{TerrainMaterial, WaterMaterial, ZoneMaterial},
+    material::{TerrainBuffer, TerrainMaterial, WaterMaterial, ZoneMaterial},
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
 use bevy_mod_picking::prelude::{Pickable, PickingInteraction};
@@ -85,7 +85,11 @@ impl WaterBundle {
     }
 }
 
-pub type ZoneParams<'w> = (Res<'w, HexAssets>, ResMut<'w, Assets<ZoneMaterial>>);
+pub type ZoneParams<'w> = (
+    Res<'w, HexAssets>,
+    Res<'w, TerrainBuffer>,
+    ResMut<'w, Assets<ZoneMaterial>>,
+);
 
 #[derive(Bundle, Default)]
 pub struct ZoneBundle {
@@ -131,13 +135,11 @@ impl ZoneBundle {
     pub fn with_fluff(
         self,
         zone_params: &mut ZoneParams,
-        terrain_codex: &Codex<Terrain>,
         outer_terrain: Neighbours<Id<Terrain>>,
     ) -> (Self, ZoneFluffBundle) {
         let outer_visible = OuterVisible::default();
         let fluff = ZoneFluffBundle::new(
             zone_params,
-            terrain_codex,
             &self.position,
             &self.terrain,
             &self.fog,
@@ -150,8 +152,7 @@ impl ZoneBundle {
 
 impl ZoneFluffBundle {
     pub fn new(
-        (hex_assets, zone_materials): &mut ZoneParams,
-        terrain_codex: &Codex<Terrain>,
+        (hex_assets, terrain_buffer, zone_materials): &mut ZoneParams,
         position: &MapPosition,
         terrain: &TerrainId,
         fog: &Fog,
@@ -162,11 +163,11 @@ impl ZoneFluffBundle {
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: hex_assets.mesh.clone(),
                 material: zone_materials.add(ZoneMaterial::new(
-                    terrain_codex,
                     terrain,
                     fog,
                     &outer_visible,
                     &outer_terrain,
+                    terrain_buffer,
                 )),
                 transform: Transform::from_translation(position.0.into()),
                 ..default()

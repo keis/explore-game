@@ -2486,6 +2486,7 @@ dependencies = [
  "bevy_mod_picking",
  "bevy_obj",
  "bevy_sprite3d",
+ "bitflags 2.4.1",
  "clap",
  "enum-map",
  "expl_codex",

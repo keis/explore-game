@@ -8,7 +8,7 @@ mod zone_material;
 pub use portal_material::{PortalMaterial, PortalMaterialPlugin};
 pub use terrain_material::{TerrainMaterial, TerrainMaterialPlugin};
 pub use water_material::{WaterMaterial, WaterMaterialPlugin};
-pub use zone_material::{ZoneMaterial, ZoneMaterialPlugin};
+pub use zone_material::{TerrainBuffer, ZoneMaterial, ZoneMaterialPlugin};
 
 pub struct MaterialPlugins;
 
