@@ -40,7 +40,7 @@ impl Plugin for ActorPlugin {
                 (
                     derive_party_movement,
                     despawn_empty_party,
-                    slide,
+                    slide.run_if(in_state(SceneState::Active)),
                     update_enemy_visibility,
                 ),
             );

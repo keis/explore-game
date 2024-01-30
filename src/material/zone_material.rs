@@ -10,6 +10,7 @@ use bevy::{
     render::render_resource::*,
 };
 use expl_codex::{Codex, Id};
+use expl_hexgrid::Neighbours;
 
 #[derive(Default)]
 pub struct ZoneMaterialPlugin;
@@ -52,11 +53,12 @@ impl ZoneMaterial {
     pub fn new(
         terrain_codex: &Codex<Terrain>,
         terrain: &TerrainId,
-        height: &Height,
         fog: &Fog,
         outer_visible: &OuterVisible,
+        outer_terrain: &Neighbours<Id<Terrain>>,
     ) -> Self {
         let terrain_data = &terrain_codex[terrain];
+        let height = Height::new(terrain_codex, **terrain, outer_terrain);
 
         Self {
             terrain: **terrain,
@@ -67,9 +69,9 @@ impl ZoneMaterial {
             explored: fog.explored,
             height_amp: height.height_amp,
             height_base: height.height_base,
-            outer_amp: height.outer_amp.into(),
-            outer_base: height.outer_base.into(),
-            outer_visible: **outer_visible,
+            outer_amp: *height.outer_amp.values(),
+            outer_base: *height.outer_base.values(),
+            outer_visible: *outer_visible.values(),
             ..default()
         }
     }
@@ -170,7 +172,7 @@ fn apply_to_material(
         };
         material.visible = fog.visible;
         material.explored = fog.explored;
-        material.outer_visible = **outer_visible;
+        material.outer_visible = *outer_visible.values();
     }
 }
 

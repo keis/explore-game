@@ -1,6 +1,6 @@
 use super::{MapPrototype, MapTemplate, ZonePrototype};
 use crate::{
-    terrain::{Outer, Terrain, TerrainDecoration},
+    terrain::{Terrain, TerrainDecoration},
     ExplError,
 };
 use bevy::prelude::*;
@@ -76,7 +76,7 @@ pub fn generate_map(
     })
     .ok_or(ExplError::CouldNotPlaceSpawner)?;
 
-    let mut prototype = Grid::with_data(
+    let tiles = Grid::with_data(
         terrain.layout,
         terrain.iter().map(|(coord, &terrain)| {
             let terrain_data = &terrain_codex[&terrain];
@@ -98,38 +98,11 @@ pub fn generate_map(
                 terrain,
                 random_fill,
                 crystals,
-                height_amp: terrain_codex[&terrain].height_amp,
-                height_base: terrain_codex[&terrain].height_base,
-                ..default()
             }
         }),
     );
-    let layout = prototype.layout;
-    for coord in layout.iter() {
-        let neighbour_amp: Vec<_> = coord
-            .neighbours()
-            .map(|neighbour| {
-                prototype
-                    .get(neighbour)
-                    .map(|proto| proto.height_amp)
-                    .unwrap_or(0.0)
-            })
-            .collect();
-        let neighbour_base: Vec<_> = coord
-            .neighbours()
-            .map(|neighbour| {
-                prototype
-                    .get(neighbour)
-                    .map(|proto| proto.height_base)
-                    .unwrap_or(0.0)
-            })
-            .collect();
-        let zone = &mut prototype[coord];
-        zone.outer_amp = Outer::new(&neighbour_amp);
-        zone.outer_base = Outer::new(&neighbour_base);
-    }
     Ok(MapPrototype {
-        tiles: prototype,
+        tiles,
         party_position,
         portal_position,
         spawner_position,

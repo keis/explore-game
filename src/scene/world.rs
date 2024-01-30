@@ -10,7 +10,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use expl_codex::Id;
-use expl_hexgrid::{layout::GridLayout, HexCoord};
+use expl_hexgrid::{layout::GridLayout, HexCoord, Neighbours};
 use expl_wfc::{Seed, SeedType};
 use std::collections::HashMap;
 
@@ -59,14 +59,25 @@ pub fn spawn_generated_map(
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.get_single()?;
     let terrain_codex = terrain_codex.get()?;
+    let void = Id::from_tag("void");
     let tiles = prototype
         .tiles
         .iter()
         .map(|(position, zoneproto)| {
+            let neighbours = Neighbours::from_fn_around(position, |coord| {
+                prototype
+                    .tiles
+                    .get(coord)
+                    .map_or(void, |proto| proto.terrain)
+            });
             let mut zone = commands.spawn((
                 Name::new(format!("Zone {}", position)),
                 save::Save,
-                ZoneBundle::new(position, zoneproto).with_fluff(&mut zone_params, terrain_codex),
+                ZoneBundle::new(position, zoneproto).with_fluff(
+                    &mut zone_params,
+                    terrain_codex,
+                    neighbours,
+                ),
             ));
 
             if zoneproto.crystals {

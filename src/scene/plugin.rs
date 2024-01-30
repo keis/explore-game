@@ -22,7 +22,9 @@ impl Plugin for ScenePlugin {
                 OnEnter(SceneState::Active),
                 (
                     SceneSet::InitialSetup,
-                    SceneSet::CommandFlush,
+                    SceneSet::InitialFlush,
+                    SceneSet::Terrain,
+                    SceneSet::TerrainFlush,
                     SceneSet::Populate,
                     SceneSet::Cleanup,
                 )
@@ -68,7 +70,8 @@ impl Plugin for ScenePlugin {
                     spawn_generated_map
                         .map(bevy::utils::warn)
                         .in_set(SceneSet::InitialSetup),
-                    apply_deferred.in_set(SceneSet::CommandFlush),
+                    apply_deferred.in_set(SceneSet::InitialFlush),
+                    apply_deferred.in_set(SceneSet::TerrainFlush),
                     (
                         spawn_party.map(bevy::utils::warn),
                         spawn_portal.map(bevy::utils::warn),
@@ -85,7 +88,9 @@ impl Plugin for ScenePlugin {
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
 pub enum SceneSet {
     InitialSetup,
-    CommandFlush,
+    InitialFlush,
+    Terrain,
+    TerrainFlush,
     Populate,
     Cleanup,
 }

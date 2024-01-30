@@ -50,7 +50,6 @@ pub fn filter_with_enabled_components() -> SaveFilter {
         .allow::<structure::Spawner>()
         .allow::<structure::StructureId>()
         .allow::<terrain::CrystalDeposit>()
-        .allow::<terrain::Height>()
         .allow::<terrain::TerrainId>()
         .allow::<terrain::ZoneDecorations>()
         .allow::<Transform>();

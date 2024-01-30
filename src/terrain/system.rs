@@ -6,7 +6,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use expl_codex::Id;
-use expl_hexgrid::Grid;
+use expl_hexgrid::{Grid, Neighbours};
 
 pub fn despawn_empty_crystal_deposit(
     mut commands: Commands,
@@ -86,34 +86,28 @@ pub fn fluff_zone(
     terrain_codex: TerrainCodex,
     map_query: Query<(&MapLayout, &ZoneLayer)>,
     mut zone_query: ParamSet<(
-        Query<(&MapPosition, &Height), Without<GlobalTransform>>,
-        Query<(Entity, &TerrainId, &MapPosition, &mut Height, &Fog), Without<GlobalTransform>>,
+        Query<(&MapPosition, &TerrainId), Without<GlobalTransform>>,
+        Query<(Entity, &TerrainId, &MapPosition, &Fog), Without<GlobalTransform>>,
     )>,
-    neighbour_zone_query: Query<&Fog>,
+    neighbour_fog_query: Query<&Fog>,
 ) -> Result<(), ExplError> {
     let (&MapLayout(layout), zone_layer) = map_query.get_single()?;
     let terrain_codex = terrain_codex.get()?;
 
-    let mut height_grid = Grid::<_, (f32, f32)>::new(layout);
-    for (position, height) in &zone_query.p0() {
-        height_grid[position.0] = (height.height_amp, height.height_base);
+    let mut terrain_grid = Grid::<_, Id<Terrain>>::new(layout);
+    for (position, terrain) in &zone_query.p0() {
+        terrain_grid[position.0] = **terrain;
     }
 
-    for (entity, terrain, position, mut height, fog) in &mut zone_query.p1() {
-        for (idx, coord) in position.0.neighbours().enumerate() {
-            let (amp, base) = height_grid.get(coord).unwrap_or(&(0.0, 0.0));
-            height.outer_amp[idx] = *amp;
-            height.outer_base[idx] = *base;
-        }
-
+    for (entity, terrain, position, fog) in &mut zone_query.p1() {
         let outer_visible = if fog.explored {
-            OuterVisible([true; 6])
+            OuterVisible::all_visible()
         } else {
             let mut bits = [false; 6];
             for (idx, coord) in position.0.neighbours().enumerate() {
                 let Some(fog) = zone_layer
                     .get(coord)
-                    .and_then(|&e| neighbour_zone_query.get(e).ok())
+                    .and_then(|&e| neighbour_fog_query.get(e).ok())
                 else {
                     continue;
                 };
@@ -123,16 +117,22 @@ pub fn fluff_zone(
                     bits[(idx + 1) % 6] = true;
                 }
             }
-            OuterVisible(bits)
+            OuterVisible::with_data(bits)
         };
+
+        let void = Id::from_tag("void");
+        let neighbours = Neighbours::from_fn_around(position.0, |coord| {
+            terrain_grid.get(coord).copied().unwrap_or(void)
+        });
+
         commands.entity(entity).insert(ZoneFluffBundle::new(
             &mut zone_params,
             terrain_codex,
             position,
             terrain,
-            &height,
             fog,
             outer_visible,
+            neighbours,
         ));
     }
     Ok(())
@@ -144,8 +144,8 @@ pub fn decorate_zone(
         Entity,
         &TerrainId,
         &MapPosition,
-        &Height,
         &Fog,
+        &OuterTerrain,
         &ZoneDecorations,
     )>,
     mut zone_decoration_params: ZoneDecorationParams,
@@ -155,8 +155,9 @@ pub fn decorate_zone(
 ) -> Result<(), ExplError> {
     let terrain_codex = terrain_codex.get()?;
     let decoration_codex = decoration_codex.get()?;
-    for (entity, terrain_id, position, height, fog, zone_decorations) in &zone_query {
+    for (entity, terrain_id, position, fog, outer_terrain, zone_decorations) in &zone_query {
         let terrain = &terrain_codex[terrain_id];
+        let height = Height::new(terrain_codex, **terrain_id, outer_terrain);
         commands.entity(entity).with_children(|parent| {
             for decoration in &terrain.decoration {
                 match decoration {
@@ -169,7 +170,7 @@ pub fn decorate_zone(
                                     Id::from_tag("crystal"),
                                     &mut zone_decoration_params,
                                     decoration_codex,
-                                    height,
+                                    &height,
                                     fog,
                                     **position,
                                     detail,
@@ -186,7 +187,7 @@ pub fn decorate_zone(
                                     Id::from_tag("tree"),
                                     &mut zone_decoration_params,
                                     decoration_codex,
-                                    height,
+                                    &height,
                                     fog,
                                     **position,
                                     detail,
@@ -217,7 +218,7 @@ pub fn update_outer_visible(
             let Ok((_, mut outer_visible)) = zone_query.get_mut(entity) else {
                 continue;
             };
-            outer_visible.0 = [true; 6];
+            *outer_visible = OuterVisible::all_visible();
 
             for (idx, coord) in position.0.neighbours().enumerate() {
                 let Some((neighbour_fog, mut neighbour_outer_visible)) =
@@ -228,9 +229,9 @@ pub fn update_outer_visible(
                 if neighbour_fog.explored {
                     continue;
                 }
-                neighbour_outer_visible.0[(idx + 2) % 6] = true;
-                neighbour_outer_visible.0[(idx + 3) % 6] = true;
-                neighbour_outer_visible.0[(idx + 4) % 6] = true;
+                neighbour_outer_visible[(idx + 2) % 6] = true;
+                neighbour_outer_visible[(idx + 3) % 6] = true;
+                neighbour_outer_visible[(idx + 4) % 6] = true;
             }
         }
     }

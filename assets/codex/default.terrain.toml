@@ -1,3 +1,13 @@
+[void]
+symbol = " "
+allow_walking = false
+allow_structure = false
+height_base = 0.0
+height_amp = 0.0
+color_a = { Rgba = { red = 0, green = 0, blue = 0.0, alpha = 1.0 } }
+color_b = { Rgba = { red = 0, green = 0, blue = 0.0, alpha = 1.0 } }
+color_c = { Rgba = { red = 0, green = 0, blue = 0.0, alpha = 1.0 } }
+
 [ocean]
 symbol = "~"
 allow_walking = false

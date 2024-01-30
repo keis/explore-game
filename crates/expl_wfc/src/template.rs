@@ -1,12 +1,12 @@
 use super::{tile::Tile, TileId};
-use expl_hexgrid::{GridLayout, HexCoord};
+use expl_hexgrid::{GridLayout, HexCoord, Neighbours};
 use fixedbitset::FixedBitSet;
 use std::collections::BinaryHeap;
 use std::hash::Hash;
 
 pub struct TileDetails<Item> {
     contribution: Item,
-    compatible: [FixedBitSet; 6],
+    compatible: Neighbours<FixedBitSet>,
 }
 
 /// A Template holds the rules for how tiles can be combined
@@ -40,13 +40,16 @@ where
             .iter()
             .map(|tile| TileDetails {
                 contribution: tile[HexCoord::ZERO],
-                compatible: HexCoord::NEIGHBOUR_OFFSETS.map(|offset| {
-                    tiles
-                        .iter()
-                        .enumerate()
-                        .filter(|(_, other)| tile.compatible_with(other, offset))
-                        .map(|(id, _)| id as TileId)
-                        .collect::<FixedBitSet>()
+                compatible: Neighbours::from_fn(|offset| {
+                    let mut bitset = FixedBitSet::with_capacity(tiles.len());
+                    bitset.extend(
+                        tiles
+                            .iter()
+                            .enumerate()
+                            .filter(|(_, other)| tile.compatible_with(other, offset))
+                            .map(|(id, _)| id as TileId),
+                    );
+                    bitset
                 }),
             })
             .collect();
@@ -56,10 +59,8 @@ where
     pub fn compatible_tiles(
         &self,
         tile_id: TileId,
-    ) -> impl '_ + Iterator<Item = (&HexCoord, &FixedBitSet)> {
-        HexCoord::NEIGHBOUR_OFFSETS
-            .iter()
-            .zip(self.details[tile_id].compatible.iter())
+    ) -> impl '_ + Iterator<Item = (HexCoord, &FixedBitSet)> {
+        self.details[tile_id].compatible.iter()
     }
 
     pub fn available_tiles(&self) -> usize {
@@ -74,7 +75,7 @@ where
         let connections: Vec<_> = self
             .details
             .iter()
-            .flat_map(|d| d.compatible.iter().map(|c| c.len() as u32))
+            .flat_map(|d| d.compatible.iter_values().map(|c| c.len() as u32))
             .collect();
         let mean = connections.iter().sum::<u32>() as f32 / connections.len() as f32;
         let stddev = connections

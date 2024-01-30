@@ -1,7 +1,4 @@
-use crate::{
-    terrain::{Outer, Terrain},
-    ExplError,
-};
+use crate::{terrain::Terrain, ExplError};
 use bevy::{prelude::*, tasks::Task};
 use expl_codex::Id;
 use expl_hexgrid::{layout::SquareGridLayout, Grid, HexCoord};
@@ -12,10 +9,6 @@ pub struct ZonePrototype {
     pub terrain: Id<Terrain>,
     pub random_fill: Vec<(Vec2, f32)>,
     pub crystals: bool,
-    pub height_amp: f32,
-    pub height_base: f32,
-    pub outer_amp: Outer,
-    pub outer_base: Outer,
 }
 
 #[derive(Component)]
