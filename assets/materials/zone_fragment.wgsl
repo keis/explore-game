@@ -51,7 +51,12 @@ fn fragment(@builtin(front_facing) is_front: bool, mesh: VertexOutput) -> @locat
     }
 
     if (uniform_data.flags & ZONE_FLAGS_EXPLORED_BIT) == 0u {
-        output_color = vec4<f32>(0.005, 0.005, 0.01, 1.0);
+        output_color = pixel_noise(
+            mesh.world_position.xz,
+            vec4<f32>(0.005, 0.005, 0.01, 1.0),
+            vec4<f32>(0.007, 0.005, 0.008, 1.0),
+            vec4<f32>(0.005, 0.007, 0.008, 1.0)
+        );
     }
 
     if (uniform_data.flags & ZONE_FLAGS_HOVER_BIT) != 0u {
