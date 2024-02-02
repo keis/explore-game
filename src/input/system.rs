@@ -1,4 +1,4 @@
-use super::{action::*, component::*, event::*};
+use super::{component::*, event::*, system_param::*};
 use crate::{
     action::{GameAction, GameActionQueue},
     actor::Movement,
@@ -20,13 +20,11 @@ use std::iter;
 #[allow(clippy::too_many_arguments)]
 pub fn handle_pointer_click_events(
     mut click_events: EventReader<Pointer<Click>>,
-    mut select_events: EventWriter<Select>,
-    mut deselect_events: EventWriter<Deselect>,
     mut zone_activated_events: EventWriter<ZoneActivated>,
-    action_state: Res<ActionState<Action>>,
     parent_query: Query<&Parent>,
     zone_query: Query<Entity, With<MapPosition>>,
-    selection_query: Query<(Entity, &Selection)>,
+    selection_query: Query<Entity, With<Selection>>,
+    mut selection_update: SelectionUpdate<()>,
 ) {
     for event in click_events.read() {
         if event.event.button != PointerButton::Primary {
@@ -36,23 +34,8 @@ pub fn handle_pointer_click_events(
             if zone_query.get(entity).is_ok() {
                 zone_activated_events.send(ZoneActivated(entity));
                 break;
-            } else if let Ok((entity, selection)) = selection_query.get(entity) {
-                if action_state.pressed(Action::MultiSelect) {
-                    if selection.is_selected {
-                        deselect_events.send(Deselect(entity));
-                    } else {
-                        select_events.send(Select(entity));
-                    }
-                } else {
-                    for (other_entity, selection) in &selection_query {
-                        if entity != other_entity && selection.is_selected {
-                            deselect_events.send(Deselect(other_entity));
-                        }
-                    }
-                    if !selection.is_selected {
-                        select_events.send(Select(entity));
-                    }
-                }
+            } else if selection_query.get(entity).is_ok() {
+                selection_update.toggle(entity);
                 break;
             }
         }

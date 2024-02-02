@@ -5,7 +5,7 @@ use super::{
 };
 use crate::{
     actor::{Character, Group, Movement, Party},
-    input::{Action, ActionState, Selection},
+    input::{Selection, SelectionUpdate},
     inventory::Inventory,
 };
 use bevy::prelude::*;
@@ -223,20 +223,10 @@ pub fn update_party_crystals(
 }
 
 pub fn handle_party_display_interaction(
-    action_state: Res<ActionState<Action>>,
     interaction_query: Query<(&Interaction, &PartyDisplay), Changed<Interaction>>,
-    mut selection_query: Query<(Entity, &mut Selection), Without<Character>>,
+    mut selection: SelectionUpdate<Without<Character>>,
 ) {
     if let Ok((Interaction::Pressed, display)) = interaction_query.get_single() {
-        if let Ok((entity, mut selection)) = selection_query.get_mut(display.party) {
-            if action_state.pressed(Action::MultiSelect) {
-                let selected = selection.is_selected;
-                selection.is_selected = !selected;
-            } else {
-                for (e, mut selection) in selection_query.iter_mut() {
-                    selection.is_selected = e == entity;
-                }
-            }
-        }
+        selection.toggle(display.party);
     }
 }

@@ -6,7 +6,7 @@ use super::{
 use crate::{
     actor::{Character, Group},
     combat::{Attack, Health},
-    input::{Action, ActionState, Selection},
+    input::{Deselect, Selection, SelectionUpdate},
 };
 use bevy::prelude::*;
 use bevy_mod_picking::prelude::Pickable;
@@ -121,7 +121,7 @@ pub fn update_character_list(
     character_query: Query<(Entity, &Character, &Attack, &Health)>,
     party_query: Query<(&Group, &Selection), Without<Character>>,
     character_display_query: Query<(Entity, &CharacterDisplay)>,
-    mut selection_query: Query<&mut Selection, With<Character>>,
+    mut deselect_events: EventWriter<Deselect>,
 ) {
     let character_list = character_list_query.single();
 
@@ -153,9 +153,7 @@ pub fn update_character_list(
             .any(|entity| display.character == **entity)
         {
             commands.entity(display_entity).despawn_recursive();
-            if let Ok(mut character_selection) = selection_query.get_mut(display.character) {
-                character_selection.is_selected = false;
-            }
+            deselect_events.send(Deselect(display.character));
         }
     }
 }
@@ -191,20 +189,10 @@ pub fn update_character_health(
 }
 
 pub fn handle_character_display_interaction(
-    action_state: Res<ActionState<Action>>,
     interaction_query: Query<(&Interaction, &CharacterDisplay), Changed<Interaction>>,
-    mut selection_query: Query<(Entity, &mut Selection), With<Character>>,
+    mut selection: SelectionUpdate<Without<Character>>,
 ) {
     if let Ok((Interaction::Pressed, display)) = interaction_query.get_single() {
-        if let Ok((entity, mut selection)) = selection_query.get_mut(display.character) {
-            if action_state.pressed(Action::MultiSelect) {
-                let selected = selection.is_selected;
-                selection.is_selected = !selected;
-            } else {
-                for (e, mut selection) in selection_query.iter_mut() {
-                    selection.is_selected = e == entity;
-                }
-            }
-        }
+        selection.toggle(display.character);
     }
 }

@@ -1,7 +1,7 @@
 use super::{assets::InterfaceAssets, camp, character, game_over, menu, party, shell, tooltip};
 use crate::{
     assets::AssetState,
-    input::{action_just_pressed, Action, InputManagerSystem},
+    input::{action_just_pressed, Action, InputManagerSystem, InputSet},
     scene::SceneState,
 };
 use bevy::prelude::*;
@@ -43,9 +43,17 @@ impl Plugin for InterfacePlugin {
         )
         .add_systems(
             PreUpdate,
-            shell::handle_action_button_interaction
-                .in_set(InputManagerSystem::ManualControl)
-                .after(InputManagerSystem::Update),
+            (
+                shell::handle_action_button_interaction
+                    .in_set(InputManagerSystem::ManualControl)
+                    .after(InputManagerSystem::Update),
+                (
+                    camp::handle_camp_display_interaction,
+                    party::handle_party_display_interaction,
+                    character::handle_character_display_interaction,
+                )
+                    .in_set(InputSet::ProcessInput),
+            ),
         )
         .add_systems(
             Update,
@@ -56,20 +64,17 @@ impl Plugin for InterfacePlugin {
                     party::update_party_movement_points,
                     party::update_party_size,
                     party::update_party_crystals,
-                    party::handle_party_display_interaction,
                 ),
                 (
                     camp::update_camp_list.run_if(camp::run_if_any_camp_changed),
                     camp::update_camp_selection,
                     camp::update_camp_crystals,
-                    camp::handle_camp_display_interaction,
                 ),
                 (
                     character::update_character_list
                         .run_if(character::run_if_any_party_or_selection_changed),
                     character::update_character_selection,
                     character::update_character_health,
-                    character::handle_character_display_interaction,
                 ),
                 shell::update_turn_text,
                 shell::update_zone_text,

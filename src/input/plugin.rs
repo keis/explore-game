@@ -10,6 +10,13 @@ use leafwing_input_manager::{
     common_conditions::action_just_pressed, plugin::InputManagerSystem, prelude::*,
 };
 
+#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
+pub enum InputSet {
+    ProcessInput,
+    Selection,
+    PostSelection,
+}
+
 pub struct InputPlugin;
 
 impl Plugin for InputPlugin {
@@ -21,6 +28,16 @@ impl Plugin for InputPlugin {
                 .disable::<bevy_mod_picking::prelude::SelectionPlugin>(),
         )
         .add_plugins(InputManagerPlugin::<Action>::default())
+        .configure_sets(
+            PreUpdate,
+            (
+                InputSet::ProcessInput,
+                InputSet::Selection,
+                InputSet::PostSelection,
+            )
+                .in_set(PickSet::Last)
+                .chain(),
+        )
         .register_type::<Selection>()
         .init_resource::<ActionState<Action>>()
         .add_event::<ZoneActivated>()
@@ -64,19 +81,19 @@ impl Plugin for InputPlugin {
                     handle_pointer_over_events.run_if(on_event::<Pointer<Over>>()),
                     handle_pointer_out_events.run_if(on_event::<Pointer<Out>>()),
                 )
-                    .in_set(PickSet::Last),
+                    .in_set(InputSet::ProcessInput),
                 (
                     apply_zone_activated_events.map(bevy::utils::warn),
                     apply_selection_events
                         .run_if(on_event::<Select>().or_else(on_event::<Deselect>())),
                 )
-                    .after(handle_pointer_click_events),
+                    .in_set(InputSet::Selection),
                 update_selection_highlight
                     .after(update_highlight_assets::<StandardMaterial>)
-                    .after(apply_selection_events),
+                    .in_set(InputSet::PostSelection),
                 update_interaction_highlight
                     .after(update_highlight_assets::<StandardMaterial>)
-                    .after(apply_selection_events),
+                    .in_set(InputSet::PostSelection),
             )
                 .run_if(in_state(SceneState::Active)),
         );
