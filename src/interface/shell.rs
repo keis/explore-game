@@ -348,6 +348,6 @@ pub fn handle_action_button_interaction(
         .filter(|(_, interaction)| **interaction == Interaction::Pressed)
         .map(|(action, _)| action)
     {
-        action_state.press(*action);
+        action_state.press(action);
     }
 }

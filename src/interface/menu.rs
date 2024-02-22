@@ -174,7 +174,7 @@ pub fn handle_save(
     mut action_state: ResMut<ActionState<Action>>,
 ) {
     if let Ok(Interaction::Pressed) = interaction_query.get_single() {
-        action_state.press(Action::Save);
+        action_state.press(&Action::Save);
     }
 }
 

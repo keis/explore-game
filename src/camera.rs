@@ -81,31 +81,31 @@ fn camera_control(
     let acceleration = control.acceleration;
     let mut delta = Vec3::ZERO;
 
-    if action_state.pressed(Action::PanCameraRight)
+    if action_state.pressed(&Action::PanCameraRight)
         && transform.translation.x <= bounds.position.x + bounds.extent.x - bounds.gap
     {
         delta += Vec3::X;
     }
 
-    if action_state.pressed(Action::PanCameraLeft)
+    if action_state.pressed(&Action::PanCameraLeft)
         && transform.translation.x >= bounds.position.x + bounds.gap
     {
         delta -= Vec3::X;
     }
 
-    if action_state.pressed(Action::PanCameraUp)
+    if action_state.pressed(&Action::PanCameraUp)
         && transform.translation.z >= bounds.position.z + bounds.gap
     {
         delta -= Vec3::Z;
     }
 
-    if action_state.pressed(Action::PanCameraDown)
+    if action_state.pressed(&Action::PanCameraDown)
         && transform.translation.z <= bounds.position.z + bounds.extent.z - bounds.gap
     {
         delta += Vec3::Z;
     }
 
-    let zoom = action_state.value(Action::ZoomCamera);
+    let zoom = action_state.value(&Action::ZoomCamera);
 
     if (zoom > 0.0 && transform.translation.y <= bounds.position.y + bounds.extent.y - bounds.gap)
         || (zoom < 0.0 && transform.translation.y >= bounds.position.y + bounds.gap)
@@ -113,8 +113,8 @@ fn camera_control(
         delta += Vec3::Y * zoom;
     }
 
-    if action_state.pressed(Action::PanCamera) {
-        let camera_pan = action_state.axis_pair(Action::PanCameraMotion).unwrap();
+    if action_state.pressed(&Action::PanCamera) {
+        let camera_pan = action_state.axis_pair(&Action::PanCameraMotion).unwrap();
         delta += Vec3::new(-camera_pan.x(), 0.0, -camera_pan.y()) * control.mouse_sensitivity;
     }
 
@@ -174,12 +174,12 @@ fn cursor_grab(
         return;
     };
 
-    if action_state.just_pressed(Action::PanCamera) {
+    if action_state.just_pressed(&Action::PanCamera) {
         window.cursor.grab_mode = CursorGrabMode::Locked;
         window.cursor.visible = false;
     }
 
-    if action_state.just_released(Action::PanCamera) {
+    if action_state.just_released(&Action::PanCamera) {
         window.cursor.grab_mode = CursorGrabMode::None;
         window.cursor.visible = true;
     }
@@ -261,7 +261,7 @@ mod tests {
 
         app.world
             .resource_mut::<ActionState<Action>>()
-            .press(Action::PanCameraRight);
+            .press(&Action::PanCameraRight);
 
         app.update();
 
@@ -286,7 +286,7 @@ mod tests {
 
         app.world
             .resource_mut::<ActionState<Action>>()
-            .press(Action::PanCameraRight);
+            .press(&Action::PanCameraRight);
 
         app.update();
 
