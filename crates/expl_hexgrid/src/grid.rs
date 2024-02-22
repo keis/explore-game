@@ -41,12 +41,12 @@ impl<L: GridLayout, T> Grid<L, T> {
     }
 
     /// An iterator visiting all coordinate-value pairs of the grid
-    pub fn iter(&self) -> impl Iterator<Item = (HexCoord, &T)> + ExactSizeIterator {
+    pub fn iter(&self) -> impl ExactSizeIterator<Item = (HexCoord, &T)> {
         self.layout.iter().zip(self.data.iter())
     }
 
     /// An iterator visiting all values contained in the grid
-    pub fn iter_data(&self) -> impl Iterator<Item = &T> + ExactSizeIterator {
+    pub fn iter_data(&self) -> impl ExactSizeIterator<Item = &T> {
         self.data.iter()
     }
 
