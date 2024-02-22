@@ -190,7 +190,7 @@ pub fn update_character_health(
 
 pub fn handle_character_display_interaction(
     interaction_query: Query<(&Interaction, &CharacterDisplay), Changed<Interaction>>,
-    mut selection: SelectionUpdate<Without<Character>>,
+    mut selection: SelectionUpdate<With<Character>>,
 ) {
     if let Ok((Interaction::Pressed, display)) = interaction_query.get_single() {
         selection.toggle(display.character);
