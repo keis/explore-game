@@ -45,7 +45,9 @@ pub fn magic_cancel(
     interface_state: Res<State<InterfaceState>>,
     selection_query: Query<&Selection>,
 ) {
-    let actiondata = action_state.action_data(Action::Cancel).clone();
+    let Some(actiondata) = action_state.action_data(&Action::Cancel).cloned() else {
+        return;
+    };
 
     // Close menu
     if *interface_state == InterfaceState::Menu {

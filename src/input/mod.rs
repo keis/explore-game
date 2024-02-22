@@ -72,7 +72,7 @@ mod tests {
     pub fn press_select_next(app: &mut App) {
         app.world
             .resource_mut::<ActionState<Action>>()
-            .press(Action::SelectNext);
+            .press(&Action::SelectNext);
     }
 
     #[rstest]

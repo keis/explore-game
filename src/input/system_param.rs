@@ -59,7 +59,7 @@ where
 {
     pub fn toggle(&mut self, entity: Entity) {
         if let Ok((entity, selection)) = self.selection_query.get(entity) {
-            if self.action_state.pressed(Action::MultiSelect) {
+            if self.action_state.pressed(&Action::MultiSelect) {
                 if selection.is_selected {
                     self.deselect_events.send(Deselect(entity));
                 } else {
