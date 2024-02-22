@@ -1,4 +1,4 @@
-use super::{NextSelectionQuery, Selection};
+use super::{Deselect, NextSelectionQuery, Select, Selection};
 use crate::{
     action::{GameAction, GameActionQueue},
     actor::{Character, Group, Party},
@@ -63,10 +63,13 @@ pub fn magic_cancel(
     action_state.set_action_data(Action::ToggleMainMenu, actiondata);
 }
 
-pub fn handle_deselect(mut selection_query: Query<&mut Selection>) {
-    for mut selection in selection_query.iter_mut() {
+pub fn handle_deselect(
+    selection_query: Query<(Entity, &Selection)>,
+    mut deselect_events: EventWriter<Deselect>,
+) {
+    for (entity, selection) in &selection_query {
         if selection.is_selected {
-            selection.is_selected = false;
+            deselect_events.send(Deselect(entity));
         }
     }
 }
@@ -82,24 +85,24 @@ pub fn handle_enter_portal(
 
 pub fn handle_select_next(
     mut commands: Commands,
-    mut selection_param_set: ParamSet<(
-        NextSelectionQuery,
-        Query<(Entity, &mut Selection, &MapPresence)>,
-    )>,
+    next_selection_query: NextSelectionQuery,
+    selection_query: Query<(Entity, &Selection, &MapPresence)>,
     camera_query: Query<Entity, With<CameraControl>>,
+    mut select_events: EventWriter<Select>,
+    mut deselect_events: EventWriter<Deselect>,
 ) {
     let camera_entity = camera_query.single();
-    let Some(next) = selection_param_set.p0().get() else {
+    let Some(next) = next_selection_query.get() else {
         return;
     };
-    for (entity, mut selection, presence) in &mut selection_param_set.p1() {
+    for (entity, selection, presence) in &selection_query {
         if entity == next {
-            selection.is_selected = true;
+            select_events.send(Select(entity));
             commands
                 .entity(camera_entity)
                 .insert(CameraTarget::from_hexcoord(presence.position));
         } else if selection.is_selected {
-            selection.is_selected = false;
+            deselect_events.send(Deselect(entity));
         }
     }
 }

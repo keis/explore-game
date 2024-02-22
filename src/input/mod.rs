@@ -17,12 +17,12 @@ pub use leafwing_input_manager::{
     plugin::InputManagerSystem,
     prelude::ActionState,
 };
-pub use plugin::InputPlugin;
+pub use plugin::{InputPlugin, InputSet};
 pub use system_param::*;
 
 #[cfg(test)]
 mod tests {
-    use super::{action::handle_select_next, Action, ActionState, Selection};
+    use super::{action::*, system::*, Action, ActionState, Deselect, Select, Selection};
     use crate::{
         actor::Movement, camera::CameraControl, map::MapPresence, test_fixture::spawn_game_map,
     };
@@ -34,6 +34,8 @@ mod tests {
         let mut app = App::new();
         spawn_game_map(&mut app);
         app.insert_resource(ActionState::<Action>::default());
+        app.add_event::<Select>();
+        app.add_event::<Deselect>();
         app.world.spawn(CameraControl::default());
         app.world.spawn((
             MapPresence {
@@ -75,7 +77,7 @@ mod tests {
 
     #[rstest]
     pub fn select_next(mut app: App) {
-        app.add_systems(Update, handle_select_next);
+        app.add_systems(Update, (handle_select_next, apply_selection_events).chain());
 
         press_select_next(&mut app);
         app.update();
