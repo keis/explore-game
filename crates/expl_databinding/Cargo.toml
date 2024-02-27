@@ -5,5 +5,7 @@ edition = "2021"
 license = "ISC"
 
 [dependencies]
-bevy_ecs = { workspace = true }
-smallvec = { workspace = true }
+bevy_app.workspace = true
+bevy_ecs.workspace = true
+bevy_reflect = { workspace = true, features = ["smallvec"] }
+smallvec.workspace = true

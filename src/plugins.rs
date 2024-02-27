@@ -17,6 +17,7 @@ impl PluginGroup for ExplPlugins {
             .add(bevy_mod_outline::OutlinePlugin)
             .add(bevy_obj::ObjPlugin)
             .add(bevy_sprite3d::Sprite3dPlugin)
+            .add(expl_databinding::DataBindingPlugin)
             .add(noisy_bevy::NoisyShaderPlugin)
             .add(ActionPlugin)
             .add(ActorPlugin)
