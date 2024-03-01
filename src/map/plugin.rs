@@ -17,10 +17,12 @@ impl Plugin for MapPlugin {
             .add_systems(
                 Update,
                 (
-                    (update_zone_visibility, log_moves).run_if(on_event::<MapEvent>()),
-                    update_terrain_visibility,
-                    update_presence_fog,
-                ),
+                    update_zone_visibility,
+                    log_moves,
+                    update_terrain_visibility.after(update_zone_visibility),
+                    update_presence_fog.after(update_zone_visibility),
+                )
+                    .run_if(on_event::<MapEvent>()),
             )
             .add_event::<MapEvent>();
     }
