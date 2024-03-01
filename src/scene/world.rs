@@ -1,7 +1,7 @@
 use super::save;
 use crate::{
     actor::{CharacterBundle, CreatureCodex, CreatureParams, GroupCommandsExt, PartyBundle},
-    map::{MapCommandsExt, MapLayout, MapPosition, PresenceLayer, ZoneLayer},
+    map::{MapCommandsExt, MapLayout, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     map_generator::{GenerateMapTask, MapPrototype, MapSeed},
     structure::{PortalBundle, SafeHavenBundle, SpawnerBundle, StructureCodex, StructureParams},
     terrain::{CrystalDeposit, TerrainId, ZoneBundle, ZoneParams},
@@ -37,6 +37,7 @@ pub fn fluff_loaded_map(
     mut commands: Commands,
     map_query: Query<(Entity, &MapLayout)>,
     zone_query: Query<(&MapPosition, Entity), With<TerrainId>>,
+    presence_query: Query<(Entity, &MapPresence), Without<GlobalTransform>>,
 ) -> Result<(), ExplError> {
     let (entity, &MapLayout(layout)) = map_query.get_single()?;
     let zone_lookup: HashMap<HexCoord, _> = zone_query
@@ -44,9 +45,12 @@ pub fn fluff_loaded_map(
         .map(|(&MapPosition(p), e)| (p, e))
         .collect();
     let tiles = layout.iter().map(|coord| zone_lookup[&coord]).collect();
-    commands
-        .entity(entity)
-        .insert((ZoneLayer::new(layout, tiles), PresenceLayer::new(layout)));
+    let zone_layer = ZoneLayer::new(layout, tiles);
+    let mut presence_layer = PresenceLayer::new(layout);
+    for (entity, presence) in &presence_query {
+        presence_layer.add_presence(presence.position, entity);
+    }
+    commands.entity(entity).insert((zone_layer, presence_layer));
 
     Ok(())
 }

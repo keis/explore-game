@@ -1,27 +1,12 @@
 use crate::{
-    action::ActionPlugin,
-    actor::ActorPlugin,
-    assets::AssetsPlugin,
-    camera::CameraControlPlugin,
-    combat::CombatPlugin,
-    enemy::EnemyPlugin,
-    floating_text::FloatingTextPlugin,
-    input::InputPlugin,
-    inspector::InspectorPlugin,
-    interface::InterfacePlugin,
-    inventory::InventoryPlugin,
-    map::MapPlugin,
-    map_generator::MapGeneratorPlugin,
-    path::PathPlugin,
-    scene::{ScenePlugin, SceneSet, SceneState},
-    structure::StructurePlugin,
-    terrain::TerrainPlugin,
+    action::ActionPlugin, actor::ActorPlugin, assets::AssetsPlugin, camera::CameraControlPlugin,
+    combat::CombatPlugin, enemy::EnemyPlugin, floating_text::FloatingTextPlugin,
+    input::InputPlugin, inspector::InspectorPlugin, interface::InterfacePlugin,
+    inventory::InventoryPlugin, map::MapPlugin, map_generator::MapGeneratorPlugin,
+    path::PathPlugin, scene::ScenePlugin, structure::StructurePlugin, terrain::TerrainPlugin,
     turn::TurnPlugin,
 };
-use bevy::{
-    app::{PluginGroup, PluginGroupBuilder},
-    prelude::*,
-};
+use bevy::app::{PluginGroup, PluginGroupBuilder};
 
 pub struct ExplPlugins;
 
@@ -45,10 +30,7 @@ impl PluginGroup for ExplPlugins {
             .add(InterfacePlugin)
             .add(InventoryPlugin)
             .add(MapGeneratorPlugin)
-            .add(MapPlugin {
-                setup_schedule: OnEnter(SceneState::Active),
-                setup_set: SceneSet::Populate,
-            })
+            .add(MapPlugin)
             .add(PathPlugin)
             .add(ScenePlugin)
             .add(StructurePlugin)
