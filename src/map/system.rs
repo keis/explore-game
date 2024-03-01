@@ -1,4 +1,4 @@
-use super::{command::*, component::*, event::*};
+use super::{component::*, event::*};
 use bevy::prelude::*;
 
 pub fn log_moves(
@@ -85,20 +85,5 @@ pub fn update_presence_fog(
                 *visibility = Visibility::Inherited;
             }
         }
-    }
-}
-
-pub fn fluff_presence(
-    mut commands: Commands,
-    map_query: Query<Entity, With<PresenceLayer>>,
-    presence_query: Query<(Entity, &MapPresence), Without<GlobalTransform>>,
-) {
-    let Ok(map_entity) = map_query.get_single() else {
-        return;
-    };
-    for (entity, presence) in &presence_query {
-        commands
-            .entity(map_entity)
-            .add_presence(entity, presence.position);
     }
 }
