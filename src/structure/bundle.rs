@@ -1,6 +1,6 @@
 use super::{asset::*, component::*};
 use crate::{
-    actor::{Creature, Group},
+    actor::{Creature, Members},
     floating_text::FloatingTextSource,
     input::SelectionBundle,
     inventory::Inventory,
@@ -98,7 +98,7 @@ pub struct CampBundle {
     camp: Camp,
     inventory: Inventory,
     presence: MapPresence,
-    group: Group,
+    members: Members,
     view_radius: ViewRadius,
     fog: Fog,
     fog_revealer: FogRevealer,
@@ -172,5 +172,5 @@ impl PortalBundle {
 pub struct SafeHavenBundle {
     safe_haven: SafeHaven,
     inventory: Inventory,
-    group: Group,
+    members: Members,
 }

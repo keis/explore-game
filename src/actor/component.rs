@@ -62,31 +62,39 @@ impl Movement {
 #[reflect(Component)]
 pub struct Corpse;
 
-#[derive(Component, Reflect, Default)]
+#[derive(Component, Reflect, Default, Deref)]
 #[reflect(Component, MapEntities)]
-pub struct Group {
-    pub members: SmallVec<[Entity; 8]>,
-}
+pub struct Members(pub SmallVec<[Entity; 8]>);
 
-impl MapEntities for Group {
+impl MapEntities for Members {
     fn map_entities(&mut self, entity_mapper: &mut EntityMapper) {
-        for entity in &mut self.members {
+        for entity in &mut self.0 {
             *entity = entity_mapper.get_or_reserve(*entity);
         }
     }
 }
 
-#[derive(Component, Reflect, Default)]
+#[derive(Component, Reflect)]
 #[reflect(Component, MapEntities)]
-pub struct GroupMember {
-    pub group: Option<Entity>,
+pub struct Group(pub(super) Entity);
+
+impl Group {
+    #[inline(always)]
+    pub fn get(&self) -> Entity {
+        self.0
+    }
 }
 
-impl MapEntities for GroupMember {
+impl FromWorld for Group {
+    #[inline(always)]
+    fn from_world(_world: &mut World) -> Self {
+        Self(Entity::PLACEHOLDER)
+    }
+}
+
+impl MapEntities for Group {
     fn map_entities(&mut self, entity_mapper: &mut EntityMapper) {
-        if let Some(group) = self.group.as_mut() {
-            *group = entity_mapper.get_or_reserve(*group);
-        }
+        self.0 = entity_mapper.get_or_reserve(self.0);
     }
 }
 

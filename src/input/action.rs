@@ -1,7 +1,7 @@
 use super::{Deselect, NextSelectionQuery, Select, Selection};
 use crate::{
     action::{GameAction, GameActionQueue},
-    actor::{Character, Group, Party},
+    actor::{Character, Members, Party},
     camera::{CameraControl, CameraTarget},
     interface::InterfaceState,
     map::{MapPresence, PresenceLayer},
@@ -140,13 +140,13 @@ pub fn handle_break_camp(
 }
 
 pub fn handle_create_party(
-    camp_query: Query<(Entity, &Group, &Selection), With<Camp>>,
+    camp_query: Query<(Entity, &Members, &Selection), With<Camp>>,
     character_query: Query<(Entity, &Selection), With<Character>>,
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
-    for (entity, group, _) in camp_query.iter().filter(|(_, _, s)| s.is_selected) {
+    for (entity, members, _) in camp_query.iter().filter(|(_, _, s)| s.is_selected) {
         let selected: Vec<_> = character_query
-            .iter_many(&group.members)
+            .iter_many(members.iter())
             .filter(|(_, s)| s.is_selected)
             .map(|(e, _)| e)
             .collect();
@@ -157,13 +157,13 @@ pub fn handle_create_party(
 }
 
 pub fn handle_split_party(
-    party_query: Query<(Entity, &Group, &Selection), With<Party>>,
+    party_query: Query<(Entity, &Members, &Selection), With<Party>>,
     character_query: Query<(Entity, &Selection), With<Character>>,
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
-    for (entity, group, _) in party_query.iter().filter(|(_, _, s)| s.is_selected) {
+    for (entity, members, _) in party_query.iter().filter(|(_, _, s)| s.is_selected) {
         let selected: Vec<Entity> = character_query
-            .iter_many(&group.members)
+            .iter_many(members.iter())
             .filter(|(_, s)| s.is_selected)
             .map(|(e, _)| e)
             .collect();

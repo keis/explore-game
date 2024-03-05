@@ -46,7 +46,7 @@ pub struct PartyBundle {
     party: Party,
     inventory: Inventory,
     presence: MapPresence,
-    group: Group,
+    members: Members,
     movement: Movement,
     view_radius: ViewRadius,
     slide: Slide,

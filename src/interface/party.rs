@@ -4,7 +4,7 @@ use super::{
     InterfaceAssets,
 };
 use crate::{
-    actor::{Character, Group, Movement, Party},
+    actor::{Character, Members, Movement, Party},
     input::{Selection, SelectionUpdate},
     inventory::Inventory,
 };
@@ -64,7 +64,7 @@ fn spawn_party_display(
     entity: Entity,
     party: &Party,
     movement: &Movement,
-    group: &Group,
+    members: &Members,
     inventory: &Inventory,
     assets: &Res<InterfaceAssets>,
 ) {
@@ -110,7 +110,7 @@ fn spawn_party_display(
                     entity,
                     PartySizeText,
                     assets.person_icon.clone(),
-                    format!("{}", group.members.len()),
+                    format!("{}", members.len()),
                 );
                 spawn_stat_display(
                     parent,
@@ -126,7 +126,7 @@ fn spawn_party_display(
 
 #[allow(clippy::type_complexity)]
 pub fn run_if_any_party_changed(
-    party_query: Query<Entity, Or<(Changed<Party>, Changed<Group>)>>,
+    party_query: Query<Entity, Or<(Changed<Party>, Changed<Members>)>>,
 ) -> bool {
     !party_query.is_empty()
 }
@@ -135,7 +135,7 @@ pub fn update_party_list(
     mut commands: Commands,
     assets: Res<InterfaceAssets>,
     party_list_query: Query<Entity, With<PartyList>>,
-    party_query: Query<(Entity, &Party, &Group, &Movement, &Inventory)>,
+    party_query: Query<(Entity, &Party, &Members, &Movement, &Inventory)>,
     party_display_query: Query<(Entity, &PartyDisplay)>,
 ) {
     let party_list = party_list_query.single();
@@ -161,7 +161,7 @@ pub fn update_party_list(
 
     let party_entities: Vec<Entity> = party_query
         .iter()
-        .filter(|(_, _, g, _, _)| !g.members.is_empty())
+        .filter(|(_, _, m, _, _)| !m.is_empty())
         .map(|(e, _, _, _, _)| e)
         .collect();
     for (display_entity, display) in party_display_query.iter() {
@@ -203,10 +203,14 @@ pub fn update_party_movement_points(
 }
 
 pub fn update_party_size(
-    mut data_binding_update: DataBindingUpdate<&Group, &mut Text, (Changed<Group>, With<Party>)>,
+    mut data_binding_update: DataBindingUpdate<
+        &Members,
+        &mut Text,
+        (Changed<Members>, With<Party>),
+    >,
 ) {
-    data_binding_update.for_each(|group, text| {
-        text.sections[0].value = format!("{}", group.members.len());
+    data_binding_update.for_each(|members, text| {
+        text.sections[0].value = format!("{}", members.len());
     });
 }
 

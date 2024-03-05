@@ -18,7 +18,7 @@ pub use system_param::CreatureCodex;
 #[cfg(test)]
 mod tests {
     use super::{
-        command::AddMembers, system::derive_party_movement, Group, GroupMember, Movement, Party,
+        command::AddMembers, system::derive_party_movement, Group, Members, Movement, Party,
     };
     use bevy::{ecs::system::Command, prelude::*};
     use rstest::*;
@@ -30,7 +30,7 @@ mod tests {
         app.add_systems(Update, derive_party_movement);
         let party_entity = app
             .world
-            .spawn((Party::default(), Group::default(), Movement::default()))
+            .spawn((Party::default(), Members::default(), Movement::default()))
             .id();
         let member_entity = app
             .world
@@ -49,27 +49,21 @@ mod tests {
 
     #[rstest]
     fn join_group(mut app: App) {
-        let (group_entity, group) = app.world.query::<(Entity, &Group)>().single(&app.world);
-        assert_eq!(group.members.len(), 1);
-        let member_from_group_entity = group.members[0];
+        let (group_entity, group) = app.world.query::<(Entity, &Members)>().single(&app.world);
+        assert_eq!(group.len(), 1);
+        let member_from_group_entity = group[0];
 
-        let (member_entity, member) = app
-            .world
-            .query::<(Entity, &GroupMember)>()
-            .single(&app.world);
+        let (member_entity, member) = app.world.query::<(Entity, &Group)>().single(&app.world);
 
         assert_eq!(member_from_group_entity, member_entity);
-        assert_eq!(member.group, Some(group_entity));
+        assert_eq!(member.get(), group_entity);
     }
 
     #[rstest]
     fn change_group(mut app: App) {
-        let (member_entity, _) = app
-            .world
-            .query::<(Entity, &GroupMember)>()
-            .single(&app.world);
+        let (member_entity, _) = app.world.query::<(Entity, &Group)>().single(&app.world);
 
-        let new_group_entity = app.world.spawn(Group::default()).id();
+        let new_group_entity = app.world.spawn(Members::default()).id();
         let addmembers = AddMembers {
             group: new_group_entity,
             members: SmallVec::from_slice(&[member_entity]),
@@ -78,22 +72,22 @@ mod tests {
 
         let group = app
             .world
-            .query::<&Group>()
+            .query::<&Members>()
             .get(&app.world, new_group_entity)
             .unwrap();
 
-        assert_eq!(group.members.len(), 1);
-        assert_eq!(group.members[0], member_entity);
+        assert_eq!(group.len(), 1);
+        assert_eq!(group[0], member_entity);
 
-        let member = app.world.query::<&GroupMember>().single(&app.world);
-        assert_eq!(member.group, Some(new_group_entity));
+        let member = app.world.query::<&Group>().single(&app.world);
+        assert_eq!(member.0, new_group_entity);
     }
 
     #[rstest]
     fn party_movement(mut app: App) {
         let (mut movement, _member) = app
             .world
-            .query::<(&mut Movement, &GroupMember)>()
+            .query::<(&mut Movement, &Group)>()
             .single_mut(&mut app.world);
         movement.current = 3;
 

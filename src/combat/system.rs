@@ -1,6 +1,6 @@
 use super::{bundle::*, component::*, event::*};
 use crate::{
-    actor::{Character, Corpse, Enemy, Group, GroupCommandsExt, GroupMember},
+    actor::{Character, Corpse, Enemy, Group, GroupCommandsExt, Members},
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     map::{MapCommandsExt, MapEvent, PresenceLayer},
 };
@@ -45,7 +45,7 @@ pub fn initiate_combat(
     mut combat_events: EventWriter<CombatEvent>,
     mut combat_params: CombatParams,
     map_query: Query<&PresenceLayer>,
-    friend_query: Query<&Group>,
+    friend_query: Query<&Members>,
     character_query: Query<Entity, With<Character>>,
     foe_query: Query<Entity, With<Enemy>>,
 ) {
@@ -58,7 +58,7 @@ pub fn initiate_combat(
         };
         let friends: Vec<_> = friend_query
             .iter_many(presence_layer.presence(*position))
-            .flat_map(|group| character_query.iter_many(&group.members))
+            .flat_map(|members| character_query.iter_many(members.iter()))
             .collect();
         let foes: Vec<_> = foe_query
             .iter_many(presence_layer.presence(*position))
@@ -116,7 +116,7 @@ pub fn combat_round(
 pub fn make_corpses(
     mut commands: Commands,
     map_query: Query<Entity, With<PresenceLayer>>,
-    health_query: Query<(Entity, &Health, Option<&GroupMember>, Option<&Enemy>), Without<Corpse>>,
+    health_query: Query<(Entity, &Health, Option<&Group>, Option<&Enemy>), Without<Corpse>>,
 ) {
     let Ok(map_entity) = map_query.get_single() else {
         return;
@@ -124,7 +124,7 @@ pub fn make_corpses(
     for (entity, health, maybe_member, maybe_enemy) in &health_query {
         if health.current == 0 {
             info!("{:?} is dead", entity);
-            if let Some(group) = maybe_member.and_then(|member| member.group) {
+            if let Some(group) = maybe_member.map(|member| member.get()) {
                 commands.entity(group).remove_members(&[entity]);
             }
             if maybe_enemy.is_some() {

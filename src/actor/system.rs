@@ -105,14 +105,14 @@ pub fn update_enemy_visibility(
 #[allow(clippy::type_complexity)]
 pub fn despawn_empty_party(
     mut commands: Commands,
-    party_query: Query<(Entity, &Group), (With<Party>, With<MapPresence>, Changed<Group>)>,
+    party_query: Query<(Entity, &Members), (With<Party>, With<MapPresence>, Changed<Members>)>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) {
     let Ok(map_entity) = map_query.get_single() else {
         return;
     };
-    for (entity, group) in &party_query {
-        if group.members.is_empty() {
+    for (entity, members) in &party_query {
+        if members.is_empty() {
             commands.entity(map_entity).despawn_presence(entity);
         }
     }
@@ -120,17 +120,17 @@ pub fn despawn_empty_party(
 
 #[allow(clippy::type_complexity)]
 pub fn derive_party_movement(
-    mut party_query: Query<(&Group, &mut Movement), (With<Party>, Changed<Group>)>,
+    mut party_query: Query<(&Members, &mut Movement), (With<Party>, Changed<Members>)>,
     movement_query: Query<&Movement, Without<Party>>,
 ) {
-    for (group, mut party_movement) in party_query.iter_mut() {
+    for (members, mut party_movement) in party_query.iter_mut() {
         party_movement.current = movement_query
-            .iter_many(&group.members)
+            .iter_many(members.iter())
             .map(|m| m.current)
             .min()
             .unwrap_or(0);
         party_movement.reset = movement_query
-            .iter_many(&group.members)
+            .iter_many(members.iter())
             .map(|m| m.reset)
             .min()
             .unwrap_or(0);
