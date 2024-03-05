@@ -40,7 +40,8 @@ impl Default for CharacterListBundle {
                 style: Style {
                     width: Val::Px(200.0),
                     height: Val::Auto,
-                    flex_direction: FlexDirection::Column,
+                    flex_direction: FlexDirection::Row,
+                    align_self: AlignSelf::FlexEnd,
                     ..default()
                 },
                 ..default()

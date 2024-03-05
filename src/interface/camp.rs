@@ -37,7 +37,7 @@ impl Default for CampListBundle {
         Self {
             node_bundle: NodeBundle {
                 style: Style {
-                    width: Val::Px(200.0),
+                    width: Val::Auto,
                     height: Val::Auto,
                     flex_direction: FlexDirection::Column,
                     margin: UiRect {
@@ -55,24 +55,13 @@ impl Default for CampListBundle {
     }
 }
 
-fn spawn_camp_display(
-    parent: &mut ChildBuilder,
-    entity: Entity,
-    camp: &Camp,
-    members: &Members,
-    inventory: &Inventory,
-    assets: &Res<InterfaceAssets>,
-) {
+fn spawn_camp_display(parent: &mut ChildBuilder, entity: Entity, assets: &Res<InterfaceAssets>) {
     parent
         .spawn((
             CampDisplay { camp: entity },
             ButtonBundle {
                 style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Px(120.0),
                     margin: UiRect::all(Val::Px(2.0)),
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::SpaceBetween,
                     ..default()
                 },
                 background_color: NORMAL.into(),
@@ -81,7 +70,15 @@ fn spawn_camp_display(
         ))
         .bind_to(entity)
         .with_children(|parent| {
-            spawn_camp_details(parent, entity, camp, members, inventory, assets);
+            parent.spawn(ImageBundle {
+                style: Style {
+                    width: Val::Px(32.0),
+                    height: Val::Px(32.0),
+                    ..default()
+                },
+                image: assets.campfire_icon.clone().into(),
+                ..default()
+            });
         });
 }
 
@@ -125,11 +122,11 @@ pub fn update_camp_list(
     mut commands: Commands,
     assets: Res<InterfaceAssets>,
     camp_list_query: Query<Entity, With<CampList>>,
-    camp_query: Query<(Entity, &Camp, &Members, &Inventory), Added<Camp>>,
+    camp_query: Query<Entity, Added<Camp>>,
     camp_display_query: Query<(Entity, &CampDisplay)>,
 ) {
     let camp_list = camp_list_query.single();
-    for (entity, camp, members, inventory) in camp_query.iter() {
+    for entity in camp_query.iter() {
         if camp_display_query
             .iter()
             .any(|(_, display)| display.camp == entity)
@@ -137,7 +134,7 @@ pub fn update_camp_list(
             continue;
         }
         commands.get_or_spawn(camp_list).with_children(|parent| {
-            spawn_camp_display(parent, entity, camp, members, inventory, &assets);
+            spawn_camp_display(parent, entity, &assets);
         });
     }
 }

@@ -1,12 +1,17 @@
-use super::{assets::InterfaceAssets, camp, character, game_over, menu, party, shell, tooltip};
+use super::{
+    assets::InterfaceAssets, camp, character, game_over, menu, party, selected, shell, tabview,
+    tooltip,
+};
 use crate::{
     actor::{GroupEvent, Party},
     assets::AssetState,
-    input::{action_just_pressed, Action, Deselect, InputManagerSystem, InputSet, Select},
+    input::{
+        action_just_pressed, Action, Deselect, InputManagerSystem, InputSet, Select, Selection,
+    },
     scene::SceneState,
     structure::Camp,
 };
-use bevy::prelude::*;
+use bevy::{hierarchy::HierarchyEvent, prelude::*};
 use bevy_asset_loader::prelude::*;
 
 pub struct InterfacePlugin;
@@ -53,6 +58,7 @@ impl Plugin for InterfacePlugin {
                     camp::handle_camp_display_interaction,
                     party::handle_party_display_interaction,
                     character::handle_character_display_interaction,
+                    tabview::handle_tab_view_header_button_interaction.map(bevy::utils::warn),
                 )
                     .in_set(InputSet::ProcessInput),
             ),
@@ -86,6 +92,16 @@ impl Plugin for InterfacePlugin {
                 shell::update_turn_text,
                 shell::update_zone_text,
                 tooltip::show_tooltip_on_hover,
+                (
+                    (
+                        selected::remove_despawned.run_if(any_component_removed::<Selection>()),
+                        selected::update_selected
+                            .run_if(on_event::<Select>().or_else(on_event::<Deselect>())),
+                    ),
+                    apply_deferred,
+                    tabview::update_tab_view.run_if(on_event::<HierarchyEvent>()),
+                )
+                    .chain(),
             )
                 .run_if(in_state(AssetState::Loaded)),
         )
