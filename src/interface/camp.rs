@@ -1,5 +1,6 @@
 use super::{
     color::{NORMAL, SELECTED},
+    party::PartySizeText,
     stat::spawn_stat_display,
     InterfaceAssets,
 };
@@ -59,6 +60,7 @@ fn spawn_camp_display(
     parent: &mut ChildBuilder,
     entity: Entity,
     camp: &Camp,
+    members: &Members,
     inventory: &Inventory,
     assets: &Res<InterfaceAssets>,
 ) {
@@ -80,25 +82,44 @@ fn spawn_camp_display(
         ))
         .bind_to(entity)
         .with_children(|parent| {
-            parent.spawn(TextBundle::from_section(
-                camp.name.clone(),
-                TextStyle {
-                    font: assets.font.clone(),
-                    font_size: 32.0,
-                    color: Color::WHITE,
-                },
-            ));
-            parent.spawn(NodeBundle::default()).with_children(|parent| {
-                spawn_stat_display(
-                    parent,
-                    assets,
-                    entity,
-                    CampCrystalsText,
-                    assets.crystals_icon.clone(),
-                    format!("{}", inventory.count_item(Inventory::CRYSTAL)),
-                );
-            });
+            spawn_camp_details(parent, entity, camp, members, inventory, assets);
         });
+}
+
+pub fn spawn_camp_details(
+    parent: &mut ChildBuilder,
+    entity: Entity,
+    camp: &Camp,
+    members: &Members,
+    inventory: &Inventory,
+    assets: &Res<InterfaceAssets>,
+) {
+    parent.spawn(TextBundle::from_section(
+        camp.name.clone(),
+        TextStyle {
+            font: assets.font.clone(),
+            font_size: 32.0,
+            color: Color::WHITE,
+        },
+    ));
+    parent.spawn(NodeBundle::default()).with_children(|parent| {
+        spawn_stat_display(
+            parent,
+            assets,
+            entity,
+            CampCrystalsText,
+            assets.crystals_icon.clone(),
+            format!("{}", inventory.count_item(Inventory::CRYSTAL)),
+        );
+        spawn_stat_display(
+            parent,
+            assets,
+            entity,
+            PartySizeText,
+            assets.person_icon.clone(),
+            format!("{}", members.len()),
+        );
+    });
 }
 
 #[allow(clippy::type_complexity)]
@@ -117,11 +138,11 @@ pub fn update_camp_list(
     mut commands: Commands,
     assets: Res<InterfaceAssets>,
     camp_list_query: Query<Entity, With<CampList>>,
-    camp_query: Query<(Entity, &Camp, &Inventory)>,
+    camp_query: Query<(Entity, &Camp, &Members, &Inventory)>,
     camp_display_query: Query<(Entity, &CampDisplay)>,
 ) {
     let camp_list = camp_list_query.single();
-    for (entity, camp, inventory) in camp_query.iter() {
+    for (entity, camp, members, inventory) in camp_query.iter() {
         if camp_display_query
             .iter()
             .any(|(_, display)| display.camp == entity)
@@ -129,11 +150,11 @@ pub fn update_camp_list(
             continue;
         }
         commands.get_or_spawn(camp_list).with_children(|parent| {
-            spawn_camp_display(parent, entity, camp, inventory, &assets);
+            spawn_camp_display(parent, entity, camp, members, inventory, &assets);
         });
     }
 
-    let camp_entities: Vec<Entity> = camp_query.iter().map(|(e, _, _)| e).collect();
+    let camp_entities: Vec<Entity> = camp_query.iter().map(|(e, ..)| e).collect();
     for (display_entity, display) in camp_display_query.iter() {
         if !camp_entities.iter().any(|&entity| display.camp == entity) {
             commands.entity(display_entity).despawn_recursive();

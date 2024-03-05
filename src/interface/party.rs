@@ -87,41 +87,53 @@ fn spawn_party_display(
         ))
         .bind_to(entity)
         .with_children(|parent| {
-            parent.spawn(TextBundle::from_section(
-                party.name.clone(),
-                TextStyle {
-                    font: assets.font.clone(),
-                    font_size: 32.0,
-                    color: Color::WHITE,
-                },
-            ));
-            parent.spawn(NodeBundle::default()).with_children(|parent| {
-                spawn_stat_display(
-                    parent,
-                    assets,
-                    entity,
-                    PartyMovementPointsText,
-                    assets.footsteps_icon.clone(),
-                    format!("{}", movement.current),
-                );
-                spawn_stat_display(
-                    parent,
-                    assets,
-                    entity,
-                    PartySizeText,
-                    assets.person_icon.clone(),
-                    format!("{}", members.len()),
-                );
-                spawn_stat_display(
-                    parent,
-                    assets,
-                    entity,
-                    PartyCrystalsText,
-                    assets.crystals_icon.clone(),
-                    format!("{}", inventory.count_item(Inventory::CRYSTAL)),
-                );
-            });
+            spawn_party_details(parent, entity, party, movement, members, inventory, assets);
         });
+}
+
+pub fn spawn_party_details(
+    parent: &mut ChildBuilder,
+    entity: Entity,
+    party: &Party,
+    movement: &Movement,
+    members: &Members,
+    inventory: &Inventory,
+    assets: &Res<InterfaceAssets>,
+) {
+    parent.spawn(TextBundle::from_section(
+        party.name.clone(),
+        TextStyle {
+            font: assets.font.clone(),
+            font_size: 32.0,
+            color: Color::WHITE,
+        },
+    ));
+    parent.spawn(NodeBundle::default()).with_children(|parent| {
+        spawn_stat_display(
+            parent,
+            assets,
+            entity,
+            PartyMovementPointsText,
+            assets.footsteps_icon.clone(),
+            format!("{}", movement.current),
+        );
+        spawn_stat_display(
+            parent,
+            assets,
+            entity,
+            PartySizeText,
+            assets.person_icon.clone(),
+            format!("{}", members.len()),
+        );
+        spawn_stat_display(
+            parent,
+            assets,
+            entity,
+            PartyCrystalsText,
+            assets.crystals_icon.clone(),
+            format!("{}", inventory.count_item(Inventory::CRYSTAL)),
+        );
+    });
 }
 
 #[allow(clippy::type_complexity)]
