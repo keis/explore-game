@@ -4,7 +4,7 @@ use super::{
     InterfaceAssets,
 };
 use crate::{
-    actor::{Character, Group},
+    actor::{Character, Members},
     combat::{Attack, Health},
     input::{Deselect, Selection, SelectionUpdate},
 };
@@ -107,19 +107,12 @@ fn spawn_character_display(
         });
 }
 
-#[allow(clippy::type_complexity)]
-pub fn run_if_any_party_or_selection_changed(
-    party_query: Query<Entity, Or<(Changed<Group>, Changed<Selection>)>>,
-) -> bool {
-    !party_query.is_empty()
-}
-
 pub fn update_character_list(
     mut commands: Commands,
     assets: Res<InterfaceAssets>,
     character_list_query: Query<Entity, With<CharacterList>>,
     character_query: Query<(Entity, &Character, &Attack, &Health)>,
-    party_query: Query<(&Group, &Selection), Without<Character>>,
+    party_query: Query<(&Members, &Selection), Without<Character>>,
     character_display_query: Query<(Entity, &CharacterDisplay)>,
     mut deselect_events: EventWriter<Deselect>,
 ) {
@@ -128,7 +121,7 @@ pub fn update_character_list(
     let characters = party_query
         .iter()
         .filter(|(_, selection)| selection.is_selected)
-        .flat_map(|(group, _)| group.members.iter());
+        .flat_map(|(members, _)| members.iter());
     for (entity, character, attack, health) in character_query.iter_many(characters) {
         if !character_display_query
             .iter()
@@ -145,7 +138,7 @@ pub fn update_character_list(
     let characters: Vec<&Entity> = party_query
         .iter()
         .filter(|(_, selection)| selection.is_selected)
-        .flat_map(|(party, _)| party.members.iter())
+        .flat_map(|(members, _)| members.iter())
         .collect();
     for (display_entity, display) in character_display_query.iter() {
         if !characters

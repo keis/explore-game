@@ -51,7 +51,6 @@ impl Plugin for InputPlugin {
         .add_systems(
             Update,
             (
-                handle_deselect.run_if(action_just_pressed(Action::Deselect)),
                 handle_enter_portal.run_if(action_just_pressed(Action::EnterPortal)),
                 handle_select_next.run_if(action_just_pressed(Action::SelectNext)),
                 handle_resume_move.run_if(action_just_pressed(Action::ResumeMove)),
@@ -68,10 +67,13 @@ impl Plugin for InputPlugin {
         )
         .add_systems(
             PreUpdate,
-            magic_cancel
-                .in_set(InputManagerSystem::ManualControl)
-                .after(InputManagerSystem::Update)
-                .run_if(action_just_pressed(Action::Cancel)),
+            (
+                magic_cancel.run_if(action_just_pressed(Action::Cancel)),
+                handle_deselect.run_if(action_just_pressed(Action::Deselect)),
+            )
+                .chain()
+                .in_set(InputSet::ProcessInput)
+                .in_set(InputManagerSystem::ManualControl),
         )
         .add_systems(
             PreUpdate,
@@ -88,10 +90,7 @@ impl Plugin for InputPlugin {
                         .run_if(on_event::<Select>().or_else(on_event::<Deselect>())),
                 )
                     .in_set(InputSet::Selection),
-                update_selection_highlight
-                    .after(update_highlight_assets::<StandardMaterial>)
-                    .in_set(InputSet::PostSelection),
-                update_interaction_highlight
+                (update_selection_highlight, update_interaction_highlight)
                     .after(update_highlight_assets::<StandardMaterial>)
                     .in_set(InputSet::PostSelection),
             )

@@ -1,6 +1,6 @@
 use super::SceneState;
 use crate::{
-    actor::{Corpse, Group},
+    actor::{Corpse, Members},
     inventory::Inventory,
     map::MapPresence,
     structure::SafeHaven,
@@ -18,16 +18,16 @@ pub struct Score {
 pub fn game_over(
     mut commands: Commands,
     mut scene_state: ResMut<NextState<SceneState>>,
-    group_query: Query<&Group, With<MapPresence>>,
-    safe_haven_query: Query<(&Group, &Inventory), With<SafeHaven>>,
+    group_query: Query<&Members, With<MapPresence>>,
+    safe_haven_query: Query<(&Members, &Inventory), With<SafeHaven>>,
     corpse_query: Query<&Corpse>,
 ) {
-    if group_query.iter().any(|g| !g.members.is_empty()) {
+    if group_query.iter().any(|m| !m.is_empty()) {
         return;
     }
     let mut score = Score::default();
-    for (group, inventory) in &safe_haven_query {
-        score.survivors += group.members.len() as u32;
+    for (members, inventory) in &safe_haven_query {
+        score.survivors += members.len() as u32;
         score.crystals += inventory.count_item(Inventory::CRYSTAL);
     }
     score.dead = corpse_query.iter().count() as u32;

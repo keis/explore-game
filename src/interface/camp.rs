@@ -4,7 +4,7 @@ use super::{
     InterfaceAssets,
 };
 use crate::{
-    actor::{Character, Group},
+    actor::{Character, Members},
     input::{Selection, SelectionUpdate},
     inventory::Inventory,
     map::MapEvent,
@@ -103,7 +103,7 @@ fn spawn_camp_display(
 
 #[allow(clippy::type_complexity)]
 pub fn run_if_any_camp_changed(
-    camp_query: Query<Entity, Or<(Changed<Camp>, Changed<Group>)>>,
+    camp_query: Query<Entity, Or<(Changed<Camp>, Changed<Members>)>>,
     mut map_events: EventReader<MapEvent>,
 ) -> bool {
     let removed_event_count = map_events

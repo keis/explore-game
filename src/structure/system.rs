@@ -1,6 +1,6 @@
 use super::{bundle::*, component::*, system_param::*};
 use crate::{
-    actor::{CreatureCodex, CreatureParams, EnemyBundle, Group},
+    actor::{CreatureCodex, CreatureParams, EnemyBundle, Members},
     combat::Health,
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     map::{Fog, MapCommandsExt, MapPresence, PresenceLayer, ViewRadius},
@@ -105,10 +105,10 @@ pub fn update_portal_effect(
 
 #[allow(clippy::type_complexity)]
 pub fn update_camp_view_radius(
-    mut camp_query: Query<(&Group, &mut ViewRadius), (With<Camp>, Changed<Group>)>,
+    mut camp_query: Query<(&Members, &mut ViewRadius), (With<Camp>, Changed<Members>)>,
 ) {
-    for (group, mut view_radius) in &mut camp_query {
-        view_radius.0 = if group.members.is_empty() {
+    for (members, mut view_radius) in &mut camp_query {
+        view_radius.0 = if members.is_empty() {
             0
         } else {
             ViewRadius::DEFAULT_VIEW_RADIUS
@@ -117,11 +117,11 @@ pub fn update_camp_view_radius(
 }
 
 pub fn heal_characters(
-    mut camp_query: Query<(&Group, &mut FloatingTextSource), With<Camp>>,
+    mut camp_query: Query<(&Members, &mut FloatingTextSource), With<Camp>>,
     mut health_query: Query<&mut Health>,
 ) {
-    for (group, mut floating_text_source) in &mut camp_query {
-        let mut iter = health_query.iter_many_mut(&group.members);
+    for (members, mut floating_text_source) in &mut camp_query {
+        let mut iter = health_query.iter_many_mut(members.iter());
         while let Some(mut health) = iter.fetch_next() {
             let healed = health.heal(2);
             if healed > 0 {
