@@ -8,7 +8,6 @@ use crate::{
     actor::{Character, Members},
     input::{Selection, SelectionUpdate},
     inventory::Inventory,
-    map::MapEvent,
     structure::Camp,
 };
 use bevy::prelude::*;
@@ -122,23 +121,11 @@ pub fn spawn_camp_details(
     });
 }
 
-#[allow(clippy::type_complexity)]
-pub fn run_if_any_camp_changed(
-    camp_query: Query<Entity, Or<(Changed<Camp>, Changed<Members>)>>,
-    mut map_events: EventReader<MapEvent>,
-) -> bool {
-    let removed_event_count = map_events
-        .read()
-        .filter(|e| matches!(e, MapEvent::PresenceRemoved { .. }))
-        .count();
-    !(camp_query.is_empty() && removed_event_count == 0)
-}
-
 pub fn update_camp_list(
     mut commands: Commands,
     assets: Res<InterfaceAssets>,
     camp_list_query: Query<Entity, With<CampList>>,
-    camp_query: Query<(Entity, &Camp, &Members, &Inventory)>,
+    camp_query: Query<(Entity, &Camp, &Members, &Inventory), Added<Camp>>,
     camp_display_query: Query<(Entity, &CampDisplay)>,
 ) {
     let camp_list = camp_list_query.single();
@@ -153,10 +140,19 @@ pub fn update_camp_list(
             spawn_camp_display(parent, entity, camp, members, inventory, &assets);
         });
     }
+}
 
-    let camp_entities: Vec<Entity> = camp_query.iter().map(|(e, ..)| e).collect();
-    for (display_entity, display) in camp_display_query.iter() {
-        if !camp_entities.iter().any(|&entity| display.camp == entity) {
+pub(super) fn remove_despawned(
+    mut commands: Commands,
+    mut removed_camp: RemovedComponents<Camp>,
+    camp_display_query: Query<(Entity, &CampDisplay)>,
+) {
+    for entity in removed_camp.read() {
+        if let Some((display_entity, _)) = camp_display_query
+            .iter()
+            .find(|(_, display)| display.camp == entity)
+        {
+            commands.entity(display_entity).remove_parent();
             commands.entity(display_entity).despawn_recursive();
         }
     }

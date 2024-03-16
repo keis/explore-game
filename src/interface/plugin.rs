@@ -1,9 +1,10 @@
 use super::{assets::InterfaceAssets, camp, character, game_over, menu, party, shell, tooltip};
 use crate::{
-    actor::GroupEvent,
+    actor::{GroupEvent, Party},
     assets::AssetState,
     input::{action_just_pressed, Action, Deselect, InputManagerSystem, InputSet, Select},
     scene::SceneState,
+    structure::Camp,
 };
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
@@ -60,16 +61,18 @@ impl Plugin for InterfacePlugin {
             Update,
             (
                 (
-                    party::update_party_list.run_if(party::run_if_any_party_changed),
+                    party::update_party_list,
                     party::update_party_selection,
                     party::update_party_movement_points,
                     party::update_party_size,
                     party::update_party_crystals,
+                    party::remove_despawned.run_if(any_component_removed::<Party>()),
                 ),
                 (
-                    camp::update_camp_list.run_if(camp::run_if_any_camp_changed),
+                    camp::update_camp_list,
                     camp::update_camp_selection,
                     camp::update_camp_crystals,
+                    camp::remove_despawned.run_if(any_component_removed::<Camp>()),
                 ),
                 (
                     character::update_character_list.run_if(

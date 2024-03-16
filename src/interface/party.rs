@@ -136,18 +136,11 @@ pub fn spawn_party_details(
     });
 }
 
-#[allow(clippy::type_complexity)]
-pub fn run_if_any_party_changed(
-    party_query: Query<Entity, Or<(Changed<Party>, Changed<Members>)>>,
-) -> bool {
-    !party_query.is_empty()
-}
-
 pub fn update_party_list(
     mut commands: Commands,
     assets: Res<InterfaceAssets>,
     party_list_query: Query<Entity, With<PartyList>>,
-    party_query: Query<(Entity, &Party, &Members, &Movement, &Inventory)>,
+    party_query: Query<(Entity, &Party, &Members, &Movement, &Inventory), Added<Party>>,
     party_display_query: Query<(Entity, &PartyDisplay)>,
 ) {
     let party_list = party_list_query.single();
@@ -170,14 +163,19 @@ pub fn update_party_list(
             );
         });
     }
+}
 
-    let party_entities: Vec<Entity> = party_query
-        .iter()
-        .filter(|(_, _, m, _, _)| !m.is_empty())
-        .map(|(e, _, _, _, _)| e)
-        .collect();
-    for (display_entity, display) in party_display_query.iter() {
-        if !party_entities.iter().any(|&entity| display.party == entity) {
+pub(super) fn remove_despawned(
+    mut commands: Commands,
+    mut removed_party: RemovedComponents<Party>,
+    party_display_query: Query<(Entity, &PartyDisplay)>,
+) {
+    for entity in removed_party.read() {
+        if let Some((display_entity, _)) = party_display_query
+            .iter()
+            .find(|(_, display)| display.party == entity)
+        {
+            commands.entity(display_entity).remove_parent();
             commands.entity(display_entity).despawn_recursive();
         }
     }
