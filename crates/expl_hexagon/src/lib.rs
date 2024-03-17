@@ -1,6 +1,7 @@
 use bevy_render::{
     mesh::{Indices, PrimitiveTopology},
     prelude::*,
+    render_asset::RenderAssetUsages,
 };
 use glam::Vec3A;
 use hexasphere::{interpolation, BaseShape, Subdivided, Triangle};
@@ -29,8 +30,11 @@ impl From<Hexagon> for Mesh {
             .map(|point| [point[0] * 0.5 + 0.5, point[2] * 0.5 + 0.5])
             .collect();
 
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-        mesh.set_indices(Some(indices));
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::default(),
+        );
+        mesh.insert_indices(indices);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
