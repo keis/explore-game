@@ -1,8 +1,8 @@
 use super::{
     camp::CampListBundle,
-    character::CharacterListBundle,
     color::NORMAL,
     party::PartyListBundle,
+    selected::spawn_selected_display,
     tooltip::{spawn_tooltip, TooltipPosition, TooltipTarget},
     InterfaceAssets,
 };
@@ -167,6 +167,7 @@ fn spawn_next_turn_button(parent: &mut ChildBuilder, assets: &Res<InterfaceAsset
                     width: Val::Px(200.0),
                     height: Val::Px(60.0),
                     align_items: AlignItems::Center,
+                    align_self: AlignSelf::FlexEnd,
                     justify_content: JustifyContent::Center,
                     ..default()
                 },
@@ -253,7 +254,6 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                                     parent.spawn(CampListBundle::default());
                                     parent.spawn(PartyListBundle::default());
                                 });
-                            parent.spawn(CharacterListBundle::default());
                         });
                     spawn_toolbar(parent, &assets);
                     parent
@@ -289,7 +289,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     NodeBundle {
                         style: Style {
                             width: Val::Percent(100.0),
-                            justify_content: JustifyContent::FlexEnd,
+                            justify_content: JustifyContent::SpaceBetween,
                             ..default()
                         },
                         focus_policy: FocusPolicy::Pass,
@@ -298,6 +298,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                     Pickable::IGNORE,
                 ))
                 .with_children(|parent| {
+                    spawn_selected_display(parent, &assets);
                     spawn_next_turn_button(parent, &assets);
                 });
         });

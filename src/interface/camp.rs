@@ -1,5 +1,6 @@
 use super::{
     color::{NORMAL, SELECTED},
+    party::PartySizeText,
     stat::spawn_stat_display,
     InterfaceAssets,
 };
@@ -7,7 +8,6 @@ use crate::{
     actor::{Character, Members},
     input::{Selection, SelectionUpdate},
     inventory::Inventory,
-    map::MapEvent,
     structure::Camp,
 };
 use bevy::prelude::*;
@@ -37,7 +37,7 @@ impl Default for CampListBundle {
         Self {
             node_bundle: NodeBundle {
                 style: Style {
-                    width: Val::Px(200.0),
+                    width: Val::Auto,
                     height: Val::Auto,
                     flex_direction: FlexDirection::Column,
                     margin: UiRect {
@@ -55,23 +55,13 @@ impl Default for CampListBundle {
     }
 }
 
-fn spawn_camp_display(
-    parent: &mut ChildBuilder,
-    entity: Entity,
-    camp: &Camp,
-    inventory: &Inventory,
-    assets: &Res<InterfaceAssets>,
-) {
+fn spawn_camp_display(parent: &mut ChildBuilder, entity: Entity, assets: &Res<InterfaceAssets>) {
     parent
         .spawn((
             CampDisplay { camp: entity },
             ButtonBundle {
                 style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Px(120.0),
                     margin: UiRect::all(Val::Px(2.0)),
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::SpaceBetween,
                     ..default()
                 },
                 background_color: NORMAL.into(),
@@ -80,48 +70,63 @@ fn spawn_camp_display(
         ))
         .bind_to(entity)
         .with_children(|parent| {
-            parent.spawn(TextBundle::from_section(
-                camp.name.clone(),
-                TextStyle {
-                    font: assets.font.clone(),
-                    font_size: 32.0,
-                    color: Color::WHITE,
+            parent.spawn(ImageBundle {
+                style: Style {
+                    width: Val::Px(32.0),
+                    height: Val::Px(32.0),
+                    ..default()
                 },
-            ));
-            parent.spawn(NodeBundle::default()).with_children(|parent| {
-                spawn_stat_display(
-                    parent,
-                    assets,
-                    entity,
-                    CampCrystalsText,
-                    assets.crystals_icon.clone(),
-                    format!("{}", inventory.count_item(Inventory::CRYSTAL)),
-                );
+                image: assets.campfire_icon.clone().into(),
+                ..default()
             });
         });
 }
 
-#[allow(clippy::type_complexity)]
-pub fn run_if_any_camp_changed(
-    camp_query: Query<Entity, Or<(Changed<Camp>, Changed<Members>)>>,
-    mut map_events: EventReader<MapEvent>,
-) -> bool {
-    let removed_event_count = map_events
-        .read()
-        .filter(|e| matches!(e, MapEvent::PresenceRemoved { .. }))
-        .count();
-    !(camp_query.is_empty() && removed_event_count == 0)
+pub fn spawn_camp_details(
+    parent: &mut ChildBuilder,
+    entity: Entity,
+    camp: &Camp,
+    members: &Members,
+    inventory: &Inventory,
+    assets: &Res<InterfaceAssets>,
+) {
+    parent.spawn(TextBundle::from_section(
+        camp.name.clone(),
+        TextStyle {
+            font: assets.font.clone(),
+            font_size: 32.0,
+            color: Color::WHITE,
+        },
+    ));
+    parent.spawn(NodeBundle::default()).with_children(|parent| {
+        spawn_stat_display(
+            parent,
+            assets,
+            entity,
+            CampCrystalsText,
+            assets.crystals_icon.clone(),
+            format!("{}", inventory.count_item(Inventory::CRYSTAL)),
+        );
+        spawn_stat_display(
+            parent,
+            assets,
+            entity,
+            PartySizeText,
+            assets.person_icon.clone(),
+            format!("{}", members.len()),
+        );
+    });
 }
 
 pub fn update_camp_list(
     mut commands: Commands,
     assets: Res<InterfaceAssets>,
     camp_list_query: Query<Entity, With<CampList>>,
-    camp_query: Query<(Entity, &Camp, &Inventory)>,
+    camp_query: Query<Entity, Added<Camp>>,
     camp_display_query: Query<(Entity, &CampDisplay)>,
 ) {
     let camp_list = camp_list_query.single();
-    for (entity, camp, inventory) in camp_query.iter() {
+    for entity in camp_query.iter() {
         if camp_display_query
             .iter()
             .any(|(_, display)| display.camp == entity)
@@ -129,13 +134,22 @@ pub fn update_camp_list(
             continue;
         }
         commands.get_or_spawn(camp_list).with_children(|parent| {
-            spawn_camp_display(parent, entity, camp, inventory, &assets);
+            spawn_camp_display(parent, entity, &assets);
         });
     }
+}
 
-    let camp_entities: Vec<Entity> = camp_query.iter().map(|(e, _, _)| e).collect();
-    for (display_entity, display) in camp_display_query.iter() {
-        if !camp_entities.iter().any(|&entity| display.camp == entity) {
+pub(super) fn remove_despawned(
+    mut commands: Commands,
+    mut removed_camp: RemovedComponents<Camp>,
+    camp_display_query: Query<(Entity, &CampDisplay)>,
+) {
+    for entity in removed_camp.read() {
+        if let Some((display_entity, _)) = camp_display_query
+            .iter()
+            .find(|(_, display)| display.camp == entity)
+        {
+            commands.entity(display_entity).remove_parent();
             commands.entity(display_entity).despawn_recursive();
         }
     }

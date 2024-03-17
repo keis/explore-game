@@ -41,7 +41,7 @@ impl Default for PartyListBundle {
         Self {
             node_bundle: NodeBundle {
                 style: Style {
-                    width: Val::Px(200.0),
+                    width: Val::Auto,
                     height: Val::Auto,
                     flex_direction: FlexDirection::Column,
                     margin: UiRect {
@@ -59,26 +59,13 @@ impl Default for PartyListBundle {
     }
 }
 
-fn spawn_party_display(
-    parent: &mut ChildBuilder,
-    entity: Entity,
-    party: &Party,
-    movement: &Movement,
-    members: &Members,
-    inventory: &Inventory,
-    assets: &Res<InterfaceAssets>,
-) {
+fn spawn_party_display(parent: &mut ChildBuilder, entity: Entity, assets: &Res<InterfaceAssets>) {
     parent
         .spawn((
             PartyDisplay { party: entity },
             ButtonBundle {
                 style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Px(120.0),
                     margin: UiRect::all(Val::Px(2.0)),
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::SpaceBetween,
-                    align_items: AlignItems::FlexStart,
                     ..default()
                 },
                 background_color: NORMAL.into(),
@@ -87,59 +74,72 @@ fn spawn_party_display(
         ))
         .bind_to(entity)
         .with_children(|parent| {
-            parent.spawn(TextBundle::from_section(
-                party.name.clone(),
-                TextStyle {
-                    font: assets.font.clone(),
-                    font_size: 32.0,
-                    color: Color::WHITE,
+            parent.spawn(ImageBundle {
+                style: Style {
+                    width: Val::Px(32.0),
+                    height: Val::Px(32.0),
+                    ..default()
                 },
-            ));
-            parent.spawn(NodeBundle::default()).with_children(|parent| {
-                spawn_stat_display(
-                    parent,
-                    assets,
-                    entity,
-                    PartyMovementPointsText,
-                    assets.footsteps_icon.clone(),
-                    format!("{}", movement.current),
-                );
-                spawn_stat_display(
-                    parent,
-                    assets,
-                    entity,
-                    PartySizeText,
-                    assets.person_icon.clone(),
-                    format!("{}", members.len()),
-                );
-                spawn_stat_display(
-                    parent,
-                    assets,
-                    entity,
-                    PartyCrystalsText,
-                    assets.crystals_icon.clone(),
-                    format!("{}", inventory.count_item(Inventory::CRYSTAL)),
-                );
+                image: assets.brutal_helm_icon.clone().into(),
+                ..default()
             });
         });
 }
 
-#[allow(clippy::type_complexity)]
-pub fn run_if_any_party_changed(
-    party_query: Query<Entity, Or<(Changed<Party>, Changed<Members>)>>,
-) -> bool {
-    !party_query.is_empty()
+pub fn spawn_party_details(
+    parent: &mut ChildBuilder,
+    entity: Entity,
+    party: &Party,
+    movement: &Movement,
+    members: &Members,
+    inventory: &Inventory,
+    assets: &Res<InterfaceAssets>,
+) {
+    parent.spawn(TextBundle::from_section(
+        party.name.clone(),
+        TextStyle {
+            font: assets.font.clone(),
+            font_size: 32.0,
+            color: Color::WHITE,
+        },
+    ));
+    parent.spawn(NodeBundle::default()).with_children(|parent| {
+        spawn_stat_display(
+            parent,
+            assets,
+            entity,
+            PartyMovementPointsText,
+            assets.footsteps_icon.clone(),
+            format!("{}", movement.current),
+        );
+        spawn_stat_display(
+            parent,
+            assets,
+            entity,
+            PartySizeText,
+            assets.person_icon.clone(),
+            format!("{}", members.len()),
+        );
+        spawn_stat_display(
+            parent,
+            assets,
+            entity,
+            PartyCrystalsText,
+            assets.crystals_icon.clone(),
+            format!("{}", inventory.count_item(Inventory::CRYSTAL)),
+        );
+    });
 }
 
 pub fn update_party_list(
     mut commands: Commands,
     assets: Res<InterfaceAssets>,
     party_list_query: Query<Entity, With<PartyList>>,
-    party_query: Query<(Entity, &Party, &Members, &Movement, &Inventory)>,
+    party_query: Query<Entity, Added<Party>>,
     party_display_query: Query<(Entity, &PartyDisplay)>,
 ) {
     let party_list = party_list_query.single();
-    for (entity, party, group, party_movement, inventory) in party_query.iter() {
+    for entity in party_query.iter() {
         if party_display_query
             .iter()
             .any(|(_, display)| display.party == entity)
@@ -147,25 +147,22 @@ pub fn update_party_list(
             continue;
         }
         commands.get_or_spawn(party_list).with_children(|parent| {
-            spawn_party_display(
-                parent,
-                entity,
-                party,
-                party_movement,
-                group,
-                inventory,
-                &assets,
-            );
+            spawn_party_display(parent, entity, &assets);
         });
     }
+}
 
-    let party_entities: Vec<Entity> = party_query
-        .iter()
-        .filter(|(_, _, m, _, _)| !m.is_empty())
-        .map(|(e, _, _, _, _)| e)
-        .collect();
-    for (display_entity, display) in party_display_query.iter() {
-        if !party_entities.iter().any(|&entity| display.party == entity) {
+pub(super) fn remove_despawned(
+    mut commands: Commands,
+    mut removed_party: RemovedComponents<Party>,
+    party_display_query: Query<(Entity, &PartyDisplay)>,
+) {
+    for entity in removed_party.read() {
+        if let Some((display_entity, _)) = party_display_query
+            .iter()
+            .find(|(_, display)| display.party == entity)
+        {
+            commands.entity(display_entity).remove_parent();
             commands.entity(display_entity).despawn_recursive();
         }
     }

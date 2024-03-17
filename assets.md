@@ -17,6 +17,8 @@
   - assets/icons/gladius.png
 * By Faithtoken under CC-BY 3.0 (https://www.faithtoken.com/)
   - assets/icons/minerals.png
+* By Carl Olsen under CC-BY 3.0 (https://twitter.com/unstoppableCarl)
+  - assets/icons/brutal-helm.png
 * By Jinn under CC-BY SA 3.0 (https://opengameart.org/content/world-map-tiles)
   - assets/textures/ocean_inner.png
   - assets/textures/mountains_inner.png
