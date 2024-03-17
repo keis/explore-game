@@ -1,8 +1,4 @@
-use bevy::{
-    prelude::*,
-    reflect::{TypePath, TypeUuid},
-    render::render_resource::*,
-};
+use bevy::{prelude::*, reflect::TypePath, render::render_resource::*};
 
 #[derive(Default)]
 pub struct PortalMaterialPlugin;
@@ -13,8 +9,7 @@ impl Plugin for PortalMaterialPlugin {
     }
 }
 
-#[derive(Asset, AsBindGroup, TypeUuid, TypePath, Clone, Default)]
-#[uuid = "30c885f0-3baa-4267-b48c-41062f7fe7b5"]
+#[derive(Asset, AsBindGroup, TypePath, Clone, Default)]
 #[uniform(0, PortalMaterialUniform)]
 pub struct PortalMaterial {
     pub base_color: Color,

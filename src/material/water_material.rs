@@ -1,8 +1,4 @@
-use bevy::{
-    prelude::*,
-    reflect::{TypePath, TypeUuid},
-    render::render_resource::*,
-};
+use bevy::{prelude::*, reflect::TypePath, render::render_resource::*};
 
 #[derive(Default)]
 pub struct WaterMaterialPlugin;
@@ -13,8 +9,7 @@ impl Plugin for WaterMaterialPlugin {
     }
 }
 
-#[derive(Asset, AsBindGroup, TypeUuid, TypePath, Clone, Default)]
-#[uuid = "ce8eb070-dbb0-44c1-a1c5-d4a6ac9f4033"]
+#[derive(Asset, AsBindGroup, TypePath, Clone, Default)]
 #[uniform(0, WaterMaterialUniform)]
 pub struct WaterMaterial {
     pub color: Color,
