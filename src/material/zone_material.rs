@@ -6,7 +6,7 @@ use crate::{
 };
 use bevy::{
     prelude::*,
-    reflect::{TypePath, TypeUuid},
+    reflect::TypePath,
     render::{
         render_resource::*,
         renderer::{RenderDevice, RenderQueue},
@@ -107,8 +107,7 @@ pub struct ZoneMaterialUniform {
     outer_terrain_ne: u32,
 }
 
-#[derive(Asset, AsBindGroup, TypeUuid, TypePath, Clone)]
-#[uuid = "05f50382-7218-4860-8c4c-06dbd66694db"]
+#[derive(Asset, AsBindGroup, TypePath, Clone)]
 pub struct ZoneMaterial {
     #[storage(0, read_only, buffer)]
     terrain_data: Buffer,

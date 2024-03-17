@@ -1,9 +1,5 @@
 use crate::{map::Fog, structure::Structure, terrain::Decoration};
-use bevy::{
-    prelude::*,
-    reflect::{TypePath, TypeUuid},
-    render::render_resource::*,
-};
+use bevy::{prelude::*, reflect::TypePath, render::render_resource::*};
 use expl_codex::{Codex, Id};
 
 #[derive(Default)]
@@ -16,8 +12,7 @@ impl Plugin for TerrainMaterialPlugin {
     }
 }
 
-#[derive(Asset, AsBindGroup, TypeUuid, TypePath, Clone, Default)]
-#[uuid = "f3c06773-d878-40b4-8f00-f39b82513c81"]
+#[derive(Asset, AsBindGroup, TypePath, Clone, Default)]
 #[uniform(0, TerrainMaterialUniform)]
 pub struct TerrainMaterial {
     color_a: Color,
