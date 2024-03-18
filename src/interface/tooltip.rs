@@ -21,6 +21,7 @@ pub fn spawn_tooltip(
 ) {
     parent
         .spawn((
+            Name::new("Tooltip"),
             Tooltip,
             NodeBundle {
                 background_color: NORMAL.into(),
@@ -42,7 +43,8 @@ pub fn spawn_tooltip(
             },
         ))
         .with_children(|parent| {
-            parent.spawn(
+            parent.spawn((
+                Name::new("Tooltip text"),
                 TextBundle::from_section(
                     tooltip_text,
                     TextStyle {
@@ -55,9 +57,10 @@ pub fn spawn_tooltip(
                     margin: UiRect::all(Val::Px(2.0)),
                     ..default()
                 }),
-            );
+            ));
             if let Some(text) = keybind_text {
-                parent.spawn(
+                parent.spawn((
+                    Name::new("Tooltip keybind"),
                     TextBundle::from_section(
                         text,
                         TextStyle {
@@ -70,7 +73,7 @@ pub fn spawn_tooltip(
                         margin: UiRect::all(Val::Px(2.0)),
                         ..default()
                     }),
-                );
+                ));
             }
         });
 }

@@ -179,6 +179,7 @@ fn spawn_next_turn_button(parent: &mut ChildBuilder, assets: &Res<InterfaceAsset
         ))
         .with_children(|parent| {
             parent.spawn((
+                Name::new("Next Turn Button Text"),
                 TurnText,
                 TextBundle::from_section(
                     "Turn ?",
