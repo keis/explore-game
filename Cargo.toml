@@ -3,12 +3,12 @@ members = [".", "crates/*"]
 default-members = [".", "crates/*"]
 
 [workspace.dependencies]
-bevy_app = "0.12"
-bevy_asset = "0.12"
-bevy_core = "0.12"
-bevy_ecs = "0.12"
-bevy_reflect = "0.12"
-bevy_render = "0.12"
+bevy_app = "0.13"
+bevy_asset = "0.13"
+bevy_core = "0.13"
+bevy_ecs = "0.13"
+bevy_reflect = "0.13"
+bevy_render = "0.13"
 clap = "4.5"
 glam = "0.24"
 itertools = "0.12"
@@ -33,15 +33,15 @@ opt-level = 3
 opt-level = 3
 
 [dependencies]
-bevy_asset_loader = "0.19"
-bevy_egui = "0.24"
-bevy-inspector-egui = "0.22"
+bevy_asset_loader = "0.20"
+bevy_egui = "0.26"
+bevy-inspector-egui = "0.23"
 bevy_mod_billboard = { version = "0.5.1" }
-bevy_mod_outline = "0.6"
-bevy_mod_picking = "0.17"
-bevy_obj = "0.12"
-bevy_sprite3d = "2.7"
-bevy = { version = "0.12", features = ["wayland", "dynamic_linking", "file_watcher"] }
+bevy_mod_outline = "0.7"
+bevy_mod_picking = "0.18"
+bevy_obj = "0.13"
+bevy_sprite3d = "2.8"
+bevy = { version = "0.13", features = ["wayland", "dynamic_linking", "file_watcher"] }
 bitflags = "2"
 clap = { workspace = true, features = ["derive"] }
 enum-map = "2.7.3"
@@ -54,9 +54,9 @@ futures-lite = "2"
 glam = { workspace = true }
 interpolation = "0.3"
 itertools = { workspace = true }
-leafwing-input-manager = { version = "0.12", features = ["egui"] }
-moonshine-save = "=0.3.4"
-noisy_bevy = "0.5"
+leafwing-input-manager = { version = "0.13", features = ["egui"] }
+moonshine-save = "=0.3.6"
+noisy_bevy = "0.6"
 pathfinding = "4"
 platform-dirs = "0.3"
 rand = { workspace = true }
