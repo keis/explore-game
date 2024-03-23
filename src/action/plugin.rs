@@ -57,19 +57,15 @@ impl Plugin for ActionPlugin {
             .add_systems(
                 Update,
                 (
-                    apply_action
-                        .map(bevy::utils::warn)
-                        .run_if(has_current_action),
-                    handle_slide_stopped
-                        .run_if(on_event::<SlideEvent>())
-                        .after(apply_action),
-                )
-                    .in_set(ActionSet::Apply),
-            )
-            .add_systems(
-                Update,
-                (
-                    apply_deferred.in_set(ActionSet::CommandFlush),
+                    (
+                        apply_action
+                            .map(bevy::utils::warn)
+                            .run_if(has_current_action),
+                        handle_slide_stopped
+                            .run_if(on_event::<SlideEvent>())
+                            .after(apply_action),
+                    )
+                        .in_set(ActionSet::Apply),
                     follow_path
                         .run_if(has_current_action)
                         .in_set(ActionSet::FollowUp),

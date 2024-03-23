@@ -1,4 +1,6 @@
-use super::queue::{GameAction, GameActionQueue, GameActionSystems};
+use super::queue::{
+    GameAction, GameActionQueue, GameActionResult, GameActionStatus, GameActionSystems,
+};
 use crate::{
     actor::{
         ActorCodex, ActorParams, GroupCommandsExt, Members, Party, PartyBundle, Slide, SlideEvent,
@@ -13,30 +15,43 @@ use crate::{
     terrain::{CrystalDeposit, HeightQuery, TerrainCodex, TerrainId},
     ExplError,
 };
-use bevy::{ecs::system::RegisteredSystemError, prelude::*};
+use bevy::prelude::*;
 use smallvec::SmallVec;
 
-pub fn apply_action(world: &mut World) -> Result<(), RegisteredSystemError> {
-    let Some(systems) = world.get_resource::<GameActionSystems>() else {
-        return Ok(());
-    };
-    let Some(queue) = world.get_resource::<GameActionQueue>() else {
-        return Ok(());
-    };
+pub fn apply_action(world: &mut World) -> Result<(), ExplError> {
+    let systems = world
+        .get_resource::<GameActionSystems>()
+        .ok_or(ExplError::ResourceMissing)?;
+    let queue = world
+        .get_resource::<GameActionQueue>()
+        .ok_or(ExplError::ResourceMissing)?;
+
     let Some(ref action) = queue.current else {
         return Ok(());
     };
     let Some(system) = systems.get(action.action_type) else {
         return Ok(());
     };
-    world.run_system(system)
+
+    let result = world.run_system_with_input(system, action.clone())??;
+
+    let mut queue = world
+        .get_resource_mut::<GameActionQueue>()
+        .ok_or(ExplError::ResourceMissing)?;
+    match result {
+        GameActionStatus::Waiting => {
+            queue.wait();
+        }
+        GameActionStatus::Ready => {}
+    }
+    Ok(())
 }
 
 #[allow(clippy::type_complexity)]
 #[allow(clippy::too_many_arguments)]
 pub fn handle_move(
+    In(action): In<GameAction>,
     mut commands: Commands,
-    mut queue: ResMut<GameActionQueue>,
     mut party_query: Query<
         (
             &mut Slide,
@@ -52,10 +67,7 @@ pub fn handle_move(
     map_position_query: Query<(&MapPosition, &Transform)>,
     fog_query: Query<&Fog>,
     height_query: HeightQuery,
-) -> Result<(), ExplError> {
-    let Some(ref action) = queue.current else {
-        return Ok(());
-    };
+) -> GameActionResult {
     let (mut slide, mut transform, presence, mut movement, maybe_members) =
         party_query.get_mut(action.source)?;
     let (map_entity, zone_layer) = zone_layer_query.get_single()?;
@@ -65,10 +77,7 @@ pub fn handle_move(
         .ok_or(ExplError::OutOfBounds)
         .and_then(|&e| fog_query.get(e).map_err(ExplError::from))?;
 
-    if let Err(e) = movement.consume() {
-        queue.clear();
-        return Err(e);
-    }
+    movement.consume()?;
 
     if let Some(members) = maybe_members {
         let mut iter = member_movement_query.iter_many_mut(members.iter());
@@ -82,15 +91,15 @@ pub fn handle_move(
         slide.end = next_transform.translation;
         slide.progress = 0.0;
 
-        queue.wait();
+        Ok(GameActionStatus::Waiting)
     } else {
         transform.translation = height_query.adjust(next_transform.translation);
         commands
             .entity(map_entity)
             .move_presence(action.source, next_position.0);
-    }
 
-    Ok(())
+        Ok(GameActionStatus::Ready)
+    }
 }
 
 pub fn handle_slide_stopped(
@@ -150,7 +159,7 @@ pub fn follow_path(
 
 #[allow(clippy::too_many_arguments)]
 pub fn handle_make_camp(
-    queue: ResMut<GameActionQueue>,
+    In(action): In<GameAction>,
     mut commands: Commands,
     mut structure_params: StructureParams,
     map_query: Query<(Entity, &ZoneLayer, &PresenceLayer)>,
@@ -159,10 +168,7 @@ pub fn handle_make_camp(
     camp_query: Query<&Camp>,
     terrain_codex: TerrainCodex,
     structure_codex: StructureCodex,
-) -> Result<(), ExplError> {
-    let Some(ref action) = queue.current else {
-        return Ok(());
-    };
+) -> GameActionResult {
     let terrain_codex = terrain_codex.get()?;
     let structure_codex = structure_codex.get()?;
 
@@ -204,20 +210,16 @@ pub fn handle_make_camp(
                 })
                 .add_members(members);
         });
-    Ok(())
+    Ok(GameActionStatus::Ready)
 }
 
 pub fn handle_break_camp(
+    In(action): In<GameAction>,
     mut commands: Commands,
-    queue: ResMut<GameActionQueue>,
     mut party_query: Query<(&mut Inventory, &MapPresence), With<Party>>,
     map_query: Query<(Entity, &PresenceLayer)>,
     camp_query: Query<(Entity, &Members), With<Camp>>,
-) -> Result<(), ExplError> {
-    let Some(ref action) = queue.current else {
-        return Ok(());
-    };
-
+) -> GameActionResult {
     let (mut inventory, presence) = party_query.get_mut(action.source)?;
     let (map_entity, presence_layer) = map_query.get_single()?;
     let (camp_entity, members) = camp_query
@@ -230,20 +232,16 @@ pub fn handle_break_camp(
     info!("Depawning camp at {}", presence.position);
     inventory.add_item(Inventory::SUPPLY, 1);
     commands.entity(map_entity).despawn_presence(camp_entity);
-    Ok(())
+    Ok(GameActionStatus::Ready)
 }
 
 #[allow(clippy::type_complexity)]
 pub fn handle_enter_camp(
+    In(action): In<GameAction>,
     mut commands: Commands,
-    queue: ResMut<GameActionQueue>,
     mut party_query: Query<(&mut Inventory, &Members), (With<Party>, Without<Camp>)>,
     mut camp_query: Query<&mut Inventory, (With<Camp>, Without<Party>)>,
-) -> Result<(), ExplError> {
-    let Some(ref action) = queue.current else {
-        return Ok(());
-    };
-
+) -> GameActionResult {
     let (mut party_inventory, members) = party_query.get_mut(action.source)?;
     let camp_entity = action.target()?;
     let mut camp_inventory = camp_query.get_mut(camp_entity)?;
@@ -251,21 +249,17 @@ pub fn handle_enter_camp(
     camp_inventory.take_all(&mut party_inventory);
     commands.entity(camp_entity).add_members(members);
 
-    Ok(())
+    Ok(GameActionStatus::Ready)
 }
 
 pub fn handle_create_party_from_camp(
+    In(action): In<GameAction>,
     mut commands: Commands,
-    queue: ResMut<GameActionQueue>,
     mut party_params: ActorParams,
     mut camp_query: Query<(&mut Inventory, &MapPresence), With<Camp>>,
     map_query: Query<Entity, With<PresenceLayer>>,
     actor_codex: ActorCodex,
-) -> Result<(), ExplError> {
-    let Some(ref action) = queue.current else {
-        return Ok(());
-    };
-
+) -> GameActionResult {
     let actor_codex = actor_codex.get()?;
     info!(
         "Creating party at camp {:?} {:?}",
@@ -290,21 +284,17 @@ pub fn handle_create_party_from_camp(
                 .add_members(&action.targets);
         });
 
-    Ok(())
+    Ok(GameActionStatus::Ready)
 }
 
 pub fn handle_split_party(
+    In(action): In<GameAction>,
     mut commands: Commands,
-    queue: ResMut<GameActionQueue>,
     mut party_params: ActorParams,
     mut party_query: Query<(&mut Inventory, &Members, &MapPresence), With<Party>>,
     map_query: Query<Entity, With<PresenceLayer>>,
     actor_codex: ActorCodex,
-) -> Result<(), ExplError> {
-    let Some(ref action) = queue.current else {
-        return Ok(());
-    };
-
+) -> GameActionResult {
     let actor_codex = actor_codex.get()?;
     let (mut party_inventory, members, presence) = party_query.get_mut(action.source)?;
     let map_entity = map_query.get_single()?;
@@ -327,18 +317,14 @@ pub fn handle_split_party(
                 })
                 .add_members(&action.targets);
         });
-    Ok(())
+    Ok(GameActionStatus::Ready)
 }
 
 pub fn handle_merge_party(
+    In(action): In<GameAction>,
     mut commands: Commands,
-    queue: ResMut<GameActionQueue>,
     mut party_query: Query<(&mut Inventory, &Members, &MapPresence), With<Party>>,
-) -> Result<(), ExplError> {
-    let Some(ref action) = queue.current else {
-        return Ok(());
-    };
-
+) -> GameActionResult {
     let source_position = party_query.get(action.source)?.2.position;
     let mut characters = SmallVec::<[Entity; 8]>::new();
     let mut inventory = Inventory::default();
@@ -355,19 +341,15 @@ pub fn handle_merge_party(
     party_inventory.take_all(&mut inventory);
     commands.entity(action.source).add_members(&characters);
 
-    Ok(())
+    Ok(GameActionStatus::Ready)
 }
 
 pub fn handle_collect_crystals(
-    queue: ResMut<GameActionQueue>,
+    In(action): In<GameAction>,
     map_query: Query<&ZoneLayer>,
     mut party_query: Query<(&mut Inventory, &MapPresence), With<Party>>,
     mut crystal_deposit_query: Query<&mut CrystalDeposit>,
-) -> Result<(), ExplError> {
-    let Some(ref action) = queue.current else {
-        return Ok(());
-    };
-
+) -> GameActionResult {
     let (mut inventory, presence) = party_query.get_mut(action.source)?;
     let zone_layer = map_query.get_single()?;
 
@@ -377,19 +359,16 @@ pub fn handle_collect_crystals(
         .and_then(|&e| crystal_deposit_query.get_mut(e).map_err(ExplError::from))?;
 
     inventory.add_item(Inventory::CRYSTAL, crystal_deposit.take() as u32);
-    Ok(())
+
+    Ok(GameActionStatus::Ready)
 }
 
 pub fn handle_open_portal(
-    queue: ResMut<GameActionQueue>,
+    In(action): In<GameAction>,
     party_query: Query<&MapPresence, With<Party>>,
     map_query: Query<&PresenceLayer>,
     mut portal_query: Query<&mut Portal>,
-) -> Result<(), ExplError> {
-    let Some(ref action) = queue.current else {
-        return Ok(());
-    };
-
+) -> GameActionResult {
     let presence = party_query.get(action.source)?;
     let presence_layer = map_query.get_single()?;
 
@@ -402,22 +381,18 @@ pub fn handle_open_portal(
         portal.open = true;
     }
 
-    Ok(())
+    Ok(GameActionStatus::Ready)
 }
 
 #[allow(clippy::type_complexity)]
 pub fn handle_enter_portal(
+    In(action): In<GameAction>,
     mut commands: Commands,
-    queue: ResMut<GameActionQueue>,
     map_query: Query<&PresenceLayer>,
     portal_query: Query<&Portal>,
     mut party_query: Query<(&MapPresence, &Members, &mut Inventory), With<Party>>,
     mut safe_haven_query: Query<(Entity, &mut Inventory), (With<SafeHaven>, Without<Party>)>,
-) -> Result<(), ExplError> {
-    let Some(ref action) = queue.current else {
-        return Ok(());
-    };
-
+) -> GameActionResult {
     let (presence, members, mut party_inventory) = party_query.get_mut(action.source)?;
     let presence_layer = map_query.get_single()?;
 
@@ -435,5 +410,5 @@ pub fn handle_enter_portal(
 
     safe_inventory.take_all(&mut party_inventory);
 
-    Ok(())
+    Ok(GameActionStatus::Ready)
 }

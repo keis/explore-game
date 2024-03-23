@@ -18,6 +18,15 @@ pub enum GameActionType {
     EnterPortal,
 }
 
+#[derive(Default, Debug, Hash, PartialEq, Eq, Clone)]
+pub enum GameActionStatus {
+    #[default]
+    Ready,
+    Waiting,
+}
+
+pub type GameActionResult = Result<GameActionStatus, ExplError>;
+
 #[derive(Clone, Debug)]
 pub struct GameAction {
     pub(super) action_type: GameActionType,
@@ -127,25 +136,27 @@ impl GameAction {
 pub struct GameActionQueue {
     pub deque: VecDeque<GameAction>,
     pub current: Option<GameAction>,
-    waiting: bool,
+    pub status: GameActionStatus,
 }
 
 #[derive(Resource)]
-pub struct GameActionSystems(EnumMap<GameActionType, Option<SystemId>>);
+pub struct GameActionSystems(
+    EnumMap<GameActionType, Option<SystemId<GameAction, GameActionResult>>>,
+);
 
 impl GameActionSystems {
     pub fn builder(world: &mut World) -> GameActionSystemsBuilder {
         GameActionSystemsBuilder::from_world(world)
     }
 
-    pub fn get(&self, action: GameActionType) -> Option<SystemId> {
+    pub fn get(&self, action: GameActionType) -> Option<SystemId<GameAction, GameActionResult>> {
         self.0[action]
     }
 }
 
 pub struct GameActionSystemsBuilder<'a> {
     world: &'a mut World,
-    enum_map: EnumMap<GameActionType, Option<SystemId>>,
+    enum_map: EnumMap<GameActionType, Option<SystemId<GameAction, GameActionResult>>>,
 }
 
 impl<'a> GameActionSystemsBuilder<'a> {
@@ -158,9 +169,9 @@ impl<'a> GameActionSystemsBuilder<'a> {
 
     pub fn register_action<F, Marker>(mut self, action: GameActionType, f: F) -> Self
     where
-        F: IntoSystem<(), Result<(), ExplError>, Marker> + 'static,
+        F: IntoSystem<GameAction, GameActionResult, Marker> + 'static,
     {
-        self.enum_map[action] = Some(self.world.register_system(f.map(bevy::utils::warn)));
+        self.enum_map[action] = Some(self.world.register_system(f));
         self
     }
 
@@ -175,7 +186,7 @@ impl GameActionQueue {
     }
 
     pub fn is_waiting(&self) -> bool {
-        self.waiting
+        self.status == GameActionStatus::Waiting
     }
 
     pub fn has_next(&self) -> bool {
@@ -187,11 +198,11 @@ impl GameActionQueue {
     }
 
     pub fn wait(&mut self) {
-        self.waiting = true;
+        self.status = GameActionStatus::Waiting;
     }
 
     pub fn done(&mut self) {
-        self.waiting = false;
+        self.status = GameActionStatus::Ready;
     }
 
     pub fn clear(&mut self) {

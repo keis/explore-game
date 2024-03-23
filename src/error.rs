@@ -12,6 +12,10 @@ pub enum ExplError {
     QuerySingleError(#[from] bevy::ecs::query::QuerySingleError),
     #[error(transparent)]
     LoadDirectError(#[from] Box<bevy::asset::LoadDirectError>),
+    #[error("registered system error")]
+    RegisteredSystemError,
+    #[error("resource missing")]
+    ResourceMissing,
     #[error("could not place portal")]
     CouldNotPlacePortal,
     #[error("could not place spawner")]
@@ -38,4 +42,10 @@ pub enum ExplError {
     MissingTemplate,
     #[error("invalid action target")]
     InvalidTarget,
+}
+
+impl<I, O> From<bevy::ecs::system::RegisteredSystemError<I, O>> for ExplError {
+    fn from(_err: bevy::ecs::system::RegisteredSystemError<I, O>) -> Self {
+        Self::RegisteredSystemError
+    }
 }
