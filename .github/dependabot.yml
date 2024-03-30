@@ -9,6 +9,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    open-pull-request-limit: 10
     groups:
       # Group bevy and bevy plugins together
       bevy:
