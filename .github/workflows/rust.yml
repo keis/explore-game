@@ -35,10 +35,25 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang
-        sudo apt-get clean
     - uses: Leafwing-Studios/cargo-cache@v1
     - name: Test
       run: cargo test
+  clippy:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Rust toolchain
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: stable
+        components: clippy
+    - uses: rui314/setup-mold@v1
+    - name: Install dependencies
+      run: |
+        sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang
+    - uses: Leafwing-Studios/cargo-cache@v1
     - name: Clippy
       uses: sksat/action-clippy@v0.7.1
       with:
