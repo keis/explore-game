@@ -16,7 +16,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt
-      - uses: mbrobbel/rustfmt-check@0.10.0
+      - uses: mbrobbel/rustfmt-check@0.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           mode: review
