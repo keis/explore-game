@@ -21,7 +21,7 @@ pub trait GroupCommandsExt {
     fn join_group(&mut self, group: Entity) -> &mut Self;
 }
 
-impl<'w, 's, 'a> GroupCommandsExt for EntityCommands<'w, 's, 'a> {
+impl<'a> GroupCommandsExt for EntityCommands<'a> {
     fn add_members(&mut self, members: &[Entity]) -> &mut Self {
         let group = self.id();
         self.commands().add(AddMembers {

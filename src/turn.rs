@@ -17,7 +17,7 @@ pub struct TurnPlugin;
 
 impl Plugin for TurnPlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<TurnState>()
+        app.init_state::<TurnState>()
             .register_type::<Turn>()
             .insert_resource(Turn { number: 0 })
             .add_systems(OnEnter(TurnState::Player), update_turn_counter);

@@ -23,7 +23,7 @@ impl Plugin for InterfacePlugin {
                 .continue_to_state(AssetState::Loaded)
                 .load_collection::<InterfaceAssets>(),
         )
-        .add_state::<InterfaceState>()
+        .init_state::<InterfaceState>()
         .add_systems(
             OnEnter(AssetState::Loaded),
             (

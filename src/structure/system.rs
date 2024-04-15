@@ -85,7 +85,7 @@ pub fn update_portal_effect(
                 .spawn((
                     NotShadowCaster,
                     MaterialMeshBundle {
-                        mesh: meshes.add(shape::Plane::from_size(2.0).into()),
+                        mesh: meshes.add(Plane3d::default().mesh().size(2.0, 2.0)),
                         material: portal_materials.add(PortalMaterial {
                             base_color: Color::rgba(0.2, 0.7, 0.1, 0.3),
                             swirl_color: Color::rgba(0.4, 0.2, 0.7, 0.7),

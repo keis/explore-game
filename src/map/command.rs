@@ -22,8 +22,8 @@ struct DespawnPresence {
     pub presence: Entity,
 }
 
-pub struct PresenceBuilder<'w, 's, 'a> {
-    commands: &'a mut Commands<'w, 's>,
+pub struct PresenceBuilder<'w, 's> {
+    commands: Commands<'w, 's>,
     add_map_presence: AddMapPresence,
 }
 
@@ -38,15 +38,15 @@ pub trait MapCommandsExt {
     fn despawn_presence(&mut self, presence: Entity) -> &mut Self;
 }
 
-impl<'w, 's, 'a> PresenceBuilder<'w, 's, 'a> {
-    pub fn spawn(&mut self, bundle: impl Bundle) -> EntityCommands<'w, 's, '_> {
+impl<'w, 's> PresenceBuilder<'w, 's> {
+    pub fn spawn(&mut self, bundle: impl Bundle) -> EntityCommands<'_> {
         let e = self.commands.spawn(bundle);
         self.add_map_presence.presence.push(e.id());
         e
     }
 }
 
-impl<'w, 's, 'a> MapCommandsExt for EntityCommands<'w, 's, 'a> {
+impl<'a> MapCommandsExt for EntityCommands<'a> {
     fn add_presence(&mut self, presence: Entity, position: HexCoord) -> &mut Self {
         let map = self.id();
         self.commands().add(AddMapPresence {

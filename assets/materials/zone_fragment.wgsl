@@ -15,10 +15,10 @@
     ZONE_FLAGS_HOVER_BIT
 }
 
-@group(1) @binding(0)
+@group(2) @binding(0)
 var<storage> terrain_data: array<TerrainData>;
 
-@group(1) @binding(1)
+@group(2) @binding(1)
 var<uniform> uniform_data: UniformData;
 
 fn cloud_noise(world_uv: vec2<f32>) -> vec4<f32> {

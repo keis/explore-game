@@ -10,7 +10,7 @@ bevy_ecs = "0.13"
 bevy_reflect = "0.13"
 bevy_render = "0.13"
 clap = "4.5"
-glam = "0.24"
+glam = "0.25"
 itertools = "0.12"
 rand = "0.8"
 serde = "1.0"
@@ -34,11 +34,11 @@ opt-level = 3
 
 [dependencies]
 bevy_asset_loader = "0.20"
-bevy_egui = "0.26"
+bevy_egui = "0.25"
 bevy-inspector-egui = "0.23"
-bevy_mod_billboard = { version = "0.5.1" }
+bevy_mod_billboard = { git = "https://github.com/kulkalkul/bevy_mod_billboard.git", version = "0.6.0" }
 bevy_mod_outline = "0.7"
-bevy_mod_picking = "0.18"
+bevy_mod_picking = { version = "0.18.2", features = ["backend_egui"], git = "https://github.com/keis/bevy_mod_picking.git" }
 bevy_obj = "0.13"
 bevy_sprite3d = "2.8"
 bevy = { version = "0.13", features = ["wayland", "dynamic_linking", "file_watcher"] }
@@ -51,7 +51,7 @@ expl_hexagon = { version = "0.1.0", path = "crates/expl_hexagon" }
 expl_hexgrid = { path = "crates/expl_hexgrid", features = ["bevy-reflect"] }
 expl_wfc = { path = "crates/expl_wfc" }
 futures-lite = "2"
-glam = { workspace = true }
+glam.workspace = true
 interpolation = "0.3"
 itertools = { workspace = true }
 leafwing-input-manager = { version = "0.13", features = ["egui"] }
@@ -62,7 +62,7 @@ platform-dirs = "0.3"
 rand = { workspace = true }
 serde = { workspace = true }
 smallvec = { workspace = true }
-splines = { version = "4", features = ["glam"] }
+splines = { features = ["glam"], git = "https://github.com/hadronized/splines.git", version = "4.3.2-dev", branch = "master" }
 thiserror = { workspace = true }
 
 [dev-dependencies]

@@ -38,7 +38,7 @@ impl FloatingTextBundle {
                         color,
                     },
                 }])
-                .with_alignment(TextAlignment::Center),
+                .with_justify(JustifyText::Center),
                 ..default()
             },
             ..default()

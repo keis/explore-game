@@ -12,7 +12,7 @@ pub struct ScenePlugin;
 
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<SceneState>()
+        app.init_state::<SceneState>()
             .register_type::<Option<Entity>>()
             .add_plugins((
                 moonshine_save::save::SavePlugin,

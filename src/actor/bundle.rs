@@ -108,7 +108,7 @@ impl CreatureFluffBundle {
             CreatureChildBundle {
                 pbr_bundle: PbrBundle {
                     mesh: creature_data.mesh.clone(),
-                    material: standard_materials.add(creature_data.color.into()),
+                    material: standard_materials.add(creature_data.color),
                     transform: Transform::from_translation(offset)
                         .with_scale(Vec3::splat(creature_data.scale)),
                     ..default()
