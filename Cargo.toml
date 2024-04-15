@@ -67,4 +67,4 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 approx = "0.5"
-rstest = { version = "0.18.2", default-features = false }
+rstest = { version = "0.19.0", default-features = false }
