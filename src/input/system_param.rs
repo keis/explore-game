@@ -1,7 +1,7 @@
 use super::{action::*, component::*, event::*};
 use crate::{actor::Movement, map::MapPresence};
 use bevy::{
-    ecs::{query::ReadOnlyWorldQuery, system::SystemParam},
+    ecs::{query::QueryFilter, system::SystemParam},
     prelude::*,
 };
 
@@ -45,7 +45,7 @@ impl<'w, 's> NextSelectionQuery<'w, 's> {
 #[derive(SystemParam)]
 pub struct SelectionUpdate<'w, 's, Filter>
 where
-    Filter: ReadOnlyWorldQuery + 'static,
+    Filter: QueryFilter + 'static,
 {
     selection_query: Query<'w, 's, (Entity, &'static Selection), Filter>,
     action_state: Res<'w, ActionState<Action>>,
@@ -55,7 +55,7 @@ where
 
 impl<'w, 's, Filter> SelectionUpdate<'w, 's, Filter>
 where
-    Filter: ReadOnlyWorldQuery + 'static,
+    Filter: QueryFilter + 'static,
 {
     pub fn toggle(&mut self, entity: Entity) {
         if let Ok((entity, selection)) = self.selection_query.get(entity) {
@@ -63,7 +63,7 @@ where
                 if selection.is_selected {
                     self.deselect_events.send(Deselect(entity));
                 } else {
-                    self.select_events.send(Select(entity))
+                    self.select_events.send(Select(entity));
                 }
             } else {
                 for (other_entity, selection) in self.selection_query.iter() {

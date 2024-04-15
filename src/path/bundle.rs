@@ -23,8 +23,8 @@ impl PathDisplayBundle {
         Self {
             path_display: PathDisplay { path_guided },
             pbr_bundle: PbrBundle {
-                mesh: meshes.add(path.into()),
-                material: standard_materials.add(Color::rgba(0.8, 0.8, 0.8, 0.6).into()),
+                mesh: meshes.add(path),
+                material: standard_materials.add(Color::rgba(0.8, 0.8, 0.8, 0.6)),
                 transform: Transform::from_translation(Vec3::new(0.0, 0.5, 0.0)),
                 ..default()
             },

@@ -4,7 +4,7 @@ use moonshine_save::save::SaveFilter;
 use platform_dirs::AppDirs;
 use std::path::PathBuf;
 
-pub use moonshine_save::prelude::{save_with, LoadSet, Save};
+pub use moonshine_save::prelude::{save_with, LoadSystem, Save};
 
 #[derive(Resource)]
 pub struct Loaded;

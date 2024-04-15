@@ -1,24 +1,50 @@
 use bevy_render::{
-    mesh::{Indices, PrimitiveTopology},
+    mesh::{Indices, Meshable, PrimitiveTopology},
     prelude::*,
+    render_asset::RenderAssetUsages,
 };
 use glam::Vec3A;
 use hexasphere::{interpolation, BaseShape, Subdivided, Triangle};
 use std::iter;
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Hexagon {
     pub radius: f32,
+}
+
+impl Default for Hexagon {
+    fn default() -> Self {
+        Self { radius: 1.0 }
+    }
+}
+
+impl Hexagon {
+    #[inline(always)]
+    pub const fn new(radius: f32) -> Self {
+        Self { radius }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct HexagonMeshBuilder {
+    pub hexagon: Hexagon,
     pub subdivisions: usize,
 }
 
-impl From<Hexagon> for Mesh {
-    fn from(hexagon: Hexagon) -> Self {
-        let generated = SubdividedHexagon::new(hexagon.subdivisions, |_| ());
+impl HexagonMeshBuilder {
+    #[inline]
+    pub const fn subdivisions(mut self, subdivisions: usize) -> Self {
+        self.subdivisions = subdivisions;
+        self
+    }
+
+    fn build(&self) -> Mesh {
+        let generated = SubdividedHexagon::new(self.subdivisions, |_| ());
         let indices = Indices::U32(generated.get_all_indices());
         let positions: Vec<_> = generated
             .raw_points()
             .iter()
-            .map(|&p| (p * hexagon.radius).into())
+            .map(|&p| (p * self.hexagon.radius).into())
             .collect::<Vec<[f32; 3]>>();
         let normals: Vec<_> = iter::repeat([0.0, 1.0, 0.0])
             .take(positions.len())
@@ -29,13 +55,39 @@ impl From<Hexagon> for Mesh {
             .map(|point| [point[0] * 0.5 + 0.5, point[2] * 0.5 + 0.5])
             .collect();
 
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-        mesh.set_indices(Some(indices));
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::default(),
+        );
+        mesh.insert_indices(indices);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
 
         mesh
+    }
+}
+
+impl Meshable for Hexagon {
+    type Output = HexagonMeshBuilder;
+
+    fn mesh(&self) -> Self::Output {
+        HexagonMeshBuilder {
+            hexagon: *self,
+            ..Default::default()
+        }
+    }
+}
+
+impl From<Hexagon> for Mesh {
+    fn from(hexagon: Hexagon) -> Self {
+        hexagon.mesh().into()
+    }
+}
+
+impl From<HexagonMeshBuilder> for Mesh {
+    fn from(hexagon: HexagonMeshBuilder) -> Self {
+        hexagon.build()
     }
 }
 
@@ -102,7 +154,8 @@ mod consts {
 
 #[cfg(test)]
 mod tests {
-    use super::SubdividedHexagon;
+    use super::{Hexagon, SubdividedHexagon};
+    use bevy_render::mesh::{Mesh, Meshable};
 
     #[test]
     fn base_hexagon() {
@@ -112,5 +165,12 @@ mod tests {
         println!("points {:?} indices {:?}", raw_points, indices);
         assert_eq!(raw_points.len(), 7);
         assert_eq!(indices.len(), 18);
+    }
+
+    #[test]
+    fn default_mesh() {
+        let hexagon = Hexagon::default();
+        let mesh: Mesh = hexagon.mesh().build();
+        assert!(mesh.attribute(Mesh::ATTRIBUTE_POSITION).is_some());
     }
 }

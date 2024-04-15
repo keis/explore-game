@@ -189,7 +189,7 @@ fn spawn_next_turn_button(parent: &mut ChildBuilder, assets: &Res<InterfaceAsset
                         color: Color::WHITE,
                     },
                 )
-                .with_text_alignment(TextAlignment::Center)
+                .with_text_justify(JustifyText::Center)
                 .with_style(Style { ..default() }),
             ));
             spawn_tooltip(
@@ -280,7 +280,7 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                                         color: Color::WHITE,
                                     },
                                 )
-                                .with_text_alignment(TextAlignment::Center),
+                                .with_text_justify(JustifyText::Center),
                             ));
                         });
                 });

@@ -3,7 +3,6 @@
   forward_io::{Vertex, VertexOutput},
   view_transformations::position_world_to_clip,
 }
-#import bevy_render::instance_index::get_instance_index
 #import noisy_bevy::simplex_noise_2d
 #import "materials/zone_types.wgsl"::{
     UniformData,
@@ -17,10 +16,10 @@
     ZONE_FLAGS_OUTER_VISIBLE_NE_BIT
 }
 
-@group(1) @binding(0)
+@group(2) @binding(0)
 var<storage> terrain_data: array<TerrainData>;
 
-@group(1) @binding(1)
+@group(2) @binding(1)
 var<uniform> uniform_data: UniformData;
 
 fn corner(self_value: f32, a_value: f32, b_value: f32) -> f32 {
@@ -189,7 +188,7 @@ fn vertex(vertex: Vertex) -> VertexOutput {
 #else
     out.world_normal = mesh_functions::mesh_normal_local_to_world(
         vertex.normal,
-        get_instance_index(vertex.instance_index)
+        vertex.instance_index
     );
 #endif
 #endif

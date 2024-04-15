@@ -1,7 +1,7 @@
 use bevy_app::prelude::*;
 use bevy_ecs::{
     prelude::*,
-    query::{ReadOnlyWorldQuery, WorldQuery},
+    query::{QueryData, QueryFilter},
     system::{Command, EntityCommands, SystemParam},
 };
 use bevy_reflect::prelude::*;
@@ -76,7 +76,7 @@ pub trait DataBindingExt {
     fn bind_to(&mut self, source: Entity) -> &mut Self;
 }
 
-impl<'w, 's, 'a> DataBindingExt for EntityCommands<'w, 's, 'a> {
+impl<'a> DataBindingExt for EntityCommands<'a> {
     /// Bind the entity to another entity `source`
     fn bind_to(&mut self, source: Entity) -> &mut Self {
         let sink = self.id();
@@ -93,9 +93,9 @@ impl<'w, 's, 'a> DataBindingExt for EntityCommands<'w, 's, 'a> {
 #[derive(SystemParam)]
 pub struct DataBindingUpdate<'w, 's, Source, Sink, Filter>
 where
-    Source: WorldQuery + 'static,
-    Sink: WorldQuery + 'static,
-    Filter: ReadOnlyWorldQuery + 'static,
+    Source: QueryData + 'static,
+    Sink: QueryData + 'static,
+    Filter: QueryFilter + 'static,
 {
     source_query: Query<'w, 's, (Entity, &'static DataBindings, Source), Filter>,
     sink_query: Query<'w, 's, (Entity, Option<Sink>)>,
@@ -104,14 +104,14 @@ where
 
 impl<'w, 's, Source, Sink, Filter> DataBindingUpdate<'w, 's, Source, Sink, Filter>
 where
-    Source: WorldQuery<ReadOnly = Source> + 'static,
-    Sink: WorldQuery + 'static,
-    Filter: ReadOnlyWorldQuery + 'static,
+    Source: QueryData<ReadOnly = Source> + 'static,
+    Sink: QueryData + 'static,
+    Filter: QueryFilter + 'static,
 {
     /// Apply the given function `f` to each binding of each matching source entity.
     pub fn for_each<F>(&mut self, mut f: F)
     where
-        F: FnMut(&<Source::ReadOnly as WorldQuery>::Item<'_>, &mut Sink::Item<'_>),
+        F: FnMut(&Source::Item<'_>, &mut Sink::Item<'_>),
     {
         for (source, bindings, source_data) in &self.source_query {
             for &sink in bindings {

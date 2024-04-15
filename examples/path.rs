@@ -32,32 +32,26 @@ fn setup(
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane {
-            size: 5.0,
-            subdivisions: 1,
-        })),
-        material: standard_materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        mesh: meshes.add(Plane3d::default().mesh().size(5.0, 5.0)),
+        material: standard_materials.add(Color::rgb(0.3, 0.5, 0.3)),
         ..default()
     });
 
     commands.spawn((
         PbrBundle {
-            mesh: meshes.add(
-                Path {
-                    spline: Spline::from_vec(vec![
-                        Key::new(
-                            0.0,
-                            Vec3::new(0.0, 0.0, 0.0),
-                            Interpolation::Bezier(Vec3::new(-2.0, 0.0, 0.5)),
-                        ),
-                        Key::new(1.0, Vec3::new(4.0, 0.0, 2.0), Interpolation::default()),
-                    ]),
-                    steps: 40,
-                    stroke: 0.1,
-                }
-                .into(),
-            ),
-            material: standard_materials.add(Color::rgb(1.0, 0.8, 0.8).into()),
+            mesh: meshes.add(Path {
+                spline: Spline::from_vec(vec![
+                    Key::new(
+                        0.0,
+                        Vec3::new(0.0, 0.0, 0.0),
+                        Interpolation::Bezier(Vec3::new(-2.0, 0.0, 0.5)),
+                    ),
+                    Key::new(1.0, Vec3::new(4.0, 0.0, 2.0), Interpolation::default()),
+                ]),
+                steps: 40,
+                stroke: 0.1,
+            }),
+            material: standard_materials.add(Color::rgb(1.0, 0.8, 0.8)),
             transform: Transform::from_translation(Vec3::new(-2.0, 0.5, 0.0)),
             ..default()
         },
@@ -66,22 +60,19 @@ fn setup(
 
     commands.spawn((
         PbrBundle {
-            mesh: meshes.add(
-                Path {
-                    spline: Spline::from_vec(vec![
-                        Key::new(
-                            0.0,
-                            Vec3::new(0.0, 0.0, 0.0),
-                            Interpolation::Bezier(Vec3::new(0.0, 0.0, 1.0)),
-                        ),
-                        Key::new(1.0, Vec3::new(1.0, 0.0, 1.0), Interpolation::default()),
-                    ]),
-                    steps: 8,
-                    stroke: 0.1,
-                }
-                .into(),
-            ),
-            material: standard_materials.add(Color::rgb(0.8, 1.0, 0.8).into()),
+            mesh: meshes.add(Path {
+                spline: Spline::from_vec(vec![
+                    Key::new(
+                        0.0,
+                        Vec3::new(0.0, 0.0, 0.0),
+                        Interpolation::Bezier(Vec3::new(0.0, 0.0, 1.0)),
+                    ),
+                    Key::new(1.0, Vec3::new(1.0, 0.0, 1.0), Interpolation::default()),
+                ]),
+                steps: 8,
+                stroke: 0.1,
+            }),
+            material: standard_materials.add(Color::rgb(0.8, 1.0, 0.8)),
             transform: Transform::from_translation(Vec3::new(2.0, 0.5, 0.0)),
             ..default()
         },

@@ -69,9 +69,6 @@ impl FromWithLoadContext<RawDecoration> for Decoration {
 
 pub fn insert_hex_assets(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
     commands.insert_resource(HexAssets {
-        mesh: meshes.add(Mesh::from(Hexagon {
-            radius: 1.0,
-            subdivisions: 2,
-        })),
+        mesh: meshes.add(Hexagon::new(1.0).mesh().subdivisions(2)),
     });
 }

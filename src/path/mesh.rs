@@ -1,6 +1,9 @@
 use super::component::*;
 use bevy::{
-    math::Vec3Swizzles, prelude::*, render::mesh::Indices, render::mesh::PrimitiveTopology,
+    math::Vec3Swizzles,
+    prelude::*,
+    render::mesh::Indices,
+    render::{mesh::PrimitiveTopology, render_asset::RenderAssetUsages},
 };
 use itertools::Itertools;
 
@@ -55,14 +58,17 @@ pub fn update_path_mesh(path: Path, mesh: &mut Mesh) {
     let normals: Vec<_> = vertices.iter().map(|(_, n, _)| *n).collect();
     let uvs: Vec<_> = vertices.iter().map(|(_, _, uv)| *uv).collect();
 
-    mesh.set_indices(Some(indices));
+    mesh.insert_indices(indices);
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
 }
 
 pub fn empty_path_mesh() -> Mesh {
-    Mesh::new(PrimitiveTopology::TriangleList)
+    Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::RENDER_WORLD | RenderAssetUsages::MAIN_WORLD,
+    )
 }
 
 impl From<Path> for Mesh {
