@@ -64,6 +64,7 @@ serde = { workspace = true }
 smallvec = { workspace = true }
 splines = { features = ["glam"], git = "https://github.com/hadronized/splines.git", version = "4.3.2-dev", branch = "master" }
 thiserror = { workspace = true }
+bevy_tweening = "0.10.0"
 
 [dev-dependencies]
 approx = "0.5"
