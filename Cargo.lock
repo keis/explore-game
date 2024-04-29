@@ -420,7 +420,7 @@ dependencies = [
  "bevy_core",
  "bevy_core_pipeline",
  "bevy_ecs",
- "bevy_egui 0.27.0",
+ "bevy_egui",
  "bevy_hierarchy",
  "bevy_log",
  "bevy_math",
@@ -430,7 +430,7 @@ dependencies = [
  "bevy_time",
  "bevy_utils",
  "bevy_window",
- "egui 0.27.2",
+ "egui",
  "egui-dropdown",
  "fuzzy-matcher",
  "image",
@@ -691,20 +691,6 @@ dependencies = [
 
 [[package]]
 name = "bevy_egui"
-version = "0.25.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b84bfb8d4104a1467910cf2090bc6a6d394ebde39c0dbc02397b45aa9ef88e80"
-dependencies = [
- "arboard",
- "bevy",
- "egui 0.26.2",
- "thread_local",
- "web-sys",
- "webbrowser",
-]
-
-[[package]]
-name = "bevy_egui"
 version = "0.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eac153cb176b04eb0734c60fbc2912aa6fb2539f5b64ba832661c1c4cf9e298a"
@@ -713,7 +699,7 @@ dependencies = [
  "bevy",
  "console_log",
  "crossbeam-channel",
- "egui 0.27.2",
+ "egui",
  "js-sys",
  "log",
  "thread_local",
@@ -987,7 +973,7 @@ dependencies = [
  "bevy_core",
  "bevy_core_pipeline",
  "bevy_ecs",
- "bevy_egui 0.27.0",
+ "bevy_egui",
  "bevy_eventlistener",
  "bevy_math",
  "bevy_picking_core",
@@ -1091,7 +1077,7 @@ source = "git+https://github.com/keis/bevy_mod_picking.git#74fb17eedac07f80dac85
 dependencies = [
  "bevy_app",
  "bevy_ecs",
- "bevy_egui 0.27.0",
+ "bevy_egui",
  "bevy_picking_core",
  "bevy_picking_selection",
  "bevy_reflect",
@@ -2319,13 +2305,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ea835d29036a4087793836fa931b08837ad5e957da9e23886b29586fb9b6650"
 
 [[package]]
-name = "ecolor"
-version = "0.26.2"
+name = "dyn-clone"
+version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03cfe80b1890e1a8cdbffc6044d6872e814aaf6011835a2a5e2db0e5c5c4ef4e"
-dependencies = [
- "bytemuck",
-]
+checksum = "0d6ef0072f8a535281e4876be788938b528e9a1d43900b82c2569af7da799125"
+
+[[package]]
+name = "dyn-eq"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c2d035d21af5cde1a6f5c7b444a5bf963520a9f142e5d06931178433d7d5388"
+
+[[package]]
+name = "dyn-hash"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a650a461c6a8ff1ef205ed9a2ad56579309853fecefc2423f73dced342f92258"
 
 [[package]]
 name = "ecolor"
@@ -2338,23 +2333,12 @@ dependencies = [
 
 [[package]]
 name = "egui"
-version = "0.26.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "180f595432a5b615fc6b74afef3955249b86cfea72607b40740a4cd60d5297d0"
-dependencies = [
- "ahash",
- "epaint 0.26.2",
- "nohash-hasher",
-]
-
-[[package]]
-name = "egui"
 version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "584c5d1bf9a67b25778a3323af222dbe1a1feb532190e103901187f92c7fe29a"
 dependencies = [
  "ahash",
- "epaint 0.27.2",
+ "epaint",
  "nohash-hasher",
 ]
 
@@ -2364,7 +2348,7 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "240e9423d44c6fd18a72208b442b1101ac871f9636c06d30cc6555d125f57db0"
 dependencies = [
- "egui 0.27.2",
+ "egui",
 ]
 
 [[package]]
@@ -2372,15 +2356,6 @@ name = "either"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a26ae43d7bcc3b814de94796a5e736d4029efb0ee900c12e2d54c993ad1a1e07"
-
-[[package]]
-name = "emath"
-version = "0.26.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6916301ecf80448f786cdf3eb51d9dbdd831538732229d49119e2d4312eaaf09"
-dependencies = [
- "bytemuck",
-]
 
 [[package]]
 name = "emath"
@@ -2445,21 +2420,6 @@ dependencies = [
 
 [[package]]
 name = "epaint"
-version = "0.26.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77b9fdf617dd7f58b0c8e6e9e4a1281f730cde0831d40547da446b2bb76a47af"
-dependencies = [
- "ab_glyph",
- "ahash",
- "bytemuck",
- "ecolor 0.26.2",
- "emath 0.26.2",
- "nohash-hasher",
- "parking_lot",
-]
-
-[[package]]
-name = "epaint"
 version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b381f8b149657a4acf837095351839f32cd5c4aec1817fc4df84e18d76334176"
@@ -2467,8 +2427,8 @@ dependencies = [
  "ab_glyph",
  "ahash",
  "bytemuck",
- "ecolor 0.27.2",
- "emath 0.27.2",
+ "ecolor",
+ "emath",
  "nohash-hasher",
  "parking_lot",
 ]
@@ -2612,7 +2572,7 @@ dependencies = [
  "bevy",
  "bevy-inspector-egui",
  "bevy_asset_loader",
- "bevy_egui 0.27.0",
+ "bevy_egui",
  "bevy_mod_billboard",
  "bevy_mod_outline",
  "bevy_mod_picking",
@@ -3442,23 +3402,26 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "leafwing-input-manager"
-version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "def515aa1461ed6ed5d55d53cea6c7149a3076c331cfea1d920682884bfaf839"
+version = "0.14.0"
+source = "git+https://github.com/Leafwing-Studios/leafwing-input-manager.git?branch=main#41bfa8010a491ae962093e2f4771569aaeefce53"
 dependencies = [
  "bevy",
- "bevy_egui 0.25.0",
+ "bevy_egui",
  "derive_more",
+ "dyn-clone",
+ "dyn-eq",
+ "dyn-hash",
  "itertools 0.12.1",
  "leafwing_input_manager_macros",
+ "once_cell",
  "serde",
+ "serde_flexitos",
 ]
 
 [[package]]
 name = "leafwing_input_manager_macros"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d065e4f0771d9cc597e76d648da18476ad01fd50cd60ee585ee500f9cd8d696"
+version = "0.13.1"
+source = "git+https://github.com/Leafwing-Studios/leafwing-input-manager.git?branch=main#41bfa8010a491ae962093e2f4771569aaeefce53"
 dependencies = [
  "proc-macro-crate 3.1.0",
  "proc-macro2",
@@ -4774,6 +4737,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.48",
+]
+
+[[package]]
+name = "serde_flexitos"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "15a95e8972debc2acae5fa208fd4ec9ba96ace41d2bdd4e715ad4082b822e955"
+dependencies = [
+ "erased-serde",
+ "serde",
 ]
 
 [[package]]

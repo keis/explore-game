@@ -54,7 +54,7 @@ futures-lite = "2"
 glam.workspace = true
 interpolation = "0.3"
 itertools = { workspace = true }
-leafwing-input-manager = { version = "0.13", features = ["egui"] }
+leafwing-input-manager = { version = "0.14.0", features = ["egui", "ui"], git = "https://github.com/Leafwing-Studios/leafwing-input-manager.git", branch = "main" }
 moonshine-save = "=0.3.6"
 noisy_bevy = "0.6"
 pathfinding = "4"
