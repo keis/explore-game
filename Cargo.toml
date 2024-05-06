@@ -34,8 +34,8 @@ opt-level = 3
 
 [dependencies]
 bevy_asset_loader = "0.20"
-bevy_egui = "0.25"
-bevy-inspector-egui = "0.23"
+bevy_egui = "0.27"
+bevy-inspector-egui = "0.24"
 bevy_mod_billboard = { git = "https://github.com/kulkalkul/bevy_mod_billboard.git", version = "0.6.0" }
 bevy_mod_outline = "0.7"
 bevy_mod_picking = { version = "0.18.2", features = ["backend_egui"], git = "https://github.com/keis/bevy_mod_picking.git" }
@@ -54,8 +54,8 @@ futures-lite = "2"
 glam.workspace = true
 interpolation = "0.3"
 itertools = { workspace = true }
-leafwing-input-manager = { version = "0.13", features = ["egui"] }
-moonshine-save = "=0.3.6"
+leafwing-input-manager = "0.13"
+moonshine-save = "=0.3.7"
 noisy_bevy = "0.6"
 pathfinding = "4"
 platform-dirs = "0.3"
