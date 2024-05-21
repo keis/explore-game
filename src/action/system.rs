@@ -194,13 +194,14 @@ pub fn handle_make_camp(
     commands
         .entity(map_entity)
         .with_presence(position, |location| {
+            let (camp_bundle, child_bundle) =
+                CampBundle::new(position, String::from("New camp"), camp_inventory)
+                    .with_fluff(&mut structure_params, structure_codex);
             location
-                .spawn((
-                    Name::new("Camp"),
-                    save::Save,
-                    CampBundle::new(position, String::from("New camp"), camp_inventory)
-                        .with_fluff(&mut structure_params, structure_codex),
-                ))
+                .spawn((Name::new("Camp"), save::Save, camp_bundle))
+                .with_children(|parent| {
+                    parent.spawn(child_bundle);
+                })
                 .add_members(members);
         });
     Ok(())

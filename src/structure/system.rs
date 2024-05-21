@@ -19,13 +19,19 @@ pub fn fluff_structure(
 ) -> Result<(), ExplError> {
     let structure_codex = structure_codex.get()?;
     for (entity, structure_id, presence, fog) in &structure_query {
-        commands.entity(entity).insert(StructureFluffBundle::new(
+        let (fluff_bundle, child_bundle) = StructureFluffBundle::new(
             &mut structure_params,
             structure_codex,
             **structure_id,
             presence,
             fog,
-        ));
+        );
+        commands
+            .entity(entity)
+            .insert(fluff_bundle)
+            .with_children(|parent| {
+                parent.spawn(child_bundle);
+            });
     }
     Ok(())
 }

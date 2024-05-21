@@ -15,9 +15,14 @@ pub type StructureParams<'w, 's> = (ResMut<'w, Assets<TerrainMaterial>>, HeightQ
 
 #[derive(Bundle, Default)]
 pub struct StructureFluffBundle {
-    material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
+    spatial_bundle: SpatialBundle,
     selection: SelectionBundle,
     floating_text_source: FloatingTextSource,
+}
+
+#[derive(Bundle, Default)]
+pub struct StructureChildBundle {
+    material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
 }
 
 impl StructureFluffBundle {
@@ -27,31 +32,39 @@ impl StructureFluffBundle {
         structure_id: Id<Structure>,
         presence: &MapPresence,
         fog: &Fog,
-    ) -> Self {
+    ) -> (Self, StructureChildBundle) {
         let structure = &structure_codex[&structure_id];
-        Self {
-            material_mesh_bundle: MaterialMeshBundle {
-                mesh: structure.mesh.clone(),
-                material: terrain_materials.add(TerrainMaterial::from_structure(
-                    structure_codex,
-                    &structure_id,
-                    fog,
-                )),
-                visibility: if fog.explored {
-                    Visibility::Inherited
-                } else {
-                    Visibility::Hidden
+        (
+            Self {
+                floating_text_source: FloatingTextSource::with_offset(Vec3::new(0.0, 0.5, 0.0)),
+                spatial_bundle: SpatialBundle {
+                    transform: Transform::from_translation(
+                        height_query.adjust(presence.position.into()),
+                    ),
+                    visibility: if fog.explored {
+                        Visibility::Inherited
+                    } else {
+                        Visibility::Hidden
+                    },
+                    ..default()
                 },
-                transform: Transform::from_translation(
-                    height_query.adjust(presence.position.into()),
-                )
-                .with_scale(Vec3::splat(structure.scale))
-                .with_rotation(Quat::from_rotation_y(structure.rotation)),
                 ..default()
             },
-            floating_text_source: FloatingTextSource::with_offset(Vec3::new(0.0, 0.5, 0.0)),
-            ..default()
-        }
+            StructureChildBundle {
+                material_mesh_bundle: MaterialMeshBundle {
+                    mesh: structure.mesh.clone(),
+                    material: terrain_materials.add(TerrainMaterial::from_structure(
+                        structure_codex,
+                        &structure_id,
+                        fog,
+                    )),
+                    transform: Transform::from_translation(Vec3::ZERO)
+                        .with_scale(Vec3::splat(structure.scale))
+                        .with_rotation(Quat::from_rotation_y(structure.rotation)),
+                    ..default()
+                },
+            },
+        )
     }
 }
 
@@ -80,15 +93,15 @@ impl SpawnerBundle {
         self,
         structure_params: &mut StructureParams,
         structure_codex: &Codex<Structure>,
-    ) -> (Self, StructureFluffBundle) {
-        let fluff = StructureFluffBundle::new(
+    ) -> ((Self, StructureFluffBundle), StructureChildBundle) {
+        let (fluff, child) = StructureFluffBundle::new(
             structure_params,
             structure_codex,
             *self.structure_id,
             &self.presence,
             &self.fog,
         );
-        (self, fluff)
+        ((self, fluff), child)
     }
 }
 
@@ -123,15 +136,15 @@ impl CampBundle {
         self,
         structure_params: &mut StructureParams,
         structure_codex: &Codex<Structure>,
-    ) -> (Self, StructureFluffBundle) {
-        let fluff = StructureFluffBundle::new(
+    ) -> ((Self, StructureFluffBundle), StructureChildBundle) {
+        let (fluff, child) = StructureFluffBundle::new(
             structure_params,
             structure_codex,
             *self.structure_id,
             &self.presence,
             &self.fog,
         );
-        (self, fluff)
+        ((self, fluff), child)
     }
 }
 
@@ -156,15 +169,15 @@ impl PortalBundle {
         self,
         structure_params: &mut StructureParams,
         structure_codex: &Codex<Structure>,
-    ) -> (Self, StructureFluffBundle) {
-        let fluff = StructureFluffBundle::new(
+    ) -> ((Self, StructureFluffBundle), StructureChildBundle) {
+        let (fluff, child) = StructureFluffBundle::new(
             structure_params,
             structure_codex,
             *self.structure_id,
             &self.presence,
             &self.fog,
         );
-        (self, fluff)
+        ((self, fluff), child)
     }
 }
 
