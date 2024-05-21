@@ -1,7 +1,7 @@
 use super::{asset::*, component::*};
 use crate::{
     combat::{Attack, Health},
-    input::{Selection, SelectionBundle},
+    input::{DefaultOutlineVolume, Selection, SelectionBundle},
     inventory::Inventory,
     map::{FogRevealer, HexCoord, MapPresence, ViewRadius},
     path::PathGuided,
@@ -9,7 +9,6 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_mod_outline::{OutlineBundle, OutlineVolume};
-use bevy_mod_picking::prelude::PickHighlight;
 use expl_codex::{Codex, Id};
 
 pub type CreatureParams<'w, 's> = (ResMut<'w, Assets<StandardMaterial>>, HeightQuery<'w, 's>);
@@ -30,7 +29,7 @@ pub struct CreatureFluffBundle {
 #[derive(Bundle)]
 pub struct CreatureChildBundle {
     pbr_bundle: PbrBundle,
-    pick_highlight: PickHighlight,
+    default_outline_volume: DefaultOutlineVolume,
     outline_bundle: OutlineBundle,
 }
 
@@ -96,6 +95,11 @@ impl CreatureFluffBundle {
     ) -> (Self, CreatureChildBundle) {
         let creature_data = &creature_codex[&creature_id];
         let offset = Vec3::new(0.0, creature_data.offset, 0.0);
+        let outline = OutlineVolume {
+            visible: true,
+            width: 2.0,
+            colour: creature_data.outline_color,
+        };
         (
             Self {
                 spatial_bundle: SpatialBundle {
@@ -113,13 +117,9 @@ impl CreatureFluffBundle {
                         .with_scale(Vec3::splat(creature_data.scale)),
                     ..default()
                 },
-                pick_highlight: PickHighlight,
+                default_outline_volume: DefaultOutlineVolume(outline.clone()),
                 outline_bundle: OutlineBundle {
-                    outline: OutlineVolume {
-                        visible: true,
-                        width: 2.0,
-                        colour: creature_data.outline_color,
-                    },
+                    outline,
                     ..default()
                 },
             },

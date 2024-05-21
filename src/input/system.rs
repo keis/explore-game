@@ -2,6 +2,7 @@ use super::{component::*, event::*, system_param::*};
 use crate::{
     action::{GameAction, GameActionQueue},
     actor::Movement,
+    color,
     combat::Combat,
     map::{MapPosition, MapPresence},
     path::{PathFinder, PathGuided},
@@ -9,12 +10,8 @@ use crate::{
     ExplError,
 };
 use bevy::prelude::*;
-use bevy_mod_picking::{
-    highlight::InitialHighlight,
-    prelude::{
-        Click, GlobalHighlight, Highlight, Out, Over, PickingInteraction, Pointer, PointerButton,
-    },
-};
+use bevy_mod_outline::OutlineVolume;
+use bevy_mod_picking::prelude::{Click, Out, Over, Pointer, PointerButton};
 use std::iter;
 
 #[allow(clippy::too_many_arguments)]
@@ -123,81 +120,64 @@ pub fn apply_zone_activated_events(
 }
 
 pub fn apply_selection_events(
-    mut selection_query: Query<&mut Selection>,
+    mut selection_query: Query<(&mut Selection, Option<&Children>)>,
     mut select_events: EventReader<Select>,
     mut deselect_events: EventReader<Deselect>,
+    mut outline_volume_query: Query<(&mut OutlineVolume, &DefaultOutlineVolume)>,
 ) {
     for Select(target) in select_events.read() {
-        let Ok(mut selection) = selection_query.get_mut(*target) else {
+        let Ok((mut selection, children)) = selection_query.get_mut(*target) else {
             continue;
         };
         selection.is_selected = true;
+        for &child in children.iter().flat_map(|c| c.iter()) {
+            if let Ok((mut outline_volume, _)) = outline_volume_query.get_mut(child) {
+                outline_volume.colour = color::OUTLINE_SELECTED;
+            }
+        }
     }
 
     for Deselect(target) in deselect_events.read() {
-        let Ok(mut selection) = selection_query.get_mut(*target) else {
+        let Ok((mut selection, children)) = selection_query.get_mut(*target) else {
             continue;
         };
         selection.is_selected = false;
-    }
-}
-
-#[allow(clippy::type_complexity)]
-pub fn update_selection_highlight(
-    global_defaults: Res<GlobalHighlight<StandardMaterial>>,
-    selection_query: Query<(Entity, &PickingInteraction, &Selection), Changed<Selection>>,
-    children_query: Query<&Children>,
-    mut highlight_query: Query<(
-        &mut Handle<StandardMaterial>,
-        &InitialHighlight<StandardMaterial>,
-        Option<&Highlight<StandardMaterial>>,
-    )>,
-) {
-    for (entity, interaction, selection) in &selection_query {
-        for entity in iter::once(entity).chain(children_query.iter_descendants(entity)) {
-            let Ok((mut handle, initial_highlight, highlight)) = highlight_query.get_mut(entity)
-            else {
-                continue;
-            };
-            if let PickingInteraction::None = interaction {
-                *handle = if selection.is_selected {
-                    global_defaults.selected(&highlight)
-                } else {
-                    initial_highlight.initial.to_owned()
-                }
+        for &child in children.iter().flat_map(|c| c.iter()) {
+            if let Ok((mut outline_volume, default)) = outline_volume_query.get_mut(child) {
+                *outline_volume = (*default).clone();
             }
         }
     }
 }
 
-#[allow(clippy::type_complexity)]
-pub fn update_interaction_highlight(
-    global_defaults: Res<GlobalHighlight<StandardMaterial>>,
-    parent_query: Query<&Parent>,
-    selection_query: Query<&Selection>,
-    mut interaction_query: Query<
-        (
-            Entity,
-            &mut Handle<StandardMaterial>,
-            &InitialHighlight<StandardMaterial>,
-            Option<&Highlight<StandardMaterial>>,
-            &PickingInteraction,
-        ),
-        Changed<PickingInteraction>,
-    >,
+pub fn apply_selection_over_out_events(
+    selection_query: Query<(&Selection, &Children)>,
+    mut selection_over_events: EventReader<SelectionOver>,
+    mut selection_out_events: EventReader<SelectionOut>,
+    mut outline_volume_query: Query<(&mut OutlineVolume, &DefaultOutlineVolume)>,
 ) {
-    for (entity, mut handle, initial_highlight, highlight, interaction) in &mut interaction_query {
-        if let PickingInteraction::None = interaction {
-            for entity in iter::once(entity).chain(parent_query.iter_ancestors(entity)) {
-                let Ok(selection) = selection_query.get(entity) else {
-                    continue;
-                };
-                *handle = if selection.is_selected {
-                    global_defaults.selected(&highlight)
+    for SelectionOver(target) in selection_over_events.read() {
+        let Ok((_, children)) = selection_query.get(*target) else {
+            continue;
+        };
+        for &child in children.iter() {
+            if let Ok((mut outline_volume, _)) = outline_volume_query.get_mut(child) {
+                outline_volume.colour = color::OUTLINE_HOVER;
+            }
+        }
+    }
+
+    for SelectionOut(target) in selection_out_events.read() {
+        let Ok((selection, children)) = selection_query.get(*target) else {
+            continue;
+        };
+        for &child in children.iter() {
+            if let Ok((mut outline_volume, default)) = outline_volume_query.get_mut(child) {
+                if selection.is_selected {
+                    outline_volume.colour = Color::rgb(0.75, 0.50, 0.50);
                 } else {
-                    initial_highlight.initial.to_owned()
+                    *outline_volume = (*default).clone();
                 };
-                break;
             }
         }
     }
