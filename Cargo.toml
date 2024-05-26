@@ -38,7 +38,7 @@ bevy_egui = "0.27"
 bevy-inspector-egui = "0.24"
 bevy_mod_billboard = { git = "https://github.com/kulkalkul/bevy_mod_billboard.git", version = "0.6.0" }
 bevy_mod_outline = "0.7"
-bevy_mod_picking = { version = "0.18.2", features = ["backend_egui"], git = "https://github.com/keis/bevy_mod_picking.git" }
+bevy_mod_picking = { version = "0.18.2", default-features = false, features = ["backend_egui", "backend_bevy_ui", "backend_raycast", "debug"], git = "https://github.com/keis/bevy_mod_picking.git" }
 bevy_obj = "0.13"
 bevy_sprite3d = "2.8"
 bevy = { version = "0.13", features = ["wayland", "dynamic_linking", "file_watcher"] }

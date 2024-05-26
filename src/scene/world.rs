@@ -110,12 +110,13 @@ pub fn spawn_portal(
     commands
         .entity(map_entity)
         .with_presence(prototype.portal_position, |location| {
-            location.spawn((
-                Name::new("Portal"),
-                save::Save,
-                PortalBundle::new(prototype.portal_position)
-                    .with_fluff(&mut structure_params, structure_codex),
-            ));
+            let (portal_bundle, child_bundle) = PortalBundle::new(prototype.portal_position)
+                .with_fluff(&mut structure_params, structure_codex);
+            location
+                .spawn((Name::new("Portal"), save::Save, portal_bundle))
+                .with_children(|parent| {
+                    parent.spawn(child_bundle);
+                });
         });
 
     Ok(())
@@ -135,12 +136,14 @@ pub fn spawn_spawner(
     commands
         .entity(map_entity)
         .with_presence(prototype.spawner_position, |location| {
-            location.spawn((
-                Name::new("EnemySpawner"),
-                save::Save,
+            let (spawner_bundle, child_bundle) =
                 SpawnerBundle::new(prototype.spawner_position, Id::from_tag("slime"))
-                    .with_fluff(&mut structure_params, structure_codex),
-            ));
+                    .with_fluff(&mut structure_params, structure_codex);
+            location
+                .spawn((Name::new("EnemySpawner"), save::Save, spawner_bundle))
+                .with_children(|parent| {
+                    parent.spawn(child_bundle);
+                });
         });
 
     Ok(())

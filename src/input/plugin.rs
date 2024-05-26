@@ -3,7 +3,6 @@ use crate::{scene::SceneState, turn};
 use bevy::prelude::*;
 use bevy_mod_picking::{
     backend::prelude::PickSet,
-    highlight::update_highlight_assets,
     prelude::{Click, DebugPickingPlugin, DefaultPickingPlugins, Out, Over, Pointer},
 };
 use leafwing_input_manager::{
@@ -24,8 +23,7 @@ impl Plugin for InputPlugin {
         app.add_plugins(
             DefaultPickingPlugins
                 .build()
-                .disable::<DebugPickingPlugin>()
-                .disable::<bevy_mod_picking::prelude::SelectionPlugin>(),
+                .disable::<DebugPickingPlugin>(),
         )
         .add_plugins(InputManagerPlugin::<Action>::default())
         .configure_sets(
@@ -90,8 +88,8 @@ impl Plugin for InputPlugin {
                         .run_if(on_event::<Select>().or_else(on_event::<Deselect>())),
                 )
                     .in_set(InputSet::Selection),
-                (update_selection_highlight, update_interaction_highlight)
-                    .after(update_highlight_assets::<StandardMaterial>)
+                apply_selection_over_out_events
+                    .run_if(on_event::<SelectionOver>().or_else(on_event::<SelectionOut>()))
                     .in_set(InputSet::PostSelection),
             )
                 .run_if(in_state(SceneState::Active)),
