@@ -1,4 +1,4 @@
-use super::{component::*, event::*, system::*};
+use super::{event::*, system::*};
 use crate::{action::ActionSet, assets::AssetState, map::MapEvent};
 use bevy::{prelude::*, time::common_conditions::on_timer};
 use std::time::Duration;
@@ -8,8 +8,6 @@ pub struct CombatPlugin;
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<CombatEvent>()
-            .register_type::<Attack>()
-            .register_type::<Health>()
             .add_systems(
                 Update,
                 initiate_combat

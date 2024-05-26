@@ -1,9 +1,9 @@
 use super::{component::*, event::*, system_param::*};
 use crate::{
     action::{GameAction, GameActionQueue},
-    actor::Movement,
     color,
     combat::Combat,
+    creature::Movement,
     map::{MapPosition, MapPresence},
     path::{PathFinder, PathGuided},
     terrain::TerrainId,

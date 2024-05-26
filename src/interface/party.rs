@@ -4,7 +4,8 @@ use super::{
     InterfaceAssets,
 };
 use crate::{
-    actor::{Character, Members, Movement, Party},
+    actor::{Character, Members, Party},
+    creature::Movement,
     input::{Selection, SelectionUpdate},
     inventory::Inventory,
 };

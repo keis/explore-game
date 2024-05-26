@@ -1,6 +1,7 @@
 use super::{bundle::*, component::*, event::*};
 use crate::{
-    actor::{Character, Corpse, Enemy, Group, GroupCommandsExt, Members},
+    actor::{Character, Enemy, Group, GroupCommandsExt, Members},
+    creature::{Attack, Corpse, Health},
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     map::{MapCommandsExt, MapEvent, PresenceLayer},
 };

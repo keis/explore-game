@@ -1,5 +1,5 @@
 use super::asset::Structure;
-use crate::actor::Creature;
+use crate::{actor::Actor, creature::Creature};
 use bevy::prelude::*;
 use expl_codex::Id;
 
@@ -34,4 +34,5 @@ pub struct Portal {
 pub struct Spawner {
     pub charge: u8,
     pub creature: Id<Creature>,
+    pub actor: Id<Actor>,
 }

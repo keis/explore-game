@@ -1,5 +1,5 @@
 use super::{action::*, component::*, event::*};
-use crate::{actor::Movement, map::MapPresence};
+use crate::{creature::Movement, map::MapPresence};
 use bevy::{
     ecs::{query::QueryFilter, system::SystemParam},
     prelude::*,

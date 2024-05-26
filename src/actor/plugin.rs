@@ -10,15 +10,13 @@ pub struct ActorPlugin;
 
 impl Plugin for ActorPlugin {
     fn build(&self, app: &mut App) {
-        app.init_asset::<Codex<Creature>>()
-            .init_asset_loader::<CodexLoader<RawCreature, Creature>>()
-            .add_event::<SlideEvent>()
+        app.add_event::<SlideEvent>()
             .add_event::<GroupEvent>()
+            .init_asset::<Codex<Actor>>()
+            .init_asset_loader::<CodexLoader<RawActor, Actor>>()
+            .register_type::<ActorId>()
+            .register_type::<Id<Actor>>()
             .register_type::<Character>()
-            .register_type::<CreatureId>()
-            .register_type::<Id<Creature>>()
-            .register_type::<Corpse>()
-            .register_type::<Movement>()
             .register_type::<Enemy>()
             .register_type::<Members>()
             .register_type::<Group>()
@@ -32,7 +30,7 @@ impl Plugin for ActorPlugin {
                 OnEnter(SceneState::Active),
                 (
                     fluff_party.map(bevy::utils::warn),
-                    fluff_creature.map(bevy::utils::warn),
+                    fluff_actor.map(bevy::utils::warn),
                 )
                     .in_set(SceneSet::Populate),
             )

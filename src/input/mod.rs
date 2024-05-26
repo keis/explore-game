@@ -24,7 +24,7 @@ pub use system_param::*;
 mod tests {
     use super::{action::*, system::*, Action, ActionState, Deselect, Select, Selection};
     use crate::{
-        actor::Movement, camera::CameraControl, map::MapPresence, test_fixture::spawn_game_map,
+        camera::CameraControl, creature::Movement, map::MapPresence, test_fixture::spawn_game_map,
     };
     use bevy::prelude::*;
     use rstest::*;

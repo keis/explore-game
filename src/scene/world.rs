@@ -1,6 +1,7 @@
 use super::save;
 use crate::{
-    actor::{CharacterBundle, CreatureCodex, CreatureParams, GroupCommandsExt, PartyBundle},
+    actor::{ActorCodex, ActorParams, CharacterBundle, GroupCommandsExt, PartyBundle},
+    creature::CreatureCodex,
     map::{MapCommandsExt, MapLayout, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     map_generator::{GenerateMapTask, MapPrototype, MapSeed},
     structure::{PortalBundle, SafeHavenBundle, SpawnerBundle, StructureCodex, StructureParams},
@@ -151,13 +152,15 @@ pub fn spawn_spawner(
 
 pub fn spawn_party(
     mut commands: Commands,
-    mut party_params: CreatureParams,
+    mut party_params: ActorParams,
+    actor_codex: ActorCodex,
     creature_codex: CreatureCodex,
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.get_single()?;
     let map_entity = map_query.get_single()?;
+    let actor_codex = actor_codex.get()?;
     let creature_codex = creature_codex.get()?;
 
     let character1 = commands
@@ -186,7 +189,7 @@ pub fn spawn_party(
         .with_presence(prototype.party_position, |location| {
             let (party_bundle, child_bundle) =
                 PartyBundle::new(prototype.party_position, String::from("Alpha Group"), 1)
-                    .with_fluff(&mut party_params, creature_codex);
+                    .with_fluff(&mut party_params, actor_codex);
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
                 .with_children(|parent| {

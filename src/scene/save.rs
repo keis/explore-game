@@ -1,4 +1,4 @@
-use crate::{actor, combat, input, inventory, map, structure, terrain, turn};
+use crate::{actor, creature, input, inventory, map, structure, terrain, turn};
 use bevy::prelude::*;
 use moonshine_save::save::SaveFilter;
 use platform_dirs::AppDirs;
@@ -25,17 +25,18 @@ pub fn filter_with_enabled_components() -> SaveFilter {
     let components = SceneFilter::deny_all()
         .allow::<Name>()
         .allow::<Save>()
+        .allow::<actor::ActorId>()
         .allow::<actor::Character>()
-        .allow::<actor::Corpse>()
-        .allow::<actor::CreatureId>()
         .allow::<actor::Enemy>()
-        .allow::<actor::Members>()
         .allow::<actor::Group>()
-        .allow::<actor::Movement>()
+        .allow::<actor::Members>()
         .allow::<actor::Party>()
         .allow::<actor::Slide>()
-        .allow::<combat::Attack>()
-        .allow::<combat::Health>()
+        .allow::<creature::Attack>()
+        .allow::<creature::Corpse>()
+        .allow::<creature::CreatureId>()
+        .allow::<creature::Health>()
+        .allow::<creature::Movement>()
         .allow::<input::Selection>()
         .allow::<inventory::Inventory>()
         .allow::<map::Fog>()

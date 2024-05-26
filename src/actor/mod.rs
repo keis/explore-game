@@ -13,13 +13,12 @@ pub use command::GroupCommandsExt;
 pub use component::*;
 pub use event::*;
 pub use plugin::ActorPlugin;
-pub use system_param::CreatureCodex;
+pub use system_param::*;
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        command::AddMembers, system::derive_party_movement, Group, Members, Movement, Party,
-    };
+    use super::{command::AddMembers, system::derive_party_movement, Group, Members, Party};
+    use crate::creature::Movement;
     use bevy::{ecs::system::Command, prelude::*};
     use rstest::*;
     use smallvec::SmallVec;

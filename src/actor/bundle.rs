@@ -1,6 +1,6 @@
 use super::{asset::*, component::*};
 use crate::{
-    combat::{Attack, Health},
+    creature::{Creature, CreatureBundle, Movement},
     input::{DefaultOutlineVolume, Selection, SelectionBundle},
     inventory::Inventory,
     map::{FogRevealer, HexCoord, MapPresence, ViewRadius},
@@ -11,23 +11,15 @@ use bevy::prelude::*;
 use bevy_mod_outline::{OutlineBundle, OutlineVolume};
 use expl_codex::{Codex, Id};
 
-pub type CreatureParams<'w, 's> = (ResMut<'w, Assets<StandardMaterial>>, HeightQuery<'w, 's>);
+pub type ActorParams<'w, 's> = (ResMut<'w, Assets<StandardMaterial>>, HeightQuery<'w, 's>);
 
 #[derive(Bundle, Default)]
-pub struct CreatureBundle {
-    pub creature_id: CreatureId,
-    pub movement: Movement,
-    pub attack: Attack,
-    pub health: Health,
-}
-
-#[derive(Bundle, Default)]
-pub struct CreatureFluffBundle {
+pub struct ActorFluffBundle {
     spatial_bundle: SpatialBundle,
 }
 
 #[derive(Bundle)]
-pub struct CreatureChildBundle {
+pub struct ActorChildBundle {
     pbr_bundle: PbrBundle,
     default_outline_volume: DefaultOutlineVolume,
     outline_bundle: OutlineBundle,
@@ -42,6 +34,7 @@ pub struct CharacterBundle {
 
 #[derive(Bundle, Default)]
 pub struct PartyBundle {
+    actor_id: ActorId,
     party: Party,
     inventory: Inventory,
     presence: MapPresence,
@@ -56,11 +49,11 @@ pub struct PartyBundle {
 pub struct PartyFluffBundle {
     selection_bundle: SelectionBundle,
     path_guided: PathGuided,
-    creature_fluff: CreatureFluffBundle,
 }
 
 #[derive(Bundle, Default)]
 pub struct EnemyBundle {
+    actor_id: ActorId,
     creature: CreatureBundle,
     enemy: Enemy,
     presence: MapPresence,
@@ -68,37 +61,19 @@ pub struct EnemyBundle {
     slide: Slide,
 }
 
-impl CreatureBundle {
-    pub fn new(creature_codex: &Codex<Creature>, creature_id: Id<Creature>) -> Self {
-        let creature_data = &creature_codex[&creature_id];
-        Self {
-            creature_id: CreatureId(creature_id),
-            movement: Movement {
-                current: creature_data.movement,
-                reset: creature_data.movement,
-            },
-            attack: creature_data.attack.clone(),
-            health: Health {
-                current: creature_data.health,
-                max: creature_data.health,
-            },
-        }
-    }
-}
-
-impl CreatureFluffBundle {
+impl ActorFluffBundle {
     pub fn new(
-        (standard_materials, height_query): &mut CreatureParams,
-        creature_codex: &Codex<Creature>,
-        creature_id: Id<Creature>,
+        (standard_materials, height_query): &mut ActorParams,
+        actor_codex: &Codex<Actor>,
+        actor_id: Id<Actor>,
         presence: &MapPresence,
-    ) -> (Self, CreatureChildBundle) {
-        let creature_data = &creature_codex[&creature_id];
-        let offset = Vec3::new(0.0, creature_data.offset, 0.0);
+    ) -> (Self, ActorChildBundle) {
+        let actor_data = &actor_codex[&actor_id];
+        let offset = Vec3::new(0.0, actor_data.offset, 0.0);
         let outline = OutlineVolume {
             visible: true,
             width: 2.0,
-            colour: creature_data.outline_color,
+            colour: actor_data.outline_color,
         };
         (
             Self {
@@ -109,12 +84,12 @@ impl CreatureFluffBundle {
                     ..default()
                 },
             },
-            CreatureChildBundle {
+            ActorChildBundle {
                 pbr_bundle: PbrBundle {
-                    mesh: creature_data.mesh.clone(),
-                    material: standard_materials.add(creature_data.color),
+                    mesh: actor_data.mesh.clone(),
+                    material: standard_materials.add(actor_data.color),
                     transform: Transform::from_translation(offset)
-                        .with_scale(Vec3::splat(creature_data.scale)),
+                        .with_scale(Vec3::splat(actor_data.scale)),
                     ..default()
                 },
                 default_outline_volume: DefaultOutlineVolume(outline.clone()),
@@ -142,8 +117,10 @@ impl PartyBundle {
         let presence = MapPresence { position };
         let mut inventory = Inventory::default();
         inventory.add_item(Inventory::SUPPLY, supplies);
+        let actor_id = ActorId::from_tag("party");
         Self {
             party: Party { name },
+            actor_id,
             inventory,
             presence,
             ..default()
@@ -152,32 +129,13 @@ impl PartyBundle {
 
     pub fn with_fluff(
         self,
-        party_params: &mut CreatureParams,
-        creature_codex: &Codex<Creature>,
-    ) -> ((Self, PartyFluffBundle), CreatureChildBundle) {
-        let creature_id = Id::from_tag("warrior");
-        let (fluff, child) =
-            PartyFluffBundle::new(party_params, creature_codex, creature_id, &self.presence);
-        ((self, fluff), child)
-    }
-}
-
-impl PartyFluffBundle {
-    pub fn new(
-        party_params: &mut CreatureParams,
-        creature_codex: &Codex<Creature>,
-        creature_id: Id<Creature>,
-        presence: &MapPresence,
-    ) -> (Self, CreatureChildBundle) {
-        let (creature_fluff, child) =
-            CreatureFluffBundle::new(party_params, creature_codex, creature_id, presence);
-        (
-            Self {
-                creature_fluff,
-                ..default()
-            },
-            child,
-        )
+        party_params: &mut ActorParams,
+        actor_codex: &Codex<Actor>,
+    ) -> ((Self, PartyFluffBundle, ActorFluffBundle), ActorChildBundle) {
+        let party_fluff = PartyFluffBundle::default();
+        let (actor_fluff, child) =
+            ActorFluffBundle::new(party_params, actor_codex, *self.actor_id, &self.presence);
+        ((self, party_fluff, actor_fluff), child)
     }
 }
 
@@ -186,12 +144,14 @@ impl EnemyBundle {
         position: HexCoord,
         creature_codex: &Codex<Creature>,
         creature_id: Id<Creature>,
+        actor_id: Id<Actor>,
     ) -> Self {
         let presence = MapPresence { position };
         let view_radius = ViewRadius(creature_codex[&creature_id].view_radius.into());
         Self {
             presence,
             view_radius,
+            actor_id: ActorId(actor_id),
             creature: CreatureBundle::new(creature_codex, creature_id),
             ..default()
         }
@@ -199,15 +159,11 @@ impl EnemyBundle {
 
     pub fn with_fluff(
         self,
-        enemy_params: &mut CreatureParams,
-        creature_codex: &Codex<Creature>,
-    ) -> ((Self, CreatureFluffBundle), CreatureChildBundle) {
-        let (fluff, child) = CreatureFluffBundle::new(
-            enemy_params,
-            creature_codex,
-            *self.creature.creature_id,
-            &self.presence,
-        );
+        enemy_params: &mut ActorParams,
+        actor_codex: &Codex<Actor>,
+    ) -> ((Self, ActorFluffBundle), ActorChildBundle) {
+        let (fluff, child) =
+            ActorFluffBundle::new(enemy_params, actor_codex, *self.actor_id, &self.presence);
         ((self, fluff), child)
     }
 }

@@ -1,5 +1,4 @@
-use super::asset::Creature;
-use crate::ExplError;
+use super::asset::Actor;
 use bevy::{
     ecs::{
         entity::{EntityMapper, MapEntities},
@@ -12,9 +11,9 @@ use smallvec::SmallVec;
 
 #[derive(Component, Reflect, Default, Deref)]
 #[reflect(Component)]
-pub struct CreatureId(pub Id<Creature>);
+pub struct ActorId(pub Id<Actor>);
 
-impl CreatureId {
+impl ActorId {
     pub fn from_tag(tag: &str) -> Self {
         Self(Id::from_tag(tag))
     }
@@ -35,32 +34,6 @@ pub struct Enemy;
 pub struct Party {
     pub name: String,
 }
-
-#[derive(Component, Reflect, Default, Debug)]
-#[reflect(Component)]
-pub struct Movement {
-    pub current: u16,
-    pub reset: u16,
-}
-
-impl Movement {
-    pub fn reset(&mut self) {
-        self.current = self.reset;
-    }
-
-    pub fn consume(&mut self) -> Result<(), ExplError> {
-        if self.current == 0 {
-            Err(ExplError::MoveWithoutMovementPoints)
-        } else {
-            self.current -= 1;
-            Ok(())
-        }
-    }
-}
-
-#[derive(Component, Reflect, Default, Debug)]
-#[reflect(Component)]
-pub struct Corpse;
 
 #[derive(Component, Reflect, Default, Deref)]
 #[reflect(Component, MapEntities)]
