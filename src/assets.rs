@@ -1,5 +1,6 @@
 use crate::{
-    actor::Creature,
+    actor::Actor,
+    creature::Creature,
     map_generator::MapTemplate,
     structure::Structure,
     terrain::{Decoration, Terrain},
@@ -33,6 +34,8 @@ pub struct CodexAssets {
     pub structure_codex: Handle<Codex<Structure>>,
     #[asset(path = "codex/default.creature.toml")]
     pub creature_codex: Handle<Codex<Creature>>,
+    #[asset(path = "codex/default.actor.toml")]
+    pub actor_codex: Handle<Codex<Actor>>,
 }
 
 pub struct AssetsPlugin;

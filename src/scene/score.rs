@@ -1,9 +1,6 @@
 use super::SceneState;
 use crate::{
-    actor::{Corpse, Members},
-    inventory::Inventory,
-    map::MapPresence,
-    structure::SafeHaven,
+    actor::Members, creature::Corpse, inventory::Inventory, map::MapPresence, structure::SafeHaven,
 };
 use bevy::prelude::*;
 

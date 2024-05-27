@@ -1,10 +1,10 @@
 use super::queue::{GameAction, GameActionQueue, GameActionSystems};
 use crate::{
     actor::{
-        CreatureCodex, CreatureParams, GroupCommandsExt, Members, Movement, Party, PartyBundle,
-        Slide, SlideEvent,
+        ActorCodex, ActorParams, GroupCommandsExt, Members, Party, PartyBundle, Slide, SlideEvent,
     },
     combat::CombatEvent,
+    creature::Movement,
     inventory::Inventory,
     map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     path::PathGuided,
@@ -257,16 +257,16 @@ pub fn handle_enter_camp(
 pub fn handle_create_party_from_camp(
     mut commands: Commands,
     queue: ResMut<GameActionQueue>,
-    mut party_params: CreatureParams,
+    mut party_params: ActorParams,
     mut camp_query: Query<(&mut Inventory, &MapPresence), With<Camp>>,
     map_query: Query<Entity, With<PresenceLayer>>,
-    creature_codex: CreatureCodex,
+    actor_codex: ActorCodex,
 ) -> Result<(), ExplError> {
     let Some(ref action) = queue.current else {
         return Ok(());
     };
 
-    let creature_codex = creature_codex.get()?;
+    let actor_codex = actor_codex.get()?;
     info!(
         "Creating party at camp {:?} {:?}",
         action.source, action.targets
@@ -281,7 +281,7 @@ pub fn handle_create_party_from_camp(
         .with_presence(presence.position, |location| {
             let (fluff_bundle, child_bundle) =
                 PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
-                    .with_fluff(&mut party_params, creature_codex);
+                    .with_fluff(&mut party_params, actor_codex);
             location
                 .spawn((Name::new("Party"), save::Save, fluff_bundle))
                 .with_children(|parent| {
@@ -296,16 +296,16 @@ pub fn handle_create_party_from_camp(
 pub fn handle_split_party(
     mut commands: Commands,
     queue: ResMut<GameActionQueue>,
-    mut party_params: CreatureParams,
+    mut party_params: ActorParams,
     mut party_query: Query<(&mut Inventory, &Members, &MapPresence), With<Party>>,
     map_query: Query<Entity, With<PresenceLayer>>,
-    creature_codex: CreatureCodex,
+    actor_codex: ActorCodex,
 ) -> Result<(), ExplError> {
     let Some(ref action) = queue.current else {
         return Ok(());
     };
 
-    let creature_codex = creature_codex.get()?;
+    let actor_codex = actor_codex.get()?;
     let (mut party_inventory, members, presence) = party_query.get_mut(action.source)?;
     let map_entity = map_query.get_single()?;
     if members.len() == action.targets.len() {
@@ -319,7 +319,7 @@ pub fn handle_split_party(
         .with_presence(presence.position, |location| {
             let (party_bundle, child_bundle) =
                 PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
-                    .with_fluff(&mut party_params, creature_codex);
+                    .with_fluff(&mut party_params, actor_codex);
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
                 .with_children(|parent| {

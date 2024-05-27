@@ -7,7 +7,8 @@ use super::{
     InterfaceAssets,
 };
 use crate::{
-    actor::{Members, Movement, Party},
+    actor::{Members, Party},
+    creature::Movement,
     input::{Deselect, Select, Selection},
     inventory::Inventory,
     structure::Camp,

@@ -1,6 +1,7 @@
 use super::{asset::*, component::*};
 use crate::{
-    actor::{Creature, Members},
+    actor::Members,
+    creature::Creature,
     floating_text::FloatingTextSource,
     input::{DefaultOutlineVolume, SelectionBundle},
     inventory::Inventory,

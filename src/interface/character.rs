@@ -5,7 +5,7 @@ use super::{
 };
 use crate::{
     actor::{Character, Members},
-    combat::{Attack, Health},
+    creature::{Attack, Health},
     input::{Deselect, Selection, SelectionUpdate},
 };
 use bevy::prelude::*;

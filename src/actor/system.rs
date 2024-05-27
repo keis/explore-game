@@ -1,11 +1,11 @@
 use super::{bundle::*, component::*, event::*, system_param::*};
 use crate::{
+    creature::Movement,
     map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     terrain::HeightQuery,
     ExplError,
 };
 use bevy::prelude::*;
-use expl_codex::Id;
 use interpolation::Ease;
 
 pub fn reset_movement_points(mut movement_query: Query<&mut Movement>) {
@@ -15,20 +15,16 @@ pub fn reset_movement_points(mut movement_query: Query<&mut Movement>) {
 }
 
 #[allow(clippy::type_complexity)]
-pub fn fluff_creature(
+pub fn fluff_actor(
     mut commands: Commands,
-    creature_codex: CreatureCodex,
-    creature_query: Query<(Entity, &CreatureId, &MapPresence), Without<GlobalTransform>>,
-    mut creature_params: CreatureParams,
+    actor_codex: ActorCodex,
+    creature_query: Query<(Entity, &ActorId, &MapPresence), Without<GlobalTransform>>,
+    mut creature_params: ActorParams,
 ) -> Result<(), ExplError> {
-    let creature_codex = creature_codex.get()?;
+    let actor_codex = actor_codex.get()?;
     for (entity, creature_id, presence) in &creature_query {
-        let (fluff_bundle, child_bundle) = CreatureFluffBundle::new(
-            &mut creature_params,
-            creature_codex,
-            **creature_id,
-            presence,
-        );
+        let (fluff_bundle, child_bundle) =
+            ActorFluffBundle::new(&mut creature_params, actor_codex, **creature_id, presence);
         commands
             .entity(entity)
             .insert(fluff_bundle)
@@ -42,21 +38,10 @@ pub fn fluff_creature(
 #[allow(clippy::type_complexity)]
 pub fn fluff_party(
     mut commands: Commands,
-    creature_codex: CreatureCodex,
-    party_query: Query<(Entity, &MapPresence), (With<Party>, Without<GlobalTransform>)>,
-    mut party_params: CreatureParams,
+    party_query: Query<Entity, (With<Party>, Without<GlobalTransform>)>,
 ) -> Result<(), ExplError> {
-    let creature_id = Id::from_tag("warrior");
-    let creature_codex = creature_codex.get()?;
-    for (entity, presence) in &party_query {
-        let (fluff_bundle, child_bundle) =
-            PartyFluffBundle::new(&mut party_params, creature_codex, creature_id, presence);
-        commands
-            .entity(entity)
-            .insert(fluff_bundle)
-            .with_children(|parent| {
-                parent.spawn(child_bundle);
-            });
+    for entity in &party_query {
+        commands.entity(entity).insert(PartyFluffBundle::default());
     }
     Ok(())
 }

@@ -1,7 +1,7 @@
 use super::{bundle::*, component::*, system_param::*};
 use crate::{
-    actor::{CreatureCodex, CreatureParams, EnemyBundle, Members},
-    combat::Health,
+    actor::{ActorCodex, ActorParams, EnemyBundle, Members},
+    creature::{CreatureCodex, Health},
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     map::{Fog, MapCommandsExt, MapPresence, PresenceLayer, ViewRadius},
     material::PortalMaterial,
@@ -45,11 +45,13 @@ pub fn charge_spawner(mut spawner_query: Query<&mut Spawner>) {
 pub fn spawn_enemy(
     mut commands: Commands,
     mut spawner_query: Query<(&MapPresence, &mut Spawner)>,
+    actor_codex: ActorCodex,
     creature_codex: CreatureCodex,
     presence_query: Query<Entity, Without<Spawner>>,
     map_query: Query<(Entity, &PresenceLayer)>,
-    mut creature_params: CreatureParams,
+    mut creature_params: ActorParams,
 ) -> Result<(), ExplError> {
+    let actor_codex = actor_codex.get()?;
     let creature_codex = creature_codex.get()?;
     let (map_entity, presence_layer) = map_query.get_single()?;
     for (presence, mut spawner) in &mut spawner_query {
@@ -61,9 +63,13 @@ pub fn spawn_enemy(
         {
             spawner.charge -= 3;
             info!("Spawning enemy at {}", presence.position);
-            let (fluff_bundle, child_bundle) =
-                EnemyBundle::new(presence.position, creature_codex, spawner.creature)
-                    .with_fluff(&mut creature_params, creature_codex);
+            let (fluff_bundle, child_bundle) = EnemyBundle::new(
+                presence.position,
+                creature_codex,
+                spawner.creature,
+                spawner.actor,
+            )
+            .with_fluff(&mut creature_params, actor_codex);
             commands
                 .entity(map_entity)
                 .with_presence(presence.position, |location| {

@@ -3,19 +3,9 @@ attack = { low = 0, high = 8 }
 health = 10
 movement = 2
 view_radius = 2
-color = { Rgba = { red = 0.165, green = 0.631, blue = 0.596, alpha = 1.0 } }
-outline_color = { Rgba = { red = 0.155, green = 0.621, blue = 0.586, alpha = 1.0 } }
-mesh = "models/heather-shield.obj"
-offset = 0.5
-scale = 0.1
 
 [slime]
 attack = { low = 1, high = 10 }
 health = 10
 movement = 1
 view_radius = 2
-color = { Rgba = { red = 0.749, green = 0.584, blue = 0.901, alpha = 0.666 } }
-outline_color = { Rgba = { red = 0.739, green = 0.574, blue = 0.891, alpha = 1.0 } }
-mesh = "models/blob.obj"
-offset = 0.05
-scale = 0.5

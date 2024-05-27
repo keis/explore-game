@@ -5,6 +5,7 @@ pub mod camera;
 pub mod cleanup;
 pub mod color;
 pub mod combat;
+pub mod creature;
 pub mod enemy;
 mod error;
 pub mod floating_text;

@@ -1,10 +1,10 @@
 use crate::{
     action::ActionPlugin, actor::ActorPlugin, assets::AssetsPlugin, camera::CameraControlPlugin,
-    combat::CombatPlugin, enemy::EnemyPlugin, floating_text::FloatingTextPlugin,
-    input::InputPlugin, inspector::InspectorPlugin, interface::InterfacePlugin,
-    inventory::InventoryPlugin, map::MapPlugin, map_generator::MapGeneratorPlugin,
-    path::PathPlugin, scene::ScenePlugin, structure::StructurePlugin, terrain::TerrainPlugin,
-    turn::TurnPlugin,
+    combat::CombatPlugin, creature::CreaturePlugin, enemy::EnemyPlugin,
+    floating_text::FloatingTextPlugin, input::InputPlugin, inspector::InspectorPlugin,
+    interface::InterfacePlugin, inventory::InventoryPlugin, map::MapPlugin,
+    map_generator::MapGeneratorPlugin, path::PathPlugin, scene::ScenePlugin,
+    structure::StructurePlugin, terrain::TerrainPlugin, turn::TurnPlugin,
 };
 use bevy::app::{PluginGroup, PluginGroupBuilder};
 
@@ -24,6 +24,7 @@ impl PluginGroup for ExplPlugins {
             .add(AssetsPlugin)
             .add(CameraControlPlugin)
             .add(CombatPlugin)
+            .add(CreaturePlugin)
             .add(EnemyPlugin)
             .add(FloatingTextPlugin)
             .add(InputPlugin)

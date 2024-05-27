@@ -74,6 +74,7 @@ pub fn app(default_terrain_codex: Codex<Terrain>) -> App {
         decoration_codex: Handle::default(),
         structure_codex: Handle::default(),
         creature_codex: Handle::default(),
+        actor_codex: Handle::default(),
     };
     app.world.insert_resource(terrain_codex_assets);
     app.world.insert_resource(codex_assets);
