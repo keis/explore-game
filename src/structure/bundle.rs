@@ -1,6 +1,6 @@
 use super::{asset::*, component::*};
 use crate::{
-    actor::Members,
+    actor::{Actor, Members},
     creature::Creature,
     floating_text::FloatingTextSource,
     input::{DefaultOutlineVolume, SelectionBundle},
@@ -91,12 +91,13 @@ pub struct SpawnerBundle {
 }
 
 impl SpawnerBundle {
-    pub fn new(position: HexCoord, creature: Id<Creature>) -> Self {
+    pub fn new(position: HexCoord, creature: Id<Creature>, actor: Id<Actor>) -> Self {
         Self {
             structure_id: StructureId::from_tag("spawner"),
             presence: MapPresence { position },
             spawner: Spawner {
                 creature,
+                actor,
                 ..default()
             },
             ..default()

@@ -137,9 +137,12 @@ pub fn spawn_spawner(
     commands
         .entity(map_entity)
         .with_presence(prototype.spawner_position, |location| {
-            let (spawner_bundle, child_bundle) =
-                SpawnerBundle::new(prototype.spawner_position, Id::from_tag("slime"))
-                    .with_fluff(&mut structure_params, structure_codex);
+            let (spawner_bundle, child_bundle) = SpawnerBundle::new(
+                prototype.spawner_position,
+                Id::from_tag("slime"),
+                Id::from_tag("slime"),
+            )
+            .with_fluff(&mut structure_params, structure_codex);
             location
                 .spawn((Name::new("EnemySpawner"), save::Save, spawner_bundle))
                 .with_children(|parent| {
