@@ -1,6 +1,4 @@
-use super::queue::{
-    GameAction, GameActionQueue, GameActionResult, GameActionStatus, GameActionSystems,
-};
+use super::{plugin::ActionUpdate, queue::*};
 use crate::{
     actor::{
         ActorCodex, ActorParams, GroupCommandsExt, Members, Party, PartyBundle, Slide, SlideEvent,
@@ -26,25 +24,108 @@ pub fn apply_action(world: &mut World) -> Result<(), ExplError> {
         .get_resource::<GameActionQueue>()
         .ok_or(ExplError::ResourceMissing)?;
 
-    let Some(ref action) = queue.current else {
+    let Some(action) = queue.current() else {
         return Ok(());
     };
     let Some(system) = systems.get(action.action_type) else {
         return Ok(());
     };
 
-    let result = world.run_system_with_input(system, action.clone())??;
+    let my_action = action.clone();
+
+    let result = world.run_system_with_input(system, my_action.clone())??;
+
+    match result {
+        GameActionStatus::Waiting => {
+            let mut queue = world
+                .get_resource_mut::<GameActionQueue>()
+                .ok_or(ExplError::ResourceMissing)?;
+            queue.wait();
+            return Ok(());
+        }
+        GameActionStatus::Ready => {
+            panic!("Oh no")
+        }
+        GameActionStatus::Resolved => {}
+    }
+
+    world.run_schedule(ActionUpdate);
+
+    let follow_up_system = world
+        .get_resource::<GameActionFollowUpSystem>()
+        .ok_or(ExplError::ResourceMissing)?;
+    let maybe_follow_up: Option<GameAction> =
+        world.run_system_with_input(**follow_up_system, my_action.clone())?;
+
+    if let Some(follow_up) = maybe_follow_up {
+        let mut queue = world
+            .get_resource_mut::<GameActionQueue>()
+            .ok_or(ExplError::ResourceMissing)?;
+        queue.add(follow_up);
+    }
 
     let mut queue = world
         .get_resource_mut::<GameActionQueue>()
         .ok_or(ExplError::ResourceMissing)?;
-    match result {
-        GameActionStatus::Waiting => {
-            queue.wait();
-        }
-        GameActionStatus::Ready => {}
-    }
+    queue.ready();
+
     Ok(())
+}
+
+pub fn resolve_action(world: &mut World) -> Result<(), ExplError> {
+    world.run_schedule(ActionUpdate);
+    let queue = world
+        .get_resource::<GameActionQueue>()
+        .ok_or(ExplError::ResourceMissing)?;
+    let Some(action) = queue.current() else {
+        return Ok(());
+    };
+    let my_action = action.clone();
+
+    let Some(follow_up_system) = world.get_resource::<GameActionFollowUpSystem>() else {
+        return Ok(());
+    };
+    let maybe_follow_up: Option<GameAction> =
+        world.run_system_with_input(**follow_up_system, my_action)?;
+
+    if let Some(follow_up) = maybe_follow_up {
+        let mut queue = world
+            .get_resource_mut::<GameActionQueue>()
+            .ok_or(ExplError::ResourceMissing)?;
+        queue.add(follow_up);
+    }
+
+    let mut queue = world
+        .get_resource_mut::<GameActionQueue>()
+        .ok_or(ExplError::ResourceMissing)?;
+    queue.ready();
+
+    Ok(())
+}
+
+pub fn follow_up_action(
+    In(action): In<GameAction>,
+    mut combat_events: EventReader<CombatEvent>,
+    mut path_guided_query: Query<(&Movement, &mut PathGuided)>,
+) -> Option<GameAction> {
+    let Ok((party_movement, mut pathguided)) = path_guided_query.get_mut(action.source) else {
+        return None;
+    };
+
+    pathguided.advance();
+
+    if combat_events.read().count() > 0 {
+        return None;
+    }
+
+    // Keep moving if a path is set
+    if party_movement.current > 0 {
+        if let Some(next) = pathguided.next() {
+            return Some(GameAction::new_move(action.source, *next));
+        }
+    }
+
+    None
 }
 
 #[allow(clippy::type_complexity)]
@@ -98,7 +179,7 @@ pub fn handle_move(
             .entity(map_entity)
             .move_presence(action.source, next_position.0);
 
-        Ok(GameActionStatus::Ready)
+        Ok(GameActionStatus::Resolved)
     }
 }
 
@@ -113,7 +194,7 @@ pub fn handle_slide_stopped(
         return;
     };
     for _ in events.read() {
-        let Some(ref action) = queue.current else {
+        let Some(action) = queue.current() else {
             return;
         };
         let Ok(target) = action.target() else {
@@ -126,34 +207,7 @@ pub fn handle_slide_stopped(
         commands
             .entity(map_entity)
             .move_presence(action.source, next.0);
-        queue.done();
-    }
-}
-
-pub fn follow_path(
-    mut queue: ResMut<GameActionQueue>,
-    mut combat_events: EventReader<CombatEvent>,
-    mut path_guided_query: Query<(&Movement, &mut PathGuided)>,
-) {
-    let Some(ref action) = queue.current else {
-        return;
-    };
-    let Ok((party_movement, mut pathguided)) = path_guided_query.get_mut(action.source) else {
-        return;
-    };
-
-    pathguided.advance();
-
-    if combat_events.read().count() > 0 {
-        return;
-    }
-
-    // Keep moving if a path is set
-    if party_movement.current > 0 {
-        if let Some(next) = pathguided.next() {
-            let action = GameAction::new_move(action.source, *next);
-            queue.add(action);
-        }
+        queue.resolve();
     }
 }
 
@@ -210,7 +264,7 @@ pub fn handle_make_camp(
                 })
                 .add_members(members);
         });
-    Ok(GameActionStatus::Ready)
+    Ok(GameActionStatus::Resolved)
 }
 
 pub fn handle_break_camp(
@@ -232,7 +286,7 @@ pub fn handle_break_camp(
     info!("Depawning camp at {}", presence.position);
     inventory.add_item(Inventory::SUPPLY, 1);
     commands.entity(map_entity).despawn_presence(camp_entity);
-    Ok(GameActionStatus::Ready)
+    Ok(GameActionStatus::Resolved)
 }
 
 #[allow(clippy::type_complexity)]
@@ -249,7 +303,7 @@ pub fn handle_enter_camp(
     camp_inventory.take_all(&mut party_inventory);
     commands.entity(camp_entity).add_members(members);
 
-    Ok(GameActionStatus::Ready)
+    Ok(GameActionStatus::Resolved)
 }
 
 pub fn handle_create_party_from_camp(
@@ -284,7 +338,7 @@ pub fn handle_create_party_from_camp(
                 .add_members(&action.targets);
         });
 
-    Ok(GameActionStatus::Ready)
+    Ok(GameActionStatus::Resolved)
 }
 
 pub fn handle_split_party(
@@ -317,7 +371,7 @@ pub fn handle_split_party(
                 })
                 .add_members(&action.targets);
         });
-    Ok(GameActionStatus::Ready)
+    Ok(GameActionStatus::Resolved)
 }
 
 pub fn handle_merge_party(
@@ -341,7 +395,7 @@ pub fn handle_merge_party(
     party_inventory.take_all(&mut inventory);
     commands.entity(action.source).add_members(&characters);
 
-    Ok(GameActionStatus::Ready)
+    Ok(GameActionStatus::Resolved)
 }
 
 pub fn handle_collect_crystals(
@@ -360,7 +414,7 @@ pub fn handle_collect_crystals(
 
     inventory.add_item(Inventory::CRYSTAL, crystal_deposit.take() as u32);
 
-    Ok(GameActionStatus::Ready)
+    Ok(GameActionStatus::Resolved)
 }
 
 pub fn handle_open_portal(
@@ -381,7 +435,7 @@ pub fn handle_open_portal(
         portal.open = true;
     }
 
-    Ok(GameActionStatus::Ready)
+    Ok(GameActionStatus::Resolved)
 }
 
 #[allow(clippy::type_complexity)]
@@ -410,5 +464,5 @@ pub fn handle_enter_portal(
 
     safe_inventory.take_all(&mut party_inventory);
 
-    Ok(GameActionStatus::Ready)
+    Ok(GameActionStatus::Resolved)
 }

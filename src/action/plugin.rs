@@ -3,17 +3,10 @@ use crate::{
     actor::SlideEvent,
     turn::{set_player_turn, TurnState},
 };
-use bevy::prelude::*;
+use bevy::{ecs::schedule::ScheduleLabel, prelude::*};
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
-pub enum ActionSet {
-    Prepare,
-    Apply,
-    CommandFlush,
-    PostApply,
-    FollowUp,
-    Cleanup,
-}
+#[derive(ScheduleLabel, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ActionUpdate;
 
 pub struct ActionPlugin;
 
@@ -34,44 +27,23 @@ impl Plugin for ActionPlugin {
             .register_action(GameActionType::OpenPortal, handle_open_portal)
             .register_action(GameActionType::EnterPortal, handle_enter_portal)
             .build();
+        let game_action_follow_up_system =
+            GameActionFollowUpSystem(app.world.register_system(follow_up_action));
         app.insert_resource(GameActionQueue::default())
+            .insert_resource(game_action_follow_up_system)
             .insert_resource(game_action_systems)
-            .configure_sets(
-                Update,
-                (
-                    ActionSet::Prepare,
-                    ActionSet::Apply,
-                    ActionSet::CommandFlush,
-                    ActionSet::PostApply,
-                    ActionSet::FollowUp,
-                    ActionSet::Cleanup,
-                )
-                    .chain(),
-            )
-            .add_systems(
-                Update,
-                advance_action_queue
-                    .run_if(ready_for_next_action)
-                    .in_set(ActionSet::Prepare),
-            )
+            .init_schedule(ActionUpdate)
             .add_systems(
                 Update,
                 (
                     (
-                        apply_action
+                        apply_action.map(bevy::utils::warn).run_if(has_ready_action),
+                        handle_slide_stopped.run_if(on_event::<SlideEvent>()),
+                        resolve_action
                             .map(bevy::utils::warn)
-                            .run_if(has_current_action),
-                        handle_slide_stopped
-                            .run_if(on_event::<SlideEvent>())
-                            .after(apply_action),
+                            .run_if(has_resolved_action),
                     )
-                        .in_set(ActionSet::Apply),
-                    follow_path
-                        .run_if(has_current_action)
-                        .in_set(ActionSet::FollowUp),
-                    clear_current_action
-                        .run_if(has_current_action)
-                        .in_set(ActionSet::Cleanup),
+                        .chain(),
                     set_player_turn
                         .run_if(in_state(TurnState::System))
                         .run_if(action_queue_is_empty),

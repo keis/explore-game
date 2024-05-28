@@ -1,5 +1,5 @@
 use super::{event::*, system::*};
-use crate::{action::ActionSet, assets::AssetState, map::MapEvent};
+use crate::{action::ActionUpdate, assets::AssetState, map::MapEvent};
 use bevy::{prelude::*, time::common_conditions::on_timer};
 use std::time::Duration;
 
@@ -8,12 +8,7 @@ pub struct CombatPlugin;
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<CombatEvent>()
-            .add_systems(
-                Update,
-                initiate_combat
-                    .run_if(on_event::<MapEvent>())
-                    .in_set(ActionSet::PostApply),
-            )
+            .add_systems(ActionUpdate, initiate_combat.run_if(on_event::<MapEvent>()))
             .add_systems(
                 Update,
                 (
