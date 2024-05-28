@@ -62,7 +62,7 @@ pub fn spawn_enemy(
                 .is_none()
         {
             spawner.charge -= 3;
-            info!("Spawning enemy at {}", presence.position);
+            info!("Spawning enemy at {} from {:?}", presence.position, spawner);
             let (fluff_bundle, child_bundle) = EnemyBundle::new(
                 presence.position,
                 creature_codex,
