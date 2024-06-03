@@ -68,4 +68,4 @@ bevy_tweening = "0.10.0"
 
 [dev-dependencies]
 approx = "0.5"
-rstest = { version = "0.19.0", default-features = false }
+rstest = { version = "0.21.0", default-features = false }
