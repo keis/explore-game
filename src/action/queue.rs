@@ -18,6 +18,16 @@ pub enum GameActionType {
     EnterPortal,
 }
 
+#[derive(Default, Debug, Hash, PartialEq, Eq, Clone)]
+pub enum GameActionStatus {
+    #[default]
+    Ready,
+    Waiting,
+    Resolved,
+}
+
+pub type GameActionResult = Result<GameActionStatus, ExplError>;
+
 #[derive(Clone, Debug)]
 pub struct GameAction {
     pub(super) action_type: GameActionType,
@@ -125,27 +135,63 @@ impl GameAction {
 
 #[derive(Default, Resource)]
 pub struct GameActionQueue {
-    pub deque: VecDeque<GameAction>,
-    pub current: Option<GameAction>,
-    waiting: bool,
+    deque: VecDeque<GameAction>,
+    status: GameActionStatus,
+}
+
+impl GameActionQueue {
+    pub fn add(&mut self, action: GameAction) {
+        self.deque.push_back(action);
+    }
+
+    pub fn is_waiting(&self) -> bool {
+        self.status == GameActionStatus::Waiting
+    }
+
+    pub fn is_resolved(&self) -> bool {
+        self.status == GameActionStatus::Resolved
+    }
+
+    pub fn wait(&mut self) {
+        self.status = GameActionStatus::Waiting;
+    }
+
+    pub fn resolve(&mut self) {
+        self.status = GameActionStatus::Resolved;
+    }
+
+    pub fn ready(&mut self) {
+        self.status = GameActionStatus::Ready;
+        self.deque.pop_front();
+    }
+
+    pub fn current(&self) -> Option<&GameAction> {
+        self.deque.front()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.deque.is_empty()
+    }
 }
 
 #[derive(Resource)]
-pub struct GameActionSystems(EnumMap<GameActionType, Option<SystemId>>);
+pub struct GameActionSystems(
+    EnumMap<GameActionType, Option<SystemId<GameAction, GameActionResult>>>,
+);
 
 impl GameActionSystems {
     pub fn builder(world: &mut World) -> GameActionSystemsBuilder {
         GameActionSystemsBuilder::from_world(world)
     }
 
-    pub fn get(&self, action: GameActionType) -> Option<SystemId> {
+    pub fn get(&self, action: GameActionType) -> Option<SystemId<GameAction, GameActionResult>> {
         self.0[action]
     }
 }
 
 pub struct GameActionSystemsBuilder<'a> {
     world: &'a mut World,
-    enum_map: EnumMap<GameActionType, Option<SystemId>>,
+    enum_map: EnumMap<GameActionType, Option<SystemId<GameAction, GameActionResult>>>,
 }
 
 impl<'a> GameActionSystemsBuilder<'a> {
@@ -158,9 +204,9 @@ impl<'a> GameActionSystemsBuilder<'a> {
 
     pub fn register_action<F, Marker>(mut self, action: GameActionType, f: F) -> Self
     where
-        F: IntoSystem<(), Result<(), ExplError>, Marker> + 'static,
+        F: IntoSystem<GameAction, GameActionResult, Marker> + 'static,
     {
-        self.enum_map[action] = Some(self.world.register_system(f.map(bevy::utils::warn)));
+        self.enum_map[action] = Some(self.world.register_system(f));
         self
     }
 
@@ -169,57 +215,22 @@ impl<'a> GameActionSystemsBuilder<'a> {
     }
 }
 
-impl GameActionQueue {
-    pub fn add(&mut self, action: GameAction) {
-        self.deque.push_back(action);
-    }
+#[derive(Resource, Deref)]
+pub struct GameActionFollowUpSystem(pub(super) SystemId<GameAction, Option<GameAction>>);
 
-    pub fn is_waiting(&self) -> bool {
-        self.waiting
-    }
-
-    pub fn has_next(&self) -> bool {
-        !self.deque.is_empty()
-    }
-
-    pub fn start_next(&mut self) {
-        self.current = self.deque.pop_front();
-    }
-
-    pub fn wait(&mut self) {
-        self.waiting = true;
-    }
-
-    pub fn done(&mut self) {
-        self.waiting = false;
-    }
-
-    pub fn clear(&mut self) {
-        self.current = None;
-    }
-}
-
-pub fn advance_action_queue(mut game_action_queue: ResMut<GameActionQueue>) {
-    game_action_queue.start_next();
-}
-
-pub fn clear_current_action(mut game_action_queue: ResMut<GameActionQueue>) {
-    game_action_queue.clear();
-}
-
-pub fn has_current_action(game_action_queue: Res<GameActionQueue>) -> bool {
-    !game_action_queue.is_waiting() && game_action_queue.current.is_some()
-}
-
-pub fn action_queue_is_empty(game_action_queue: Res<GameActionQueue>) -> bool {
-    game_action_queue.current.is_none() && !game_action_queue.has_next()
-}
-
-pub fn ready_for_next_action(
+pub fn has_ready_action(
     game_action_queue: Res<GameActionQueue>,
     combat_query: Query<&Combat>,
 ) -> bool {
     !game_action_queue.is_waiting()
-        && (game_action_queue.current.is_some() || game_action_queue.has_next())
+        && game_action_queue.current().is_some()
         && combat_query.is_empty()
+}
+
+pub fn has_resolved_action(game_action_queue: Res<GameActionQueue>) -> bool {
+    game_action_queue.is_resolved()
+}
+
+pub fn action_queue_is_empty(game_action_queue: Res<GameActionQueue>) -> bool {
+    game_action_queue.is_empty()
 }
