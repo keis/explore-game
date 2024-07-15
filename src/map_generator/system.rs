@@ -14,7 +14,7 @@ pub fn start_map_generation(
     for (entity, map_seed) in &seed_query {
         let terrain_codex = terrain_codex.get()?.clone();
         let template = map_template_assets
-            .get(main_assets.map_template.clone())
+            .get(&main_assets.map_template)
             .ok_or(ExplError::MissingTemplate)?
             .clone();
         let seed: Seed = map_seed.0;

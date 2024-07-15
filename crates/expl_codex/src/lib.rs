@@ -320,15 +320,15 @@ text = 'some other text'
         .add_plugins((TaskPoolPlugin::default(), AssetPlugin::default()))
         .init_asset::<Codex<MenuItem>>()
         .register_asset_loader(CodexLoader::<RawMenuItem, MenuItem>::default());
-        let asset_server = app.world.resource::<AssetServer>().clone();
+        let asset_server = app.world().resource::<AssetServer>().clone();
 
         let handle: Handle<Codex<MenuItem>> = asset_server.load("some.menu.toml");
         let asset_id = handle.id();
-        app.world.spawn(handle);
+        app.world_mut().spawn(handle);
         for _ in 0..100 {
             app.update();
             if let Some(codex) = app
-                .world
+                .world()
                 .resource::<Assets<Codex<MenuItem>>>()
                 .get(asset_id)
             {

@@ -50,9 +50,9 @@ impl From<&Terrain> for TerrainData {
         Self {
             height_base: value.height_base,
             height_amp: value.height_amp,
-            color_a: value.color_a.as_linear_rgba_f32().into(),
-            color_b: value.color_b.as_linear_rgba_f32().into(),
-            color_c: value.color_c.as_linear_rgba_f32().into(),
+            color_a: value.color_a.to_linear().to_f32_array().into(),
+            color_b: value.color_b.to_linear().to_f32_array().into(),
+            color_c: value.color_c.to_linear().to_f32_array().into(),
         }
     }
 }
@@ -282,7 +282,7 @@ fn update_from_terrain_codex(
         };
         if *asset_id == codex_assets.terrain_codex.id() {
             let terrain_codex = terrain_codex_assets
-                .get(codex_assets.terrain_codex.clone())
+                .get(&codex_assets.terrain_codex)
                 .unwrap();
             terrain_buffer.extend(terrain_codex.iter());
             terrain_buffer

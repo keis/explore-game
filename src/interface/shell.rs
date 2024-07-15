@@ -171,7 +171,7 @@ fn spawn_next_turn_button(parent: &mut ChildBuilder, assets: &Res<InterfaceAsset
                     justify_content: JustifyContent::Center,
                     ..default()
                 },
-                background_color: Color::rgb(0.4, 0.9, 0.4).into(),
+                background_color: Color::srgb(0.4, 0.9, 0.4).into(),
                 ..default()
             },
             ActionButton(Action::NextTurn),

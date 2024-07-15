@@ -1,5 +1,5 @@
 use super::Codex;
-use bevy_asset::{io::Reader, AssetLoader, AsyncReadExt, BoxedFuture, LoadContext};
+use bevy_asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext};
 use bevy_reflect::TypePath;
 use serde::de::{Deserialize, DeserializeSeed, Deserializer, MapAccess, Visitor};
 use std::{fmt, marker::PhantomData};
@@ -134,19 +134,17 @@ where
         &[Entry::EXTENSION]
     }
 
-    fn load<'a>(
+    async fn load<'a>(
         &'a self,
-        reader: &'a mut Reader,
+        reader: &'a mut Reader<'_>,
         _settings: &'a (),
         load_context: &'a mut LoadContext<'_>,
-    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            let mut bytes = Vec::new();
-            reader.read_to_end(&mut bytes).await?;
-            let strdata = std::str::from_utf8(&bytes)?;
-            let codex: Self::Asset = CodexDeserializer::with_load_context(load_context)
-                .deserialize(toml::de::Deserializer::new(strdata))?;
-            Ok(codex)
-        })
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes).await?;
+        let strdata = std::str::from_utf8(&bytes)?;
+        let codex: Self::Asset = CodexDeserializer::with_load_context(load_context)
+            .deserialize(toml::de::Deserializer::new(strdata))?;
+        Ok(codex)
     }
 }

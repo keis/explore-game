@@ -1,6 +1,6 @@
 use crate::{terrain::Terrain, ExplError};
 use bevy::{
-    asset::{io::Reader, AssetLoader, AsyncReadExt, BoxedFuture, LoadContext},
+    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
     prelude::*,
     reflect::TypePath,
 };
@@ -31,34 +31,35 @@ impl AssetLoader for TemplateLoader {
         &["template.txt"]
     }
 
-    fn load<'a>(
+    async fn load<'a>(
         &'a self,
-        reader: &'a mut Reader,
+        reader: &'a mut Reader<'_>,
         _settings: &'a Self::Settings,
         load_context: &'a mut LoadContext<'_>,
-    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            let terrain_codex: Codex<Terrain> = load_context
-                .load_direct("codex/default.terrain.toml")
-                .await
-                .map_err(Box::new)?
-                .take()
-                .ok_or(ExplError::MissingCodex)?;
-            let terrain_lookup: HashMap<char, Id<Terrain>> = terrain_codex
-                .iter()
-                .map(|(id, t)| (t.symbol, *id))
-                .collect();
-            let mut bytes = Vec::new();
-            reader.read_to_end(&mut bytes).await?;
-            let grid =
-                Grid::<HexagonalGridLayout, Id<Terrain>>::load_with(&mut bytes.as_slice(), |c| {
-                    terrain_lookup.get(&c).copied().ok_or(0)
-                })?;
-            let wrapped_grid = wrap_grid(grid);
-            let transforms = standard_tile_transforms();
-            let template = Template::from_tiles(extract_tiles(&wrapped_grid, &transforms));
+    ) -> Result<Self::Asset, Self::Error> {
+        let terrain_codex: Codex<Terrain> = load_context
+            .loader()
+            .direct()
+            .untyped()
+            .load("codex/default.terrain.toml")
+            .await
+            .map_err(Box::new)?
+            .take()
+            .ok_or(ExplError::MissingCodex)?;
+        let terrain_lookup: HashMap<char, Id<Terrain>> = terrain_codex
+            .iter()
+            .map(|(id, t)| (t.symbol, *id))
+            .collect();
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes).await?;
+        let grid =
+            Grid::<HexagonalGridLayout, Id<Terrain>>::load_with(&mut bytes.as_slice(), |c| {
+                terrain_lookup.get(&c).copied().ok_or(0)
+            })?;
+        let wrapped_grid = wrap_grid(grid);
+        let transforms = standard_tile_transforms();
+        let template = Template::from_tiles(extract_tiles(&wrapped_grid, &transforms));
 
-            Ok(MapTemplate(template.into()))
-        })
+        Ok(MapTemplate(template.into()))
     }
 }

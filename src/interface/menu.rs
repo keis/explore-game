@@ -183,6 +183,6 @@ pub fn handle_quit(
     mut event_writer: EventWriter<bevy::app::AppExit>,
 ) {
     if let Ok(Interaction::Pressed) = interaction_query.get_single() {
-        event_writer.send(bevy::app::AppExit);
+        event_writer.send(bevy::app::AppExit::Success);
     }
 }

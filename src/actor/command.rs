@@ -1,8 +1,5 @@
 use super::{component::*, event::*};
-use bevy::{
-    ecs::system::{Command, EntityCommands},
-    prelude::*,
-};
+use bevy::{ecs::system::EntityCommands, ecs::world::Command, prelude::*};
 use smallvec::SmallVec;
 
 pub(super) struct AddMembers {

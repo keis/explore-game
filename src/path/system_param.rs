@@ -89,26 +89,26 @@ mod tests {
 
     #[rstest]
     fn pathfinding_neighbour(mut app: App) {
-        app.world
+        app.world_mut()
             .spawn((Start(HexCoord::new(2, 1)), Goal(HexCoord::new(2, 0))));
         app.add_systems(Update, find_path_system);
 
         app.update();
 
-        let path = app.world.query::<&Path>().single(&app.world);
+        let path = app.world_mut().query::<&Path>().single(app.world());
         println!("path {:?}", path.0);
         assert_eq!(path.0.len(), 2);
     }
 
     #[rstest]
     fn pathfinding(mut app: App) {
-        app.world
+        app.world_mut()
             .spawn((Start(HexCoord::new(0, 0)), Goal(HexCoord::new(0, 2))));
         app.add_systems(Update, find_path_system);
 
         app.update();
 
-        let path = app.world.query::<&Path>().single(&app.world);
+        let path = app.world_mut().query::<&Path>().single(app.world());
         println!("path {:?}", path.0);
         assert_eq!(path.0.len(), 6);
     }

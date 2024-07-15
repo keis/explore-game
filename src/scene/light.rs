@@ -1,6 +1,6 @@
 use crate::turn::Period;
 use bevy::prelude::*;
-use bevy_tweening::{Animator, EaseFunction, Lens, Tracks, Tween};
+use bevy_tweening::{Animator, EaseFunction, Lens, Targetable, Tracks, Tween};
 use std::time::Duration;
 
 // Yoinked from bevy_tweening
@@ -10,11 +10,13 @@ trait ColorLerper {
 
 impl ColorLerper for Color {
     fn lerp(&self, target: &Color, ratio: f32) -> Color {
-        let r = self.r().lerp(target.r(), ratio);
-        let g = self.g().lerp(target.g(), ratio);
-        let b = self.b().lerp(target.b(), ratio);
-        let a = self.a().lerp(target.a(), ratio);
-        Color::rgba(r, g, b, a)
+        let linear = self.to_linear();
+        let target = target.to_linear();
+        let r = linear.red.lerp(target.red, ratio);
+        let g = linear.green.lerp(target.green, ratio);
+        let b = linear.blue.lerp(target.blue, ratio);
+        let a = linear.alpha.lerp(target.alpha, ratio);
+        Color::linear_rgba(r, g, b, a)
     }
 }
 
@@ -25,7 +27,7 @@ pub struct LightIlluminanceLens {
 }
 
 impl Lens<DirectionalLight> for LightIlluminanceLens {
-    fn lerp(&mut self, target: &mut DirectionalLight, ratio: f32) {
+    fn lerp(&mut self, target: &mut dyn Targetable<DirectionalLight>, ratio: f32) {
         target.illuminance = self.start.lerp(self.end, ratio);
     }
 }
@@ -37,7 +39,7 @@ struct LightColorLens {
 }
 
 impl Lens<DirectionalLight> for LightColorLens {
-    fn lerp(&mut self, target: &mut DirectionalLight, ratio: f32) {
+    fn lerp(&mut self, target: &mut dyn Targetable<DirectionalLight>, ratio: f32) {
         target.color = self.start.lerp(&self.end, ratio);
     }
 }
@@ -75,10 +77,10 @@ pub fn apply_period_light(
 ) {
     let (light, mut animator) = light_query.single_mut();
     let (illuminance, color) = match *period {
-        Period::Morning => (8_000.0, Color::rgb(1.0, 0.9, 0.9)),
-        Period::Day => (11_000.0, Color::rgb(1.0, 1.0, 1.0)),
-        Period::Evening => (10_000.0, Color::rgb(1.0, 0.8, 0.8)),
-        Period::Night => (6_000.0, Color::rgb(0.8, 0.8, 1.0)),
+        Period::Morning => (8_000.0, Color::srgb(1.0, 0.9, 0.9)),
+        Period::Day => (11_000.0, Color::srgb(1.0, 1.0, 1.0)),
+        Period::Evening => (10_000.0, Color::srgb(1.0, 0.8, 0.8)),
+        Period::Night => (6_000.0, Color::srgb(0.8, 0.8, 1.0)),
     };
     let tween = Tracks::new([
         Tween::new(

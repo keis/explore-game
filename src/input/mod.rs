@@ -36,8 +36,8 @@ mod tests {
         app.insert_resource(ActionState::<Action>::default());
         app.add_event::<Select>();
         app.add_event::<Deselect>();
-        app.world.spawn(CameraControl::default());
-        app.world.spawn((
+        app.world_mut().spawn(CameraControl::default());
+        app.world_mut().spawn((
             MapPresence {
                 position: (1, 1).into(),
             },
@@ -47,7 +47,7 @@ mod tests {
                 reset: 2,
             },
         ));
-        app.world.spawn((
+        app.world_mut().spawn((
             MapPresence {
                 position: (2, 0).into(),
             },
@@ -61,16 +61,16 @@ mod tests {
     }
 
     pub fn get_selected_entities(app: &mut App) -> Vec<Entity> {
-        app.world
+        app.world_mut()
             .query::<(Entity, &Selection)>()
-            .iter(&app.world)
+            .iter(app.world())
             .filter(|(_, s)| s.is_selected)
             .map(|(e, _)| e)
             .collect()
     }
 
     pub fn press_select_next(app: &mut App) {
-        app.world
+        app.world_mut()
             .resource_mut::<ActionState<Action>>()
             .press(&Action::SelectNext);
     }

@@ -10,7 +10,7 @@ use rstest::*;
 
 pub fn spawn_game_map(app: &mut App) -> Entity {
     let tiles = app
-        .world
+        .world_mut()
         .spawn_batch(vec![
             TerrainId::from_tag("forest"),
             TerrainId::from_tag("forest"),
@@ -23,7 +23,7 @@ pub fn spawn_game_map(app: &mut App) -> Entity {
             TerrainId::from_tag("mountain"),
         ])
         .collect();
-    app.world
+    app.world_mut()
         .spawn(ZoneLayer::new(
             SquareGridLayout {
                 width: 3,
@@ -76,8 +76,8 @@ pub fn app(default_terrain_codex: Codex<Terrain>) -> App {
         creature_codex: Handle::default(),
         actor_codex: Handle::default(),
     };
-    app.world.insert_resource(terrain_codex_assets);
-    app.world.insert_resource(codex_assets);
+    app.world_mut().insert_resource(terrain_codex_assets);
+    app.world_mut().insert_resource(codex_assets);
     spawn_game_map(&mut app);
     app
 }

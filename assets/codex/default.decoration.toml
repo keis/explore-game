@@ -1,13 +1,13 @@
 [tree]
-color_a = { Rgba = { red = 0.3, green = 0.7, blue = 0.4, alpha = 1.0 } }
-color_b = { Rgba = { red = 0.3, green = 0.6, blue = 0.3, alpha = 1.0 } }
-color_c = { Rgba = { red = 0.36, green = 0.55, blue = 0.36, alpha = 1.0 } }
+color_a = { Srgba = { red = 0.3, green = 0.7, blue = 0.4, alpha = 1.0 } }
+color_b = { Srgba = { red = 0.3, green = 0.6, blue = 0.3, alpha = 1.0 } }
+color_c = { Srgba = { red = 0.36, green = 0.55, blue = 0.36, alpha = 1.0 } }
 mesh = "models/pine.obj"
 scale = 0.5
 
 [crystal]
-color_a = { Rgba = { red = 0.7, green = 0.4, blue = 0.4, alpha = 0.777 } }
-color_b = { Rgba = { red = 0.6, green = 0.3, blue = 0.3, alpha = 0.777 } }
-color_c = { Rgba = { red = 0.7, green = 0.3, blue = 0.3, alpha = 0.777  } }
+color_a = { Srgba = { red = 0.7, green = 0.4, blue = 0.4, alpha = 0.777 } }
+color_b = { Srgba = { red = 0.6, green = 0.3, blue = 0.3, alpha = 0.777 } }
+color_c = { Srgba = { red = 0.7, green = 0.3, blue = 0.3, alpha = 0.777  } }
 mesh = "models/crystals.obj"
 scale = 0.3

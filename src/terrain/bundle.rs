@@ -75,7 +75,7 @@ impl WaterBundle {
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: hex_assets.mesh.clone(),
                 material: water_materials.add(WaterMaterial {
-                    color: Color::rgba(0.1, 0.1, 0.8, 0.4),
+                    color: Color::srgba(0.1, 0.1, 0.8, 0.4),
                 }),
                 transform: Transform::from_translation(Vec3::new(0.0, -0.1, 0.0)),
                 ..default()

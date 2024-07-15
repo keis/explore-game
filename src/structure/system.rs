@@ -8,7 +8,7 @@ use crate::{
     scene::save,
     ExplError,
 };
-use bevy::{pbr::NotShadowCaster, prelude::*};
+use bevy::{color::palettes::css, pbr::NotShadowCaster, prelude::*};
 
 #[allow(clippy::type_complexity)]
 pub fn fluff_structure(
@@ -99,8 +99,8 @@ pub fn update_portal_effect(
                     MaterialMeshBundle {
                         mesh: meshes.add(Plane3d::default().mesh().size(2.0, 2.0)),
                         material: portal_materials.add(PortalMaterial {
-                            base_color: Color::rgba(0.2, 0.7, 0.1, 0.3),
-                            swirl_color: Color::rgba(0.4, 0.2, 0.7, 0.7),
+                            base_color: Color::srgba(0.2, 0.7, 0.1, 0.3),
+                            swirl_color: Color::srgba(0.4, 0.2, 0.7, 0.7),
                         }),
                         transform: Transform::from_translation(Vec3::new(0.0, 0.9, 0.0))
                             .with_rotation(
@@ -140,7 +140,7 @@ pub fn heal_characters(
                 floating_text_source.add(FloatingTextPrototype {
                     value: healed.to_string(),
                     alignment: FloatingTextAlignment::Center,
-                    color: Color::GREEN,
+                    color: css::GREEN.into(),
                 });
             }
         }

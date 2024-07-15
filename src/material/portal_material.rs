@@ -25,8 +25,12 @@ pub struct PortalMaterialUniform {
 impl From<&PortalMaterial> for PortalMaterialUniform {
     fn from(portal_material: &PortalMaterial) -> Self {
         Self {
-            base_color: portal_material.base_color.as_linear_rgba_f32().into(),
-            swirl_color: portal_material.swirl_color.as_linear_rgba_f32().into(),
+            base_color: portal_material.base_color.to_linear().to_f32_array().into(),
+            swirl_color: portal_material
+                .swirl_color
+                .to_linear()
+                .to_f32_array()
+                .into(),
         }
     }
 }
