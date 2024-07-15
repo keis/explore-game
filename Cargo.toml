@@ -3,12 +3,12 @@ members = [".", "crates/*"]
 default-members = [".", "crates/*"]
 
 [workspace.dependencies]
-bevy_app = "0.13"
-bevy_asset = "0.13"
-bevy_core = "0.13"
-bevy_ecs = "0.13"
-bevy_reflect = "0.13"
-bevy_render = "0.13"
+bevy_app = "0.14"
+bevy_asset = "0.14"
+bevy_core = "0.14"
+bevy_ecs = "0.14"
+bevy_reflect = "0.14"
+bevy_render = "0.14"
 clap = "4.5"
 glam = "0.25"
 itertools = "0.12"
@@ -33,15 +33,15 @@ opt-level = 3
 opt-level = 3
 
 [dependencies]
-bevy_asset_loader = "0.20"
-bevy_egui = "0.27"
-bevy-inspector-egui = "0.24"
+bevy_asset_loader = "0.21"
+bevy_egui = "0.28"
+bevy-inspector-egui = "0.25"
 bevy_mod_billboard = { git = "https://github.com/kulkalkul/bevy_mod_billboard.git", version = "0.6.0" }
-bevy_mod_outline = "0.7"
+bevy_mod_outline = "0.8"
 bevy_mod_picking = { version = "0.18.2", default-features = false, features = ["backend_egui", "backend_bevy_ui", "backend_raycast", "debug"], git = "https://github.com/keis/bevy_mod_picking.git" }
-bevy_obj = "0.13"
-bevy_sprite3d = "2.8"
-bevy = { version = "0.13", features = ["wayland", "dynamic_linking", "file_watcher"] }
+bevy_obj = "0.14"
+bevy_sprite3d = "3.0"
+bevy = { version = "0.14", features = ["wayland", "dynamic_linking", "file_watcher"] }
 bitflags = "2"
 clap = { workspace = true, features = ["derive"] }
 enum-map = "2.7.3"
@@ -54,9 +54,9 @@ futures-lite = "2"
 glam.workspace = true
 interpolation = "0.3"
 itertools = { workspace = true }
-leafwing-input-manager = "0.13"
-moonshine-save = "=0.3.7"
-noisy_bevy = "0.6"
+leafwing-input-manager = "0.14"
+moonshine-save = "=0.3.8"
+noisy_bevy = "0.7"
 pathfinding = "4"
 platform-dirs = "0.3"
 rand = { workspace = true }
@@ -64,7 +64,7 @@ serde = { workspace = true }
 smallvec = { workspace = true }
 splines = { features = ["glam"], git = "https://github.com/hadronized/splines.git", version = "4.3.2-dev", branch = "master" }
 thiserror = { workspace = true }
-bevy_tweening = "0.10.0"
+bevy_tweening = "0.11.0"
 
 [dev-dependencies]
 approx = "0.5"
