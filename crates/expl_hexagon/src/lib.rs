@@ -37,7 +37,9 @@ impl HexagonMeshBuilder {
         self.subdivisions = subdivisions;
         self
     }
+}
 
+impl MeshBuilder for HexagonMeshBuilder {
     fn build(&self) -> Mesh {
         let generated = SubdividedHexagon::new(self.subdivisions, |_| ());
         let indices = Indices::U32(generated.get_all_indices());
@@ -82,12 +84,6 @@ impl Meshable for Hexagon {
 impl From<Hexagon> for Mesh {
     fn from(hexagon: Hexagon) -> Self {
         hexagon.mesh().into()
-    }
-}
-
-impl From<HexagonMeshBuilder> for Mesh {
-    fn from(hexagon: HexagonMeshBuilder) -> Self {
-        hexagon.build()
     }
 }
 
@@ -155,7 +151,7 @@ mod consts {
 #[cfg(test)]
 mod tests {
     use super::{Hexagon, SubdividedHexagon};
-    use bevy_render::mesh::{Mesh, Meshable};
+    use bevy_render::mesh::{Mesh, MeshBuilder, Meshable};
 
     #[test]
     fn base_hexagon() {

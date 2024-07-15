@@ -3,7 +3,7 @@ use clap::Parser;
 use expl_wfc::Seed;
 use explore_game::{map_generator::MapSeed, material::MaterialPlugins, plugins::ExplPlugins};
 
-pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
+pub const CLEAR: Color = Color::srgb(0.1, 0.1, 0.1);
 
 #[derive(Parser, Debug)]
 struct Cli {

@@ -72,27 +72,14 @@ fn fragment(@builtin(front_facing) is_front: bool, mesh: VertexOutput) -> @locat
     pbr_input.material.base_color = output_color;
     pbr_input.frag_coord = mesh.position;
     pbr_input.world_position = mesh.world_position;
-    pbr_input.is_orthographic = view.projection[3].w == 1.0;
+    pbr_input.is_orthographic = view.clip_from_view[3].w == 1.0;
     pbr_input.world_normal = fns::prepare_world_normal(
         mesh.world_normal,
         double_sided,
         is_front
     );
-    pbr_input.N = fns::apply_normal_mapping(
-        pbr_input.material.flags,
-        pbr_input.world_normal,
-        double_sided,
-        is_front,
-        #ifdef VERTEX_TANGENTS
-        #ifdef STANDARDMATERIAL_NORMAL_MAP
-        mesh.world_tangent,
-        #endif
-        #endif
-        mesh.uv,
-        view.mip_bias,
-    );
+    pbr_input.N = normalize(pbr_input.world_normal);
     pbr_input.V = fns::calculate_view(mesh.world_position, pbr_input.is_orthographic);
-    //pbr_input.flags = mesh.flags;
 
     output_color = fns::apply_pbr_lighting(pbr_input);
 

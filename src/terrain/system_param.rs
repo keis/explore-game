@@ -46,7 +46,7 @@ pub struct TerrainCodex<'w> {
 impl<'w> TerrainCodex<'w> {
     pub fn get(&self) -> Result<&Codex<Terrain>, ExplError> {
         self.terrain_codex_assets
-            .get(self.codex_assets.terrain_codex.clone())
+            .get(&self.codex_assets.terrain_codex)
             .ok_or(ExplError::MissingCodex)
     }
 }
@@ -60,7 +60,7 @@ pub struct DecorationCodex<'w> {
 impl<'w> DecorationCodex<'w> {
     pub fn get(&self) -> Result<&Codex<Decoration>, ExplError> {
         self.decoration_codex_assets
-            .get(self.codex_assets.decoration_codex.clone())
+            .get(&self.codex_assets.decoration_codex)
             .ok_or(ExplError::MissingCodex)
     }
 }

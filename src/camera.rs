@@ -207,7 +207,7 @@ mod tests {
 
         app.init_resource::<Time>();
 
-        let mut time = app.world.resource_mut::<Time>();
+        let mut time = app.world_mut().resource_mut::<Time>();
         time.advance_by(Duration::from_millis(10));
 
         app.insert_resource(ActionState::<Action>::default());
@@ -220,7 +220,7 @@ mod tests {
         let mut app = init_bare_app();
 
         let camera_id = app
-            .world
+            .world_mut()
             .spawn((
                 Transform::from_xyz(0.0, 10.0, 0.0),
                 CameraControl {
@@ -233,16 +233,16 @@ mod tests {
 
         app.update();
 
-        let cameracontrol = app.world.get::<CameraControl>(camera_id).unwrap();
+        let cameracontrol = app.world().get::<CameraControl>(camera_id).unwrap();
         assert!(cameracontrol.velocity.length() < 1.0);
 
         for _ in 0..100 {
-            let mut time = app.world.resource_mut::<Time>();
+            let mut time = app.world_mut().resource_mut::<Time>();
             time.advance_by(Duration::from_millis(100));
             app.update()
         }
 
-        let cameracontrol = app.world.get::<CameraControl>(camera_id).unwrap();
+        let cameracontrol = app.world().get::<CameraControl>(camera_id).unwrap();
         assert!(cameracontrol.velocity.abs_diff_eq(Vec3::ZERO, 0.01));
     }
 
@@ -251,7 +251,7 @@ mod tests {
         let mut app = init_bare_app();
 
         let camera_id = app
-            .world
+            .world_mut()
             .spawn((
                 Transform::from_xyz(0.0, 10.0, 0.0),
                 CameraControl::default(),
@@ -259,13 +259,13 @@ mod tests {
             ))
             .id();
 
-        app.world
+        app.world_mut()
             .resource_mut::<ActionState<Action>>()
             .press(&Action::PanCameraRight);
 
         app.update();
 
-        let cameracontrol = app.world.get::<CameraControl>(camera_id).unwrap();
+        let cameracontrol = app.world().get::<CameraControl>(camera_id).unwrap();
         assert!(cameracontrol
             .velocity
             .abs_diff_eq(Vec3::new(0.76, 0.0, 0.0), 0.01));
@@ -276,7 +276,7 @@ mod tests {
         let mut app = init_bare_app();
 
         let camera_id = app
-            .world
+            .world_mut()
             .spawn((
                 Transform::from_xyz(9.8, 10.0, 0.0),
                 CameraControl::default(),
@@ -284,13 +284,13 @@ mod tests {
             ))
             .id();
 
-        app.world
+        app.world_mut()
             .resource_mut::<ActionState<Action>>()
             .press(&Action::PanCameraRight);
 
         app.update();
 
-        let cameracontrol = app.world.get::<CameraControl>(camera_id).unwrap();
+        let cameracontrol = app.world().get::<CameraControl>(camera_id).unwrap();
         assert_eq!(cameracontrol.velocity, Vec3::ZERO);
     }
 
@@ -299,7 +299,7 @@ mod tests {
         let mut app = init_bare_app();
 
         let camera_id = app
-            .world
+            .world_mut()
             .spawn((
                 Transform::from_xyz(-10.2, 10.0, 0.0),
                 CameraControl::default(),
@@ -309,7 +309,7 @@ mod tests {
 
         app.update();
 
-        let cameracontrol = app.world.get::<CameraControl>(camera_id).unwrap();
+        let cameracontrol = app.world().get::<CameraControl>(camera_id).unwrap();
         assert!(cameracontrol
             .velocity
             .abs_diff_eq(Vec3::new(0.76, 0.0, 0.0), 0.01));
@@ -320,7 +320,7 @@ mod tests {
         let mut app = init_bare_app();
 
         let camera_id = app
-            .world
+            .world_mut()
             .spawn((
                 Transform::from_xyz(0.0, 10.0, 0.0),
                 CameraControl::default(),
@@ -332,12 +332,12 @@ mod tests {
             .id();
 
         for _ in 0..100 {
-            let mut time = app.world.resource_mut::<Time>();
+            let mut time = app.world_mut().resource_mut::<Time>();
             time.advance_by(Duration::from_millis(100));
             app.update()
         }
 
-        let transform = app.world.get::<Transform>(camera_id).unwrap();
+        let transform = app.world().get::<Transform>(camera_id).unwrap();
         println!("transform {:?}", transform);
         assert!(transform
             .translation

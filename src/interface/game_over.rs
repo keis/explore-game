@@ -1,6 +1,6 @@
 use super::{color::*, InterfaceAssets, InterfaceState};
 use crate::scene::{SceneState, Score};
-use bevy::prelude::*;
+use bevy::{color::palettes::css, prelude::*};
 
 #[derive(Component)]
 pub struct GameOverLayer;
@@ -110,7 +110,7 @@ pub fn spawn_game_over_screen(
                             TextStyle {
                                 font: assets.font.clone(),
                                 font_size: 24.0,
-                                color: Color::RED,
+                                color: css::RED.into(),
                             },
                         ),
                     ]));
@@ -140,7 +140,7 @@ pub fn spawn_game_over_screen(
                                 TextStyle {
                                     font: assets.font.clone(),
                                     font_size: 32.0,
-                                    color: Color::WHITE,
+                                    color: css::WHITE.into(),
                                 },
                             ));
                         });

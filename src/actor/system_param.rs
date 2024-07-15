@@ -12,7 +12,7 @@ pub struct ActorCodex<'w> {
 impl<'w> ActorCodex<'w> {
     pub fn get(&self) -> Result<&Codex<Actor>, ExplError> {
         self.actor_codex_assets
-            .get(self.codex_assets.actor_codex.clone())
+            .get(&self.codex_assets.actor_codex)
             .ok_or(ExplError::MissingCodex)
     }
 }

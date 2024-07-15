@@ -5,7 +5,7 @@ use crate::{
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     map::{MapCommandsExt, MapEvent, PresenceLayer},
 };
-use bevy::prelude::*;
+use bevy::{color::palettes::css, prelude::*};
 use rand::Rng;
 
 pub fn combat_log(mut combat_events: EventReader<CombatEvent>, combat_query: Query<&Combat>) {
@@ -180,7 +180,7 @@ pub fn spawn_damage_text(
                 floating_text_source.add(FloatingTextPrototype {
                     value: damage.to_string(),
                     alignment: FloatingTextAlignment::Left,
-                    color: Color::RED,
+                    color: css::RED.into(),
                 });
             }
             CombatEvent::EnemyDamage(entity, damage) => {
@@ -190,7 +190,7 @@ pub fn spawn_damage_text(
                 floating_text_source.add(FloatingTextPrototype {
                     value: damage.to_string(),
                     alignment: FloatingTextAlignment::Right,
-                    color: Color::YELLOW,
+                    color: css::YELLOW.into(),
                 });
             }
             _ => {}

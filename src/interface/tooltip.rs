@@ -1,5 +1,5 @@
 use super::{color::NORMAL, InterfaceAssets};
-use bevy::prelude::*;
+use bevy::{color::palettes::css, prelude::*};
 
 #[derive(Component)]
 pub struct Tooltip;
@@ -66,7 +66,7 @@ pub fn spawn_tooltip(
                         TextStyle {
                             font: assets.font.clone(),
                             font_size: 20.0,
-                            color: Color::GREEN,
+                            color: css::GREEN.into(),
                         },
                     )
                     .with_style(Style {

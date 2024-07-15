@@ -2,7 +2,8 @@ use bevy_app::prelude::*;
 use bevy_ecs::{
     prelude::*,
     query::{QueryData, QueryFilter},
-    system::{Command, EntityCommands, SystemParam},
+    system::{EntityCommands, SystemParam},
+    world::Command,
 };
 use bevy_reflect::prelude::*;
 use core::slice;
@@ -186,18 +187,22 @@ mod tests {
     fn configure_bindings() {
         let mut app = App::new();
         app.add_plugins(DataBindingPlugin);
-        app.world.run_system_once(configure);
+        app.world_mut().run_system_once(configure);
 
         let temps: Vec<_> = app
-            .world
+            .world_mut()
             .query::<(&Temperature, &DataBindings)>()
-            .iter(&app.world)
+            .iter(app.world())
             .collect();
         assert_eq!(temps.len(), 2);
         assert_eq!(temps[0].1 .0.len(), 2);
         assert_eq!(temps[1].1 .0.len(), 1);
 
-        let displays: Vec<_> = app.world.query::<&Display>().iter(&app.world).collect();
+        let displays: Vec<_> = app
+            .world_mut()
+            .query::<&Display>()
+            .iter(app.world())
+            .collect();
         assert_eq!(displays.len(), 3);
     }
 
@@ -205,34 +210,34 @@ mod tests {
     fn update_sink() {
         let mut app = App::new();
         app.add_plugins(DataBindingPlugin);
-        app.world.run_system_once(configure);
+        app.world_mut().run_system_once(configure);
 
         let mut schedule = Schedule::default();
         schedule.add_systems((update_temperature, update_display.after(update_temperature)));
 
-        schedule.run(&mut app.world);
+        schedule.run(app.world_mut());
         let displays: Vec<_> = app
-            .world
+            .world_mut()
             .query::<&Display>()
-            .iter(&app.world)
+            .iter(app.world())
             .map(|display| display.1)
             .collect();
         assert_eq!(displays, [1, 1, 1]);
 
-        schedule.run(&mut app.world);
+        schedule.run(app.world_mut());
         let displays: Vec<_> = app
-            .world
+            .world_mut()
             .query::<&Display>()
-            .iter(&app.world)
+            .iter(app.world())
             .map(|display| display.1)
             .collect();
         assert_eq!(displays, [2, 2, 1]);
 
-        schedule.run(&mut app.world);
+        schedule.run(app.world_mut());
         let displays: Vec<_> = app
-            .world
+            .world_mut()
             .query::<&Display>()
-            .iter(&app.world)
+            .iter(app.world())
             .map(|display| display.1)
             .collect();
         assert_eq!(displays, [2, 2, 1]);
@@ -242,16 +247,16 @@ mod tests {
     fn expire_deleted_entity() {
         let mut app = App::new();
         app.add_plugins(DataBindingPlugin);
-        app.world.run_system_once(configure);
+        app.world_mut().run_system_once(configure);
 
         let display = app
-            .world
+            .world_mut()
             .query_filtered::<Entity, With<Display>>()
-            .iter(&app.world)
+            .iter(app.world())
             .next()
             .unwrap();
 
-        app.world.despawn(display);
+        app.world_mut().despawn(display);
 
         app.add_systems(
             Update,
@@ -260,9 +265,9 @@ mod tests {
         app.update();
 
         let total_bindings: usize = app
-            .world
+            .world_mut()
             .query::<&DataBindings>()
-            .iter(&app.world)
+            .iter(app.world())
             .map(|bindings| bindings.0.len())
             .sum();
 

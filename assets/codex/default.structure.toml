@@ -1,23 +1,23 @@
 [portal]
-color_a = { Rgba = { red = 0.4, green = 0.4, blue = 0.4, alpha = 1.0 } }
-color_b = { Rgba = { red = 0.3, green = 0.3, blue = 0.5, alpha = 1.0 } }
-color_c = { Rgba = { red = 0.5, green = 0.5, blue = 0.3, alpha = 1.0 } }
+color_a = { Srgba = { red = 0.4, green = 0.4, blue = 0.4, alpha = 1.0 } }
+color_b = { Srgba = { red = 0.3, green = 0.3, blue = 0.5, alpha = 1.0 } }
+color_c = { Srgba = { red = 0.5, green = 0.5, blue = 0.3, alpha = 1.0 } }
 mesh = "models/portal.obj"
 scale = 0.3
 rotation = 2.0
 
 [spawner]
-color_a = { Rgba = { red = 0.8, green = 0.32, blue = 0.3, alpha = 1.0 } }
-color_b = { Rgba = { red = 0.7, green = 0.32, blue = 0.4, alpha = 1.0 } }
-color_c = { Rgba = { red = 0.6, green = 0.29, blue = 0.3, alpha = 1.0 } }
+color_a = { Srgba = { red = 0.8, green = 0.32, blue = 0.3, alpha = 1.0 } }
+color_b = { Srgba = { red = 0.7, green = 0.32, blue = 0.4, alpha = 1.0 } }
+color_c = { Srgba = { red = 0.6, green = 0.29, blue = 0.3, alpha = 1.0 } }
 mesh = "models/portal.obj"
 scale = 0.3
 rotation = 2.0
 
 [camp]
-color_a = { Rgba = { red = 0.631, green = 0.596, blue = 0.165, alpha = 1.0 } }
-color_b = { Rgba = { red = 0.531, green = 0.622, blue = 0.195, alpha = 1.0 } }
-color_c = { Rgba = { red = 0.571, green = 0.520, blue = 0.125, alpha = 1.0 } }
+color_a = { Srgba = { red = 0.631, green = 0.596, blue = 0.165, alpha = 1.0 } }
+color_b = { Srgba = { red = 0.531, green = 0.622, blue = 0.195, alpha = 1.0 } }
+color_c = { Srgba = { red = 0.571, green = 0.520, blue = 0.125, alpha = 1.0 } }
 mesh = "models/tent.obj"
 scale = 0.5
 rotation = 1.0

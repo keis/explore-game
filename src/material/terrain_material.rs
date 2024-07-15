@@ -68,9 +68,9 @@ pub struct TerrainMaterialUniform {
 impl From<&TerrainMaterial> for TerrainMaterialUniform {
     fn from(terrain_material: &TerrainMaterial) -> Self {
         Self {
-            color_a: terrain_material.color_a.as_linear_rgba_f32().into(),
-            color_b: terrain_material.color_b.as_linear_rgba_f32().into(),
-            color_c: terrain_material.color_c.as_linear_rgba_f32().into(),
+            color_a: terrain_material.color_a.to_linear().to_f32_array().into(),
+            color_b: terrain_material.color_b.to_linear().to_f32_array().into(),
+            color_c: terrain_material.color_c.to_linear().to_f32_array().into(),
             visible: terrain_material.visible as u32,
             explored: terrain_material.explored as u32,
         }

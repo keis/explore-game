@@ -32,7 +32,7 @@ pub fn float_and_fade(
             continue;
         }
         transform.translation.y += progress;
-        text.sections[0].style.color.set_a(
+        text.sections[0].style.color.set_alpha(
             1.0 - ((floating_text.progress - 0.5) / 0.5)
                 .clamp(0.0, 1.0)
                 .quadratic_out(),

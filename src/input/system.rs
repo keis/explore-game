@@ -174,7 +174,7 @@ pub fn apply_selection_over_out_events(
         for &child in children.iter() {
             if let Ok((mut outline_volume, default)) = outline_volume_query.get_mut(child) {
                 if selection.is_selected {
-                    outline_volume.colour = Color::rgb(0.75, 0.50, 0.50);
+                    outline_volume.colour = Color::srgb(0.75, 0.50, 0.50);
                 } else {
                     *outline_volume = (*default).clone();
                 };

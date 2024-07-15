@@ -23,7 +23,7 @@ pub struct WaterMaterialUniform {
 impl From<&WaterMaterial> for WaterMaterialUniform {
     fn from(water_material: &WaterMaterial) -> Self {
         Self {
-            color: water_material.color.as_linear_rgba_f32().into(),
+            color: water_material.color.to_linear().to_f32_array().into(),
         }
     }
 }

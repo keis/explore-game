@@ -4,9 +4,9 @@ allow_walking = false
 allow_structure = false
 height_base = 0.0
 height_amp = 0.0
-color_a = { Rgba = { red = 0, green = 0, blue = 0.0, alpha = 1.0 } }
-color_b = { Rgba = { red = 0, green = 0, blue = 0.0, alpha = 1.0 } }
-color_c = { Rgba = { red = 0, green = 0, blue = 0.0, alpha = 1.0 } }
+color_a = { Srgba = { red = 0, green = 0, blue = 0.0, alpha = 1.0 } }
+color_b = { Srgba = { red = 0, green = 0, blue = 0.0, alpha = 1.0 } }
+color_c = { Srgba = { red = 0, green = 0, blue = 0.0, alpha = 1.0 } }
 
 [ocean]
 symbol = "~"
@@ -14,9 +14,9 @@ allow_walking = false
 allow_structure = false
 height_base = -0.5
 height_amp = -0.2
-color_a = { Rgba = { red = 0.290, green = 0.388, blue = 0.443, alpha = 1.0 } }
-color_b = { Rgba = { red = 0.443, green = 0.549, blue = 0.631, alpha = 1.0 } }
-color_c = { Rgba = { red = 0.325, green = 0.427, blue = 0.490, alpha = 1.0 } }
+color_a = { Srgba = { red = 0.290, green = 0.388, blue = 0.443, alpha = 1.0 } }
+color_b = { Srgba = { red = 0.443, green = 0.549, blue = 0.631, alpha = 1.0 } }
+color_c = { Srgba = { red = 0.325, green = 0.427, blue = 0.490, alpha = 1.0 } }
 
 [[ocean.decoration]]
 Water = {}
@@ -27,9 +27,9 @@ allow_walking = true
 allow_structure = false
 height_base = 0.1
 height_amp = 0.5
-color_a = { Rgba = { red = 0.357, green = 0.255, blue = 0.114, alpha = 1.0 } }
-color_b = { Rgba = { red = 0.259, green = 0.184, blue = 0.067, alpha = 1.0 } }
-color_c = { Rgba = { red = 0.584, green = 0.498, blue = 0.271, alpha = 1.0 } }
+color_a = { Srgba = { red = 0.357, green = 0.255, blue = 0.114, alpha = 1.0 } }
+color_b = { Srgba = { red = 0.259, green = 0.184, blue = 0.067, alpha = 1.0 } }
+color_c = { Srgba = { red = 0.584, green = 0.498, blue = 0.271, alpha = 1.0 } }
 
 [forest]
 symbol = "%"
@@ -37,9 +37,9 @@ allow_walking = true
 allow_structure = true
 height_base = 0.0
 height_amp = 0.1
-color_a = { Rgba = { red = 0.122, green = 0.333, blue = 0.094, alpha = 1.0 } }
-color_b = { Rgba = { red = 0.329, green = 0.412, blue = 0.118, alpha = 1.0 } }
-color_c = { Rgba = { red = 0.145, green = 0.353, blue = 0.010, alpha = 1.0 } }
+color_a = { Srgba = { red = 0.122, green = 0.333, blue = 0.094, alpha = 1.0 } }
+color_b = { Srgba = { red = 0.329, green = 0.412, blue = 0.118, alpha = 1.0 } }
+color_c = { Srgba = { red = 0.145, green = 0.353, blue = 0.010, alpha = 1.0 } }
 
 [[forest.decoration]]
 Tree = {}

@@ -9,7 +9,7 @@ use splines::{Interpolation, Key, Spline};
 fn main() {
     let mut app = App::new();
 
-    app.insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
+    app.insert_resource(ClearColor(Color::srgb(0.1, 0.1, 0.1)))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 resolution: (800.0, 600.0).into(),
@@ -33,7 +33,7 @@ fn setup(
 ) {
     commands.spawn(PbrBundle {
         mesh: meshes.add(Plane3d::default().mesh().size(5.0, 5.0)),
-        material: standard_materials.add(Color::rgb(0.3, 0.5, 0.3)),
+        material: standard_materials.add(Color::srgb(0.3, 0.5, 0.3)),
         ..default()
     });
 
@@ -51,7 +51,7 @@ fn setup(
                 steps: 40,
                 stroke: 0.1,
             }),
-            material: standard_materials.add(Color::rgb(1.0, 0.8, 0.8)),
+            material: standard_materials.add(Color::srgb(1.0, 0.8, 0.8)),
             transform: Transform::from_translation(Vec3::new(-2.0, 0.5, 0.0)),
             ..default()
         },
@@ -72,7 +72,7 @@ fn setup(
                 steps: 8,
                 stroke: 0.1,
             }),
-            material: standard_materials.add(Color::rgb(0.8, 1.0, 0.8)),
+            material: standard_materials.add(Color::srgb(0.8, 1.0, 0.8)),
             transform: Transform::from_translation(Vec3::new(2.0, 0.5, 0.0)),
             ..default()
         },

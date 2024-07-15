@@ -12,7 +12,7 @@ pub struct ActionPlugin;
 
 impl Plugin for ActionPlugin {
     fn build(&self, app: &mut App) {
-        let game_action_systems = GameActionSystems::builder(&mut app.world)
+        let game_action_systems = GameActionSystems::builder(app.world_mut())
             .register_action(GameActionType::Move, handle_move)
             .register_action(GameActionType::MakeCamp, handle_make_camp)
             .register_action(GameActionType::BreakCamp, handle_break_camp)
@@ -28,7 +28,7 @@ impl Plugin for ActionPlugin {
             .register_action(GameActionType::EnterPortal, handle_enter_portal)
             .build();
         let game_action_follow_up_system =
-            GameActionFollowUpSystem(app.world.register_system(follow_up_action));
+            GameActionFollowUpSystem(app.world_mut().register_system(follow_up_action));
         app.insert_resource(GameActionQueue::default())
             .insert_resource(game_action_follow_up_system)
             .insert_resource(game_action_systems)
