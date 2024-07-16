@@ -326,14 +326,13 @@ pub fn handle_create_party_from_camp(
     commands
         .entity(map_entity)
         .with_presence(presence.position, |location| {
-            let (fluff_bundle, child_bundle) =
+            let (party_bundle, party_role, actor_role) =
                 PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
                     .with_fluff(&mut party_params, actor_codex);
             location
-                .spawn((Name::new("Party"), save::Save, fluff_bundle))
-                .with_children(|parent| {
-                    parent.spawn(child_bundle);
-                })
+                .spawn((Name::new("Party"), save::Save, party_bundle))
+                .attach_role(party_role)
+                .attach_role(actor_role)
                 .add_members(&action.targets);
         });
 
@@ -360,14 +359,13 @@ pub fn handle_split_party(
     commands
         .entity(map_entity)
         .with_presence(presence.position, |location| {
-            let (party_bundle, child_bundle) =
+            let (party_bundle, party_role, actor_role) =
                 PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
                     .with_fluff(&mut party_params, actor_codex);
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
-                .with_children(|parent| {
-                    parent.spawn(child_bundle);
-                })
+                .attach_role(party_role)
+                .attach_role(actor_role)
                 .add_members(&action.targets);
         });
     Ok(GameActionStatus::Resolved)

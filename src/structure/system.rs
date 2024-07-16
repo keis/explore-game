@@ -58,7 +58,7 @@ pub fn spawn_enemy(
         {
             spawner.charge -= 3;
             info!("Spawning enemy at {} from {:?}", presence.position, spawner);
-            let (fluff_bundle, child_bundle) = EnemyBundle::new(
+            let (enemy_bundle, actor_role) = EnemyBundle::new(
                 presence.position,
                 creature_codex,
                 spawner.creature,
@@ -69,10 +69,8 @@ pub fn spawn_enemy(
                 .entity(map_entity)
                 .with_presence(presence.position, |location| {
                     location
-                        .spawn((Name::new("Enemy"), save::Save, fluff_bundle))
-                        .with_children(|parent| {
-                            parent.spawn(child_bundle);
-                        });
+                        .spawn((Name::new("Enemy"), save::Save, enemy_bundle))
+                        .attach_role(actor_role);
                 });
         }
     }

@@ -2,6 +2,7 @@ use super::{bundle::*, component::*, event::*, system_param::*};
 use crate::{
     creature::Movement,
     map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
+    role::RoleCommandsExt,
     terrain::HeightQuery,
     ExplError,
 };
@@ -23,14 +24,12 @@ pub fn fluff_actor(
 ) -> Result<(), ExplError> {
     let actor_codex = actor_codex.get()?;
     for (entity, creature_id, presence) in &creature_query {
-        let (fluff_bundle, child_bundle) =
-            ActorFluffBundle::new(&mut creature_params, actor_codex, **creature_id, presence);
-        commands
-            .entity(entity)
-            .insert(fluff_bundle)
-            .with_children(|parent| {
-                parent.spawn(child_bundle);
-            });
+        commands.entity(entity).attach_role(ActorRole::new(
+            &mut creature_params,
+            actor_codex,
+            **creature_id,
+            presence,
+        ));
     }
     Ok(())
 }
@@ -41,7 +40,7 @@ pub fn fluff_party(
     party_query: Query<Entity, (With<Party>, Without<GlobalTransform>)>,
 ) -> Result<(), ExplError> {
     for entity in &party_query {
-        commands.entity(entity).insert(PartyFluffBundle::default());
+        commands.entity(entity).attach_role(PartyRole::default());
     }
     Ok(())
 }
