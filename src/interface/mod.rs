@@ -9,6 +9,8 @@ mod plugin;
 mod selected;
 mod shell;
 mod stat;
+mod style;
+mod styles;
 mod tabview;
 mod tooltip;
 

@@ -1,8 +1,9 @@
 use super::{
     camp::CampListBundle,
-    color::NORMAL,
     party::PartyListBundle,
     selected::spawn_selected_display,
+    style::*,
+    styles::{style_button, style_icon, style_root_container},
     tooltip::{spawn_tooltip, TooltipPosition, TooltipTarget},
     InterfaceAssets,
 };
@@ -12,7 +13,7 @@ use crate::{
     terrain::TerrainId,
     turn::Turn,
 };
-use bevy::{prelude::*, ui::FocusPolicy};
+use bevy::prelude::*;
 use bevy_mod_picking::prelude::{Pickable, PickingInteraction};
 
 #[derive(Component)]
@@ -30,7 +31,11 @@ pub struct TurnText;
 #[derive(Component)]
 pub struct ActionButton(Action);
 
-fn spawn_toolbar_icon(
+fn style_toolbar(style: &mut StyleBuilder) {
+    style.align_self(AlignSelf::FlexStart).padding(Val::Px(2.0));
+}
+
+fn spawn_toolbar_item(
     parent: &mut ChildBuilder,
     assets: &Res<InterfaceAssets>,
     tag: impl Component,
@@ -39,25 +44,15 @@ fn spawn_toolbar_icon(
     keybind_text: Option<impl Into<String>>,
 ) {
     parent
-        .spawn((
-            TooltipTarget,
-            ButtonBundle {
-                background_color: NORMAL.into(),
-                ..default()
-            },
-            tag,
-        ))
+        .spawn((TooltipTarget, ButtonBundle::default(), tag))
+        .with_style(style_button)
         .with_children(|parent| {
-            parent.spawn(ImageBundle {
-                style: Style {
-                    width: Val::Px(32.0),
-                    height: Val::Px(32.0),
+            parent
+                .spawn(ImageBundle {
+                    image: image.into(),
                     ..default()
-                },
-                image: image.into(),
-                focus_policy: FocusPolicy::Pass,
-                ..default()
-            });
+                })
+                .with_style(style_icon);
             spawn_tooltip(
                 parent,
                 assets,
@@ -70,19 +65,10 @@ fn spawn_toolbar_icon(
 
 fn spawn_toolbar(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
     parent
-        .spawn((
-            Name::new("Toolbar"),
-            NodeBundle {
-                style: Style {
-                    align_self: AlignSelf::FlexStart,
-                    padding: UiRect::all(Val::Px(2.0)),
-                    ..default()
-                },
-                ..default()
-            },
-        ))
+        .spawn((Name::new("Toolbar"), NodeBundle::default()))
+        .with_style(style_toolbar)
         .with_children(|parent| {
-            spawn_toolbar_icon(
+            spawn_toolbar_item(
                 parent,
                 assets,
                 ActionButton(Action::ResumeMove),
@@ -90,7 +76,7 @@ fn spawn_toolbar(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
                 "Resume move",
                 Some("<M>"),
             );
-            spawn_toolbar_icon(
+            spawn_toolbar_item(
                 parent,
                 assets,
                 ActionButton(Action::Camp),
@@ -98,7 +84,7 @@ fn spawn_toolbar(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
                 "Make/Enter camp",
                 Some("<C>"),
             );
-            spawn_toolbar_icon(
+            spawn_toolbar_item(
                 parent,
                 assets,
                 ActionButton(Action::BreakCamp),
@@ -106,7 +92,7 @@ fn spawn_toolbar(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
                 "Break camp",
                 None::<&str>,
             );
-            spawn_toolbar_icon(
+            spawn_toolbar_item(
                 parent,
                 assets,
                 ActionButton(Action::CreateParty),
@@ -114,7 +100,7 @@ fn spawn_toolbar(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
                 "Create party",
                 None::<&str>,
             );
-            spawn_toolbar_icon(
+            spawn_toolbar_item(
                 parent,
                 assets,
                 ActionButton(Action::SplitParty),
@@ -122,7 +108,7 @@ fn spawn_toolbar(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
                 "Split selected from party",
                 None::<&str>,
             );
-            spawn_toolbar_icon(
+            spawn_toolbar_item(
                 parent,
                 assets,
                 ActionButton(Action::MergeParty),
@@ -130,7 +116,7 @@ fn spawn_toolbar(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
                 "Merge selected parties",
                 None::<&str>,
             );
-            spawn_toolbar_icon(
+            spawn_toolbar_item(
                 parent,
                 assets,
                 ActionButton(Action::CollectCrystals),
@@ -138,7 +124,7 @@ fn spawn_toolbar(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
                 "Collect crystals",
                 None::<&str>,
             );
-            spawn_toolbar_icon(
+            spawn_toolbar_item(
                 parent,
                 assets,
                 ActionButton(Action::OpenPortal),
@@ -146,7 +132,7 @@ fn spawn_toolbar(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
                 "Open portal",
                 None::<&str>,
             );
-            spawn_toolbar_icon(
+            spawn_toolbar_item(
                 parent,
                 assets,
                 ActionButton(Action::EnterPortal),
@@ -157,26 +143,24 @@ fn spawn_toolbar(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
         });
 }
 
+fn style_next_turn_button(style: &mut StyleBuilder) {
+    style
+        .width(Val::Px(200.0))
+        .height(Val::Px(60.0))
+        .align_self(AlignSelf::FlexEnd)
+        .background_color(Color::srgb(0.4, 0.9, 0.4));
+}
+
 fn spawn_next_turn_button(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
     parent
         .spawn((
             Name::new("Next Turn Button"),
             TooltipTarget,
-            ButtonBundle {
-                style: Style {
-                    width: Val::Px(200.0),
-                    height: Val::Px(60.0),
-                    align_items: AlignItems::Center,
-                    align_self: AlignSelf::FlexEnd,
-                    justify_content: JustifyContent::Center,
-                    ..default()
-                },
-                background_color: Color::srgb(0.4, 0.9, 0.4).into(),
-                ..default()
-            },
+            ButtonBundle::default(),
             ActionButton(Action::NextTurn),
             TurnButton,
         ))
+        .with_style((style_button, style_next_turn_button))
         .with_children(|parent| {
             parent.spawn((
                 Name::new("Next Turn Button Text"),
@@ -202,73 +186,60 @@ fn spawn_next_turn_button(parent: &mut ChildBuilder, assets: &Res<InterfaceAsset
         });
 }
 
+fn style_shell_container(style: &mut StyleBuilder) {
+    style
+        .flex_direction(FlexDirection::Column)
+        .justify_content(JustifyContent::SpaceBetween)
+        .pointer_events(false);
+}
+
+fn style_bar(style: &mut StyleBuilder) {
+    style
+        .width(Val::Percent(100.0))
+        .justify_content(JustifyContent::SpaceBetween)
+        .pointer_events(false);
+}
+
+fn style_outliner(style: &mut StyleBuilder) {
+    style
+        .flex_direction(FlexDirection::Column)
+        .pointer_events(false);
+}
+
+fn style_zone_display(style: &mut StyleBuilder) {
+    style
+        .width(Val::Px(100.0))
+        .justify_content(JustifyContent::End);
+}
+
 pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
     commands
-        .spawn((
-            Name::new("Shell Container"),
-            NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::SpaceBetween,
-                    ..default()
-                },
-                focus_policy: FocusPolicy::Pass,
-                visibility: Visibility::Hidden,
-                ..default()
-            },
-            Pickable::IGNORE,
-            Shell,
-        ))
+        .spawn((Name::new("Shell Container"), NodeBundle::default(), Shell))
+        .with_style((style_root_container, style_shell_container))
         .with_children(|parent| {
             parent
-                .spawn((
-                    Name::new("Top"),
-                    NodeBundle {
-                        style: Style {
-                            width: Val::Percent(100.0),
-                            justify_content: JustifyContent::SpaceBetween,
-                            ..default()
-                        },
-                        focus_policy: FocusPolicy::Pass,
-                        ..default()
-                    },
-                    Pickable::IGNORE,
-                ))
+                .spawn((Name::new("Top"), NodeBundle::default()))
+                .with_style(style_bar)
                 .with_children(|parent| {
                     parent
                         .spawn((NodeBundle::default(), Pickable::IGNORE))
                         .with_children(|parent| {
                             parent
-                                .spawn((
-                                    NodeBundle {
-                                        style: Style {
-                                            flex_direction: FlexDirection::Column,
-                                            ..default()
-                                        },
-                                        ..default()
-                                    },
-                                    Pickable::IGNORE,
-                                ))
+                                .spawn((Name::new("Outliner"), NodeBundle::default()))
+                                .with_style(style_outliner)
                                 .with_children(|parent| {
-                                    parent.spawn(CampListBundle::default());
-                                    parent.spawn(PartyListBundle::default());
+                                    parent
+                                        .spawn(CampListBundle::default())
+                                        .with_style(style_outliner);
+                                    parent
+                                        .spawn(PartyListBundle::default())
+                                        .with_style(style_outliner);
                                 });
                         });
                     spawn_toolbar(parent, &assets);
                     parent
-                        .spawn((
-                            Name::new("Zone Display"),
-                            NodeBundle {
-                                style: Style {
-                                    width: Val::Px(100.0),
-                                    justify_content: JustifyContent::End,
-                                    ..default()
-                                },
-                                ..default()
-                            },
-                        ))
+                        .spawn((Name::new("Zone Display"), NodeBundle::default()))
+                        .with_style(style_zone_display)
                         .with_children(|parent| {
                             parent.spawn((
                                 ZoneText,
@@ -285,19 +256,8 @@ pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
                         });
                 });
             parent
-                .spawn((
-                    Name::new("Bottom"),
-                    NodeBundle {
-                        style: Style {
-                            width: Val::Percent(100.0),
-                            justify_content: JustifyContent::SpaceBetween,
-                            ..default()
-                        },
-                        focus_policy: FocusPolicy::Pass,
-                        ..default()
-                    },
-                    Pickable::IGNORE,
-                ))
+                .spawn((Name::new("Bottom"), NodeBundle::default()))
+                .with_style(style_bar)
                 .with_children(|parent| {
                     spawn_selected_display(parent, &assets);
                     spawn_next_turn_button(parent, &assets);

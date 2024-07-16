@@ -1,5 +1,7 @@
 use super::{
     color::{BACKGROUND, HOVERED, MENU, NORMAL, PRESSED},
+    style::*,
+    styles::{style_button, style_root_container},
     InterfaceAssets, InterfaceState,
 };
 use crate::{
@@ -26,6 +28,30 @@ pub struct MenuItemSave;
 #[derive(Component)]
 pub struct MenuItemQuit;
 
+fn style_menu_button(style: &mut StyleBuilder) {
+    style
+        .width(Val::Percent(100.0))
+        .height(Val::Px(50.0))
+        .margin_bottom(Val::Px(10.0));
+}
+
+fn style_menu_container(style: &mut StyleBuilder) {
+    style
+        .align_items(AlignItems::Center)
+        .justify_content(JustifyContent::SpaceAround)
+        .background_color(BACKGROUND);
+}
+
+fn style_menu(style: &mut StyleBuilder) {
+    style
+        .width(Val::Px(300.0))
+        .height(Val::Px(400.0))
+        .flex_direction(FlexDirection::Column)
+        .justify_content(JustifyContent::FlexStart)
+        .padding(Val::Px(5.0))
+        .background_color(MENU);
+}
+
 fn spawn_menu_item(
     parent: &mut ChildBuilder,
     assets: &Res<InterfaceAssets>,
@@ -33,25 +59,8 @@ fn spawn_menu_item(
     text: &str,
 ) {
     parent
-        .spawn((
-            ButtonBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Px(50.0),
-                    margin: UiRect {
-                        bottom: Val::Px(10.0),
-                        ..default()
-                    },
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::SpaceAround,
-                    ..default()
-                },
-                background_color: NORMAL.into(),
-                ..default()
-            },
-            MenuItem,
-            tag,
-        ))
+        .spawn((ButtonBundle::default(), MenuItem, tag))
+        .with_style((style_button, style_menu_button))
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
                 text,
@@ -68,35 +77,14 @@ pub fn spawn_menu(mut commands: Commands, assets: Res<InterfaceAssets>) {
     commands
         .spawn((
             Name::new("Menu Container"),
-            NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    position_type: PositionType::Absolute,
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::SpaceAround,
-                    ..default()
-                },
-                background_color: BACKGROUND.into(),
-                visibility: Visibility::Hidden,
-                ..default()
-            },
+            NodeBundle::default(),
             MenuLayer,
         ))
+        .with_style((style_root_container, style_menu_container))
         .with_children(|parent| {
             parent
-                .spawn(NodeBundle {
-                    style: Style {
-                        width: Val::Px(300.0),
-                        height: Val::Px(400.0),
-                        flex_direction: FlexDirection::Column,
-                        justify_content: JustifyContent::FlexStart,
-                        padding: UiRect::all(Val::Px(5.0)),
-                        ..default()
-                    },
-                    background_color: MENU.into(),
-                    ..default()
-                })
+                .spawn(NodeBundle::default())
+                .with_style(style_menu)
                 .with_children(|parent| {
                     spawn_menu_item(parent, &assets, MenuItemResume, "Resume");
                     spawn_menu_item(parent, &assets, MenuItemNewGame, "New game");

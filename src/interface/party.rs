@@ -1,6 +1,8 @@
 use super::{
     color::{NORMAL, SELECTED},
     stat::spawn_stat_display,
+    style::*,
+    styles::{style_button, style_icon},
     InterfaceAssets,
 };
 use crate::{
@@ -10,7 +12,6 @@ use crate::{
     inventory::Inventory,
 };
 use bevy::prelude::*;
-use bevy_mod_picking::prelude::Pickable;
 use expl_databinding::{DataBindingExt, DataBindingUpdate};
 
 #[derive(Component)]
@@ -34,56 +35,29 @@ pub struct PartyCrystalsText;
 pub struct PartyListBundle {
     node_bundle: NodeBundle,
     party_list: PartyList,
-    pickable: Pickable,
 }
 
 impl Default for PartyListBundle {
     fn default() -> Self {
         Self {
-            node_bundle: NodeBundle {
-                style: Style {
-                    width: Val::Auto,
-                    height: Val::Auto,
-                    flex_direction: FlexDirection::Column,
-                    margin: UiRect {
-                        right: Val::Px(8.0),
-                        ..default()
-                    },
-                    ..default()
-                },
-                background_color: Color::NONE.into(),
-                ..default()
-            },
+            node_bundle: NodeBundle::default(),
             party_list: PartyList,
-            pickable: Pickable::IGNORE,
         }
     }
 }
 
 fn spawn_party_display(parent: &mut ChildBuilder, entity: Entity, assets: &Res<InterfaceAssets>) {
     parent
-        .spawn((
-            PartyDisplay { party: entity },
-            ButtonBundle {
-                style: Style {
-                    margin: UiRect::all(Val::Px(2.0)),
-                    ..default()
-                },
-                background_color: NORMAL.into(),
-                ..default()
-            },
-        ))
+        .spawn((PartyDisplay { party: entity }, ButtonBundle::default()))
+        .with_style(style_button)
         .bind_to(entity)
         .with_children(|parent| {
-            parent.spawn(ImageBundle {
-                style: Style {
-                    width: Val::Px(32.0),
-                    height: Val::Px(32.0),
+            parent
+                .spawn(ImageBundle {
+                    image: assets.brutal_helm_icon.clone().into(),
                     ..default()
-                },
-                image: assets.brutal_helm_icon.clone().into(),
-                ..default()
-            });
+                })
+                .with_style(style_icon);
         });
 }
 

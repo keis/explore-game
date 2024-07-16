@@ -1,4 +1,4 @@
-use super::color::*;
+use super::{color::*, style::*, styles::style_icon};
 use crate::ExplError;
 use bevy::{hierarchy::HierarchyEvent, prelude::*};
 
@@ -143,14 +143,11 @@ fn spawn_header_icon(
             },
         ))
         .with_children(|parent| {
-            parent.spawn(ImageBundle {
-                style: Style {
-                    width: Val::Px(32.0),
-                    height: Val::Px(32.0),
+            parent
+                .spawn(ImageBundle {
+                    image: content.icon.clone().into(),
                     ..default()
-                },
-                image: content.icon.clone().into(),
-                ..default()
-            });
+                })
+                .with_style(style_icon);
         });
 }
