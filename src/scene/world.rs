@@ -74,11 +74,14 @@ pub fn spawn_generated_map(
                     .get(coord)
                     .map_or(void, |proto| proto.terrain)
             });
+            let (zone_bundle, zone_role) =
+                ZoneBundle::new(position, zoneproto).with_fluff(&mut zone_params, neighbours);
             let mut zone = commands.spawn((
                 Name::new(format!("Zone {}", position)),
                 save::Save,
-                ZoneBundle::new(position, zoneproto).with_fluff(&mut zone_params, neighbours),
+                zone_bundle,
             ));
+            zone.attach_role(zone_role);
 
             if zoneproto.crystals {
                 zone.insert(CrystalDeposit { amount: 20 });

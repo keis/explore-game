@@ -1,6 +1,7 @@
 use super::{asset::*, bundle::*, component::*, system_param::*};
 use crate::{
     map::{Fog, MapEvent, MapLayout, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
+    role::RoleCommandsExt,
     structure::Camp,
     ExplError,
 };
@@ -123,7 +124,7 @@ pub fn fluff_zone(
             terrain_grid.get(coord).copied().unwrap_or(void)
         });
 
-        commands.entity(entity).insert(ZoneFluffBundle::new(
+        commands.entity(entity).attach_role(ZoneRole::new(
             &mut zone_params,
             position,
             terrain,
