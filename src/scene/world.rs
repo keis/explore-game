@@ -4,6 +4,7 @@ use crate::{
     creature::CreatureCodex,
     map::{MapCommandsExt, MapLayout, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     map_generator::{GenerateMapTask, MapPrototype, MapSeed},
+    role::RoleCommandsExt,
     structure::{PortalBundle, SafeHavenBundle, SpawnerBundle, StructureCodex, StructureParams},
     terrain::{CrystalDeposit, TerrainId, ZoneBundle, ZoneParams},
     turn::Turn,
@@ -73,11 +74,14 @@ pub fn spawn_generated_map(
                     .get(coord)
                     .map_or(void, |proto| proto.terrain)
             });
+            let (zone_bundle, zone_role) =
+                ZoneBundle::new(position, zoneproto).with_fluff(&mut zone_params, neighbours);
             let mut zone = commands.spawn((
                 Name::new(format!("Zone {}", position)),
                 save::Save,
-                ZoneBundle::new(position, zoneproto).with_fluff(&mut zone_params, neighbours),
+                zone_bundle,
             ));
+            zone.attach_role(zone_role);
 
             if zoneproto.crystals {
                 zone.insert(CrystalDeposit { amount: 20 });
@@ -111,13 +115,11 @@ pub fn spawn_portal(
     commands
         .entity(map_entity)
         .with_presence(prototype.portal_position, |location| {
-            let (portal_bundle, child_bundle) = PortalBundle::new(prototype.portal_position)
+            let (portal_bundle, structure_role) = PortalBundle::new(prototype.portal_position)
                 .with_fluff(&mut structure_params, structure_codex);
             location
                 .spawn((Name::new("Portal"), save::Save, portal_bundle))
-                .with_children(|parent| {
-                    parent.spawn(child_bundle);
-                });
+                .attach_role(structure_role);
         });
 
     Ok(())
@@ -137,7 +139,7 @@ pub fn spawn_spawner(
     commands
         .entity(map_entity)
         .with_presence(prototype.spawner_position, |location| {
-            let (spawner_bundle, child_bundle) = SpawnerBundle::new(
+            let (spawner_bundle, structure_role) = SpawnerBundle::new(
                 prototype.spawner_position,
                 Id::from_tag("slime"),
                 Id::from_tag("slime"),
@@ -145,9 +147,7 @@ pub fn spawn_spawner(
             .with_fluff(&mut structure_params, structure_codex);
             location
                 .spawn((Name::new("EnemySpawner"), save::Save, spawner_bundle))
-                .with_children(|parent| {
-                    parent.spawn(child_bundle);
-                });
+                .attach_role(structure_role);
         });
 
     Ok(())
@@ -190,14 +190,13 @@ pub fn spawn_party(
     commands
         .entity(map_entity)
         .with_presence(prototype.party_position, |location| {
-            let (party_bundle, child_bundle) =
+            let (party_bundle, party_role, actor_role) =
                 PartyBundle::new(prototype.party_position, String::from("Alpha Group"), 1)
                     .with_fluff(&mut party_params, actor_codex);
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
-                .with_children(|parent| {
-                    parent.spawn(child_bundle);
-                })
+                .attach_role(party_role)
+                .attach_role(actor_role)
                 .add_members(&[character1, character2, character3]);
         });
 

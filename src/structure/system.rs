@@ -5,6 +5,7 @@ use crate::{
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     map::{Fog, MapCommandsExt, MapPresence, PresenceLayer, ViewRadius},
     material::PortalMaterial,
+    role::RoleCommandsExt,
     scene::save,
     ExplError,
 };
@@ -19,19 +20,13 @@ pub fn fluff_structure(
 ) -> Result<(), ExplError> {
     let structure_codex = structure_codex.get()?;
     for (entity, structure_id, presence, fog) in &structure_query {
-        let (fluff_bundle, child_bundle) = StructureFluffBundle::new(
+        commands.entity(entity).attach_role(StructureRole::new(
             &mut structure_params,
             structure_codex,
             **structure_id,
             presence,
             fog,
-        );
-        commands
-            .entity(entity)
-            .insert(fluff_bundle)
-            .with_children(|parent| {
-                parent.spawn(child_bundle);
-            });
+        ));
     }
     Ok(())
 }
@@ -63,7 +58,7 @@ pub fn spawn_enemy(
         {
             spawner.charge -= 3;
             info!("Spawning enemy at {} from {:?}", presence.position, spawner);
-            let (fluff_bundle, child_bundle) = EnemyBundle::new(
+            let (enemy_bundle, actor_role) = EnemyBundle::new(
                 presence.position,
                 creature_codex,
                 spawner.creature,
@@ -74,10 +69,8 @@ pub fn spawn_enemy(
                 .entity(map_entity)
                 .with_presence(presence.position, |location| {
                     location
-                        .spawn((Name::new("Enemy"), save::Save, fluff_bundle))
-                        .with_children(|parent| {
-                            parent.spawn(child_bundle);
-                        });
+                        .spawn((Name::new("Enemy"), save::Save, enemy_bundle))
+                        .attach_role(actor_role);
                 });
         }
     }

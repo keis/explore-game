@@ -3,6 +3,7 @@ use crate::{
     map::{Fog, HexCoord, MapPosition},
     map_generator::ZonePrototype,
     material::{TerrainBuffer, TerrainMaterial, WaterMaterial, ZoneMaterial},
+    role::Role,
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
 use bevy_mod_picking::prelude::{Pickable, PickingInteraction};
@@ -91,22 +92,65 @@ pub type ZoneParams<'w> = (
     ResMut<'w, Assets<ZoneMaterial>>,
 );
 
-#[derive(Bundle, Default)]
-pub struct ZoneBundle {
-    terrain: TerrainId,
-    fog: Fog,
-    position: MapPosition,
-    zone_decorations: ZoneDecorations,
-}
-
-#[derive(Bundle, Default)]
-pub struct ZoneFluffBundle {
+#[derive(Default)]
+pub struct ZoneRole {
+    // Insert
     pickable: Pickable,
     interaction: PickingInteraction,
     not_shadow_caster: NotShadowCaster,
     material_mesh_bundle: MaterialMeshBundle<ZoneMaterial>,
     outer_visible: OuterVisible,
     outer_terrain: OuterTerrain,
+}
+
+impl ZoneRole {
+    pub fn new(
+        (hex_assets, terrain_buffer, zone_materials): &mut ZoneParams,
+        position: &MapPosition,
+        terrain: &TerrainId,
+        fog: &Fog,
+        outer_visible: OuterVisible,
+        outer_terrain: Neighbours<Id<Terrain>>,
+    ) -> Self {
+        Self {
+            material_mesh_bundle: MaterialMeshBundle {
+                mesh: hex_assets.mesh.clone(),
+                material: zone_materials.add(ZoneMaterial::new(
+                    terrain,
+                    fog,
+                    &outer_visible,
+                    &outer_terrain,
+                    terrain_buffer,
+                )),
+                transform: Transform::from_translation(position.0.into()),
+                ..default()
+            },
+            outer_visible,
+            outer_terrain: OuterTerrain(outer_terrain),
+            ..default()
+        }
+    }
+}
+
+impl Role for ZoneRole {
+    fn attach(self, entity: &mut EntityWorldMut) {
+        entity.insert((
+            self.pickable,
+            self.interaction,
+            self.not_shadow_caster,
+            self.material_mesh_bundle,
+            self.outer_visible,
+            self.outer_terrain,
+        ));
+    }
+}
+
+#[derive(Bundle, Default)]
+pub struct ZoneBundle {
+    terrain: TerrainId,
+    fog: Fog,
+    position: MapPosition,
+    zone_decorations: ZoneDecorations,
 }
 
 impl ZoneBundle {
@@ -136,9 +180,9 @@ impl ZoneBundle {
         self,
         zone_params: &mut ZoneParams,
         outer_terrain: Neighbours<Id<Terrain>>,
-    ) -> (Self, ZoneFluffBundle) {
+    ) -> (Self, ZoneRole) {
         let outer_visible = OuterVisible::default();
-        let fluff = ZoneFluffBundle::new(
+        let zone_role = ZoneRole::new(
             zone_params,
             &self.position,
             &self.terrain,
@@ -146,35 +190,6 @@ impl ZoneBundle {
             outer_visible,
             outer_terrain,
         );
-        (self, fluff)
-    }
-}
-
-impl ZoneFluffBundle {
-    pub fn new(
-        (hex_assets, terrain_buffer, zone_materials): &mut ZoneParams,
-        position: &MapPosition,
-        terrain: &TerrainId,
-        fog: &Fog,
-        outer_visible: OuterVisible,
-        outer_terrain: Neighbours<Id<Terrain>>,
-    ) -> Self {
-        Self {
-            material_mesh_bundle: MaterialMeshBundle {
-                mesh: hex_assets.mesh.clone(),
-                material: zone_materials.add(ZoneMaterial::new(
-                    terrain,
-                    fog,
-                    &outer_visible,
-                    &outer_terrain,
-                    terrain_buffer,
-                )),
-                transform: Transform::from_translation(position.0.into()),
-                ..default()
-            },
-            outer_visible,
-            outer_terrain: OuterTerrain(outer_terrain),
-            ..default()
-        }
+        (self, zone_role)
     }
 }

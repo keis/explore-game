@@ -8,6 +8,7 @@ use crate::{
     inventory::Inventory,
     map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     path::PathGuided,
+    role::RoleCommandsExt,
     scene::save,
     structure::{Camp, CampBundle, Portal, SafeHaven, StructureCodex, StructureParams},
     terrain::{CrystalDeposit, HeightQuery, TerrainCodex, TerrainId},
@@ -254,14 +255,12 @@ pub fn handle_make_camp(
     commands
         .entity(map_entity)
         .with_presence(position, |location| {
-            let (camp_bundle, child_bundle) =
+            let (camp_bundle, structure_role) =
                 CampBundle::new(position, String::from("New camp"), camp_inventory)
                     .with_fluff(&mut structure_params, structure_codex);
             location
                 .spawn((Name::new("Camp"), save::Save, camp_bundle))
-                .with_children(|parent| {
-                    parent.spawn(child_bundle);
-                })
+                .attach_role(structure_role)
                 .add_members(members);
         });
     Ok(GameActionStatus::Resolved)
@@ -327,14 +326,13 @@ pub fn handle_create_party_from_camp(
     commands
         .entity(map_entity)
         .with_presence(presence.position, |location| {
-            let (fluff_bundle, child_bundle) =
+            let (party_bundle, party_role, actor_role) =
                 PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
                     .with_fluff(&mut party_params, actor_codex);
             location
-                .spawn((Name::new("Party"), save::Save, fluff_bundle))
-                .with_children(|parent| {
-                    parent.spawn(child_bundle);
-                })
+                .spawn((Name::new("Party"), save::Save, party_bundle))
+                .attach_role(party_role)
+                .attach_role(actor_role)
                 .add_members(&action.targets);
         });
 
@@ -361,14 +359,13 @@ pub fn handle_split_party(
     commands
         .entity(map_entity)
         .with_presence(presence.position, |location| {
-            let (party_bundle, child_bundle) =
+            let (party_bundle, party_role, actor_role) =
                 PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
                     .with_fluff(&mut party_params, actor_codex);
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
-                .with_children(|parent| {
-                    parent.spawn(child_bundle);
-                })
+                .attach_role(party_role)
+                .attach_role(actor_role)
                 .add_members(&action.targets);
         });
     Ok(GameActionStatus::Resolved)

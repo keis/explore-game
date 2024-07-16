@@ -5,6 +5,7 @@ use crate::{
     inventory::Inventory,
     map::{FogRevealer, HexCoord, MapPresence, ViewRadius},
     path::PathGuided,
+    role::Role,
     terrain::HeightQuery,
 };
 use bevy::prelude::*;
@@ -13,16 +14,78 @@ use expl_codex::{Codex, Id};
 
 pub type ActorParams<'w, 's> = (ResMut<'w, Assets<StandardMaterial>>, HeightQuery<'w, 's>);
 
-#[derive(Bundle, Default)]
-pub struct ActorFluffBundle {
+#[derive(Default)]
+pub struct ActorRole {
+    // Insert
     spatial_bundle: SpatialBundle,
-}
-
-#[derive(Bundle)]
-pub struct ActorChildBundle {
+    // Child
     pbr_bundle: PbrBundle,
     default_outline_volume: DefaultOutlineVolume,
     outline_bundle: OutlineBundle,
+}
+
+impl ActorRole {
+    pub fn new(
+        (standard_materials, height_query): &mut ActorParams,
+        actor_codex: &Codex<Actor>,
+        actor_id: Id<Actor>,
+        presence: &MapPresence,
+    ) -> Self {
+        let actor_data = &actor_codex[&actor_id];
+        let offset = Vec3::new(0.0, actor_data.offset, 0.0);
+        let outline = OutlineVolume {
+            visible: true,
+            width: 2.0,
+            colour: actor_data.outline_color,
+        };
+        Self {
+            spatial_bundle: SpatialBundle {
+                transform: Transform::from_translation(
+                    height_query.adjust(presence.position.into()),
+                ),
+                ..default()
+            },
+            pbr_bundle: PbrBundle {
+                mesh: actor_data.mesh.clone(),
+                material: standard_materials.add(actor_data.color),
+                transform: Transform::from_translation(offset)
+                    .with_scale(Vec3::splat(actor_data.scale)),
+                ..default()
+            },
+            default_outline_volume: DefaultOutlineVolume(outline.clone()),
+            outline_bundle: OutlineBundle {
+                outline,
+                ..default()
+            },
+        }
+    }
+}
+
+impl Role for ActorRole {
+    fn attach(self, entity: &mut EntityWorldMut) {
+        entity
+            .insert((self.spatial_bundle,))
+            .with_children(|parent| {
+                parent.spawn((
+                    self.pbr_bundle,
+                    self.default_outline_volume,
+                    self.outline_bundle,
+                ));
+            });
+    }
+}
+
+#[derive(Default)]
+pub struct PartyRole {
+    // Insert
+    selection_bundle: SelectionBundle,
+    path_guided: PathGuided,
+}
+
+impl Role for PartyRole {
+    fn attach(self, entity: &mut EntityWorldMut) {
+        entity.insert((self.selection_bundle, self.path_guided));
+    }
 }
 
 #[derive(Bundle, Default)]
@@ -46,12 +109,6 @@ pub struct PartyBundle {
 }
 
 #[derive(Bundle, Default)]
-pub struct PartyFluffBundle {
-    selection_bundle: SelectionBundle,
-    path_guided: PathGuided,
-}
-
-#[derive(Bundle, Default)]
 pub struct EnemyBundle {
     actor_id: ActorId,
     creature: CreatureBundle,
@@ -59,47 +116,6 @@ pub struct EnemyBundle {
     presence: MapPresence,
     view_radius: ViewRadius,
     slide: Slide,
-}
-
-impl ActorFluffBundle {
-    pub fn new(
-        (standard_materials, height_query): &mut ActorParams,
-        actor_codex: &Codex<Actor>,
-        actor_id: Id<Actor>,
-        presence: &MapPresence,
-    ) -> (Self, ActorChildBundle) {
-        let actor_data = &actor_codex[&actor_id];
-        let offset = Vec3::new(0.0, actor_data.offset, 0.0);
-        let outline = OutlineVolume {
-            visible: true,
-            width: 2.0,
-            colour: actor_data.outline_color,
-        };
-        (
-            Self {
-                spatial_bundle: SpatialBundle {
-                    transform: Transform::from_translation(
-                        height_query.adjust(presence.position.into()),
-                    ),
-                    ..default()
-                },
-            },
-            ActorChildBundle {
-                pbr_bundle: PbrBundle {
-                    mesh: actor_data.mesh.clone(),
-                    material: standard_materials.add(actor_data.color),
-                    transform: Transform::from_translation(offset)
-                        .with_scale(Vec3::splat(actor_data.scale)),
-                    ..default()
-                },
-                default_outline_volume: DefaultOutlineVolume(outline.clone()),
-                outline_bundle: OutlineBundle {
-                    outline,
-                    ..default()
-                },
-            },
-        )
-    }
 }
 
 impl CharacterBundle {
@@ -131,11 +147,10 @@ impl PartyBundle {
         self,
         party_params: &mut ActorParams,
         actor_codex: &Codex<Actor>,
-    ) -> ((Self, PartyFluffBundle, ActorFluffBundle), ActorChildBundle) {
-        let party_fluff = PartyFluffBundle::default();
-        let (actor_fluff, child) =
-            ActorFluffBundle::new(party_params, actor_codex, *self.actor_id, &self.presence);
-        ((self, party_fluff, actor_fluff), child)
+    ) -> (Self, PartyRole, ActorRole) {
+        let party_role = PartyRole::default();
+        let actor_role = ActorRole::new(party_params, actor_codex, *self.actor_id, &self.presence);
+        (self, party_role, actor_role)
     }
 }
 
@@ -161,9 +176,8 @@ impl EnemyBundle {
         self,
         enemy_params: &mut ActorParams,
         actor_codex: &Codex<Actor>,
-    ) -> ((Self, ActorFluffBundle), ActorChildBundle) {
-        let (fluff, child) =
-            ActorFluffBundle::new(enemy_params, actor_codex, *self.actor_id, &self.presence);
-        ((self, fluff), child)
+    ) -> (Self, ActorRole) {
+        let actor_role = ActorRole::new(enemy_params, actor_codex, *self.actor_id, &self.presence);
+        (self, actor_role)
     }
 }
