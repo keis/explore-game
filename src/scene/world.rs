@@ -4,6 +4,7 @@ use crate::{
     creature::CreatureCodex,
     map::{MapCommandsExt, MapLayout, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     map_generator::{GenerateMapTask, MapPrototype, MapSeed},
+    role::RoleCommandsExt,
     structure::{PortalBundle, SafeHavenBundle, SpawnerBundle, StructureCodex, StructureParams},
     terrain::{CrystalDeposit, TerrainId, ZoneBundle, ZoneParams},
     turn::Turn,
@@ -111,13 +112,11 @@ pub fn spawn_portal(
     commands
         .entity(map_entity)
         .with_presence(prototype.portal_position, |location| {
-            let (portal_bundle, child_bundle) = PortalBundle::new(prototype.portal_position)
+            let (portal_bundle, structure_role) = PortalBundle::new(prototype.portal_position)
                 .with_fluff(&mut structure_params, structure_codex);
             location
                 .spawn((Name::new("Portal"), save::Save, portal_bundle))
-                .with_children(|parent| {
-                    parent.spawn(child_bundle);
-                });
+                .attach_role(structure_role);
         });
 
     Ok(())
@@ -137,7 +136,7 @@ pub fn spawn_spawner(
     commands
         .entity(map_entity)
         .with_presence(prototype.spawner_position, |location| {
-            let (spawner_bundle, child_bundle) = SpawnerBundle::new(
+            let (spawner_bundle, structure_role) = SpawnerBundle::new(
                 prototype.spawner_position,
                 Id::from_tag("slime"),
                 Id::from_tag("slime"),
@@ -145,9 +144,7 @@ pub fn spawn_spawner(
             .with_fluff(&mut structure_params, structure_codex);
             location
                 .spawn((Name::new("EnemySpawner"), save::Save, spawner_bundle))
-                .with_children(|parent| {
-                    parent.spawn(child_bundle);
-                });
+                .attach_role(structure_role);
         });
 
     Ok(())

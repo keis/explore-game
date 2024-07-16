@@ -18,6 +18,7 @@ pub mod map_generator;
 pub mod material;
 pub mod path;
 pub mod plugins;
+pub mod role;
 pub mod scene;
 pub mod structure;
 pub mod terrain;

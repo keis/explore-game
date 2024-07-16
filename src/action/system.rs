@@ -8,6 +8,7 @@ use crate::{
     inventory::Inventory,
     map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     path::PathGuided,
+    role::RoleCommandsExt,
     scene::save,
     structure::{Camp, CampBundle, Portal, SafeHaven, StructureCodex, StructureParams},
     terrain::{CrystalDeposit, HeightQuery, TerrainCodex, TerrainId},
@@ -254,14 +255,12 @@ pub fn handle_make_camp(
     commands
         .entity(map_entity)
         .with_presence(position, |location| {
-            let (camp_bundle, child_bundle) =
+            let (camp_bundle, structure_role) =
                 CampBundle::new(position, String::from("New camp"), camp_inventory)
                     .with_fluff(&mut structure_params, structure_codex);
             location
                 .spawn((Name::new("Camp"), save::Save, camp_bundle))
-                .with_children(|parent| {
-                    parent.spawn(child_bundle);
-                })
+                .attach_role(structure_role)
                 .add_members(members);
         });
     Ok(GameActionStatus::Resolved)

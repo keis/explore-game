@@ -7,6 +7,7 @@ use crate::{
     inventory::Inventory,
     map::{Fog, FogRevealer, HexCoord, MapPresence, ViewRadius},
     material::TerrainMaterial,
+    role::Role,
     terrain::HeightQuery,
 };
 use bevy::prelude::*;
@@ -15,70 +16,82 @@ use expl_codex::{Codex, Id};
 
 pub type StructureParams<'w, 's> = (ResMut<'w, Assets<TerrainMaterial>>, HeightQuery<'w, 's>);
 
-#[derive(Bundle, Default)]
-pub struct StructureFluffBundle {
+#[derive(Default)]
+pub struct StructureRole {
+    // Insert
     spatial_bundle: SpatialBundle,
     selection: SelectionBundle,
     floating_text_source: FloatingTextSource,
-}
-
-#[derive(Bundle, Default)]
-pub struct StructureChildBundle {
+    // Child
     material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
     default_outline_volume: DefaultOutlineVolume,
     outline_bundle: OutlineBundle,
 }
 
-impl StructureFluffBundle {
+impl StructureRole {
     pub fn new(
         (terrain_materials, height_query): &mut StructureParams,
         structure_codex: &Codex<Structure>,
         structure_id: Id<Structure>,
         presence: &MapPresence,
         fog: &Fog,
-    ) -> (Self, StructureChildBundle) {
+    ) -> Self {
         let structure = &structure_codex[&structure_id];
         let outline = OutlineVolume {
             visible: true,
             width: 2.0,
             colour: structure.color_a,
         };
-        (
-            Self {
-                floating_text_source: FloatingTextSource::with_offset(Vec3::new(0.0, 0.5, 0.0)),
-                spatial_bundle: SpatialBundle {
-                    transform: Transform::from_translation(
-                        height_query.adjust(presence.position.into()),
-                    ),
-                    visibility: if fog.explored {
-                        Visibility::Inherited
-                    } else {
-                        Visibility::Hidden
-                    },
-                    ..default()
+        Self {
+            floating_text_source: FloatingTextSource::with_offset(Vec3::new(0.0, 0.5, 0.0)),
+            spatial_bundle: SpatialBundle {
+                transform: Transform::from_translation(
+                    height_query.adjust(presence.position.into()),
+                ),
+                visibility: if fog.explored {
+                    Visibility::Inherited
+                } else {
+                    Visibility::Hidden
                 },
                 ..default()
             },
-            StructureChildBundle {
-                material_mesh_bundle: MaterialMeshBundle {
-                    mesh: structure.mesh.clone(),
-                    material: terrain_materials.add(TerrainMaterial::from_structure(
-                        structure_codex,
-                        &structure_id,
-                        fog,
-                    )),
-                    transform: Transform::from_translation(Vec3::ZERO)
-                        .with_scale(Vec3::splat(structure.scale))
-                        .with_rotation(Quat::from_rotation_y(structure.rotation)),
-                    ..default()
-                },
-                default_outline_volume: DefaultOutlineVolume(outline.clone()),
-                outline_bundle: OutlineBundle {
-                    outline,
-                    ..default()
-                },
+            material_mesh_bundle: MaterialMeshBundle {
+                mesh: structure.mesh.clone(),
+                material: terrain_materials.add(TerrainMaterial::from_structure(
+                    structure_codex,
+                    &structure_id,
+                    fog,
+                )),
+                transform: Transform::from_translation(Vec3::ZERO)
+                    .with_scale(Vec3::splat(structure.scale))
+                    .with_rotation(Quat::from_rotation_y(structure.rotation)),
+                ..default()
             },
-        )
+            default_outline_volume: DefaultOutlineVolume(outline.clone()),
+            outline_bundle: OutlineBundle {
+                outline,
+                ..default()
+            },
+            ..default()
+        }
+    }
+}
+
+impl Role for StructureRole {
+    fn attach(self, entity: &mut EntityWorldMut) {
+        entity
+            .insert((
+                self.spatial_bundle,
+                self.selection,
+                self.floating_text_source,
+            ))
+            .with_children(|parent| {
+                parent.spawn((
+                    self.material_mesh_bundle,
+                    self.default_outline_volume,
+                    self.outline_bundle,
+                ));
+            });
     }
 }
 
@@ -108,15 +121,15 @@ impl SpawnerBundle {
         self,
         structure_params: &mut StructureParams,
         structure_codex: &Codex<Structure>,
-    ) -> ((Self, StructureFluffBundle), StructureChildBundle) {
-        let (fluff, child) = StructureFluffBundle::new(
+    ) -> (Self, StructureRole) {
+        let structure_role = StructureRole::new(
             structure_params,
             structure_codex,
             *self.structure_id,
             &self.presence,
             &self.fog,
         );
-        ((self, fluff), child)
+        (self, structure_role)
     }
 }
 
@@ -151,15 +164,15 @@ impl CampBundle {
         self,
         structure_params: &mut StructureParams,
         structure_codex: &Codex<Structure>,
-    ) -> ((Self, StructureFluffBundle), StructureChildBundle) {
-        let (fluff, child) = StructureFluffBundle::new(
+    ) -> (Self, StructureRole) {
+        let structure_role = StructureRole::new(
             structure_params,
             structure_codex,
             *self.structure_id,
             &self.presence,
             &self.fog,
         );
-        ((self, fluff), child)
+        (self, structure_role)
     }
 }
 
@@ -184,15 +197,15 @@ impl PortalBundle {
         self,
         structure_params: &mut StructureParams,
         structure_codex: &Codex<Structure>,
-    ) -> ((Self, StructureFluffBundle), StructureChildBundle) {
-        let (fluff, child) = StructureFluffBundle::new(
+    ) -> (Self, StructureRole) {
+        let structure_role = StructureRole::new(
             structure_params,
             structure_codex,
             *self.structure_id,
             &self.presence,
             &self.fog,
         );
-        ((self, fluff), child)
+        (self, structure_role)
     }
 }
 

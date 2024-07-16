@@ -5,6 +5,7 @@ use crate::{
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     map::{Fog, MapCommandsExt, MapPresence, PresenceLayer, ViewRadius},
     material::PortalMaterial,
+    role::RoleCommandsExt,
     scene::save,
     ExplError,
 };
@@ -19,19 +20,13 @@ pub fn fluff_structure(
 ) -> Result<(), ExplError> {
     let structure_codex = structure_codex.get()?;
     for (entity, structure_id, presence, fog) in &structure_query {
-        let (fluff_bundle, child_bundle) = StructureFluffBundle::new(
+        commands.entity(entity).attach_role(StructureRole::new(
             &mut structure_params,
             structure_codex,
             **structure_id,
             presence,
             fog,
-        );
-        commands
-            .entity(entity)
-            .insert(fluff_bundle)
-            .with_children(|parent| {
-                parent.spawn(child_bundle);
-            });
+        ));
     }
     Ok(())
 }
