@@ -1,6 +1,10 @@
-use super::InterfaceAssets;
+use super::{style::*, styles::style_small_icon, InterfaceAssets};
 use bevy::prelude::*;
 use expl_databinding::DataBindingExt;
+
+fn style_stat_display(style: &mut StyleBuilder) {
+    style.padding(Val::Px(2.0)).align_items(AlignItems::Center);
+}
 
 pub fn spawn_stat_display(
     parent: &mut ChildBuilder,
@@ -11,24 +15,15 @@ pub fn spawn_stat_display(
     value: impl Into<String>,
 ) {
     parent
-        .spawn(NodeBundle {
-            style: Style {
-                padding: UiRect::all(Val::Px(2.0)),
-                align_items: AlignItems::Center,
-                ..default()
-            },
-            ..default()
-        })
+        .spawn(NodeBundle::default())
+        .with_style(style_stat_display)
         .with_children(|parent| {
-            parent.spawn(ImageBundle {
-                style: Style {
-                    width: Val::Px(20.0),
-                    height: Val::Px(20.0),
+            parent
+                .spawn(ImageBundle {
+                    image: image.into(),
                     ..default()
-                },
-                image: image.into(),
-                ..default()
-            });
+                })
+                .with_style(style_small_icon);
             parent
                 .spawn((
                     tag,

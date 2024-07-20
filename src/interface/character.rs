@@ -1,6 +1,7 @@
 use super::{
     color::{NORMAL, SELECTED},
     stat::spawn_stat_display,
+    style::*,
     InterfaceAssets,
 };
 use crate::{
@@ -9,10 +10,9 @@ use crate::{
     input::{Deselect, Selection, SelectionUpdate},
 };
 use bevy::prelude::*;
-use bevy_mod_picking::prelude::Pickable;
 use expl_databinding::{DataBindingExt, DataBindingUpdate};
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct CharacterList;
 
 #[derive(Component)]
@@ -20,36 +20,41 @@ pub struct CharacterDisplay {
     character: Entity,
 }
 
-#[derive(Bundle)]
+#[derive(Default, Bundle)]
 pub struct CharacterListBundle {
     node_bundle: NodeBundle,
     character_list: CharacterList,
-    pickable: Pickable,
 }
-
 #[derive(Component)]
 pub struct AttackText;
 
 #[derive(Component)]
 pub struct HealthText;
 
-impl Default for CharacterListBundle {
-    fn default() -> Self {
-        Self {
-            node_bundle: NodeBundle {
-                style: Style {
-                    width: Val::Px(200.0),
-                    height: Val::Auto,
-                    flex_direction: FlexDirection::Row,
-                    align_self: AlignSelf::FlexEnd,
-                    ..default()
-                },
-                ..default()
-            },
-            character_list: CharacterList,
-            pickable: Pickable::IGNORE,
-        }
-    }
+fn style_character_list(style: &mut StyleBuilder) {
+    style
+        .width(Val::Px(200.0))
+        .height(Val::Auto)
+        .flex_direction(FlexDirection::Row)
+        .align_self(AlignSelf::FlexEnd)
+        .pointer_events(false);
+}
+
+fn style_character_display(style: &mut StyleBuilder) {
+    style
+        .width(Val::Percent(100.0))
+        .height(Val::Px(60.0))
+        .margin(Val::Px(2.0))
+        .flex_direction(FlexDirection::Column)
+        .justify_content(JustifyContent::SpaceBetween)
+        .align_items(AlignItems::FlexStart)
+        .background_color(NORMAL);
+}
+
+pub fn spawn_character_list(parent: &mut ChildBuilder) {
+    parent
+        .spawn(CharacterListBundle::default())
+        .with_style(style_character_list);
 }
 
 fn spawn_character_display(
@@ -63,20 +68,9 @@ fn spawn_character_display(
     parent
         .spawn((
             CharacterDisplay { character: entity },
-            ButtonBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Px(60.0),
-                    margin: UiRect::all(Val::Px(2.0)),
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::SpaceBetween,
-                    align_items: AlignItems::FlexStart,
-                    ..default()
-                },
-                background_color: NORMAL.into(),
-                ..default()
-            },
+            ButtonBundle::default(),
         ))
+        .with_style(style_character_display)
         .bind_to(entity)
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(

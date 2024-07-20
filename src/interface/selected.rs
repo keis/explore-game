@@ -1,8 +1,9 @@
 use super::{
     camp::spawn_camp_details,
-    character::CharacterListBundle,
+    character::spawn_character_list,
     color::*,
     party::spawn_party_details,
+    style::*,
     tabview::{TabView, TabViewContent, TabViewHeader},
     InterfaceAssets,
 };
@@ -25,23 +26,30 @@ pub(super) struct SelectedInnerDisplay {
     entity: Entity,
 }
 
+fn style_selected_display(style: &mut StyleBuilder) {
+    style
+        .width(Val::Px(200.0))
+        .flex_direction(FlexDirection::Column);
+}
+
+fn style_selected_item(style: &mut StyleBuilder) {
+    style
+        .width(Val::Percent(100.0))
+        .height(Val::Px(120.0))
+        .margin(Val::Px(2.0))
+        .flex_direction(FlexDirection::Column)
+        .justify_content(JustifyContent::SpaceBetween)
+        .align_items(AlignItems::FlexStart)
+        .background_color(NORMAL);
+}
+
 pub(super) fn spawn_selected_display(parent: &mut ChildBuilder, _assets: &Res<InterfaceAssets>) {
     parent
         .spawn((Name::new("Selected Display"), NodeBundle::default()))
         .with_children(|parent| {
             parent
-                .spawn((
-                    SelectedDisplay,
-                    TabView,
-                    NodeBundle {
-                        style: Style {
-                            width: Val::Px(200.0),
-                            flex_direction: FlexDirection::Column,
-                            ..default()
-                        },
-                        ..default()
-                    },
-                ))
+                .spawn((SelectedDisplay, TabView, NodeBundle::default()))
+                .with_style(style_selected_display)
                 .with_children(|parent| {
                     parent.spawn((
                         Name::new("Selected Header"),
@@ -49,7 +57,7 @@ pub(super) fn spawn_selected_display(parent: &mut ChildBuilder, _assets: &Res<In
                         NodeBundle::default(),
                     ));
                 });
-            parent.spawn(CharacterListBundle::default());
+            spawn_character_list(parent);
         });
 }
 
@@ -68,20 +76,9 @@ fn spawn_party_display(
             TabViewContent {
                 icon: assets.brutal_helm_icon.clone(),
             },
-            ButtonBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Px(120.0),
-                    margin: UiRect::all(Val::Px(2.0)),
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::SpaceBetween,
-                    align_items: AlignItems::FlexStart,
-                    ..default()
-                },
-                background_color: NORMAL.into(),
-                ..default()
-            },
+            ButtonBundle::default(),
         ))
+        .with_style(style_selected_item)
         .bind_to(entity)
         .with_children(|parent| {
             spawn_party_details(parent, entity, party, movement, members, inventory, assets);
@@ -103,19 +100,9 @@ fn spawn_camp_display(
             TabViewContent {
                 icon: assets.campfire_icon.clone(),
             },
-            ButtonBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Px(120.0),
-                    margin: UiRect::all(Val::Px(2.0)),
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::SpaceBetween,
-                    ..default()
-                },
-                background_color: NORMAL.into(),
-                ..default()
-            },
+            ButtonBundle::default(),
         ))
+        .with_style(style_selected_item)
         .bind_to(entity)
         .with_children(|parent| {
             spawn_camp_details(parent, entity, camp, members, inventory, assets);

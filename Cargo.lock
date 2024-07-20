@@ -1062,6 +1062,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_mod_stylebuilder"
+version = "0.1.1"
+source = "git+https://github.com/viridia/quill.git?branch=main#042eb3f9530ab88212394a67297b624c3dfd8b06"
+dependencies = [
+ "bevy",
+ "bevy_mod_picking",
+ "impl-trait-for-tuples",
+]
+
+[[package]]
 name = "bevy_obj"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2617,6 +2627,7 @@ dependencies = [
  "bevy_mod_billboard",
  "bevy_mod_outline",
  "bevy_mod_picking",
+ "bevy_mod_stylebuilder",
  "bevy_obj",
  "bevy_sprite3d",
  "bevy_tweening",
@@ -3181,6 +3192,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4419f022e55cc63d5bbd6b44b71e1d226b9c9480a47824c706e9d54e5c40c5eb"
 dependencies = [
  "arrayvec",
+]
+
+[[package]]
+name = "impl-trait-for-tuples"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11d7a9f6330b71fea57921c9b61c47ee6e84f72d394754eff6163ae67e7395eb"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
