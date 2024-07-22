@@ -1000,9 +1000,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_mod_outline"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33f22156ddd429c13b4907696c08b80942f43f4f992bc06a96603377deb1a0c8"
+checksum = "e87cf62d49e32614183a7650b179dee34df76d8e3269661747f83fb0c380e96a"
 dependencies = [
  "bevy",
  "bitfield",
@@ -1064,7 +1064,7 @@ dependencies = [
 [[package]]
 name = "bevy_mod_stylebuilder"
 version = "0.1.1"
-source = "git+https://github.com/viridia/quill.git?branch=main#042eb3f9530ab88212394a67297b624c3dfd8b06"
+source = "git+https://github.com/viridia/quill.git?branch=main#479fc2aedfd5646abf88aa1f1dec7ee018829813"
 dependencies = [
  "bevy",
  "bevy_mod_picking",
@@ -3664,9 +3664,9 @@ dependencies = [
 
 [[package]]
 name = "moonshine-save"
-version = "0.3.8"
+version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e873f85e2ecb75e4bc7f4724a8e7d82eafe25b73c500375f3918479e43dabd08"
+checksum = "60273a4dc91845e6e3c12e50b5741ddb2f5ac08e72804a25e141c9a0bf181c1c"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -3681,9 +3681,9 @@ dependencies = [
 
 [[package]]
 name = "moonshine-util"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d967ef3709f52567936776de126609e2ab067ee0f01fbfc717e09044f34751ab"
+checksum = "53e838a4782c68a79e5191e79023fde03dc70da08a0102da57523e772012cf82"
 dependencies = [
  "bevy_ecs",
  "bevy_hierarchy",
