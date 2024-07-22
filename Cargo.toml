@@ -10,6 +10,11 @@ bevy_ecs = "0.14"
 bevy_reflect = "0.14"
 bevy_render = "0.14"
 clap = "4.5"
+expl_codex = { version = "0.1.0", path = "crates/expl_codex" }
+expl_databinding = { version = "0.1.0", path = "crates/expl_databinding" }
+expl_hexagon = { version = "0.1.0", path = "crates/expl_hexagon" }
+expl_hexgrid = { version = "0.1.0", path = "crates/expl_hexgrid", features = ["bevy-reflect"] }
+expl_wfc = { version = "0.1.0", path = "crates/expl_wfc" }
 glam = "0.27"
 itertools = "0.12"
 rand = "0.8"
@@ -45,11 +50,11 @@ bevy = { version = "0.14", features = ["wayland", "dynamic_linking", "file_watch
 bitflags = "2"
 clap = { workspace = true, features = ["derive"] }
 enum-map = "2.7.3"
-expl_codex = { version = "0.1.0", path = "crates/expl_codex" }
-expl_databinding = { version = "0.1.0", path = "crates/expl_databinding" }
-expl_hexagon = { version = "0.1.0", path = "crates/expl_hexagon" }
-expl_hexgrid = { path = "crates/expl_hexgrid", features = ["bevy-reflect"] }
-expl_wfc = { path = "crates/expl_wfc" }
+expl_codex = { workspace = true }
+expl_databinding = { workspace = true }
+expl_hexagon = { workspace = true }
+expl_hexgrid = { workspace = true }
+expl_wfc = { workspace = true }
 futures-lite = "2"
 glam.workspace = true
 interpolation = "0.3"
