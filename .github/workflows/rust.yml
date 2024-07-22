@@ -30,7 +30,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang
-    - uses: Leafwing-Studios/cargo-cache@v1
+    - uses: Leafwing-Studios/cargo-cache@v2
     - name: Test
       run: cargo test
   clippy:
@@ -53,7 +53,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang
-    - uses: Leafwing-Studios/cargo-cache@v1
+    - uses: Leafwing-Studios/cargo-cache@v2
     - name: Clippy
       uses: sksat/action-clippy@v1.0.0
       with:
