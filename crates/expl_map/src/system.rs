@@ -1,5 +1,8 @@
 use super::{component::*, event::*};
-use bevy::prelude::*;
+use bevy_ecs::prelude::*;
+use bevy_hierarchy::Children;
+use bevy_log::info;
+use bevy_render::view::visibility::Visibility;
 
 pub fn log_moves(
     mut map_events: EventReader<MapEvent>,

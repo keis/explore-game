@@ -4,11 +4,11 @@ use crate::{
     actor::{Character, Members, Party},
     camera::{CameraControl, CameraTarget},
     interface::InterfaceState,
-    map::{MapPresence, PresenceLayer},
     path::PathGuided,
     structure::Camp,
 };
 use bevy::prelude::*;
+use expl_map::{MapPresence, PresenceLayer};
 pub use leafwing_input_manager::prelude::ActionState;
 use leafwing_input_manager::prelude::*;
 

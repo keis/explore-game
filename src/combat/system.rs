@@ -3,9 +3,9 @@ use crate::{
     actor::{Character, Enemy, Group, GroupCommandsExt, Members},
     creature::{Attack, Corpse, Health},
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
-    map::{MapCommandsExt, MapEvent, PresenceLayer},
 };
 use bevy::{color::palettes::css, prelude::*};
+use expl_map::{MapCommandsExt, MapEvent, PresenceLayer};
 use rand::Rng;
 
 pub fn combat_log(mut combat_events: EventReader<CombatEvent>, combat_query: Query<&Combat>) {

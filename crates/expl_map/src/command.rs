@@ -1,5 +1,6 @@
 use super::{HexCoord, MapEvent, MapPresence, PresenceLayer};
-use bevy::{ecs::system::EntityCommands, ecs::world::Command, prelude::*};
+use bevy_ecs::{prelude::*, system::EntityCommands, world::Command};
+use bevy_hierarchy::despawn_with_children_recursive;
 use smallvec::SmallVec;
 
 struct AddMapPresence {

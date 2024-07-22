@@ -1,4 +1,6 @@
-use bevy::prelude::*;
+use bevy_derive::Deref;
+use bevy_ecs::prelude::*;
+use bevy_reflect::Reflect;
 use expl_hexgrid::{layout::SquareGridLayout, Grid, HexCoord};
 use std::collections::hash_set::HashSet;
 

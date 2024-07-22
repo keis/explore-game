@@ -2596,6 +2596,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "expl_map"
+version = "0.1.0"
+dependencies = [
+ "bevy_app",
+ "bevy_derive",
+ "bevy_ecs",
+ "bevy_hierarchy",
+ "bevy_log",
+ "bevy_reflect",
+ "bevy_render",
+ "expl_hexgrid",
+ "smallvec",
+]
+
+[[package]]
 name = "expl_wfc"
 version = "0.1.0"
 dependencies = [
@@ -2638,6 +2653,7 @@ dependencies = [
  "expl_databinding",
  "expl_hexagon",
  "expl_hexgrid",
+ "expl_map",
  "expl_wfc",
  "futures-lite",
  "glam",

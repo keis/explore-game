@@ -1,8 +1,6 @@
-use crate::{
-    actor::Party,
-    map::{HexCoord, MapPresence, ViewRadius},
-};
+use crate::actor::Party;
 use bevy::{ecs::system::SystemParam, prelude::*};
+use expl_map::{HexCoord, MapPresence, ViewRadius};
 
 #[derive(SystemParam)]
 pub struct Target<'w, 's> {

@@ -1,6 +1,7 @@
 use super::{event::*, system::*};
-use crate::{action::ActionUpdate, assets::AssetState, map::MapEvent};
+use crate::{action::ActionUpdate, assets::AssetState};
 use bevy::{prelude::*, time::common_conditions::on_timer};
+use expl_map::MapEvent;
 use std::time::Duration;
 
 pub struct CombatPlugin;

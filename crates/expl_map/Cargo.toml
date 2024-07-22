@@ -1,0 +1,16 @@
+[package]
+name = "expl_map"
+version = "0.1.0"
+edition = "2021"
+license = "ISC"
+
+[dependencies]
+bevy_app = { workspace = true }
+bevy_derive = { workspace = true }
+bevy_ecs = { workspace = true }
+bevy_hierarchy = { workspace = true }
+bevy_log = { workspace = true }
+bevy_reflect = { workspace = true }
+bevy_render = { workspace = true }
+expl_hexgrid = { workspace = true }
+smallvec = { workspace = true }

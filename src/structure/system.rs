@@ -3,13 +3,13 @@ use crate::{
     actor::{ActorCodex, ActorParams, EnemyBundle, Members},
     creature::{CreatureCodex, Health},
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
-    map::{Fog, MapCommandsExt, MapPresence, PresenceLayer, ViewRadius},
     material::PortalMaterial,
     role::RoleCommandsExt,
     scene::save,
     ExplError,
 };
 use bevy::{color::palettes::css, pbr::NotShadowCaster, prelude::*};
+use expl_map::{Fog, MapCommandsExt, MapPresence, PresenceLayer, ViewRadius};
 
 #[allow(clippy::type_complexity)]
 pub fn fluff_structure(

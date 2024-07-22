@@ -1,11 +1,11 @@
 use crate::{
     assets::CodexAssets,
-    map::ZoneLayer,
     terrain::{Terrain, TerrainId},
 };
 use bevy::prelude::*;
 use expl_codex::Codex;
 use expl_hexgrid::layout::SquareGridLayout;
+use expl_map::ZoneLayer;
 use rstest::*;
 
 pub fn spawn_game_map(app: &mut App) -> Entity {

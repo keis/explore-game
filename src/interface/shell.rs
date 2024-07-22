@@ -9,12 +9,12 @@ use super::{
 };
 use crate::{
     input::{Action, ActionState},
-    map::MapPosition,
     terrain::TerrainId,
     turn::Turn,
 };
 use bevy::prelude::*;
 use bevy_mod_picking::prelude::{Pickable, PickingInteraction};
+use expl_map::MapPosition;
 
 #[derive(Component)]
 pub struct Shell;

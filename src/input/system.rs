@@ -4,7 +4,6 @@ use crate::{
     color,
     combat::Combat,
     creature::Movement,
-    map::{MapPosition, MapPresence},
     path::{PathFinder, PathGuided},
     terrain::TerrainId,
     ExplError,
@@ -12,6 +11,7 @@ use crate::{
 use bevy::prelude::*;
 use bevy_mod_outline::OutlineVolume;
 use bevy_mod_picking::prelude::{Click, Out, Over, Pointer, PointerButton};
+use expl_map::{MapPosition, MapPresence};
 use std::iter;
 
 #[allow(clippy::too_many_arguments)]

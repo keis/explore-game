@@ -2,13 +2,10 @@ use super::{
     asset::{Decoration, Terrain},
     component::{Height, OuterTerrain, TerrainId},
 };
-use crate::{
-    assets::CodexAssets,
-    map::{HexCoord, ZoneLayer},
-    ExplError,
-};
+use crate::{assets::CodexAssets, ExplError};
 use bevy::{ecs::system::SystemParam, prelude::*};
 use expl_codex::Codex;
+use expl_map::{HexCoord, ZoneLayer};
 use glam::Vec3Swizzles;
 
 #[derive(SystemParam)]

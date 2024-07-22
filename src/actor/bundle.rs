@@ -3,7 +3,6 @@ use crate::{
     creature::{Creature, CreatureBundle, Movement},
     input::{DefaultOutlineVolume, Selection, SelectionBundle},
     inventory::Inventory,
-    map::{FogRevealer, HexCoord, MapPresence, ViewRadius},
     path::PathGuided,
     role::Role,
     terrain::HeightQuery,
@@ -11,6 +10,7 @@ use crate::{
 use bevy::prelude::*;
 use bevy_mod_outline::{OutlineBundle, OutlineVolume};
 use expl_codex::{Codex, Id};
+use expl_map::{FogRevealer, HexCoord, MapPresence, ViewRadius};
 
 pub type ActorParams<'w, 's> = (ResMut<'w, Assets<StandardMaterial>>, HeightQuery<'w, 's>);
 

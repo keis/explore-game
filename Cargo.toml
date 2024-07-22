@@ -6,7 +6,10 @@ default-members = [".", "crates/*"]
 bevy_app = "0.14"
 bevy_asset = "0.14"
 bevy_core = "0.14"
+bevy_derive = "0.14"
 bevy_ecs = "0.14"
+bevy_hierarchy = "0.14"
+bevy_log = "0.14"
 bevy_reflect = "0.14"
 bevy_render = "0.14"
 clap = "4.5"
@@ -14,6 +17,7 @@ expl_codex = { version = "0.1.0", path = "crates/expl_codex" }
 expl_databinding = { version = "0.1.0", path = "crates/expl_databinding" }
 expl_hexagon = { version = "0.1.0", path = "crates/expl_hexagon" }
 expl_hexgrid = { version = "0.1.0", path = "crates/expl_hexgrid", features = ["bevy-reflect"] }
+expl_map = { version = "0.1.0", path = "crates/expl_map" }
 expl_wfc = { version = "0.1.0", path = "crates/expl_wfc" }
 glam = "0.27"
 itertools = "0.12"
@@ -55,6 +59,7 @@ expl_databinding = { workspace = true }
 expl_hexagon = { workspace = true }
 expl_hexgrid = { workspace = true }
 expl_wfc = { workspace = true }
+expl_map = { workspace = true }
 futures-lite = "2"
 glam.workspace = true
 interpolation = "0.3"

@@ -1,6 +1,7 @@
-use crate::{map::Fog, structure::Structure, terrain::Decoration};
+use crate::{structure::Structure, terrain::Decoration};
 use bevy::{prelude::*, reflect::TypePath, render::render_resource::*};
 use expl_codex::{Codex, Id};
+use expl_map::Fog;
 
 #[derive(Default)]
 pub struct TerrainMaterialPlugin;

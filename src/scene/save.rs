@@ -1,5 +1,6 @@
-use crate::{actor, creature, input, inventory, map, structure, terrain, turn};
+use crate::{actor, creature, input, inventory, structure, terrain, turn};
 use bevy::prelude::*;
+use expl_map;
 use moonshine_save::save::SaveFilter;
 use platform_dirs::AppDirs;
 use std::path::PathBuf;
@@ -10,7 +11,7 @@ pub use moonshine_save::prelude::{save_with, LoadSystem, Save};
 pub struct Loaded;
 
 pub fn maybe_mark_as_loaded(world: &mut World) {
-    if world.query::<&map::MapLayout>().iter(world).len() != 0 {
+    if world.query::<&expl_map::MapLayout>().iter(world).len() != 0 {
         world.insert_resource(Loaded);
     }
 }
@@ -39,12 +40,12 @@ pub fn filter_with_enabled_components() -> SaveFilter {
         .allow::<creature::Movement>()
         .allow::<input::Selection>()
         .allow::<inventory::Inventory>()
-        .allow::<map::Fog>()
-        .allow::<map::FogRevealer>()
-        .allow::<map::MapLayout>()
-        .allow::<map::MapPosition>()
-        .allow::<map::MapPresence>()
-        .allow::<map::ViewRadius>()
+        .allow::<expl_map::Fog>()
+        .allow::<expl_map::FogRevealer>()
+        .allow::<expl_map::MapLayout>()
+        .allow::<expl_map::MapPosition>()
+        .allow::<expl_map::MapPresence>()
+        .allow::<expl_map::ViewRadius>()
         .allow::<structure::Camp>()
         .allow::<structure::Portal>()
         .allow::<structure::SafeHaven>()
