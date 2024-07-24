@@ -1,12 +1,7 @@
 use super::{bundle::*, component::*, event::*, system_param::*};
-use crate::{
-    creature::Movement,
-    map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
-    role::RoleCommandsExt,
-    terrain::HeightQuery,
-    ExplError,
-};
+use crate::{creature::Movement, role::RoleCommandsExt, terrain::HeightQuery, ExplError};
 use bevy::prelude::*;
+use expl_map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer};
 use interpolation::Ease;
 
 pub fn reset_movement_points(mut movement_query: Query<&mut Movement>) {

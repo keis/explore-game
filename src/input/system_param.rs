@@ -1,9 +1,10 @@
 use super::{action::*, component::*, event::*};
-use crate::{creature::Movement, map::MapPresence};
+use crate::creature::Movement;
 use bevy::{
     ecs::{query::QueryFilter, system::SystemParam},
     prelude::*,
 };
+use expl_map::MapPresence;
 
 #[derive(SystemParam)]
 pub struct NextSelectionQuery<'w, 's> {

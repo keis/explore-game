@@ -10,7 +10,7 @@ bench = false
 [dependencies]
 bincode = "1.3"
 data-encoding = "2.6"
-expl_hexgrid = { path = "../expl_hexgrid" }
+expl_hexgrid = { workspace = true }
 fixedbitset = "0.5"
 rand = { workspace = true }
 rand_xoshiro = "0.6"

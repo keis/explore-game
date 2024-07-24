@@ -1,7 +1,8 @@
 use super::component::*;
-use crate::{assets::MainAssets, floating_text::FloatingTextSource, map::HexCoord};
+use crate::{assets::MainAssets, floating_text::FloatingTextSource};
 use bevy::prelude::*;
 use bevy_sprite3d::{Sprite3d, Sprite3dBundle, Sprite3dParams};
+use expl_hexgrid::HexCoord;
 use smallvec::SmallVec;
 
 #[derive(Bundle)]

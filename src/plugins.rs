@@ -2,9 +2,9 @@ use crate::{
     action::ActionPlugin, actor::ActorPlugin, assets::AssetsPlugin, camera::CameraControlPlugin,
     combat::CombatPlugin, creature::CreaturePlugin, enemy::EnemyPlugin,
     floating_text::FloatingTextPlugin, input::InputPlugin, inspector::InspectorPlugin,
-    interface::InterfacePlugin, inventory::InventoryPlugin, map::MapPlugin,
-    map_generator::MapGeneratorPlugin, path::PathPlugin, scene::ScenePlugin,
-    structure::StructurePlugin, terrain::TerrainPlugin, turn::TurnPlugin,
+    interface::InterfacePlugin, inventory::InventoryPlugin, map_generator::MapGeneratorPlugin,
+    path::PathPlugin, scene::ScenePlugin, structure::StructurePlugin, terrain::TerrainPlugin,
+    turn::TurnPlugin,
 };
 use bevy::app::{PluginGroup, PluginGroupBuilder};
 
@@ -18,6 +18,7 @@ impl PluginGroup for ExplPlugins {
             .add(bevy_obj::ObjPlugin)
             .add(bevy_sprite3d::Sprite3dPlugin)
             .add(expl_databinding::DataBindingPlugin)
+            .add(expl_map::MapPlugin)
             .add(noisy_bevy::NoisyShaderPlugin)
             .add(ActionPlugin)
             .add(ActorPlugin)
@@ -32,7 +33,6 @@ impl PluginGroup for ExplPlugins {
             .add(InterfacePlugin)
             .add(InventoryPlugin)
             .add(MapGeneratorPlugin)
-            .add(MapPlugin)
             .add(PathPlugin)
             .add(ScenePlugin)
             .add(StructurePlugin)

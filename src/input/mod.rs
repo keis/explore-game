@@ -23,10 +23,9 @@ pub use system_param::*;
 #[cfg(test)]
 mod tests {
     use super::{action::*, system::*, Action, ActionState, Deselect, Select, Selection};
-    use crate::{
-        camera::CameraControl, creature::Movement, map::MapPresence, test_fixture::spawn_game_map,
-    };
+    use crate::{camera::CameraControl, creature::Movement, test_fixture::spawn_game_map};
     use bevy::prelude::*;
+    use expl_map::MapPresence;
     use rstest::*;
 
     #[fixture]

@@ -2,11 +2,11 @@ use super::system_param::*;
 use crate::{
     action::{GameAction, GameActionQueue},
     actor::Enemy,
-    map::{HexCoord, MapPresence, PresenceLayer, ViewRadius, ZoneLayer},
     path::PathFinder,
     ExplError,
 };
 use bevy::prelude::*;
+use expl_map::{HexCoord, MapPresence, PresenceLayer, ViewRadius, ZoneLayer};
 use rand::{seq::SliceRandom, thread_rng};
 
 pub fn move_enemy(

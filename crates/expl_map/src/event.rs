@@ -1,5 +1,5 @@
 use super::HexCoord;
-use bevy::prelude::*;
+use bevy_ecs::prelude::*;
 
 #[derive(Event)]
 pub enum MapEvent {

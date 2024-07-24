@@ -1,5 +1,6 @@
 use super::{component::*, event::*, system::*};
-use bevy::prelude::*;
+use bevy_app::prelude::*;
+use bevy_ecs::prelude::*;
 use expl_hexgrid::{layout::SquareGridLayout, HexCoord};
 
 pub struct MapPlugin;

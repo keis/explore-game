@@ -1,5 +1,5 @@
-use crate::map::HexCoord;
 use bevy::prelude::*;
+use expl_hexgrid::HexCoord;
 use smallvec::SmallVec;
 
 #[derive(Component)]

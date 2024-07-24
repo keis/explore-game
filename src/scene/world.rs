@@ -2,7 +2,6 @@ use super::save;
 use crate::{
     actor::{ActorCodex, ActorParams, CharacterBundle, GroupCommandsExt, PartyBundle},
     creature::CreatureCodex,
-    map::{MapCommandsExt, MapLayout, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     map_generator::{GenerateMapTask, MapPrototype, MapSeed},
     role::RoleCommandsExt,
     structure::{PortalBundle, SafeHavenBundle, SpawnerBundle, StructureCodex, StructureParams},
@@ -13,6 +12,7 @@ use crate::{
 use bevy::prelude::*;
 use expl_codex::Id;
 use expl_hexgrid::{layout::GridLayout, HexCoord, Neighbours};
+use expl_map::{MapCommandsExt, MapLayout, MapPosition, MapPresence, PresenceLayer, ZoneLayer};
 use expl_wfc::{Seed, SeedType};
 use std::collections::HashMap;
 

@@ -1,13 +1,9 @@
 use super::{asset::*, bundle::*, component::*, system_param::*};
-use crate::{
-    map::{Fog, MapEvent, MapLayout, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
-    role::RoleCommandsExt,
-    structure::Camp,
-    ExplError,
-};
+use crate::{role::RoleCommandsExt, structure::Camp, ExplError};
 use bevy::prelude::*;
 use expl_codex::Id;
 use expl_hexgrid::{Grid, Neighbours};
+use expl_map::{Fog, MapEvent, MapLayout, MapPosition, MapPresence, PresenceLayer, ZoneLayer};
 
 pub fn despawn_empty_crystal_deposit(
     mut commands: Commands,

@@ -1,11 +1,9 @@
-use crate::{
-    input::{Action, ActionState},
-    map::HexCoord,
-};
+use crate::input::{Action, ActionState};
 use bevy::{
     prelude::*,
     window::{CursorGrabMode, PrimaryWindow},
 };
+use expl_hexgrid::HexCoord;
 
 pub struct CameraControlPlugin;
 

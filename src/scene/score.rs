@@ -1,8 +1,7 @@
 use super::SceneState;
-use crate::{
-    actor::Members, creature::Corpse, inventory::Inventory, map::MapPresence, structure::SafeHaven,
-};
+use crate::{actor::Members, creature::Corpse, inventory::Inventory, structure::SafeHaven};
 use bevy::prelude::*;
+use expl_map::MapPresence;
 
 #[derive(Component, Reflect, Default, Debug)]
 #[reflect(Component)]

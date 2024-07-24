@@ -1,7 +1,6 @@
 use crate::{
     assets::{AssetState, CodexAssets},
     input::{ZoneOut, ZoneOver},
-    map::Fog,
     terrain::{OuterVisible, Terrain, TerrainCodex, TerrainId},
 };
 use bevy::{
@@ -14,6 +13,7 @@ use bevy::{
 };
 use expl_codex::{Codex, Id};
 use expl_hexgrid::Neighbours;
+use expl_map::Fog;
 
 #[derive(Default)]
 pub struct ZoneMaterialPlugin;

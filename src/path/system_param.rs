@@ -1,10 +1,10 @@
 use crate::{
-    map::{HexCoord, ZoneLayer},
     terrain::{Terrain, TerrainCodex, TerrainId},
     ExplError,
 };
 use bevy::{ecs::system::SystemParam, prelude::*};
 use expl_codex::Codex;
+use expl_map::{HexCoord, ZoneLayer};
 use pathfinding::prelude::astar;
 
 #[derive(SystemParam)]

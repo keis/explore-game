@@ -1,6 +1,5 @@
 use super::{asset::*, component::*};
 use crate::{
-    map::{Fog, HexCoord, MapPosition},
     map_generator::ZonePrototype,
     material::{TerrainBuffer, TerrainMaterial, WaterMaterial, ZoneMaterial},
     role::Role,
@@ -9,6 +8,7 @@ use bevy::{pbr::NotShadowCaster, prelude::*};
 use bevy_mod_picking::prelude::{Pickable, PickingInteraction};
 use expl_codex::{Codex, Id};
 use expl_hexgrid::Neighbours;
+use expl_map::{Fog, HexCoord, MapPosition};
 use glam::Vec3Swizzles;
 
 pub type ZoneDecorationParams<'w> = ResMut<'w, Assets<TerrainMaterial>>;

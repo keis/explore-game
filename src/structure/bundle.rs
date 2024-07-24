@@ -5,7 +5,6 @@ use crate::{
     floating_text::FloatingTextSource,
     input::{DefaultOutlineVolume, SelectionBundle},
     inventory::Inventory,
-    map::{Fog, FogRevealer, HexCoord, MapPresence, ViewRadius},
     material::TerrainMaterial,
     role::Role,
     terrain::HeightQuery,
@@ -13,6 +12,7 @@ use crate::{
 use bevy::prelude::*;
 use bevy_mod_outline::{OutlineBundle, OutlineVolume};
 use expl_codex::{Codex, Id};
+use expl_map::{Fog, FogRevealer, HexCoord, MapPresence, ViewRadius};
 
 pub type StructureParams<'w, 's> = (ResMut<'w, Assets<TerrainMaterial>>, HeightQuery<'w, 's>);
 

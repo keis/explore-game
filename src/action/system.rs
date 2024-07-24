@@ -6,7 +6,6 @@ use crate::{
     combat::CombatEvent,
     creature::Movement,
     inventory::Inventory,
-    map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer},
     path::PathGuided,
     role::RoleCommandsExt,
     scene::save,
@@ -15,6 +14,7 @@ use crate::{
     ExplError,
 };
 use bevy::prelude::*;
+use expl_map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer};
 use smallvec::SmallVec;
 
 pub fn apply_action(world: &mut World) -> Result<(), ExplError> {
