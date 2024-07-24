@@ -21,3 +21,9 @@ pub fn style_icon(style: &mut StyleBuilder) {
 pub fn style_small_icon(style: &mut StyleBuilder) {
     style.width(Val::Px(20.0)).height(Val::Px(20.0));
 }
+
+pub fn style_outliner(style: &mut StyleBuilder) {
+    style
+        .flex_direction(FlexDirection::Column)
+        .pointer_events(false);
+}

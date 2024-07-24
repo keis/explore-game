@@ -1,10 +1,10 @@
 use super::{
     color::{NORMAL, SELECTED},
-    party::PartySizeText,
-    stat::spawn_stat_display,
-    style::*,
-    styles::{style_button, style_icon},
-    InterfaceAssets,
+    prelude::*,
+    resource::*,
+    stat::StatDisplay,
+    styles::{style_button, style_icon, style_outliner},
+    InterfaceAssets, DEFAULT_FONT,
 };
 use crate::{
     actor::{Character, Members},
@@ -12,158 +12,110 @@ use crate::{
     inventory::Inventory,
     structure::Camp,
 };
-use bevy::prelude::*;
-use expl_databinding::{DataBindingExt, DataBindingUpdate};
 
-#[derive(Component)]
+fn style_title_text(style: &mut StyleBuilder) {
+    style.font(DEFAULT_FONT).font_size(32.0).color(css::WHITE);
+}
+
+#[derive(Clone, PartialEq)]
 pub struct CampList;
 
-#[derive(Component, Debug)]
-pub struct CampDisplay {
-    camp: Entity,
+#[derive(Clone, PartialEq)]
+pub struct CampIcon {
+    target: Entity,
 }
 
-#[derive(Component)]
-pub struct CampCrystalsText;
-
-#[derive(Bundle)]
-pub struct CampListBundle {
-    node_bundle: NodeBundle,
-    camp_list: CampList,
-}
-
-impl Default for CampListBundle {
-    fn default() -> Self {
-        Self {
-            node_bundle: NodeBundle::default(),
-            camp_list: CampList,
-        }
+impl CampIcon {
+    pub fn new(target: Entity) -> Self {
+        Self { target }
     }
 }
 
-fn spawn_camp_display(parent: &mut ChildBuilder, entity: Entity, assets: &Res<InterfaceAssets>) {
-    parent
-        .spawn((CampDisplay { camp: entity }, ButtonBundle::default()))
-        .with_style(style_button)
-        .bind_to(entity)
-        .with_children(|parent| {
-            parent
-                .spawn(ImageBundle {
-                    image: assets.campfire_icon.clone().into(),
-                    ..default()
-                })
-                .with_style(style_icon);
-        });
+#[derive(Clone, PartialEq)]
+pub struct CampDetails {
+    target: Entity,
 }
 
-pub fn spawn_camp_details(
-    parent: &mut ChildBuilder,
-    entity: Entity,
-    camp: &Camp,
-    members: &Members,
-    inventory: &Inventory,
-    assets: &Res<InterfaceAssets>,
-) {
-    parent.spawn(TextBundle::from_section(
-        camp.name.clone(),
-        TextStyle {
-            font: assets.font.clone(),
-            font_size: 32.0,
-            color: Color::WHITE,
-        },
-    ));
-    parent.spawn(NodeBundle::default()).with_children(|parent| {
-        spawn_stat_display(
-            parent,
-            assets,
-            entity,
-            CampCrystalsText,
-            assets.crystals_icon.clone(),
-            format!("{}", inventory.count_item(Inventory::CRYSTAL)),
+impl CampDetails {
+    pub fn new(target: Entity) -> Self {
+        Self { target }
+    }
+}
+
+impl ViewTemplate for CampList {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let camp_index = cx.use_resource::<Index<Camp>>();
+        Element::<NodeBundle>::new()
+            .style(style_outliner)
+            .children(For::each(camp_index.0.clone(), |&target| {
+                CampIcon::new(target)
+            }))
+    }
+}
+
+impl ViewTemplate for CampIcon {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let target = self.target;
+        let assets = cx.use_resource::<InterfaceAssets>();
+        let icon = assets.campfire_icon.clone();
+        let selection = cx
+            .use_component::<Selection>(target)
+            .cloned()
+            .unwrap_or_default();
+        let on_click = cx.create_callback(
+            move |camp: In<Entity>, mut selection: SelectionUpdate<Without<Character>>| {
+                selection.toggle(*camp);
+            },
         );
-        spawn_stat_display(
-            parent,
-            assets,
-            entity,
-            PartySizeText,
-            assets.person_icon.clone(),
-            format!("{}", members.len()),
-        );
-    });
-}
-
-pub fn update_camp_list(
-    mut commands: Commands,
-    assets: Res<InterfaceAssets>,
-    camp_list_query: Query<Entity, With<CampList>>,
-    camp_query: Query<Entity, Added<Camp>>,
-    camp_display_query: Query<(Entity, &CampDisplay)>,
-) {
-    let camp_list = camp_list_query.single();
-    for entity in camp_query.iter() {
-        if camp_display_query
-            .iter()
-            .any(|(_, display)| display.camp == entity)
-        {
-            continue;
-        }
-        commands.get_or_spawn(camp_list).with_children(|parent| {
-            spawn_camp_display(parent, entity, &assets);
-        });
+        Element::<ButtonBundle>::new()
+            .style((style_button, style_icon, move |sb: &mut StyleBuilder| {
+                sb.background_image(icon.clone());
+            }))
+            .style_dyn(
+                |selection, sb| {
+                    sb.background_color(if selection.is_selected {
+                        SELECTED
+                    } else {
+                        NORMAL
+                    });
+                },
+                selection,
+            )
+            .insert_dyn(
+                move |_| {
+                    On::<Pointer<Click>>::run(move |world: &mut World| {
+                        world.run_callback(on_click, target);
+                    })
+                },
+                (),
+            )
     }
 }
 
-pub(super) fn remove_despawned(
-    mut commands: Commands,
-    mut removed_camp: RemovedComponents<Camp>,
-    camp_display_query: Query<(Entity, &CampDisplay)>,
-) {
-    for entity in removed_camp.read() {
-        if let Some((display_entity, _)) = camp_display_query
-            .iter()
-            .find(|(_, display)| display.camp == entity)
-        {
-            commands.entity(display_entity).remove_parent();
-            commands.entity(display_entity).despawn_recursive();
-        }
-    }
-}
+impl ViewTemplate for CampDetails {
+    type View = impl View;
 
-#[allow(clippy::type_complexity)]
-pub fn update_camp_selection(
-    mut data_binding_update: DataBindingUpdate<
-        &Selection,
-        &mut BackgroundColor,
-        (Changed<Selection>, With<Camp>),
-    >,
-) {
-    data_binding_update.for_each(|selection, background_color| {
-        **background_color = if selection.is_selected {
-            SELECTED
-        } else {
-            NORMAL
-        }
-        .into();
-    });
-}
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let assets = cx.use_resource::<InterfaceAssets>();
+        let camp = cx.use_component::<Camp>(self.target).unwrap();
+        let members = cx.use_component::<Members>(self.target).unwrap();
+        let inventory = cx.use_component::<Inventory>(self.target).unwrap();
 
-pub fn update_camp_crystals(
-    mut data_binding_update: DataBindingUpdate<
-        &Inventory,
-        &mut Text,
-        (Changed<Inventory>, With<Camp>),
-    >,
-) {
-    data_binding_update.for_each(|inventory, text| {
-        text.sections[0].value = format!("{}", inventory.count_item(Inventory::CRYSTAL));
-    });
-}
-
-pub fn handle_camp_display_interaction(
-    interaction_query: Query<(&Interaction, &CampDisplay), Changed<Interaction>>,
-    mut selection: SelectionUpdate<Without<Character>>,
-) {
-    if let Ok((Interaction::Pressed, display)) = interaction_query.get_single() {
-        selection.toggle(display.camp);
+        (
+            Element::<NodeBundle>::new()
+                .style(style_title_text)
+                .children(camp.name.clone()),
+            Element::<NodeBundle>::new().children((
+                StatDisplay::new(assets.person_icon.clone(), format!("{}", members.len())),
+                StatDisplay::new(
+                    assets.crystals_icon.clone(),
+                    format!("{}", inventory.count_item(Inventory::CRYSTAL)),
+                ),
+            )),
+        )
     }
 }

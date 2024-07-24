@@ -16,6 +16,7 @@ impl PluginGroup for ExplPlugins {
             .add(bevy_mod_billboard::prelude::BillboardPlugin)
             .add(bevy_mod_outline::OutlinePlugin)
             .add(bevy_obj::ObjPlugin)
+            .add(bevy_quill_core::QuillPlugin)
             .add(bevy_sprite3d::Sprite3dPlugin)
             .add(expl_databinding::DataBindingPlugin)
             .add(expl_map::MapPlugin)

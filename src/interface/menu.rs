@@ -1,32 +1,14 @@
 use super::{
-    color::{BACKGROUND, HOVERED, MENU, NORMAL, PRESSED},
-    style::*,
-    styles::{style_button, style_root_container},
-    InterfaceAssets, InterfaceState,
+    color::{BACKGROUND, MENU},
+    prelude::*,
+    styles::style_root_container,
+    widget::Button,
+    InterfaceState, DEFAULT_FONT,
 };
 use crate::{
     input::{Action, ActionState},
     scene::SceneState,
 };
-use bevy::prelude::*;
-
-#[derive(Component)]
-pub struct MenuLayer;
-
-#[derive(Component)]
-pub struct MenuItem;
-
-#[derive(Component)]
-pub struct MenuItemResume;
-
-#[derive(Component)]
-pub struct MenuItemNewGame;
-
-#[derive(Component)]
-pub struct MenuItemSave;
-
-#[derive(Component)]
-pub struct MenuItemQuit;
 
 fn style_menu_button(style: &mut StyleBuilder) {
     style
@@ -52,125 +34,92 @@ fn style_menu(style: &mut StyleBuilder) {
         .background_color(MENU);
 }
 
-fn spawn_menu_item(
-    parent: &mut ChildBuilder,
-    assets: &Res<InterfaceAssets>,
-    tag: impl Component,
-    text: &str,
-) {
-    parent
-        .spawn((ButtonBundle::default(), MenuItem, tag))
-        .with_style((style_button, style_menu_button))
-        .with_children(|parent| {
-            parent.spawn(TextBundle::from_section(
-                text,
-                TextStyle {
-                    font: assets.font.clone(),
-                    font_size: 32.0,
-                    color: Color::WHITE,
-                },
-            ));
-        });
+fn style_text(style: &mut StyleBuilder) {
+    style.font(DEFAULT_FONT).color(css::WHITE).font_size(32.0);
 }
 
-pub fn spawn_menu(mut commands: Commands, assets: Res<InterfaceAssets>) {
-    commands
-        .spawn((
-            Name::new("Menu Container"),
-            NodeBundle::default(),
-            MenuLayer,
+#[derive(Clone, PartialEq)]
+struct MenuItem {
+    label: &'static str,
+    on_click: Callback,
+}
+
+impl ViewTemplate for MenuItem {
+    type View = impl View;
+
+    fn create(&self, _cx: &mut Cx) -> Self::View {
+        Button::new()
+            .on_click(self.on_click)
+            .style((style_menu_button, style_text))
+            .children(self.label)
+    }
+}
+
+#[derive(Clone, PartialEq)]
+struct Menu;
+
+impl ViewTemplate for Menu {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        Element::<NodeBundle>::new().style(style_menu).children((
+            MenuItem {
+                label: "Resume",
+                on_click: cx.create_callback(handle_resume),
+            },
+            MenuItem {
+                label: "New game",
+                on_click: cx.create_callback(handle_new_game),
+            },
+            MenuItem {
+                label: "Save",
+                on_click: cx.create_callback(handle_save),
+            },
+            MenuItem {
+                label: "Quit",
+                on_click: cx.create_callback(handle_quit),
+            },
         ))
-        .with_style((style_root_container, style_menu_container))
-        .with_children(|parent| {
-            parent
-                .spawn(NodeBundle::default())
-                .with_style(style_menu)
-                .with_children(|parent| {
-                    spawn_menu_item(parent, &assets, MenuItemResume, "Resume");
-                    spawn_menu_item(parent, &assets, MenuItemNewGame, "New game");
-                    spawn_menu_item(parent, &assets, MenuItemSave, "Save");
-                    spawn_menu_item(parent, &assets, MenuItemQuit, "Quit");
-                });
-        });
+    }
 }
 
-pub fn show_menu(mut menu_layer_query: Query<&mut Visibility, With<MenuLayer>>) {
-    let mut menu_layer_visibility = menu_layer_query.single_mut();
-    *menu_layer_visibility = Visibility::Inherited;
-}
+#[derive(Clone, PartialEq)]
+pub struct MenuScreen;
 
-pub fn hide_menu(mut menu_layer_query: Query<&mut Visibility, With<MenuLayer>>) {
-    let mut menu_layer_visibility = menu_layer_query.single_mut();
-    *menu_layer_visibility = Visibility::Hidden;
-}
+impl ViewTemplate for MenuScreen {
+    type View = impl View;
 
-pub fn handle_toggle_main_menu(
-    current_state: Res<State<InterfaceState>>,
-    mut next_state: ResMut<NextState<InterfaceState>>,
-) {
-    next_state.set(match current_state.get() {
-        InterfaceState::Hidden => InterfaceState::Menu,
-        InterfaceState::Menu => InterfaceState::Shell,
-        InterfaceState::Shell => InterfaceState::Menu,
-        InterfaceState::GameOver => InterfaceState::GameOver,
-    });
-}
-
-#[allow(clippy::type_complexity)]
-pub fn menu_item_interaction_effect(
-    mut menu_item_query: Query<
-        (&mut BackgroundColor, &Interaction),
-        (With<MenuItem>, Changed<Interaction>),
-    >,
-) {
-    for (mut background_color, interaction) in &mut menu_item_query {
-        *background_color = match interaction {
-            Interaction::Pressed => PRESSED.into(),
-            Interaction::Hovered => HOVERED.into(),
-            Interaction::None => NORMAL.into(),
-        }
+    fn create(&self, _cx: &mut Cx) -> Self::View {
+        Element::<NodeBundle>::new()
+            .named("Menu screen")
+            .style((style_root_container, style_menu_container))
+            .children(Menu)
     }
 }
 
 pub fn handle_resume(
-    interaction_query: Query<&Interaction, (With<MenuItemResume>, Changed<Interaction>)>,
     scene_state: Res<State<SceneState>>,
     mut next_interface_state: ResMut<NextState<InterfaceState>>,
 ) {
-    if let Ok(Interaction::Pressed) = interaction_query.get_single() {
-        if *scene_state.get() != SceneState::Active {
-            warn!("Can't resume; No active game");
-            return;
-        }
-        next_interface_state.set(InterfaceState::Shell);
+    if *scene_state.get() != SceneState::Active {
+        warn!("Can't resume; No active game");
+        return;
     }
+    next_interface_state.set(InterfaceState::Shell);
 }
 
 pub fn handle_new_game(
-    interaction_query: Query<&Interaction, (With<MenuItemNewGame>, Changed<Interaction>)>,
     mut next_interface_state: ResMut<NextState<InterfaceState>>,
     mut next_scene_state: ResMut<NextState<SceneState>>,
 ) {
-    if let Ok(Interaction::Pressed) = interaction_query.get_single() {
-        next_interface_state.set(InterfaceState::Shell);
-        next_scene_state.set(SceneState::Reset);
-    }
+    next_interface_state.set(InterfaceState::Shell);
+    next_scene_state.set(SceneState::Reset);
 }
 
-pub fn handle_save(
-    interaction_query: Query<&Interaction, (With<MenuItemSave>, Changed<Interaction>)>,
-    mut action_state: ResMut<ActionState<Action>>,
-) {
-    if let Ok(Interaction::Pressed) = interaction_query.get_single() {
-        action_state.press(&Action::Save);
-    }
+pub fn handle_save(mut action_state: ResMut<ActionState<Action>>) {
+    action_state.press(&Action::Save);
 }
 
-pub fn handle_quit(
-    interaction_query: Query<&Interaction, (With<MenuItemQuit>, Changed<Interaction>)>,
-    mut event_writer: EventWriter<bevy::app::AppExit>,
-) {
-    if let Ok(Interaction::Pressed) = interaction_query.get_single() {
-        event_writer.send(bevy::app::AppExit::Success);
-    }
+pub fn handle_quit(mut event_writer: EventWriter<bevy::app::AppExit>) {
+    event_writer.send(bevy::app::AppExit::Success);
 }

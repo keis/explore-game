@@ -1,30 +1,14 @@
 use super::{
-    camp::spawn_camp_details,
-    character::spawn_character_list,
+    camp::CampDetails,
+    character::CharacterList,
     color::*,
-    party::spawn_party_details,
-    style::*,
-    tabview::{TabView, TabViewContent, TabViewHeader},
+    party::PartyDetails,
+    prelude::*,
+    styles::{style_button, style_icon},
+    widget::Opt,
     InterfaceAssets,
 };
-use crate::{
-    actor::{Members, Party},
-    creature::Movement,
-    input::{Deselect, Select, Selection},
-    inventory::Inventory,
-    structure::Camp,
-};
-use bevy::prelude::*;
-use expl_databinding::DataBindingExt;
-
-#[derive(Component)]
-pub(super) struct SelectedDisplay;
-
-// Back-pointer to data binding, common enough to generalise?
-#[derive(Component)]
-pub(super) struct SelectedInnerDisplay {
-    entity: Entity,
-}
+use crate::{actor::Party, input::SelectedIndex, structure::Camp};
 
 fn style_selected_display(style: &mut StyleBuilder) {
     style
@@ -43,124 +27,144 @@ fn style_selected_item(style: &mut StyleBuilder) {
         .background_color(NORMAL);
 }
 
-pub(super) fn spawn_selected_display(parent: &mut ChildBuilder, _assets: &Res<InterfaceAssets>) {
-    parent
-        .spawn((Name::new("Selected Display"), NodeBundle::default()))
-        .with_children(|parent| {
-            parent
-                .spawn((SelectedDisplay, TabView, NodeBundle::default()))
-                .with_style(style_selected_display)
-                .with_children(|parent| {
-                    parent.spawn((
-                        Name::new("Selected Header"),
-                        TabViewHeader,
-                        NodeBundle::default(),
-                    ));
-                });
-            spawn_character_list(parent);
-        });
+#[derive(Clone, PartialEq, Debug)]
+pub enum SelectedType {
+    Party,
+    Camp,
+    Other,
 }
 
-fn spawn_party_display(
-    parent: &mut ChildBuilder,
-    assets: &Res<InterfaceAssets>,
-    entity: Entity,
-    party: &Party,
-    members: &Members,
-    movement: &Movement,
-    inventory: &Inventory,
-) -> Entity {
-    parent
-        .spawn((
-            SelectedInnerDisplay { entity },
-            TabViewContent {
-                icon: assets.brutal_helm_icon.clone(),
-            },
-            ButtonBundle::default(),
-        ))
-        .with_style(style_selected_item)
-        .bind_to(entity)
-        .with_children(|parent| {
-            spawn_party_details(parent, entity, party, movement, members, inventory, assets);
-        })
-        .id()
-}
-
-fn spawn_camp_display(
-    parent: &mut ChildBuilder,
-    assets: &Res<InterfaceAssets>,
-    entity: Entity,
-    camp: &Camp,
-    members: &Members,
-    inventory: &Inventory,
-) {
-    parent
-        .spawn((
-            SelectedInnerDisplay { entity },
-            TabViewContent {
-                icon: assets.campfire_icon.clone(),
-            },
-            ButtonBundle::default(),
-        ))
-        .with_style(style_selected_item)
-        .bind_to(entity)
-        .with_children(|parent| {
-            spawn_camp_details(parent, entity, camp, members, inventory, assets);
-        });
-}
-
-pub(super) fn handle_deselect_event(
-    trigger: Trigger<Deselect>,
-    mut commands: Commands,
-    inner_query: Query<(Entity, &SelectedInnerDisplay)>,
-) {
-    if let Some((inner_entity, _)) = inner_query
-        .iter()
-        .find(|(_, inner)| inner.entity == trigger.entity())
-    {
-        commands.entity(inner_entity).remove_parent();
-        commands.entity(inner_entity).despawn_recursive();
-    }
-}
-
-pub(super) fn handle_select_event(
-    trigger: Trigger<Select>,
-    mut commands: Commands,
-    display_query: Query<Entity, With<SelectedDisplay>>,
-    inner_query: Query<(Entity, &SelectedInnerDisplay)>,
-    party_query: Query<(&Party, &Members, &Movement, &Inventory)>,
-    camp_query: Query<(&Camp, &Members, &Inventory)>,
-    assets: Res<InterfaceAssets>,
-) {
-    let display = display_query.single();
-    let entity = trigger.entity();
-    if !inner_query.iter().any(|(_, inner)| inner.entity == entity) {
-        if let Ok((party, members, movement, inventory)) = party_query.get(entity) {
-            commands.get_or_spawn(display).with_children(|parent| {
-                spawn_party_display(parent, &assets, entity, party, members, movement, inventory);
-            });
-            return;
-        }
-
-        if let Ok((camp, members, inventory)) = camp_query.get(entity) {
-            commands.get_or_spawn(display).with_children(|parent| {
-                spawn_camp_display(parent, &assets, entity, camp, members, inventory);
-            });
+impl SelectedType {
+    fn use_selected_type(cx: &mut Cx, entity: Entity) -> Self {
+        if cx.use_component::<Party>(entity).is_some() {
+            SelectedType::Party
+        } else if cx.use_component::<Camp>(entity).is_some() {
+            SelectedType::Camp
+        } else {
+            SelectedType::Other
         }
     }
 }
 
-pub(super) fn remove_despawned(
-    mut commands: Commands,
-    mut removed_selection: RemovedComponents<Selection>,
-    inner_query: Query<(Entity, &SelectedInnerDisplay)>,
-) {
-    for entity in removed_selection.read() {
-        if let Some((inner_entity, _)) =
-            inner_query.iter().find(|(_, inner)| inner.entity == entity)
-        {
-            commands.entity(inner_entity).remove_parent();
-            commands.entity(inner_entity).despawn_recursive();
-        }
+#[derive(Clone, PartialEq)]
+pub struct SelectedDisplay;
+
+#[derive(Clone, PartialEq)]
+pub struct SelectedTabHeaderIcon {
+    target: Entity,
+    focused: Mutable<Option<Entity>>,
+}
+
+impl SelectedTabHeaderIcon {
+    pub fn new(target: Entity, focused: Mutable<Option<Entity>>) -> Self {
+        Self { target, focused }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct SelectedTabViewContent {
+    target: Entity,
+}
+
+impl SelectedTabViewContent {
+    pub fn new(target: Entity) -> Self {
+        Self { target }
+    }
+}
+
+impl ViewTemplate for SelectedTabHeaderIcon {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let selected_type = SelectedType::use_selected_type(cx, self.target);
+        let assets = cx.use_resource::<InterfaceAssets>();
+
+        let target = self.target;
+        let focused = self.focused.get(cx);
+        let brutal_helm_icon = assets.brutal_helm_icon.clone();
+        let campfire_icon = assets.campfire_icon.clone();
+
+        Cond::new(
+            selected_type != SelectedType::Other,
+            Element::<ButtonBundle>::new()
+                .style((style_button, style_icon, move |sb: &mut StyleBuilder| {
+                    match selected_type {
+                        SelectedType::Party => {
+                            sb.background_image(brutal_helm_icon.clone());
+                        }
+                        SelectedType::Camp => {
+                            sb.background_image(campfire_icon.clone());
+                        }
+                        _ => (),
+                    };
+                }))
+                .style_dyn(
+                    move |focused, sb| {
+                        sb.background_color(if focused == Some(target) {
+                            SELECTED
+                        } else {
+                            NORMAL
+                        });
+                    },
+                    focused,
+                ),
+            (),
+        )
+    }
+}
+
+impl ViewTemplate for SelectedTabViewContent {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let selected_type = SelectedType::use_selected_type(cx, self.target);
+        let target = self.target;
+
+        Element::<NodeBundle>::new()
+            .style(style_selected_item)
+            .children(
+                Switch::new(selected_type)
+                    .case(SelectedType::Party, PartyDetails::new(target))
+                    .case(SelectedType::Camp, CampDetails::new(target)),
+            )
+    }
+}
+
+impl ViewTemplate for SelectedDisplay {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let mut selected = cx.use_resource::<SelectedIndex>().0.clone();
+        selected
+            .retain(|&entity| SelectedType::use_selected_type(cx, entity) != SelectedType::Other);
+        let focused = cx.create_mutable::<Option<Entity>>(None);
+
+        focused.update(cx, |mut focused_entity: Mut<Option<Entity>>| {
+            let new_focus = focused_entity
+                .filter(|entity| selected.contains(entity))
+                .or(selected.first().copied());
+            if new_focus != *focused_entity {
+                *focused_entity = new_focus;
+            }
+        });
+
+        let focused_entity = focused.get(cx);
+
+        Element::<NodeBundle>::new()
+            .named("Selected Display")
+            .children((
+                Element::<NodeBundle>::new()
+                    .named("tab-view")
+                    .style(style_selected_display)
+                    .children((
+                        Element::<NodeBundle>::new()
+                            .named("tab-header")
+                            .children(For::each(selected, move |&target| {
+                                SelectedTabHeaderIcon::new(target, focused)
+                            })),
+                        Opt::new(focused_entity.map(SelectedTabViewContent::new)),
+                    )),
+                CharacterList,
+            ))
     }
 }

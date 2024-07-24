@@ -42,6 +42,8 @@ impl Plugin for InputPlugin {
         .observe(SelectedIndex::on_select)
         .observe(SelectedIndex::on_deselect)
         .observe(SelectedIndex::on_remove)
+        .init_resource::<MapHover>()
+        .observe(MapHover::on_zone_over)
         .insert_resource(input_map())
         .observe(apply_zone_activated_event)
         .observe(apply_select_event)

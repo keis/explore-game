@@ -1,12 +1,9 @@
-use super::{color::*, style::*, styles::style_root_container, InterfaceAssets, InterfaceState};
+use super::{
+    color::*, prelude::*, styles::style_root_container, widget::Button, InterfaceState,
+    DEFAULT_FONT,
+};
 use crate::scene::{SceneState, Score};
 use bevy::{color::palettes::css, prelude::*};
-
-#[derive(Component)]
-pub struct GameOverLayer;
-
-#[derive(Component)]
-pub struct NewGameButton;
 
 fn style_game_over_layer(style: &mut StyleBuilder) {
     style
@@ -36,124 +33,86 @@ fn style_new_game_button(style: &mut StyleBuilder) {
         .background_color(MENU);
 }
 
-pub fn spawn_game_over_screen(
-    mut commands: Commands,
-    assets: Res<InterfaceAssets>,
-    score: Res<Score>,
-) {
-    commands
-        .spawn((
-            Name::new("Game over layer"),
-            GameOverLayer,
-            NodeBundle::default(),
-        ))
-        .with_style((style_root_container, style_game_over_layer))
-        .with_children(|parent| {
-            parent
-                .spawn(NodeBundle::default())
-                .with_style(style_game_over_display)
-                .with_children(|parent| {
-                    parent.spawn(TextBundle::from_section(
-                        "Game Over",
-                        TextStyle {
-                            font: assets.font.clone(),
-                            font_size: 32.0,
-                            color: Color::WHITE,
-                        },
-                    ));
-                    parent.spawn(TextBundle::from_sections([
-                        TextSection::new(
-                            "Survivors: ",
-                            TextStyle {
-                                font: assets.font.clone(),
-                                font_size: 24.0,
-                                color: Color::WHITE,
-                            },
-                        ),
-                        TextSection::new(
-                            match score.survivors {
-                                0 => String::from("None"),
-                                v => format!("{}", v),
-                            },
-                            TextStyle {
-                                font: assets.font.clone(),
-                                font_size: 24.0,
-                                color: Color::WHITE,
-                            },
-                        ),
-                    ]));
-                    parent.spawn(TextBundle::from_sections([
-                        TextSection::new(
-                            "Dead: ",
-                            TextStyle {
-                                font: assets.font.clone(),
-                                font_size: 24.0,
-                                color: Color::WHITE,
-                            },
-                        ),
-                        TextSection::new(
-                            match score.dead {
-                                0 => String::from("None"),
-                                v => format!("{}", v),
-                            },
-                            TextStyle {
-                                font: assets.font.clone(),
-                                font_size: 24.0,
-                                color: Color::WHITE,
-                            },
-                        ),
-                    ]));
-                    parent.spawn(TextBundle::from_sections([
-                        TextSection::new(
-                            "Crystals: ",
-                            TextStyle {
-                                font: assets.font.clone(),
-                                font_size: 24.0,
-                                color: Color::WHITE,
-                            },
-                        ),
-                        TextSection::new(
-                            format!("{}", score.crystals),
-                            TextStyle {
-                                font: assets.font.clone(),
-                                font_size: 24.0,
-                                color: css::RED.into(),
-                            },
-                        ),
-                    ]));
-                    parent
-                        .spawn((NewGameButton, ButtonBundle::default()))
-                        .with_style(style_new_game_button)
-                        .with_children(|parent| {
-                            parent.spawn(TextBundle::from_section(
-                                "Play again",
-                                TextStyle {
-                                    font: assets.font.clone(),
-                                    font_size: 32.0,
-                                    color: css::WHITE.into(),
-                                },
-                            ));
-                        });
-                });
-        });
+fn style_game_over_text(style: &mut StyleBuilder) {
+    style.font(DEFAULT_FONT).font_size(32.0).color(css::WHITE);
 }
 
-pub fn despawn_game_over_screen(
-    mut commands: Commands,
-    game_over_screen_query: Query<Entity, With<GameOverLayer>>,
-) {
-    if let Ok(game_over_screen_entity) = game_over_screen_query.get_single() {
-        commands.entity(game_over_screen_entity).despawn_recursive();
+fn style_detail_text(style: &mut StyleBuilder) {
+    style.font(DEFAULT_FONT).font_size(24.0).color(css::WHITE);
+}
+
+fn style_detail_text_red(style: &mut StyleBuilder) {
+    style.font(DEFAULT_FONT).font_size(24.0).color(css::RED);
+}
+
+#[derive(Clone, PartialEq)]
+pub struct GameOverScreen;
+
+impl ViewTemplate for GameOverScreen {
+    type View = impl View;
+
+    fn create(&self, _cx: &mut Cx) -> Self::View {
+        Element::<NodeBundle>::new()
+            .named("Game over screen")
+            .style((style_root_container, style_game_over_layer))
+            .children(GameOverDisplay)
     }
 }
 
-pub fn handle_new_game(
-    interaction_query: Query<&Interaction, (With<NewGameButton>, Changed<Interaction>)>,
+#[derive(Clone, PartialEq)]
+pub struct GameOverDisplay;
+
+impl ViewTemplate for GameOverDisplay {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let on_click = cx.create_callback(handle_new_game_button);
+        let score = cx.use_resource::<Score>();
+        Element::<NodeBundle>::new()
+            .style(style_game_over_display)
+            .children((
+                Element::<NodeBundle>::new()
+                    .style(style_game_over_text)
+                    .children("Game Over"),
+                Element::<NodeBundle>::new()
+                    .style(style_detail_text)
+                    .children(format!(
+                        "Survivors: {}",
+                        match score.survivors {
+                            0 => String::from("None"),
+                            v => format!("{}", v),
+                        }
+                    )),
+                Element::<NodeBundle>::new()
+                    .style(style_detail_text)
+                    .children(format!(
+                        "Dead: {}",
+                        match score.dead {
+                            0 => String::from("None"),
+                            v => format!("{}", v),
+                        }
+                    )),
+                Element::<NodeBundle>::new()
+                    .style(style_detail_text_red)
+                    .children(format!(
+                        "Crystals: {}",
+                        match score.dead {
+                            0 => String::from("None"),
+                            v => format!("{}", v),
+                        }
+                    )),
+                Button::new()
+                    .style((style_new_game_button, style_game_over_text))
+                    .on_click(on_click)
+                    .children("Play again"),
+            ))
+    }
+}
+
+pub fn handle_new_game_button(
     mut next_interface_state: ResMut<NextState<InterfaceState>>,
     mut next_scene_state: ResMut<NextState<SceneState>>,
 ) {
-    if let Ok(Interaction::Pressed) = interaction_query.get_single() {
-        next_interface_state.set(InterfaceState::Shell);
-        next_scene_state.set(SceneState::Reset);
-    }
+    next_interface_state.set(InterfaceState::Shell);
+    next_scene_state.set(SceneState::Reset);
 }

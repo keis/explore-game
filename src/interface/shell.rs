@@ -1,38 +1,37 @@
 use super::{
-    camp::CampListBundle,
-    party::PartyListBundle,
-    selected::spawn_selected_display,
-    style::*,
-    styles::{style_button, style_icon, style_root_container},
-    tooltip::{spawn_tooltip, TooltipPosition, TooltipTarget},
-    InterfaceAssets,
+    camp::CampList,
+    color::*,
+    party::PartyList,
+    prelude::*,
+    selected::SelectedDisplay,
+    styles::{style_button, style_icon, style_outliner, style_root_container},
+    widget::{Opt, Tooltip, TooltipPosition},
+    InterfaceAssets, DEFAULT_FONT,
 };
 use crate::{
-    input::{Action, ActionState},
-    terrain::TerrainId,
+    input::{Action, ActionState, MapHover},
     turn::Turn,
 };
-use bevy::prelude::*;
-use bevy_mod_picking::prelude::{Pickable, PickingInteraction};
 use expl_map::MapPosition;
-
-#[derive(Component)]
-pub struct Shell;
-
-#[derive(Component)]
-pub struct ZoneText;
-
-#[derive(Component)]
-pub struct TurnButton;
-
-#[derive(Component)]
-pub struct TurnText;
-
-#[derive(Component)]
-pub struct ActionButton(Action);
 
 fn style_toolbar(style: &mut StyleBuilder) {
     style.align_self(AlignSelf::FlexStart).padding(Val::Px(2.0));
+}
+
+fn style_tooltip_text(style: &mut StyleBuilder) {
+    style
+        .margin(Val::Px(2.0))
+        .font(DEFAULT_FONT)
+        .font_size(20.0)
+        .color(css::WHITE);
+}
+
+fn style_keybind_text(style: &mut StyleBuilder) {
+    style
+        .margin(Val::Px(2.0))
+        .font(DEFAULT_FONT)
+        .font_size(20.0)
+        .color(css::GREEN);
 }
 
 fn style_shell_container(style: &mut StyleBuilder) {
@@ -49,16 +48,14 @@ fn style_bar(style: &mut StyleBuilder) {
         .pointer_events(false);
 }
 
-fn style_outliner(style: &mut StyleBuilder) {
-    style
-        .flex_direction(FlexDirection::Column)
-        .pointer_events(false);
-}
-
 fn style_zone_display(style: &mut StyleBuilder) {
     style
         .width(Val::Px(100.0))
         .justify_content(JustifyContent::End);
+}
+
+fn style_zone_display_text(style: &mut StyleBuilder) {
+    style.font(DEFAULT_FONT).font_size(32.0).color(css::WHITE);
 }
 
 fn style_next_turn_button(style: &mut StyleBuilder) {
@@ -66,250 +63,265 @@ fn style_next_turn_button(style: &mut StyleBuilder) {
         .width(Val::Px(200.0))
         .height(Val::Px(60.0))
         .align_self(AlignSelf::FlexEnd)
-        .background_color(Color::srgb(0.4, 0.9, 0.4));
+        .background_color(HIGHLIGHT)
+        .font_size(32.0)
+        .justify_content(JustifyContent::Center)
+        .align_items(AlignItems::Center);
 }
 
-fn spawn_toolbar_item(
-    parent: &mut ChildBuilder,
-    assets: &Res<InterfaceAssets>,
-    tag: impl Component,
-    image: Handle<Image>,
-    tooltip_text: impl Into<String>,
-    keybind_text: Option<impl Into<String>>,
-) {
-    parent
-        .spawn((TooltipTarget, ButtonBundle::default(), tag))
-        .with_style(style_button)
-        .with_children(|parent| {
-            parent
-                .spawn(ImageBundle {
-                    image: image.into(),
-                    ..default()
-                })
-                .with_style(style_icon);
-            spawn_tooltip(
-                parent,
-                assets,
-                TooltipPosition::Below,
-                tooltip_text,
-                keybind_text,
+#[derive(Clone, PartialEq)]
+pub struct KeybindText {
+    keybind_text: String,
+}
+
+impl KeybindText {
+    fn new(keybind_text: String) -> Self {
+        Self { keybind_text }
+    }
+}
+
+impl ViewTemplate for KeybindText {
+    type View = impl View;
+
+    fn create(&self, _cx: &mut Cx) -> Self::View {
+        Element::<NodeBundle>::new()
+            .style(style_keybind_text)
+            .children(self.keybind_text.clone())
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub struct TooltipContent {
+    tooltip_text: String,
+    keybind_text: Option<String>,
+}
+
+impl TooltipContent {
+    fn new(tooltip_text: impl Into<String>) -> Self {
+        TooltipContent {
+            tooltip_text: tooltip_text.into(),
+            keybind_text: None,
+        }
+    }
+
+    fn keybind_text(mut self, keybind_text: impl Into<String>) -> Self {
+        self.keybind_text = Some(keybind_text.into());
+        self
+    }
+
+    fn maybe_keybind_text(mut self, keybind_text: Option<impl Into<String>>) -> Self {
+        self.keybind_text = keybind_text.map(|v| v.into());
+        self
+    }
+}
+
+impl ViewTemplate for TooltipContent {
+    type View = impl View;
+
+    fn create(&self, _cx: &mut Cx) -> Self::View {
+        Element::<NodeBundle>::new()
+            .style(style_tooltip_text)
+            .children((
+                self.tooltip_text.clone(),
+                Opt::new(self.keybind_text.clone().map(KeybindText::new)),
+            ))
+    }
+}
+
+#[derive(Clone, PartialEq)]
+struct ToolbarItem {
+    action: Action,
+    icon: Handle<Image>,
+    tooltip_text: String,
+    keybind_text: Option<String>,
+}
+
+impl ToolbarItem {
+    pub fn for_action(action: Action) -> Self {
+        Self {
+            action,
+            icon: Handle::default(),
+            tooltip_text: "".to_string(),
+            keybind_text: None,
+        }
+    }
+
+    pub fn icon(mut self, icon: Handle<Image>) -> Self {
+        self.icon = icon;
+        self
+    }
+
+    pub fn tooltip_text(mut self, tooltip_text: impl Into<String>) -> Self {
+        self.tooltip_text = tooltip_text.into();
+        self
+    }
+
+    pub fn keybind_text(mut self, keybind_text: impl Into<String>) -> Self {
+        self.keybind_text = Some(keybind_text.into());
+        self
+    }
+}
+
+impl ViewTemplate for ToolbarItem {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let id = cx.create_entity();
+        let icon = self.icon.clone();
+        let action = self.action;
+        Element::<ButtonBundle>::for_entity(id)
+            .insert_dyn(
+                move |_| {
+                    On::<Pointer<Click>>::run(
+                        move |mut action_state: ResMut<ActionState<Action>>| {
+                            action_state.press(&action);
+                        },
+                    )
+                },
+                (),
             )
-        });
+            .style((style_button, style_icon, move |sb: &mut StyleBuilder| {
+                sb.background_image(icon.clone());
+            }))
+            .children(
+                Tooltip::for_parent(id)
+                    .position(TooltipPosition::Below)
+                    .children(
+                        TooltipContent::new(self.tooltip_text.clone())
+                            .maybe_keybind_text(self.keybind_text.clone()),
+                    ),
+            )
+    }
 }
 
-fn spawn_toolbar(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
-    parent
-        .spawn((Name::new("Toolbar"), NodeBundle::default()))
-        .with_style(style_toolbar)
-        .with_children(|parent| {
-            spawn_toolbar_item(
-                parent,
-                assets,
-                ActionButton(Action::ResumeMove),
-                assets.arrow_icon.clone(),
-                "Resume move",
-                Some("<M>"),
-            );
-            spawn_toolbar_item(
-                parent,
-                assets,
-                ActionButton(Action::Camp),
-                assets.campfire_icon.clone(),
-                "Make/Enter camp",
-                Some("<C>"),
-            );
-            spawn_toolbar_item(
-                parent,
-                assets,
-                ActionButton(Action::BreakCamp),
-                assets.cancel_icon.clone(),
-                "Break camp",
-                None::<&str>,
-            );
-            spawn_toolbar_item(
-                parent,
-                assets,
-                ActionButton(Action::CreateParty),
-                assets.knapsack_icon.clone(),
-                "Create party",
-                None::<&str>,
-            );
-            spawn_toolbar_item(
-                parent,
-                assets,
-                ActionButton(Action::SplitParty),
-                assets.back_forth_icon.clone(),
-                "Split selected from party",
-                None::<&str>,
-            );
-            spawn_toolbar_item(
-                parent,
-                assets,
-                ActionButton(Action::MergeParty),
-                assets.contract_icon.clone(),
-                "Merge selected parties",
-                None::<&str>,
-            );
-            spawn_toolbar_item(
-                parent,
-                assets,
-                ActionButton(Action::CollectCrystals),
-                assets.crystals_icon.clone(),
-                "Collect crystals",
-                None::<&str>,
-            );
-            spawn_toolbar_item(
-                parent,
-                assets,
-                ActionButton(Action::OpenPortal),
-                assets.magic_swirl_icon.clone(),
-                "Open portal",
-                None::<&str>,
-            );
-            spawn_toolbar_item(
-                parent,
-                assets,
-                ActionButton(Action::EnterPortal),
-                assets.portal_icon.clone(),
-                "Enter portal",
-                None::<&str>,
-            );
-        });
-}
+#[derive(Clone, PartialEq)]
+struct Toolbar;
 
-fn spawn_next_turn_button(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
-    parent
-        .spawn((
-            Name::new("Next Turn Button"),
-            TooltipTarget,
-            ButtonBundle::default(),
-            ActionButton(Action::NextTurn),
-            TurnButton,
+impl ViewTemplate for Toolbar {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let assets = cx.use_resource::<InterfaceAssets>();
+        Element::<NodeBundle>::new().style(style_toolbar).children((
+            ToolbarItem::for_action(Action::ResumeMove)
+                .icon(assets.arrow_icon.clone())
+                .tooltip_text("Resume move")
+                .keybind_text("<M>"),
+            ToolbarItem::for_action(Action::Camp)
+                .icon(assets.campfire_icon.clone())
+                .tooltip_text("Make/Enter camp")
+                .keybind_text("<C>"),
+            ToolbarItem::for_action(Action::BreakCamp)
+                .icon(assets.cancel_icon.clone())
+                .tooltip_text("Break camp"),
+            ToolbarItem::for_action(Action::CreateParty)
+                .icon(assets.knapsack_icon.clone())
+                .tooltip_text("Create party"),
+            ToolbarItem::for_action(Action::SplitParty)
+                .icon(assets.back_forth_icon.clone())
+                .tooltip_text("Split selected from party"),
+            ToolbarItem::for_action(Action::MergeParty)
+                .icon(assets.contract_icon.clone())
+                .tooltip_text("Merge selected parties"),
+            ToolbarItem::for_action(Action::CollectCrystals)
+                .icon(assets.crystals_icon.clone())
+                .tooltip_text("Collect cyrstals"),
+            ToolbarItem::for_action(Action::OpenPortal)
+                .icon(assets.magic_swirl_icon.clone())
+                .tooltip_text("Open portal"),
+            ToolbarItem::for_action(Action::EnterPortal)
+                .icon(assets.portal_icon.clone())
+                .tooltip_text("Enter portal"),
         ))
-        .with_style((style_button, style_next_turn_button))
-        .with_children(|parent| {
-            parent.spawn((
-                Name::new("Next Turn Button Text"),
-                TurnText,
-                TextBundle::from_section(
-                    "Turn ?",
+    }
+}
+
+#[derive(Clone, PartialEq)]
+struct ZoneDisplay;
+
+impl ViewTemplate for ZoneDisplay {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let map_hover = cx.use_resource::<MapHover>();
+        let text = if let Some(map_position) = map_hover
+            .zone
+            .and_then(|e| cx.use_component_untracked::<MapPosition>(e))
+        {
+            format!("Zone: {}", map_position.0)
+        } else {
+            String::from("")
+        };
+        Element::<NodeBundle>::new()
+            .named("Zone Display")
+            .style((style_zone_display, style_zone_display_text))
+            .children(text)
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub struct NextTurnButton;
+
+impl ViewTemplate for NextTurnButton {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let id = cx.create_entity();
+        let turn = cx.use_resource::<Turn>();
+        let action = Action::NextTurn;
+        Element::<ButtonBundle>::for_entity(id)
+            .named("Next Turn Button")
+            .style(style_next_turn_button)
+            .insert_dyn(
+                move |_| {
+                    On::<Pointer<Click>>::run(
+                        move |mut action_state: ResMut<ActionState<Action>>| {
+                            action_state.press(&action);
+                        },
+                    )
+                },
+                (),
+            )
+            .children((
+                Element::<TextBundle>::new().insert(Text::from_section(
+                    format!("Turn {}", **turn),
                     TextStyle {
-                        font: assets.font.clone(),
                         font_size: 32.0,
-                        color: Color::WHITE,
+                        ..default()
                     },
-                )
-                .with_text_justify(JustifyText::Center)
-                .with_style(Style { ..default() }),
-            ));
-            spawn_tooltip(
-                parent,
-                assets,
-                TooltipPosition::Above,
-                "Next turn",
-                Some("<Return>"),
-            );
-        });
-}
-
-pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
-    commands
-        .spawn((Name::new("Shell Container"), NodeBundle::default(), Shell))
-        .with_style((style_root_container, style_shell_container))
-        .with_children(|parent| {
-            parent
-                .spawn((Name::new("Top"), NodeBundle::default()))
-                .with_style(style_bar)
-                .with_children(|parent| {
-                    parent
-                        .spawn((NodeBundle::default(), Pickable::IGNORE))
-                        .with_children(|parent| {
-                            parent
-                                .spawn((Name::new("Outliner"), NodeBundle::default()))
-                                .with_style(style_outliner)
-                                .with_children(|parent| {
-                                    parent
-                                        .spawn(CampListBundle::default())
-                                        .with_style(style_outliner);
-                                    parent
-                                        .spawn(PartyListBundle::default())
-                                        .with_style(style_outliner);
-                                });
-                        });
-                    spawn_toolbar(parent, &assets);
-                    parent
-                        .spawn((Name::new("Zone Display"), NodeBundle::default()))
-                        .with_style(style_zone_display)
-                        .with_children(|parent| {
-                            parent.spawn((
-                                ZoneText,
-                                TextBundle::from_section(
-                                    "Zone: ",
-                                    TextStyle {
-                                        font: assets.font.clone(),
-                                        font_size: 32.0,
-                                        color: Color::WHITE,
-                                    },
-                                )
-                                .with_text_justify(JustifyText::Center),
-                            ));
-                        });
-                });
-            parent
-                .spawn((Name::new("Bottom"), NodeBundle::default()))
-                .with_style(style_bar)
-                .with_children(|parent| {
-                    spawn_selected_display(parent, &assets);
-                    spawn_next_turn_button(parent, &assets);
-                });
-        });
-}
-
-pub fn show_shell(mut shell_query: Query<&mut Visibility, With<Shell>>) {
-    let mut shell_visibility = shell_query.single_mut();
-    *shell_visibility = Visibility::Inherited;
-}
-
-pub fn hide_shell(mut shell_query: Query<&mut Visibility, With<Shell>>) {
-    let mut shell_visibility = shell_query.single_mut();
-    *shell_visibility = Visibility::Hidden;
-}
-
-pub fn update_turn_text(mut turn_text_query: Query<&mut Text, With<TurnText>>, turn: Res<Turn>) {
-    if turn.is_changed() {
-        for mut text in turn_text_query.iter_mut() {
-            text.sections[0].value = format!("Turn #{:?}", **turn);
-        }
+                )),
+                Tooltip::for_parent(id)
+                    .children(TooltipContent::new("Next turn").keybind_text("<Return>")),
+            ))
     }
 }
 
-#[allow(clippy::type_complexity)]
-pub fn update_zone_text(
-    mut zone_text_query: Query<&mut Text, With<ZoneText>>,
-    zone_query: Query<
-        (&MapPosition, &PickingInteraction),
-        (With<TerrainId>, Changed<PickingInteraction>),
-    >,
-) {
-    for (zone_position, _) in zone_query
-        .iter()
-        .filter(|(_, interaction)| **interaction == PickingInteraction::Hovered)
-    {
-        for mut text in &mut zone_text_query {
-            text.sections[0].value = format!("{}", zone_position.0);
-        }
-    }
-}
+#[derive(Clone, PartialEq)]
+pub struct ShellScreen;
 
-pub fn handle_action_button_interaction(
-    interaction_query: Query<(&ActionButton, &Interaction), Changed<Interaction>>,
-    mut action_state: ResMut<ActionState<Action>>,
-) {
-    for ActionButton(action) in interaction_query
-        .iter()
-        .filter(|(_, interaction)| **interaction == Interaction::Pressed)
-        .map(|(action, _)| action)
-    {
-        action_state.press(action);
+impl ViewTemplate for ShellScreen {
+    type View = impl View;
+
+    fn create(&self, _cx: &mut Cx) -> Self::View {
+        Element::<NodeBundle>::new()
+            .named("Shell screen")
+            .style((style_root_container, style_shell_container))
+            .children((
+                Element::<NodeBundle>::new()
+                    .named("Top")
+                    .style(style_bar)
+                    .children((
+                        Element::<NodeBundle>::new()
+                            .named("Outliner")
+                            .style(style_outliner)
+                            .children((CampList, PartyList)),
+                        Toolbar,
+                        ZoneDisplay,
+                    )),
+                Element::<NodeBundle>::new()
+                    .named("Bottom")
+                    .style(style_bar)
+                    .children((SelectedDisplay, NextTurnButton)),
+            ))
     }
 }

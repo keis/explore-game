@@ -1,3 +1,4 @@
+#![feature(impl_trait_in_assoc_type)]
 pub mod action;
 pub mod actor;
 pub mod assets;
