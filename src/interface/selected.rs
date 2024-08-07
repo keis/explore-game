@@ -109,11 +109,23 @@ fn spawn_camp_display(
         });
 }
 
-#[allow(clippy::too_many_arguments)]
-pub(super) fn update_selected(
+pub(super) fn handle_deselect_event(
+    trigger: Trigger<Deselect>,
     mut commands: Commands,
-    mut deselect_events: EventReader<Deselect>,
-    mut select_events: EventReader<Select>,
+    inner_query: Query<(Entity, &SelectedInnerDisplay)>,
+) {
+    if let Some((inner_entity, _)) = inner_query
+        .iter()
+        .find(|(_, inner)| inner.entity == trigger.entity())
+    {
+        commands.entity(inner_entity).remove_parent();
+        commands.entity(inner_entity).despawn_recursive();
+    }
+}
+
+pub(super) fn handle_select_event(
+    trigger: Trigger<Select>,
+    mut commands: Commands,
     display_query: Query<Entity, With<SelectedDisplay>>,
     inner_query: Query<(Entity, &SelectedInnerDisplay)>,
     party_query: Query<(&Party, &Members, &Movement, &Inventory)>,
@@ -121,32 +133,19 @@ pub(super) fn update_selected(
     assets: Res<InterfaceAssets>,
 ) {
     let display = display_query.single();
-    for Deselect(entity) in deselect_events.read() {
-        if let Some((inner_entity, _)) = inner_query
-            .iter()
-            .find(|(_, inner)| inner.entity == *entity)
-        {
-            commands.entity(inner_entity).remove_parent();
-            commands.entity(inner_entity).despawn_recursive();
+    let entity = trigger.entity();
+    if !inner_query.iter().any(|(_, inner)| inner.entity == entity) {
+        if let Ok((party, members, movement, inventory)) = party_query.get(entity) {
+            commands.get_or_spawn(display).with_children(|parent| {
+                spawn_party_display(parent, &assets, entity, party, members, movement, inventory);
+            });
+            return;
         }
-    }
-    for Select(entity) in select_events.read() {
-        if !inner_query.iter().any(|(_, inner)| inner.entity == *entity) {
-            if let Ok((party, members, movement, inventory)) = party_query.get(*entity) {
-                commands.get_or_spawn(display).with_children(|parent| {
-                    spawn_party_display(
-                        parent, &assets, *entity, party, members, movement, inventory,
-                    );
-                });
-                continue;
-            }
 
-            if let Ok((camp, members, inventory)) = camp_query.get(*entity) {
-                commands.get_or_spawn(display).with_children(|parent| {
-                    spawn_camp_display(parent, &assets, *entity, camp, members, inventory);
-                });
-                continue;
-            }
+        if let Ok((camp, members, inventory)) = camp_query.get(entity) {
+            commands.get_or_spawn(display).with_children(|parent| {
+                spawn_camp_display(parent, &assets, entity, camp, members, inventory);
+            });
         }
     }
 }

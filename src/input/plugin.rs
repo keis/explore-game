@@ -1,4 +1,4 @@
-use super::{action::*, component::*, event::*, system::*};
+use super::{action::*, component::*, resource::*, system::*};
 use crate::{scene::SceneState, turn};
 use bevy::prelude::*;
 use bevy_mod_picking::{
@@ -38,14 +38,15 @@ impl Plugin for InputPlugin {
         )
         .register_type::<Selection>()
         .init_resource::<ActionState<Action>>()
-        .add_event::<ZoneActivated>()
-        .add_event::<ZoneOver>()
-        .add_event::<ZoneOut>()
-        .add_event::<Select>()
-        .add_event::<Deselect>()
-        .add_event::<SelectionOver>()
-        .add_event::<SelectionOut>()
+        .init_resource::<SelectedIndex>()
+        .observe(SelectedIndex::on_select)
+        .observe(SelectedIndex::on_deselect)
         .insert_resource(input_map())
+        .observe(apply_zone_activated_event)
+        .observe(apply_select_event)
+        .observe(apply_deselect_event)
+        .observe(apply_selection_over_event)
+        .observe(apply_selection_out_event)
         .add_systems(
             Update,
             (
@@ -76,22 +77,11 @@ impl Plugin for InputPlugin {
         .add_systems(
             PreUpdate,
             (
-                (
-                    handle_pointer_click_events.run_if(on_event::<Pointer<Click>>()),
-                    handle_pointer_over_events.run_if(on_event::<Pointer<Over>>()),
-                    handle_pointer_out_events.run_if(on_event::<Pointer<Out>>()),
-                )
-                    .in_set(InputSet::ProcessInput),
-                (
-                    apply_zone_activated_events.map(bevy::utils::warn),
-                    apply_selection_events
-                        .run_if(on_event::<Select>().or_else(on_event::<Deselect>())),
-                )
-                    .in_set(InputSet::Selection),
-                apply_selection_over_out_events
-                    .run_if(on_event::<SelectionOver>().or_else(on_event::<SelectionOut>()))
-                    .in_set(InputSet::PostSelection),
+                handle_pointer_click_events.run_if(on_event::<Pointer<Click>>()),
+                handle_pointer_over_events.run_if(on_event::<Pointer<Over>>()),
+                handle_pointer_out_events.run_if(on_event::<Pointer<Out>>()),
             )
+                .in_set(InputSet::ProcessInput)
                 .run_if(in_state(SceneState::Active)),
         );
     }

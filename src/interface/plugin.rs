@@ -5,9 +5,7 @@ use super::{
 use crate::{
     actor::{GroupEvent, Party},
     assets::AssetState,
-    input::{
-        action_just_pressed, Action, Deselect, InputManagerSystem, InputSet, Select, Selection,
-    },
+    input::{action_just_pressed, Action, InputManagerSystem, InputSet, SelectedIndex, Selection},
     scene::SceneState,
     structure::Camp,
 };
@@ -24,6 +22,8 @@ impl Plugin for InterfacePlugin {
                 .load_collection::<InterfaceAssets>(),
         )
         .init_state::<InterfaceState>()
+        .observe(selected::handle_deselect_event)
+        .observe(selected::handle_select_event)
         .add_systems(
             OnEnter(AssetState::Loaded),
             (
@@ -82,9 +82,7 @@ impl Plugin for InterfacePlugin {
                 ),
                 (
                     character::update_character_list.run_if(
-                        on_event::<Select>()
-                            .or_else(on_event::<Deselect>())
-                            .or_else(on_event::<GroupEvent>()),
+                        resource_changed::<SelectedIndex>.or_else(on_event::<GroupEvent>()),
                     ),
                     character::update_character_selection,
                     character::update_character_health,
@@ -93,11 +91,7 @@ impl Plugin for InterfacePlugin {
                 shell::update_zone_text,
                 tooltip::show_tooltip_on_hover,
                 (
-                    (
-                        selected::remove_despawned.run_if(any_component_removed::<Selection>()),
-                        selected::update_selected
-                            .run_if(on_event::<Select>().or_else(on_event::<Deselect>())),
-                    ),
+                    selected::remove_despawned.run_if(any_component_removed::<Selection>()),
                     apply_deferred,
                     tabview::update_tab_view.run_if(on_event::<HierarchyEvent>()),
                 )

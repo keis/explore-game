@@ -50,8 +50,7 @@ where
 {
     selection_query: Query<'w, 's, (Entity, &'static Selection), Filter>,
     action_state: Res<'w, ActionState<Action>>,
-    select_events: EventWriter<'w, Select>,
-    deselect_events: EventWriter<'w, Deselect>,
+    commands: Commands<'w, 's>,
 }
 
 impl<'w, 's, Filter> SelectionUpdate<'w, 's, Filter>
@@ -62,18 +61,18 @@ where
         if let Ok((entity, selection)) = self.selection_query.get(entity) {
             if self.action_state.pressed(&Action::MultiSelect) {
                 if selection.is_selected {
-                    self.deselect_events.send(Deselect(entity));
+                    self.commands.trigger_targets(Deselect, entity);
                 } else {
-                    self.select_events.send(Select(entity));
+                    self.commands.trigger_targets(Select, entity);
                 }
             } else {
                 for (other_entity, selection) in self.selection_query.iter() {
                     if other_entity != entity && selection.is_selected {
-                        self.deselect_events.send(Deselect(other_entity));
+                        self.commands.trigger_targets(Deselect, other_entity);
                     }
                 }
                 if !selection.is_selected {
-                    self.select_events.send(Select(entity));
+                    self.commands.trigger_targets(Select, entity);
                 }
             }
         }
