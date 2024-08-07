@@ -109,7 +109,6 @@ pub fn update_character_list(
     character_query: Query<(Entity, &Character, &Attack, &Health)>,
     party_query: Query<(&Members, &Selection), Without<Character>>,
     character_display_query: Query<(Entity, &CharacterDisplay)>,
-    mut deselect_events: EventWriter<Deselect>,
 ) {
     let character_list = character_list_query.single();
 
@@ -141,7 +140,7 @@ pub fn update_character_list(
             .any(|entity| display.character == **entity)
         {
             commands.entity(display_entity).despawn_recursive();
-            deselect_events.send(Deselect(display.character));
+            commands.trigger_targets(Deselect, display.character);
         }
     }
 }

@@ -22,13 +22,14 @@ impl Plugin for ZoneMaterialPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<ZoneMaterial>::default())
             .init_resource::<TerrainBuffer>()
+            .observe(handle_zone_over)
+            .observe(handle_zone_out)
             .add_systems(
                 Update,
                 (
                     update_from_terrain_codex
                         .run_if(on_event::<AssetEvent<Codex<Terrain>>>())
                         .run_if(in_state(AssetState::Loaded)),
-                    update_hover.run_if(on_event::<ZoneOver>().or_else(on_event::<ZoneOut>())),
                     apply_to_material,
                 ),
             )
@@ -227,30 +228,32 @@ fn apply_to_material(
     }
 }
 
-fn update_hover(
-    mut out_events: EventReader<ZoneOut>,
-    mut over_events: EventReader<ZoneOver>,
+fn handle_zone_over(
+    trigger: Trigger<ZoneOver>,
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     material_query: Query<&Handle<ZoneMaterial>>,
 ) {
-    for ZoneOut(entity) in out_events.read() {
-        let Ok(handle) = material_query.get(*entity) else {
-            continue;
-        };
-        let Some(material) = zone_materials.get_mut(handle) else {
-            continue;
-        };
-        material.set_hover(false);
-    }
-    for ZoneOver(entity) in over_events.read() {
-        let Ok(handle) = material_query.get(*entity) else {
-            continue;
-        };
-        let Some(material) = zone_materials.get_mut(handle) else {
-            continue;
-        };
-        material.set_hover(true);
-    }
+    let Ok(handle) = material_query.get(trigger.entity()) else {
+        return;
+    };
+    let Some(material) = zone_materials.get_mut(handle) else {
+        return;
+    };
+    material.set_hover(true);
+}
+
+fn handle_zone_out(
+    trigger: Trigger<ZoneOut>,
+    mut zone_materials: ResMut<Assets<ZoneMaterial>>,
+    material_query: Query<&Handle<ZoneMaterial>>,
+) {
+    let Ok(handle) = material_query.get(trigger.entity()) else {
+        return;
+    };
+    let Some(material) = zone_materials.get_mut(handle) else {
+        return;
+    };
+    material.set_hover(false);
 }
 
 fn prepare_terrain_buffer(

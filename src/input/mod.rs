@@ -5,6 +5,7 @@ mod bundle;
 mod component;
 mod event;
 mod plugin;
+mod resource;
 mod system;
 mod system_param;
 
@@ -18,6 +19,7 @@ pub use leafwing_input_manager::{
     prelude::ActionState,
 };
 pub use plugin::{InputPlugin, InputSet};
+pub use resource::*;
 pub use system_param::*;
 
 #[cfg(test)]
@@ -76,7 +78,9 @@ mod tests {
 
     #[rstest]
     pub fn select_next(mut app: App) {
-        app.add_systems(Update, (handle_select_next, apply_selection_events).chain());
+        app.observe(apply_select_event)
+            .observe(apply_deselect_event)
+            .add_systems(Update, handle_select_next);
 
         press_select_next(&mut app);
         app.update();

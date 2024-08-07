@@ -1,22 +1,22 @@
 use bevy::prelude::*;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
-pub struct ZoneActivated(pub Entity);
+pub struct ZoneActivated;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
-pub struct ZoneOver(pub Entity);
+pub struct ZoneOver;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
-pub struct ZoneOut(pub Entity);
+pub struct ZoneOut;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
-pub struct Select(pub Entity);
+pub struct Select;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
-pub struct Deselect(pub Entity);
+pub struct Deselect;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
-pub struct SelectionOver(pub Entity);
+pub struct SelectionOver;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
-pub struct SelectionOut(pub Entity);
+pub struct SelectionOut;

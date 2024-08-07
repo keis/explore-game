@@ -65,13 +65,10 @@ pub fn magic_cancel(
     action_state.set_action_data(Action::ToggleMainMenu, actiondata);
 }
 
-pub fn handle_deselect(
-    selection_query: Query<(Entity, &Selection)>,
-    mut deselect_events: EventWriter<Deselect>,
-) {
+pub fn handle_deselect(mut commands: Commands, selection_query: Query<(Entity, &Selection)>) {
     for (entity, selection) in &selection_query {
         if selection.is_selected {
-            deselect_events.send(Deselect(entity));
+            commands.trigger_targets(Deselect, entity);
         }
     }
 }
@@ -90,8 +87,6 @@ pub fn handle_select_next(
     next_selection_query: NextSelectionQuery,
     selection_query: Query<(Entity, &Selection, &MapPresence)>,
     camera_query: Query<Entity, With<CameraControl>>,
-    mut select_events: EventWriter<Select>,
-    mut deselect_events: EventWriter<Deselect>,
 ) {
     let camera_entity = camera_query.single();
     let Some(next) = next_selection_query.get() else {
@@ -99,12 +94,12 @@ pub fn handle_select_next(
     };
     for (entity, selection, presence) in &selection_query {
         if entity == next {
-            select_events.send(Select(entity));
+            commands.trigger_targets(Select, entity);
             commands
                 .entity(camera_entity)
                 .insert(CameraTarget::from_hexcoord(presence.position));
         } else if selection.is_selected {
-            deselect_events.send(Deselect(entity));
+            commands.trigger_targets(Deselect, entity);
         }
     }
 }
