@@ -1,4 +1,4 @@
-use super::event::*;
+use super::{component::Selection, event::*};
 use bevy::prelude::*;
 
 #[derive(Resource, Default)]
@@ -10,6 +10,10 @@ impl SelectedIndex {
     }
 
     pub fn on_deselect(trigger: Trigger<Deselect>, mut index: ResMut<Self>) {
+        index.0.retain(|&e| e != trigger.entity());
+    }
+
+    pub fn on_remove(trigger: Trigger<OnRemove, Selection>, mut index: ResMut<Self>) {
         index.0.retain(|&e| e != trigger.entity());
     }
 }

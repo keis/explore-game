@@ -41,6 +41,7 @@ impl Plugin for InputPlugin {
         .init_resource::<SelectedIndex>()
         .observe(SelectedIndex::on_select)
         .observe(SelectedIndex::on_deselect)
+        .observe(SelectedIndex::on_remove)
         .insert_resource(input_map())
         .observe(apply_zone_activated_event)
         .observe(apply_select_event)
