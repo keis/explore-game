@@ -65,7 +65,7 @@ glam.workspace = true
 interpolation = "0.3"
 itertools = { workspace = true }
 leafwing-input-manager = "0.15"
-moonshine-save = "=0.3.8"
+moonshine-save = "=0.3.9"
 noisy_bevy = "0.7"
 pathfinding = "4"
 platform-dirs = "0.3"
