@@ -12,7 +12,7 @@ use expl_map::{MapPresence, PresenceLayer};
 pub use leafwing_input_manager::prelude::ActionState;
 use leafwing_input_manager::prelude::*;
 
-#[derive(Actionlike, Reflect, PartialEq, Eq, Clone, Copy, Hash, Debug)]
+#[derive(Reflect, PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum Action {
     BreakCamp,
     Camp,
@@ -40,29 +40,39 @@ pub enum Action {
     ZoomCamera,
 }
 
+impl Actionlike for Action {
+    fn input_control_kind(&self) -> InputControlKind {
+        match self {
+            Action::ZoomCamera => InputControlKind::Axis,
+            Action::PanCameraMotion => InputControlKind::DualAxis,
+            _ => InputControlKind::Button,
+        }
+    }
+}
+
 pub fn magic_cancel(
     mut action_state: ResMut<ActionState<Action>>,
     interface_state: Res<State<InterfaceState>>,
     selection_query: Query<&Selection>,
 ) {
-    let Some(actiondata) = action_state.action_data(&Action::Cancel).cloned() else {
+    let Some(actiondata) = action_state.button_data(&Action::Cancel).cloned() else {
         return;
     };
 
     // Close menu
     if *interface_state == InterfaceState::Menu {
-        action_state.set_action_data(Action::ToggleMainMenu, actiondata);
+        action_state.set_button_data(Action::ToggleMainMenu, actiondata);
         return;
     }
 
     // Deselect
     if selection_query.iter().any(|s| s.is_selected) {
-        action_state.set_action_data(Action::Deselect, actiondata);
+        action_state.set_button_data(Action::Deselect, actiondata);
         return;
     }
 
     // Open menu
-    action_state.set_action_data(Action::ToggleMainMenu, actiondata);
+    action_state.set_button_data(Action::ToggleMainMenu, actiondata);
 }
 
 pub fn handle_deselect(mut commands: Commands, selection_query: Query<(Entity, &Selection)>) {
