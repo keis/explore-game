@@ -1,4 +1,4 @@
-use super::{color::*, InterfaceAssets, InterfaceState};
+use super::{color::*, style::*, styles::style_root_container, InterfaceAssets, InterfaceState};
 use crate::scene::{SceneState, Score};
 use bevy::{color::palettes::css, prelude::*};
 
@@ -7,6 +7,34 @@ pub struct GameOverLayer;
 
 #[derive(Component)]
 pub struct NewGameButton;
+
+fn style_game_over_layer(style: &mut StyleBuilder) {
+    style
+        .align_items(AlignItems::Center)
+        .justify_content(JustifyContent::SpaceAround)
+        .background_color(BACKGROUND);
+}
+
+fn style_game_over_display(style: &mut StyleBuilder) {
+    style
+        .width(Val::Px(400.0))
+        .height(Val::Px(300.0))
+        .flex_direction(FlexDirection::Column)
+        .justify_content(JustifyContent::FlexStart)
+        .padding(Val::Px(5.0))
+        .background_color(NORMAL);
+}
+
+fn style_new_game_button(style: &mut StyleBuilder) {
+    style
+        .width(Val::Percent(100.0))
+        .height(Val::Px(50.0))
+        .margin_top(Val::Auto)
+        .margin_bottom(Val::Px(10.0))
+        .align_items(AlignItems::Center)
+        .justify_content(JustifyContent::SpaceAround)
+        .background_color(MENU);
+}
 
 pub fn spawn_game_over_screen(
     mut commands: Commands,
@@ -18,33 +46,13 @@ pub fn spawn_game_over_screen(
         .spawn((
             Name::new("Game over layer"),
             GameOverLayer,
-            NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    position_type: PositionType::Absolute,
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::SpaceAround,
-                    ..default()
-                },
-                background_color: BACKGROUND.into(),
-                ..default()
-            },
+            NodeBundle::default(),
         ))
+        .with_style((style_root_container, style_game_over_layer))
         .with_children(|parent| {
             parent
-                .spawn(NodeBundle {
-                    style: Style {
-                        width: Val::Px(400.0),
-                        height: Val::Px(300.0),
-                        flex_direction: FlexDirection::Column,
-                        justify_content: JustifyContent::FlexStart,
-                        padding: UiRect::all(Val::Px(5.0)),
-                        ..default()
-                    },
-                    background_color: NORMAL.into(),
-                    ..default()
-                })
+                .spawn(NodeBundle::default())
+                .with_style(style_game_over_display)
                 .with_children(|parent| {
                     parent.spawn(TextBundle::from_section(
                         "Game Over",
@@ -115,25 +123,8 @@ pub fn spawn_game_over_screen(
                         ),
                     ]));
                     parent
-                        .spawn((
-                            NewGameButton,
-                            ButtonBundle {
-                                style: Style {
-                                    width: Val::Percent(100.0),
-                                    height: Val::Px(50.0),
-                                    margin: UiRect {
-                                        top: Val::Auto,
-                                        bottom: Val::Px(10.0),
-                                        ..default()
-                                    },
-                                    align_items: AlignItems::Center,
-                                    justify_content: JustifyContent::SpaceAround,
-                                    ..default()
-                                },
-                                background_color: MENU.into(),
-                                ..default()
-                            },
-                        ))
+                        .spawn((NewGameButton, ButtonBundle::default()))
+                        .with_style(style_new_game_button)
                         .with_children(|parent| {
                             parent.spawn(TextBundle::from_section(
                                 "Play again",
