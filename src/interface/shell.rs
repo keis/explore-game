@@ -35,6 +35,40 @@ fn style_toolbar(style: &mut StyleBuilder) {
     style.align_self(AlignSelf::FlexStart).padding(Val::Px(2.0));
 }
 
+fn style_shell_container(style: &mut StyleBuilder) {
+    style
+        .flex_direction(FlexDirection::Column)
+        .justify_content(JustifyContent::SpaceBetween)
+        .pointer_events(false);
+}
+
+fn style_bar(style: &mut StyleBuilder) {
+    style
+        .width(Val::Percent(100.0))
+        .justify_content(JustifyContent::SpaceBetween)
+        .pointer_events(false);
+}
+
+fn style_outliner(style: &mut StyleBuilder) {
+    style
+        .flex_direction(FlexDirection::Column)
+        .pointer_events(false);
+}
+
+fn style_zone_display(style: &mut StyleBuilder) {
+    style
+        .width(Val::Px(100.0))
+        .justify_content(JustifyContent::End);
+}
+
+fn style_next_turn_button(style: &mut StyleBuilder) {
+    style
+        .width(Val::Px(200.0))
+        .height(Val::Px(60.0))
+        .align_self(AlignSelf::FlexEnd)
+        .background_color(Color::srgb(0.4, 0.9, 0.4));
+}
+
 fn spawn_toolbar_item(
     parent: &mut ChildBuilder,
     assets: &Res<InterfaceAssets>,
@@ -143,14 +177,6 @@ fn spawn_toolbar(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
         });
 }
 
-fn style_next_turn_button(style: &mut StyleBuilder) {
-    style
-        .width(Val::Px(200.0))
-        .height(Val::Px(60.0))
-        .align_self(AlignSelf::FlexEnd)
-        .background_color(Color::srgb(0.4, 0.9, 0.4));
-}
-
 fn spawn_next_turn_button(parent: &mut ChildBuilder, assets: &Res<InterfaceAssets>) {
     parent
         .spawn((
@@ -184,32 +210,6 @@ fn spawn_next_turn_button(parent: &mut ChildBuilder, assets: &Res<InterfaceAsset
                 Some("<Return>"),
             );
         });
-}
-
-fn style_shell_container(style: &mut StyleBuilder) {
-    style
-        .flex_direction(FlexDirection::Column)
-        .justify_content(JustifyContent::SpaceBetween)
-        .pointer_events(false);
-}
-
-fn style_bar(style: &mut StyleBuilder) {
-    style
-        .width(Val::Percent(100.0))
-        .justify_content(JustifyContent::SpaceBetween)
-        .pointer_events(false);
-}
-
-fn style_outliner(style: &mut StyleBuilder) {
-    style
-        .flex_direction(FlexDirection::Column)
-        .pointer_events(false);
-}
-
-fn style_zone_display(style: &mut StyleBuilder) {
-    style
-        .width(Val::Px(100.0))
-        .justify_content(JustifyContent::End);
 }
 
 pub fn spawn_shell(mut commands: Commands, assets: Res<InterfaceAssets>) {
