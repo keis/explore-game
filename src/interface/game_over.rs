@@ -39,9 +39,8 @@ fn style_new_game_button(style: &mut StyleBuilder) {
 pub fn spawn_game_over_screen(
     mut commands: Commands,
     assets: Res<InterfaceAssets>,
-    score_query: Query<&Score>,
+    score: Res<Score>,
 ) {
-    let score = score_query.get_single().unwrap();
     commands
         .spawn((
             Name::new("Game over layer"),
