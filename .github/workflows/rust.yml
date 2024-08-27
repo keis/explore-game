@@ -24,7 +24,7 @@ jobs:
     - name: Rust toolchain
       uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: stable
+        toolchain: nightly
         components: clippy
     - uses: rui314/setup-mold@v1
     - name: Install dependencies
@@ -47,7 +47,7 @@ jobs:
     - name: Rust toolchain
       uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: stable
+        toolchain: nightly
         components: clippy
     - uses: rui314/setup-mold@v1
     - name: Install dependencies
