@@ -15,6 +15,7 @@ pub use component::*;
 pub use event::*;
 pub use leafwing_input_manager::{
     common_conditions::{action_just_pressed, action_toggle_active},
+    input_map::InputMap,
     plugin::InputManagerSystem,
     prelude::ActionState,
 };
