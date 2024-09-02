@@ -1,15 +1,12 @@
-use super::{
-    assets::InterfaceAssets, camp, character, game_over, menu, party, selected, shell, tabview,
-    tooltip,
-};
+use super::{assets::InterfaceAssets, resource::*, root};
 use crate::{
-    actor::{GroupEvent, Party},
+    actor::Party,
     assets::AssetState,
-    input::{action_just_pressed, Action, InputManagerSystem, InputSet, SelectedIndex, Selection},
+    input::{action_just_pressed, Action, InputManagerSystem},
     scene::SceneState,
     structure::Camp,
 };
-use bevy::{hierarchy::HierarchyEvent, prelude::*};
+use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
 pub struct InterfacePlugin;
@@ -22,24 +19,19 @@ impl Plugin for InterfacePlugin {
                 .load_collection::<InterfaceAssets>(),
         )
         .init_state::<InterfaceState>()
-        .observe(selected::handle_deselect_event)
-        .observe(selected::handle_select_event)
+        .init_resource::<Index<Party>>()
+        .init_resource::<Index<Camp>>()
+        .observe(Index::<Party>::on_add)
+        .observe(Index::<Party>::on_remove)
+        .observe(Index::<Camp>::on_add)
+        .observe(Index::<Camp>::on_remove)
         .add_systems(
             OnEnter(AssetState::Loaded),
             (
-                shell::spawn_shell,
-                menu::spawn_menu,
+                root::spawn_interface_root,
                 |mut next_state: ResMut<NextState<InterfaceState>>| {
                     next_state.set(InterfaceState::Menu)
                 },
-            ),
-        )
-        .add_systems(
-            OnEnter(SceneState::Active),
-            (
-                party::update_party_list,
-                camp::update_camp_list,
-                character::update_character_list,
             ),
         )
         .add_systems(
@@ -49,94 +41,12 @@ impl Plugin for InterfacePlugin {
             },
         )
         .add_systems(
-            PreUpdate,
-            (
-                shell::handle_action_button_interaction
-                    .in_set(InputManagerSystem::ManualControl)
-                    .after(InputManagerSystem::Update),
-                (
-                    camp::handle_camp_display_interaction,
-                    party::handle_party_display_interaction,
-                    character::handle_character_display_interaction,
-                    tabview::handle_tab_view_header_button_interaction.map(bevy::utils::warn),
-                )
-                    .in_set(InputSet::ProcessInput),
-            ),
-        )
-        .add_systems(
             Update,
-            (
-                (
-                    party::update_party_list,
-                    party::update_party_selection,
-                    party::update_party_movement_points,
-                    party::update_party_size,
-                    party::update_party_crystals,
-                    party::remove_despawned.run_if(any_component_removed::<Party>()),
-                ),
-                (
-                    camp::update_camp_list,
-                    camp::update_camp_selection,
-                    camp::update_camp_crystals,
-                    camp::remove_despawned.run_if(any_component_removed::<Camp>()),
-                ),
-                (
-                    character::update_character_list.run_if(
-                        resource_changed::<SelectedIndex>.or_else(on_event::<GroupEvent>()),
-                    ),
-                    character::update_character_selection,
-                    character::update_character_health,
-                ),
-                shell::update_turn_text,
-                shell::update_zone_text,
-                tooltip::show_tooltip_on_hover,
-                (
-                    selected::remove_despawned.run_if(any_component_removed::<Selection>()),
-                    apply_deferred,
-                    tabview::update_tab_view.run_if(on_event::<HierarchyEvent>()),
-                )
-                    .chain(),
-            )
-                .run_if(in_state(AssetState::Loaded)),
-        )
-        .add_systems(
-            Update,
-            (
-                menu::handle_toggle_main_menu
-                    .run_if(action_just_pressed(Action::ToggleMainMenu))
-                    .run_if(in_state(SceneState::Active)),
-                (
-                    menu::handle_resume,
-                    menu::handle_new_game,
-                    menu::handle_save,
-                    menu::handle_quit,
-                    menu::menu_item_interaction_effect,
-                )
-                    .run_if(in_state(InterfaceState::Menu)),
-                game_over::handle_new_game.run_if(in_state(InterfaceState::GameOver)),
-            )
+            handle_toggle_main_menu
+                .run_if(action_just_pressed(Action::ToggleMainMenu))
+                .run_if(in_state(SceneState::Active))
                 .after(InputManagerSystem::ManualControl)
                 .run_if(in_state(AssetState::Loaded)),
-        )
-        .add_systems(
-            OnEnter(InterfaceState::Menu),
-            (shell::hide_shell, menu::show_menu),
-        )
-        .add_systems(
-            OnEnter(InterfaceState::Shell),
-            (shell::show_shell, menu::hide_menu),
-        )
-        .add_systems(
-            OnEnter(InterfaceState::GameOver),
-            (
-                shell::hide_shell,
-                menu::hide_menu,
-                game_over::spawn_game_over_screen,
-            ),
-        )
-        .add_systems(
-            OnExit(InterfaceState::GameOver),
-            game_over::despawn_game_over_screen,
         );
     }
 }
@@ -148,4 +58,16 @@ pub enum InterfaceState {
     Shell,
     Menu,
     GameOver,
+}
+
+pub fn handle_toggle_main_menu(
+    current_state: Res<State<InterfaceState>>,
+    mut next_state: ResMut<NextState<InterfaceState>>,
+) {
+    next_state.set(match current_state.get() {
+        InterfaceState::Hidden => InterfaceState::Menu,
+        InterfaceState::Menu => InterfaceState::Shell,
+        InterfaceState::Shell => InterfaceState::Menu,
+        InterfaceState::GameOver => InterfaceState::GameOver,
+    });
 }

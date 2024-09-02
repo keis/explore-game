@@ -3,8 +3,8 @@ use crate::{actor::Members, creature::Corpse, inventory::Inventory, structure::S
 use bevy::prelude::*;
 use expl_map::MapPresence;
 
-#[derive(Component, Reflect, Default, Debug)]
-#[reflect(Component)]
+#[derive(Resource, Reflect, Default, Debug)]
+#[reflect(Resource)]
 pub struct Score {
     pub survivors: u32,
     pub dead: u32,
@@ -27,6 +27,6 @@ pub fn game_over(
         score.crystals += inventory.count_item(Inventory::CRYSTAL);
     }
     score.dead = corpse_query.iter().count() as u32;
-    commands.spawn(score);
+    commands.insert_resource(score);
     scene_state.set(SceneState::GameOver);
 }
