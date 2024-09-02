@@ -427,7 +427,7 @@ dependencies = [
  "bevy_core",
  "bevy_core_pipeline",
  "bevy_ecs",
- "bevy_egui",
+ "bevy_egui 0.28.0",
  "bevy_hierarchy",
  "bevy_log",
  "bevy_math",
@@ -752,6 +752,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_egui"
+version = "0.29.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "128438a8163e49528207aabf20d3ff0890fd6be0f0054626915995efac87922b"
+dependencies = [
+ "arboard",
+ "bevy",
+ "bytemuck",
+ "console_log",
+ "crossbeam-channel",
+ "egui",
+ "js-sys",
+ "log",
+ "thread_local",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "webbrowser",
+ "wgpu-types",
+ "winit",
+]
+
+[[package]]
 name = "bevy_encase_derive"
 version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1000,9 +1023,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_mod_outline"
-version = "0.8.2"
+version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bc6235cd40ea707626f882ac79498e31a2f6835178c7094f16956ddc90e5252"
+checksum = "96a262553297f0a22d21b1b01d6b377ef0c904d261fe52d09ec7d2ad967a6a26"
 dependencies = [
  "bevy",
  "bitfield",
@@ -1023,7 +1046,7 @@ dependencies = [
  "bevy_core",
  "bevy_core_pipeline",
  "bevy_ecs",
- "bevy_egui",
+ "bevy_egui 0.28.0",
  "bevy_eventlistener",
  "bevy_math",
  "bevy_picking_core",
@@ -1064,7 +1087,7 @@ dependencies = [
 [[package]]
 name = "bevy_mod_stylebuilder"
 version = "0.1.3"
-source = "git+https://github.com/viridia/quill.git?branch=main#cecbc35426a095f56bad1f12df546f5a79dece32"
+source = "git+https://github.com/viridia/quill.git?branch=main#3dc872fb87ff0698ed8112e691fbf2c0b09ac4a2"
 dependencies = [
  "bevy",
  "bevy_mod_picking",
@@ -1139,7 +1162,7 @@ checksum = "a861e64cd1567c1bcc3075da01770dd6c5930ecec5bd9fad73d858c9564c1833"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
- "bevy_egui",
+ "bevy_egui 0.28.0",
  "bevy_picking_core",
  "bevy_picking_selection",
  "bevy_reflect",
@@ -2662,7 +2685,7 @@ dependencies = [
  "bevy",
  "bevy-inspector-egui",
  "bevy_asset_loader",
- "bevy_egui",
+ "bevy_egui 0.29.0",
  "bevy_mod_billboard",
  "bevy_mod_outline",
  "bevy_mod_picking",
