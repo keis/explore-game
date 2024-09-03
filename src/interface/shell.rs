@@ -9,7 +9,7 @@ use super::{
     InterfaceAssets, DEFAULT_FONT,
 };
 use crate::{
-    input::{Action, ActionState, MapHover},
+    input::{Action, ActionState, InputMap, MapHover},
     turn::Turn,
 };
 use expl_map::MapPosition;
@@ -69,14 +69,31 @@ fn style_next_turn_button(style: &mut StyleBuilder) {
         .align_items(AlignItems::Center);
 }
 
+fn get_keybind_for_action(inputmap: &InputMap<Action>, action: &Action) -> Option<KeyCode> {
+    inputmap
+        .get_buttonlike(action)
+        .and_then(|v| v.first())
+        .and_then(|buttonlike| Reflect::as_any(buttonlike.as_ref()).downcast_ref::<KeyCode>())
+        .copied()
+}
+
 #[derive(Clone, PartialEq)]
 pub struct KeybindText {
-    keybind_text: String,
+    keybind: KeyCode,
 }
 
 impl KeybindText {
-    fn new(keybind_text: String) -> Self {
-        Self { keybind_text }
+    fn new(keybind: KeyCode) -> Self {
+        Self { keybind }
+    }
+
+    fn keybind_text(&self) -> &'static str {
+        match self.keybind {
+            KeyCode::KeyC => "<C>",
+            KeyCode::KeyM => "<M>",
+            KeyCode::Enter => "<Enter>",
+            _ => "-",
+        }
     }
 }
 
@@ -86,31 +103,26 @@ impl ViewTemplate for KeybindText {
     fn create(&self, _cx: &mut Cx) -> Self::View {
         Element::<NodeBundle>::new()
             .style(style_keybind_text)
-            .children(self.keybind_text.clone())
+            .children(self.keybind_text())
     }
 }
 
 #[derive(Clone, PartialEq)]
 pub struct TooltipContent {
     tooltip_text: String,
-    keybind_text: Option<String>,
+    keybind: Option<KeyCode>,
 }
 
 impl TooltipContent {
     fn new(tooltip_text: impl Into<String>) -> Self {
         TooltipContent {
             tooltip_text: tooltip_text.into(),
-            keybind_text: None,
+            keybind: None,
         }
     }
 
-    fn keybind_text(mut self, keybind_text: impl Into<String>) -> Self {
-        self.keybind_text = Some(keybind_text.into());
-        self
-    }
-
-    fn maybe_keybind_text(mut self, keybind_text: Option<impl Into<String>>) -> Self {
-        self.keybind_text = keybind_text.map(|v| v.into());
+    fn maybe_keybind(mut self, keybind: Option<KeyCode>) -> Self {
+        self.keybind = keybind;
         self
     }
 }
@@ -123,7 +135,7 @@ impl ViewTemplate for TooltipContent {
             .style(style_tooltip_text)
             .children((
                 self.tooltip_text.clone(),
-                Opt::new(self.keybind_text.clone().map(KeybindText::new)),
+                Opt::new(self.keybind.map(KeybindText::new)),
             ))
     }
 }
@@ -133,7 +145,6 @@ struct ToolbarItem {
     action: Action,
     icon: Handle<Image>,
     tooltip_text: String,
-    keybind_text: Option<String>,
 }
 
 impl ToolbarItem {
@@ -142,7 +153,6 @@ impl ToolbarItem {
             action,
             icon: Handle::default(),
             tooltip_text: "".to_string(),
-            keybind_text: None,
         }
     }
 
@@ -155,11 +165,6 @@ impl ToolbarItem {
         self.tooltip_text = tooltip_text.into();
         self
     }
-
-    pub fn keybind_text(mut self, keybind_text: impl Into<String>) -> Self {
-        self.keybind_text = Some(keybind_text.into());
-        self
-    }
 }
 
 impl ViewTemplate for ToolbarItem {
@@ -169,6 +174,8 @@ impl ViewTemplate for ToolbarItem {
         let id = cx.create_entity();
         let icon = self.icon.clone();
         let action = self.action;
+        let inputmap = cx.use_resource::<InputMap<Action>>();
+        let keybind = get_keybind_for_action(inputmap, &action);
         Element::<ButtonBundle>::for_entity(id)
             .insert_dyn(
                 move |_| {
@@ -187,8 +194,7 @@ impl ViewTemplate for ToolbarItem {
                 Tooltip::for_parent(id)
                     .position(TooltipPosition::Below)
                     .children(
-                        TooltipContent::new(self.tooltip_text.clone())
-                            .maybe_keybind_text(self.keybind_text.clone()),
+                        TooltipContent::new(self.tooltip_text.clone()).maybe_keybind(keybind),
                     ),
             )
     }
@@ -205,12 +211,10 @@ impl ViewTemplate for Toolbar {
         Element::<NodeBundle>::new().style(style_toolbar).children((
             ToolbarItem::for_action(Action::ResumeMove)
                 .icon(assets.arrow_icon.clone())
-                .tooltip_text("Resume move")
-                .keybind_text("<M>"),
+                .tooltip_text("Resume move"),
             ToolbarItem::for_action(Action::Camp)
                 .icon(assets.campfire_icon.clone())
-                .tooltip_text("Make/Enter camp")
-                .keybind_text("<C>"),
+                .tooltip_text("Make/Enter camp"),
             ToolbarItem::for_action(Action::BreakCamp)
                 .icon(assets.cancel_icon.clone())
                 .tooltip_text("Break camp"),
@@ -269,6 +273,8 @@ impl ViewTemplate for NextTurnButton {
         let id = cx.create_entity();
         let turn = cx.use_resource::<Turn>();
         let action = Action::NextTurn;
+        let inputmap = cx.use_resource::<InputMap<Action>>();
+        let keybind = get_keybind_for_action(inputmap, &action);
         Element::<ButtonBundle>::for_entity(id)
             .named("Next Turn Button")
             .style(style_next_turn_button)
@@ -291,7 +297,7 @@ impl ViewTemplate for NextTurnButton {
                     },
                 )),
                 Tooltip::for_parent(id)
-                    .children(TooltipContent::new("Next turn").keybind_text("<Return>")),
+                    .children(TooltipContent::new("Next turn").maybe_keybind(keybind)),
             ))
     }
 }
