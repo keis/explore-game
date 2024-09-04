@@ -1,7 +1,7 @@
 use super::{asset::*, component::*};
 use crate::{
     map_generator::ZonePrototype,
-    material::{TerrainBuffer, TerrainMaterial, WaterMaterial, ZoneMaterial},
+    material::{DecorationBuffer, DecorationMaterial, TerrainBuffer, WaterMaterial, ZoneMaterial},
     role::Role,
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
@@ -11,13 +11,16 @@ use expl_hexgrid::Neighbours;
 use expl_map::{Fog, HexCoord, MapPosition};
 use glam::Vec3Swizzles;
 
-pub type ZoneDecorationParams<'w> = ResMut<'w, Assets<TerrainMaterial>>;
+pub type ZoneDecorationParams<'w> = (
+    Res<'w, DecorationBuffer>,
+    ResMut<'w, Assets<DecorationMaterial>>,
+);
 
 #[derive(Bundle)]
 pub struct ZoneDecorationBundle<Tag: Component> {
     fog: Fog,
     tag: Tag,
-    material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
+    material_mesh_bundle: MaterialMeshBundle<DecorationMaterial>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -25,7 +28,7 @@ impl<Tag: Component> ZoneDecorationBundle<Tag> {
     pub fn new(
         tag: Tag,
         decoration_id: Id<Decoration>,
-        terrain_materials: &mut ZoneDecorationParams,
+        (decoration_buffer, decoration_materials): &mut ZoneDecorationParams,
         decoration_codex: &Codex<Decoration>,
         height: &Height,
         fog: &Fog,
@@ -38,10 +41,10 @@ impl<Tag: Component> ZoneDecorationBundle<Tag> {
             tag,
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: decoration.mesh.clone(),
-                material: terrain_materials.add(TerrainMaterial::from_decoration(
-                    decoration_codex,
+                material: decoration_materials.add(DecorationMaterial::new(
                     &decoration_id,
                     fog,
+                    decoration_buffer,
                 )),
                 visibility: if fog.explored {
                     Visibility::Inherited
