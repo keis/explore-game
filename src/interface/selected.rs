@@ -80,13 +80,21 @@ impl ViewTemplate for SelectedTabHeaderIcon {
         let assets = cx.use_resource::<InterfaceAssets>();
 
         let target = self.target;
-        let focused = self.focused.get(cx);
+        let focused = self.focused;
         let brutal_helm_icon = assets.brutal_helm_icon.clone();
         let campfire_icon = assets.campfire_icon.clone();
 
         Cond::new(
             selected_type != SelectedType::Other,
             Element::<ButtonBundle>::new()
+                .insert_dyn(
+                    move |_| {
+                        On::<Pointer<Click>>::run(move |world: &mut World| {
+                            focused.set(world, Some(target));
+                        })
+                    },
+                    (),
+                )
                 .style((style_button, style_icon, move |sb: &mut StyleBuilder| {
                     match selected_type {
                         SelectedType::Party => {
@@ -106,7 +114,7 @@ impl ViewTemplate for SelectedTabHeaderIcon {
                             NORMAL
                         });
                     },
-                    focused,
+                    focused.get(cx),
                 ),
             (),
         )
