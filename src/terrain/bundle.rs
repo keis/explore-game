@@ -105,7 +105,7 @@ pub struct ZoneRole {
 
 impl ZoneRole {
     pub fn new(
-        (hex_assets, terrain_buffer, zone_materials): &mut ZoneParams,
+        (hex_assets, codex_buffer, zone_materials): &mut ZoneParams,
         position: &MapPosition,
         terrain: &TerrainId,
         fog: &Fog,
@@ -120,7 +120,7 @@ impl ZoneRole {
                     fog,
                     &outer_visible,
                     &outer_terrain,
-                    terrain_buffer,
+                    codex_buffer,
                 )),
                 transform: Transform::from_translation(position.0.into()),
                 ..default()

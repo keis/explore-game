@@ -1,5 +1,6 @@
 use bevy::app::{PluginGroup, PluginGroupBuilder};
 
+mod codex_buffer;
 mod portal_material;
 mod terrain_material;
 mod water_material;
