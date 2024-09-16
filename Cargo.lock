@@ -2673,7 +2673,6 @@ dependencies = [
  "bevy",
  "bevy-inspector-egui",
  "bevy_asset_loader",
- "bevy_egui",
  "bevy_mod_billboard",
  "bevy_mod_outline",
  "bevy_mod_picking",

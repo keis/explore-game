@@ -1,7 +1,9 @@
 use crate::input::{action_toggle_active, Action};
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_egui::{egui, EguiContext, EguiPlugin};
-use bevy_inspector_egui::DefaultInspectorConfigPlugin;
+use bevy_inspector_egui::{
+    bevy_egui::{egui, EguiContext, EguiPlugin},
+    DefaultInspectorConfigPlugin,
+};
 
 pub struct InspectorPlugin;
 
