@@ -1,0 +1,26 @@
+[bans]
+multiple-versions = "deny"
+wildcards = "allow"
+highlight = "all"
+workspace-default-features = "allow"
+external-default-features = "allow"
+skip = [
+    "rustc-hash",
+    "regex-syntax",
+    "regex-automata",
+    "libloading",
+    "inotify",
+    "image",
+    "fixedbitset",
+    "event-listener",
+    "cfg_aliases",
+    "base64",
+]
+skip-tree = [
+    "windows",
+    "windows-sys",
+    "toml_edit",
+    "libredox",
+    "ndk",
+]
+deny = [ ]
