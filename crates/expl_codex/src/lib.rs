@@ -132,7 +132,7 @@ impl<T> Id<T> {
 #[derive(Asset, TypePath, Clone, Debug)]
 pub struct Codex<Entry>
 where
-    Entry: fmt::Debug + TypePath + Send + Sync,
+    Entry: TypePath + Send + Sync,
 {
     lookup: Arc<HashMap<Id<Entry>, Entry>>,
 }
@@ -140,14 +140,14 @@ where
 /// Used to assemble [Codex] instances.
 pub struct CodexBuilder<Entry>
 where
-    Entry: fmt::Debug + TypePath + Send + Sync,
+    Entry: TypePath + Send + Sync,
 {
     lookup: HashMap<Id<Entry>, Entry>,
 }
 
 impl<Entry> CodexBuilder<Entry>
 where
-    Entry: fmt::Debug + TypePath + Send + Sync,
+    Entry: TypePath + Send + Sync,
 {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
@@ -167,7 +167,7 @@ where
 
 impl<Entry> Codex<Entry>
 where
-    Entry: fmt::Debug + TypePath + Send + Sync,
+    Entry: TypePath + Send + Sync,
 {
     pub fn new(lookup: HashMap<Id<Entry>, Entry>) -> Self {
         Self {
@@ -186,7 +186,7 @@ where
 
 impl<Entry> Index<&Id<Entry>> for Codex<Entry>
 where
-    Entry: fmt::Debug + TypePath + Send + Sync,
+    Entry: TypePath + Send + Sync,
 {
     type Output = Entry;
 
@@ -197,7 +197,7 @@ where
 
 impl<'a, Entry> FromIterator<(&'a str, Entry)> for Codex<Entry>
 where
-    Entry: fmt::Debug + TypePath + Send + Sync,
+    Entry: TypePath + Send + Sync,
 {
     fn from_iter<T>(iter: T) -> Self
     where
