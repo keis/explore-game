@@ -1,49 +1,41 @@
+use super::codex_buffer::{CodexBuffer, CodexBufferPlugin, CodexBufferValue};
 use crate::{
-    assets::{AssetState, CodexAssets},
     input::{ZoneOut, ZoneOver},
-    terrain::{OuterVisible, Terrain, TerrainCodex, TerrainId},
+    terrain::{OuterVisible, Terrain, TerrainId},
 };
-use bevy::{
-    prelude::*,
-    reflect::TypePath,
-    render::{
-        render_resource::*,
-        renderer::{RenderDevice, RenderQueue},
-    },
-};
-use expl_codex::{Codex, Id};
+use bevy::{prelude::*, render::render_resource::*};
+use expl_codex::Id;
 use expl_hexgrid::Neighbours;
 use expl_map::Fog;
+
+pub type TerrainBuffer = CodexBuffer<TerrainData>;
 
 #[derive(Default)]
 pub struct ZoneMaterialPlugin;
 
 impl Plugin for ZoneMaterialPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(MaterialPlugin::<ZoneMaterial>::default())
-            .init_resource::<TerrainBuffer>()
-            .observe(handle_zone_over)
-            .observe(handle_zone_out)
-            .add_systems(
-                Update,
-                (
-                    update_from_terrain_codex
-                        .run_if(on_event::<AssetEvent<Codex<Terrain>>>())
-                        .run_if(in_state(AssetState::Loaded)),
-                    apply_to_material,
-                ),
-            )
-            .add_systems(OnEnter(AssetState::Loaded), prepare_terrain_buffer);
+        app.add_plugins((
+            CodexBufferPlugin::<TerrainData>::default(),
+            MaterialPlugin::<ZoneMaterial>::default(),
+        ))
+        .observe(handle_zone_over)
+        .observe(handle_zone_out)
+        .add_systems(Update, apply_to_material);
     }
 }
 
 #[derive(Clone, Default, ShaderType)]
 pub struct TerrainData {
-    pub height_base: f32,
-    pub height_amp: f32,
-    pub color_a: Vec4,
-    pub color_b: Vec4,
-    pub color_c: Vec4,
+    height_base: f32,
+    height_amp: f32,
+    color_a: Vec4,
+    color_b: Vec4,
+    color_c: Vec4,
+}
+
+impl CodexBufferValue for TerrainData {
+    type CodexValue = Terrain;
 }
 
 impl From<&Terrain> for TerrainData {
@@ -128,7 +120,7 @@ impl ZoneMaterial {
         let outer_terrain_idx =
             outer_terrain.map(|terrain| terrain_buffer.as_index(&terrain).unwrap() as u32);
         Self {
-            terrain_data: terrain_buffer.data.buffer().unwrap().clone(),
+            terrain_data: terrain_buffer.buffer().unwrap().clone(),
             uniform: ZoneMaterialUniform {
                 terrain_idx,
                 flags: (ZoneFlags::from(fog) | ZoneFlags::from(outer_visible)).bits(),
@@ -182,34 +174,6 @@ impl Material for ZoneMaterial {
     }
 }
 
-#[derive(Resource, Default)]
-pub struct TerrainBuffer {
-    keys: Vec<Id<Terrain>>,
-    data: StorageBuffer<Vec<TerrainData>>,
-}
-
-impl TerrainBuffer {
-    fn as_index(&self, terrain_id: &Id<Terrain>) -> Option<usize> {
-        self.keys.iter().position(|&key| key == *terrain_id)
-    }
-}
-
-impl<'a> Extend<(&'a Id<Terrain>, &'a Terrain)> for TerrainBuffer {
-    fn extend<T>(&mut self, iter: T)
-    where
-        T: IntoIterator<Item = (&'a Id<Terrain>, &'a Terrain)>,
-    {
-        for (terrain_id, terrain) in iter {
-            if let Some(position) = self.as_index(terrain_id) {
-                self.data.get_mut()[position] = terrain.into();
-            } else {
-                self.keys.push(*terrain_id);
-                self.data.get_mut().push(terrain.into());
-            }
-        }
-    }
-}
-
 #[allow(clippy::type_complexity)]
 fn apply_to_material(
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
@@ -256,23 +220,8 @@ fn handle_zone_out(
     material.set_hover(false);
 }
 
-fn prepare_terrain_buffer(
-    mut terrain_buffer: ResMut<TerrainBuffer>,
-    terrain_codex: TerrainCodex,
-    render_device: Res<RenderDevice>,
-    render_queue: Res<RenderQueue>,
-) {
-    let Ok(terrain_codex) = terrain_codex.get() else {
-        return;
-    };
-    terrain_buffer.extend(terrain_codex.iter());
-    terrain_buffer
-        .data
-        .write_buffer(&render_device, &render_queue);
-}
-
+/*
 fn update_from_terrain_codex(
-    codex_assets: Res<CodexAssets>,
     mut codex_events: EventReader<AssetEvent<Codex<Terrain>>>,
     terrain_codex_assets: Res<Assets<Codex<Terrain>>>,
     mut terrain_buffer: ResMut<TerrainBuffer>,
@@ -283,14 +232,11 @@ fn update_from_terrain_codex(
         let AssetEvent::Modified { id: asset_id } = event else {
             continue;
         };
-        if *asset_id == codex_assets.terrain_codex.id() {
-            let terrain_codex = terrain_codex_assets
-                .get(&codex_assets.terrain_codex)
-                .unwrap();
-            terrain_buffer.extend(terrain_codex.iter());
-            terrain_buffer
-                .data
-                .write_buffer(&render_device, &render_queue);
-        }
+        let terrain_codex = terrain_codex_assets.get(*asset_id).unwrap();
+        terrain_buffer.extend(terrain_codex.iter());
     }
+    terrain_buffer
+        .data
+        .write_buffer(&render_device, &render_queue);
 }
+*/

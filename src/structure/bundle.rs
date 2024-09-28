@@ -5,7 +5,7 @@ use crate::{
     floating_text::FloatingTextSource,
     input::{DefaultOutlineVolume, SelectionBundle},
     inventory::Inventory,
-    material::TerrainMaterial,
+    material::{StructureBuffer, StructureMaterial},
     role::Role,
     terrain::HeightQuery,
 };
@@ -14,7 +14,11 @@ use bevy_mod_outline::{OutlineBundle, OutlineVolume};
 use expl_codex::{Codex, Id};
 use expl_map::{Fog, FogRevealer, HexCoord, MapPresence, ViewRadius};
 
-pub type StructureParams<'w, 's> = (ResMut<'w, Assets<TerrainMaterial>>, HeightQuery<'w, 's>);
+pub type StructureParams<'w, 's> = (
+    Res<'w, StructureBuffer>,
+    HeightQuery<'w, 's>,
+    ResMut<'w, Assets<StructureMaterial>>,
+);
 
 #[derive(Default)]
 pub struct StructureRole {
@@ -23,14 +27,14 @@ pub struct StructureRole {
     selection: SelectionBundle,
     floating_text_source: FloatingTextSource,
     // Child
-    material_mesh_bundle: MaterialMeshBundle<TerrainMaterial>,
+    material_mesh_bundle: MaterialMeshBundle<StructureMaterial>,
     default_outline_volume: DefaultOutlineVolume,
     outline_bundle: OutlineBundle,
 }
 
 impl StructureRole {
     pub fn new(
-        (terrain_materials, height_query): &mut StructureParams,
+        (structure_buffer, height_query, structure_materials): &mut StructureParams,
         structure_codex: &Codex<Structure>,
         structure_id: Id<Structure>,
         presence: &MapPresence,
@@ -57,10 +61,10 @@ impl StructureRole {
             },
             material_mesh_bundle: MaterialMeshBundle {
                 mesh: structure.mesh.clone(),
-                material: terrain_materials.add(TerrainMaterial::from_structure(
-                    structure_codex,
+                material: structure_materials.add(StructureMaterial::from_structure(
                     &structure_id,
                     fog,
+                    structure_buffer,
                 )),
                 transform: Transform::from_translation(Vec3::ZERO)
                     .with_scale(Vec3::splat(structure.scale))

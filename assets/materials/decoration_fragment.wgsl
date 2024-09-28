@@ -7,27 +7,38 @@
 #import bevy_core_pipeline::tonemapping::tone_mapping
 #import "materials/common.wgsl"::pixel_noise;
 
-struct UniformData {
+const DECORATION_FLAGS_VISIBLE_BIT: u32 = 1u;
+const DECORATION_FLAGS_EXPLORED_BIT: u32 = 2u;
+
+struct DecorationData {
     color_a: vec4<f32>,
     color_b: vec4<f32>,
     color_c: vec4<f32>,
-    visible: u32,
-    explored: u32,
+}
+
+struct UniformData {
+    decoration_idx: u32,
+    flags: u32,
 }
 
 @group(2) @binding(0)
+var<storage> decoration_data: array<DecorationData>;
+
+@group(2) @binding(1)
 var<uniform> uniform_data: UniformData;
 
 @fragment
 fn fragment(@builtin(front_facing) is_front: bool, mesh: VertexOutput) -> @location(0) vec4<f32> {
+    let decoration = decoration_data[uniform_data.decoration_idx];
+
     var output_color = vec4<f32>(1.0, 1.0, 1.0, 1.0);
 #ifdef VERTEX_COLORS
     output_color = output_color * mesh.color
 #endif
     let elevation = floor(mesh.world_position.y * 16.0) / 16.0;
-    output_color = output_color * pixel_noise(mesh.world_position.xz + vec2<f32>(elevation, elevation), uniform_data.color_a, uniform_data.color_b, uniform_data.color_c);
+    output_color = output_color * pixel_noise(mesh.world_position.xz + vec2<f32>(elevation, elevation), decoration.color_a, decoration.color_b, decoration.color_c);
 
-    if uniform_data.visible == 0u && uniform_data.explored == 1u {
+    if (uniform_data.flags & DECORATION_FLAGS_VISIBLE_BIT) == 0u && (uniform_data.flags & DECORATION_FLAGS_EXPLORED_BIT) != 0u {
         output_color = mix(output_color, vec4<f32>(0.2, 0.2, 0.2, 1.0), 0.7);
     }
 
