@@ -55,7 +55,7 @@ jobs:
         sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang
     - uses: Leafwing-Studios/cargo-cache@v2
     - name: Clippy
-      uses: sksat/action-clippy@v1.0.0
+      uses: sksat/action-clippy@v1.1.0
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         filter_mode: nofilter
