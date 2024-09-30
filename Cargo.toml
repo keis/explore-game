@@ -79,4 +79,4 @@ bevy_quill_core = { version = "0.1.3", git = "https://github.com/viridia/quill.g
 
 [dev-dependencies]
 approx = "0.5"
-rstest = { version = "0.22.0", default-features = false }
+rstest = { version = "0.23.0", default-features = false }
