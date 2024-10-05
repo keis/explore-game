@@ -1,11 +1,12 @@
 use super::{asset::*, component::*};
+use crate::action::ActionPoints;
 use bevy::prelude::*;
 use expl_codex::{Codex, Id};
 
 #[derive(Bundle, Default)]
 pub struct CreatureBundle {
     pub creature_id: CreatureId,
-    pub movement: Movement,
+    pub action_points: ActionPoints,
     pub attack: Attack,
     pub health: Health,
 }
@@ -15,10 +16,7 @@ impl CreatureBundle {
         let creature_data = &creature_codex[&creature_id];
         Self {
             creature_id: CreatureId(creature_id),
-            movement: Movement {
-                current: creature_data.movement,
-                reset: creature_data.movement,
-            },
+            action_points: ActionPoints::new(creature_data.action_points),
             attack: creature_data.attack.clone(),
             health: Health {
                 current: creature_data.health,

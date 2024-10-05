@@ -1,14 +1,8 @@
 use super::{bundle::*, component::*, event::*, system_param::*};
-use crate::{creature::Movement, role::RoleCommandsExt, terrain::HeightQuery, ExplError};
+use crate::{action::ActionPoints, role::RoleCommandsExt, terrain::HeightQuery, ExplError};
 use bevy::prelude::*;
 use expl_map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer};
 use interpolation::Ease;
-
-pub fn reset_movement_points(mut movement_query: Query<&mut Movement>) {
-    for mut movement in movement_query.iter_mut() {
-        movement.reset();
-    }
-}
 
 #[allow(clippy::type_complexity)]
 pub fn fluff_actor(
@@ -98,17 +92,17 @@ pub fn despawn_empty_party(
 }
 
 #[allow(clippy::type_complexity)]
-pub fn derive_party_movement(
-    mut party_query: Query<(&Members, &mut Movement), (With<Party>, Changed<Members>)>,
-    movement_query: Query<&Movement, Without<Party>>,
+pub fn derive_party_action_points(
+    mut party_query: Query<(&Members, &mut ActionPoints), (With<Party>, Changed<Members>)>,
+    action_points_query: Query<&ActionPoints, Without<Party>>,
 ) {
-    for (members, mut party_movement) in party_query.iter_mut() {
-        party_movement.current = movement_query
+    for (members, mut party_action_points) in party_query.iter_mut() {
+        party_action_points.current = action_points_query
             .iter_many(members.iter())
             .map(|m| m.current)
             .min()
             .unwrap_or(0);
-        party_movement.reset = movement_query
+        party_action_points.reset = action_points_query
             .iter_many(members.iter())
             .map(|m| m.reset)
             .min()

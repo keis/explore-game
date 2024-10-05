@@ -1,5 +1,4 @@
 use super::asset::Creature;
-use crate::ExplError;
 use bevy::prelude::*;
 use expl_codex::Id;
 use serde::Deserialize;
@@ -18,28 +17,6 @@ impl CreatureId {
 #[derive(Component, Reflect, Default, Debug)]
 #[reflect(Component)]
 pub struct Corpse;
-
-#[derive(Component, Reflect, Default, Debug)]
-#[reflect(Component)]
-pub struct Movement {
-    pub current: u16,
-    pub reset: u16,
-}
-
-impl Movement {
-    pub fn reset(&mut self) {
-        self.current = self.reset;
-    }
-
-    pub fn consume(&mut self) -> Result<(), ExplError> {
-        if self.current == 0 {
-            Err(ExplError::MoveWithoutMovementPoints)
-        } else {
-            self.current -= 1;
-            Ok(())
-        }
-    }
-}
 
 #[derive(Clone, Debug, Default, Component, Reflect, Deserialize)]
 #[reflect(Component)]

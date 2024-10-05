@@ -7,7 +7,7 @@ use serde::Deserialize;
 pub struct Creature {
     pub attack: Attack,
     pub health: u16,
-    pub movement: u16,
+    pub action_points: u16,
     pub view_radius: u16,
 }
 

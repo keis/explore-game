@@ -1,4 +1,4 @@
-use crate::{actor, creature, input, inventory, structure, terrain, turn};
+use crate::{action, actor, creature, input, inventory, structure, terrain, turn};
 use bevy::prelude::*;
 use expl_map;
 use moonshine_save::save::SaveFilter;
@@ -26,6 +26,7 @@ pub fn filter_with_enabled_components() -> SaveFilter {
     let components = SceneFilter::deny_all()
         .allow::<Name>()
         .allow::<Save>()
+        .allow::<action::ActionPoints>()
         .allow::<actor::ActorId>()
         .allow::<actor::Character>()
         .allow::<actor::Enemy>()
@@ -37,7 +38,6 @@ pub fn filter_with_enabled_components() -> SaveFilter {
         .allow::<creature::Corpse>()
         .allow::<creature::CreatureId>()
         .allow::<creature::Health>()
-        .allow::<creature::Movement>()
         .allow::<input::Selection>()
         .allow::<inventory::Inventory>()
         .allow::<expl_map::Fog>()

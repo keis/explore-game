@@ -1,8 +1,5 @@
 use super::{asset::*, component::*, event::*, system::*};
-use crate::{
-    scene::{SceneSet, SceneState},
-    turn::TurnState,
-};
+use crate::scene::{SceneSet, SceneState};
 use bevy::prelude::*;
 use expl_codex::{Codex, CodexLoader, Id};
 
@@ -23,10 +20,6 @@ impl Plugin for ActorPlugin {
             .register_type::<Party>()
             .register_type::<Slide>()
             .add_systems(
-                OnEnter(TurnState::Player),
-                reset_movement_points.run_if(in_state(SceneState::Active)),
-            )
-            .add_systems(
                 OnEnter(SceneState::Active),
                 (
                     fluff_party.map(bevy::utils::warn),
@@ -37,7 +30,7 @@ impl Plugin for ActorPlugin {
             .add_systems(
                 Update,
                 (
-                    derive_party_movement.run_if(on_event::<GroupEvent>()),
+                    derive_party_action_points.run_if(on_event::<GroupEvent>()),
                     despawn_empty_party.run_if(on_event::<GroupEvent>()),
                     slide.run_if(in_state(SceneState::Active)),
                     update_enemy_visibility,

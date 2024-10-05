@@ -17,8 +17,8 @@ pub use system_param::*;
 
 #[cfg(test)]
 mod tests {
-    use super::{command::AddMembers, system::derive_party_movement, Group, Members, Party};
-    use crate::creature::Movement;
+    use super::{command::AddMembers, system::derive_party_action_points, Group, Members, Party};
+    use crate::action::ActionPoints;
     use bevy::{ecs::world::Command, prelude::*};
     use rstest::*;
     use smallvec::SmallVec;
@@ -26,14 +26,18 @@ mod tests {
     #[fixture]
     fn app() -> App {
         let mut app = App::new();
-        app.add_systems(Update, derive_party_movement);
+        app.add_systems(Update, derive_party_action_points);
         let party_entity = app
             .world_mut()
-            .spawn((Party::default(), Members::default(), Movement::default()))
+            .spawn((
+                Party::default(),
+                Members::default(),
+                ActionPoints::default(),
+            ))
             .id();
         let member_entity = app
             .world_mut()
-            .spawn(Movement {
+            .spawn(ActionPoints {
                 current: 2,
                 reset: 2,
             })
@@ -92,19 +96,19 @@ mod tests {
     }
 
     #[rstest]
-    fn party_movement(mut app: App) {
-        let (mut movement, _member) = app
+    fn party_action_points(mut app: App) {
+        let (mut action_points, _member) = app
             .world_mut()
-            .query::<(&mut Movement, &Group)>()
+            .query::<(&mut ActionPoints, &Group)>()
             .single_mut(app.world_mut());
-        movement.current = 3;
+        action_points.current = 3;
 
         app.update();
 
-        let (party_movement, _party) = app
+        let (party_action_points, _party) = app
             .world_mut()
-            .query::<(&Movement, &Party)>()
+            .query::<(&ActionPoints, &Party)>()
             .single(app.world());
-        assert_eq!(party_movement.current, 3);
+        assert_eq!(party_action_points.current, 3);
     }
 }

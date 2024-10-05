@@ -1,6 +1,7 @@
-use super::{queue::*, system::*};
+use super::{component::*, queue::*, system::*};
 use crate::{
     actor::SlideEvent,
+    scene::SceneState,
     turn::{set_player_turn, TurnState},
 };
 use bevy::{ecs::schedule::ScheduleLabel, prelude::*};
@@ -33,6 +34,11 @@ impl Plugin for ActionPlugin {
             .insert_resource(game_action_follow_up_system)
             .insert_resource(game_action_systems)
             .init_schedule(ActionUpdate)
+            .register_type::<ActionPoints>()
+            .add_systems(
+                OnEnter(TurnState::Player),
+                reset_action_points.run_if(in_state(SceneState::Active)),
+            )
             .add_systems(
                 Update,
                 (

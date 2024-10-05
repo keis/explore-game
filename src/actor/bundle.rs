@@ -1,6 +1,7 @@
 use super::{asset::*, component::*};
 use crate::{
-    creature::{Creature, CreatureBundle, Movement},
+    action::ActionPoints,
+    creature::{Creature, CreatureBundle},
     input::{DefaultOutlineVolume, Selection, SelectionBundle},
     inventory::Inventory,
     path::PathGuided,
@@ -102,7 +103,7 @@ pub struct PartyBundle {
     inventory: Inventory,
     presence: MapPresence,
     members: Members,
-    movement: Movement,
+    action_points: ActionPoints,
     view_radius: ViewRadius,
     slide: Slide,
     fog_revealer: FogRevealer,

@@ -1,10 +1,9 @@
-use super::{plugin::ActionUpdate, queue::*};
+use super::{component::ActionPoints, plugin::ActionUpdate, queue::*};
 use crate::{
     actor::{
         ActorCodex, ActorParams, GroupCommandsExt, Members, Party, PartyBundle, Slide, SlideEvent,
     },
     combat::CombatEvent,
-    creature::Movement,
     inventory::Inventory,
     path::PathGuided,
     role::RoleCommandsExt,
@@ -107,9 +106,9 @@ pub fn resolve_action(world: &mut World) -> Result<(), ExplError> {
 pub fn follow_up_action(
     In(action): In<GameAction>,
     mut combat_events: EventReader<CombatEvent>,
-    mut path_guided_query: Query<(&Movement, &mut PathGuided)>,
+    mut path_guided_query: Query<(&ActionPoints, &mut PathGuided)>,
 ) -> Option<GameAction> {
-    let Ok((party_movement, mut pathguided)) = path_guided_query.get_mut(action.source) else {
+    let Ok((party_action_points, mut pathguided)) = path_guided_query.get_mut(action.source) else {
         return None;
     };
 
@@ -120,13 +119,19 @@ pub fn follow_up_action(
     }
 
     // Keep moving if a path is set
-    if party_movement.current > 0 {
+    if party_action_points.current > 0 {
         if let Some(next) = pathguided.next() {
             return Some(GameAction::new_move(action.source, *next));
         }
     }
 
     None
+}
+
+pub fn reset_action_points(mut action_points_query: Query<&mut ActionPoints>) {
+    for mut action_points in action_points_query.iter_mut() {
+        action_points.reset();
+    }
 }
 
 #[allow(clippy::type_complexity)]
@@ -139,18 +144,18 @@ pub fn handle_move(
             &mut Slide,
             &mut Transform,
             &MapPresence,
-            &mut Movement,
+            &mut ActionPoints,
             Option<&Members>,
         ),
         Without<MapPosition>,
     >,
-    mut member_movement_query: Query<&mut Movement, Without<MapPresence>>,
+    mut member_action_points_query: Query<&mut ActionPoints, Without<MapPresence>>,
     zone_layer_query: Query<(Entity, &ZoneLayer)>,
     map_position_query: Query<(&MapPosition, &Transform)>,
     fog_query: Query<&Fog>,
     height_query: HeightQuery,
 ) -> GameActionResult {
-    let (mut slide, mut transform, presence, mut movement, maybe_members) =
+    let (mut slide, mut transform, presence, mut action_points, maybe_members) =
         party_query.get_mut(action.source)?;
     let (map_entity, zone_layer) = zone_layer_query.get_single()?;
     let (next_position, next_transform) = map_position_query.get(action.target()?)?;
@@ -159,12 +164,12 @@ pub fn handle_move(
         .ok_or(ExplError::OutOfBounds)
         .and_then(|&e| fog_query.get(e).map_err(ExplError::from))?;
 
-    movement.consume()?;
+    action_points.consume()?;
 
     if let Some(members) = maybe_members {
-        let mut iter = member_movement_query.iter_many_mut(members.iter());
-        while let Some(mut movement) = iter.fetch_next() {
-            movement.consume().unwrap();
+        let mut iter = member_action_points_query.iter_many_mut(members.iter());
+        while let Some(mut action_points) = iter.fetch_next() {
+            action_points.consume().unwrap();
         }
     }
 
