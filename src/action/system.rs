@@ -18,23 +18,42 @@ use expl_map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, Zon
 use smallvec::SmallVec;
 
 pub fn apply_action(world: &mut World) -> Result<(), ExplError> {
-    let systems = world
-        .get_resource::<GameActionSystems>()
-        .ok_or(ExplError::ResourceMissing)?;
     let queue = world
         .get_resource::<GameActionQueue>()
+        .ok_or(ExplError::ResourceMissing)?;
+    let systems = world
+        .get_resource::<GameActions>()
         .ok_or(ExplError::ResourceMissing)?;
 
     let Some(action) = queue.current() else {
         return Ok(());
     };
-    let Some(system) = systems.get(action.action_type) else {
+    let Some(action_info) = systems.get(action.action_type) else {
         return Ok(());
     };
 
-    let my_action = action.clone();
+    let action = action.clone();
+    let action_system = action_info.system;
+    let action_point_cost = action_info.action_cost;
 
-    let result = world.run_system_with_input(system, my_action.clone())?;
+    match action_point_cost {
+        ActionCost::Free => {}
+        ActionCost::World => {
+            let mut source = world.get_entity_mut(action.source).unwrap();
+            if let Some(mut action_points) = source.get_mut::<ActionPoints>() {
+                if let Err(e) = action_points.consume() {
+                    let mut queue = world
+                        .get_resource_mut::<GameActionQueue>()
+                        .ok_or(ExplError::ResourceMissing)?;
+                    queue.ready();
+                    return Err(e);
+                }
+                world.trigger_targets(ActionPointsConsumed, action.source);
+            }
+        }
+    }
+
+    let result = world.run_system_with_input(action_system, action.clone())?;
 
     match result {
         Ok(GameActionStatus::Waiting) => {
@@ -63,7 +82,7 @@ pub fn apply_action(world: &mut World) -> Result<(), ExplError> {
         .get_resource::<GameActionFollowUpSystem>()
         .ok_or(ExplError::ResourceMissing)?;
     let maybe_follow_up: Option<GameAction> =
-        world.run_system_with_input(**follow_up_system, my_action.clone())?;
+        world.run_system_with_input(**follow_up_system, action.clone())?;
 
     if let Some(follow_up) = maybe_follow_up {
         let mut queue = world
@@ -205,26 +224,19 @@ pub fn propagate_action_points_consumed(
 pub fn handle_move(
     In(action): In<GameAction>,
     mut commands: Commands,
-    mut party_query: Query<
-        (&mut Slide, &mut Transform, &MapPresence, &mut ActionPoints),
-        Without<MapPosition>,
-    >,
+    mut party_query: Query<(&mut Slide, &mut Transform, &MapPresence), Without<MapPosition>>,
     zone_layer_query: Query<(Entity, &ZoneLayer)>,
     map_position_query: Query<(&MapPosition, &Transform)>,
     fog_query: Query<&Fog>,
     height_query: HeightQuery,
 ) -> GameActionResult {
-    let (mut slide, mut transform, presence, mut action_points) =
-        party_query.get_mut(action.source)?;
+    let (mut slide, mut transform, presence) = party_query.get_mut(action.source)?;
     let (map_entity, zone_layer) = zone_layer_query.get_single()?;
     let (next_position, next_transform) = map_position_query.get(action.target()?)?;
     let source_fog = zone_layer
         .get(presence.position)
         .ok_or(ExplError::OutOfBounds)
         .and_then(|&e| fog_query.get(e).map_err(ExplError::from))?;
-
-    action_points.consume()?;
-    commands.trigger_targets(ActionPointsConsumed, action.source);
 
     if source_fog.visible {
         slide.start = transform.translation;

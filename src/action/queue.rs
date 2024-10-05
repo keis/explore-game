@@ -174,24 +174,33 @@ impl GameActionQueue {
     }
 }
 
-#[derive(Resource)]
-pub struct GameActionSystems(
-    EnumMap<GameActionType, Option<SystemId<GameAction, GameActionResult>>>,
-);
+#[derive(Clone, Copy)]
+pub enum ActionCost {
+    Free,
+    World,
+}
 
-impl GameActionSystems {
+pub struct GameActionInfo {
+    pub(super) system: SystemId<GameAction, GameActionResult>,
+    pub(super) action_cost: ActionCost,
+}
+
+#[derive(Resource)]
+pub struct GameActions(EnumMap<GameActionType, Option<GameActionInfo>>);
+
+impl GameActions {
     pub fn builder(world: &mut World) -> GameActionSystemsBuilder {
         GameActionSystemsBuilder::from_world(world)
     }
 
-    pub fn get(&self, action: GameActionType) -> Option<SystemId<GameAction, GameActionResult>> {
-        self.0[action]
+    pub fn get(&self, action: GameActionType) -> Option<&GameActionInfo> {
+        self.0[action].as_ref()
     }
 }
 
 pub struct GameActionSystemsBuilder<'a> {
     world: &'a mut World,
-    enum_map: EnumMap<GameActionType, Option<SystemId<GameAction, GameActionResult>>>,
+    enum_map: EnumMap<GameActionType, Option<GameActionInfo>>,
 }
 
 impl<'a> GameActionSystemsBuilder<'a> {
@@ -202,16 +211,24 @@ impl<'a> GameActionSystemsBuilder<'a> {
         }
     }
 
-    pub fn register_action<F, Marker>(mut self, action: GameActionType, f: F) -> Self
+    pub fn register_action<F, Marker>(
+        mut self,
+        action: GameActionType,
+        action_point_cost: ActionCost,
+        f: F,
+    ) -> Self
     where
         F: IntoSystem<GameAction, GameActionResult, Marker> + 'static,
     {
-        self.enum_map[action] = Some(self.world.register_system(f));
+        self.enum_map[action] = Some(GameActionInfo {
+            system: self.world.register_system(f),
+            action_cost: action_point_cost,
+        });
         self
     }
 
-    pub fn build(self) -> GameActionSystems {
-        GameActionSystems(self.enum_map)
+    pub fn build(self) -> GameActions {
+        GameActions(self.enum_map)
     }
 }
 
