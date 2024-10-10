@@ -289,13 +289,7 @@ impl ViewTemplate for NextTurnButton {
                 (),
             )
             .children((
-                Element::<TextBundle>::new().insert(Text::from_section(
-                    format!("Turn {}", **turn),
-                    TextStyle {
-                        font_size: 32.0,
-                        ..default()
-                    },
-                )),
+                format!("Turn {}", **turn),
                 Tooltip::for_parent(id)
                     .children(TooltipContent::new("Next turn").maybe_keybind(keybind)),
             ))
