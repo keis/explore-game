@@ -9,7 +9,7 @@ pub struct StructureCodex<'w> {
     structure_codex_assets: Res<'w, Assets<Codex<Structure>>>,
 }
 
-impl<'w> StructureCodex<'w> {
+impl StructureCodex<'_> {
     pub fn get(&self) -> Result<&Codex<Structure>, ExplError> {
         self.structure_codex_assets
             .get(&self.codex_assets.structure_codex)

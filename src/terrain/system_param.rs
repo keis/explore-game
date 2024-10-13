@@ -15,7 +15,7 @@ pub struct HeightQuery<'w, 's> {
     terrain_query: Query<'w, 's, (&'static TerrainId, &'static OuterTerrain)>,
 }
 
-impl<'w, 's> HeightQuery<'w, 's> {
+impl HeightQuery<'_, '_> {
     pub fn get(&self, point: Vec3) -> f32 {
         let terrain_codex = self.terrain_codex.get().unwrap();
         let zone_layer = self.map_query.single();
@@ -40,7 +40,7 @@ pub struct TerrainCodex<'w> {
     terrain_codex_assets: Res<'w, Assets<Codex<Terrain>>>,
 }
 
-impl<'w> TerrainCodex<'w> {
+impl TerrainCodex<'_> {
     pub fn get(&self) -> Result<&Codex<Terrain>, ExplError> {
         self.terrain_codex_assets
             .get(&self.codex_assets.terrain_codex)
@@ -54,7 +54,7 @@ pub struct DecorationCodex<'w> {
     decoration_codex_assets: Res<'w, Assets<Codex<Decoration>>>,
 }
 
-impl<'w> DecorationCodex<'w> {
+impl DecorationCodex<'_> {
     pub fn get(&self) -> Result<&Codex<Decoration>, ExplError> {
         self.decoration_codex_assets
             .get(&self.codex_assets.decoration_codex)

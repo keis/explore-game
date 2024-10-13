@@ -14,7 +14,7 @@ pub struct PathFinder<'w, 's> {
     terrain_codex: TerrainCodex<'w>,
 }
 
-impl<'w, 's> PathFinder<'w, 's> {
+impl PathFinder<'_, '_> {
     pub fn get(&self) -> Result<BoundPathFinder, ExplError> {
         Ok(BoundPathFinder {
             zone_layer: self.map_query.get_single()?,
@@ -30,7 +30,7 @@ pub struct BoundPathFinder<'w, 's> {
     terrain_query: &'s Query<'w, 's, &'static TerrainId>,
 }
 
-impl<'w, 's> BoundPathFinder<'w, 's> {
+impl BoundPathFinder<'_, '_> {
     pub fn find_path(&self, start: HexCoord, goal: HexCoord) -> Option<Vec<(HexCoord, Entity)>> {
         let start = self.zone_layer.get(start).map(|e| (start, *e)).unwrap();
         astar(

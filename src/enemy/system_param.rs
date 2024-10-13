@@ -7,7 +7,7 @@ pub struct Target<'w, 's> {
     presence_query: Query<'w, 's, &'static MapPresence, With<Party>>,
 }
 
-impl<'w, 's> Target<'w, 's> {
+impl Target<'_, '_> {
     pub fn closest_in_view(
         &self,
         position: HexCoord,

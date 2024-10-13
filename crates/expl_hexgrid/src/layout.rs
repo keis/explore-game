@@ -65,7 +65,7 @@ pub struct SquareGridLayoutIterator<'a> {
     i: i32,
 }
 
-impl<'a> Iterator for SquareGridLayoutIterator<'a> {
+impl Iterator for SquareGridLayoutIterator<'_> {
     type Item = HexCoord;
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -159,7 +159,7 @@ pub struct HexagonalGridLayoutIterator<'a> {
     i: i32,
 }
 
-impl<'a> Iterator for HexagonalGridLayoutIterator<'a> {
+impl Iterator for HexagonalGridLayoutIterator<'_> {
     type Item = HexCoord;
 
     fn size_hint(&self) -> (usize, Option<usize>) {

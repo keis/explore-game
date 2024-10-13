@@ -38,7 +38,7 @@ impl<Layout: GridLayout, Item: Copy + PartialEq> Tile<'_, Layout, Item> {
     }
 }
 
-impl<'a, Layout: GridLayout, Item> Index<HexCoord> for Tile<'a, Layout, Item> {
+impl<Layout: GridLayout, Item> Index<HexCoord> for Tile<'_, Layout, Item> {
     type Output = Item;
 
     fn index(&self, position: HexCoord) -> &Item {
@@ -46,7 +46,7 @@ impl<'a, Layout: GridLayout, Item> Index<HexCoord> for Tile<'a, Layout, Item> {
     }
 }
 
-impl<'a, Layout: GridLayout, Item: Copy + Eq + Hash> Hash for Tile<'a, Layout, Item> {
+impl<Layout: GridLayout, Item: Copy + Eq + Hash> Hash for Tile<'_, Layout, Item> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         for value in self.iter() {
             value.hash(state);
@@ -54,26 +54,26 @@ impl<'a, Layout: GridLayout, Item: Copy + Eq + Hash> Hash for Tile<'a, Layout, I
     }
 }
 
-impl<'a, Layout: GridLayout, Item: Copy + PartialEq + Eq + Hash> PartialEq
-    for Tile<'a, Layout, Item>
+impl<Layout: GridLayout, Item: Copy + PartialEq + Eq + Hash> PartialEq
+    for Tile<'_, Layout, Item>
 {
     fn eq(&self, other: &Self) -> bool {
         self.iter().zip(other.iter()).all(|(s, o)| s.eq(&o))
     }
 }
 
-impl<'a, Layout: GridLayout, Item: Copy + Eq + Hash> Eq for Tile<'a, Layout, Item> {}
+impl<Layout: GridLayout, Item: Copy + Eq + Hash> Eq for Tile<'_, Layout, Item> {}
 
-impl<'a, Layout: GridLayout, Item: Copy + PartialEq + Eq + Hash + Ord + PartialOrd> Ord
-    for Tile<'a, Layout, Item>
+impl<Layout: GridLayout, Item: Copy + PartialEq + Eq + Hash + Ord + PartialOrd> Ord
+    for Tile<'_, Layout, Item>
 {
     fn cmp(&self, other: &Self) -> Ordering {
         self.iter().cmp(other.iter())
     }
 }
 
-impl<'a, Layout: GridLayout, Item: Copy + PartialEq + Eq + Hash + Ord + PartialOrd> PartialOrd
-    for Tile<'a, Layout, Item>
+impl<Layout: GridLayout, Item: Copy + PartialEq + Eq + Hash + Ord + PartialOrd> PartialOrd
+    for Tile<'_, Layout, Item>
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))

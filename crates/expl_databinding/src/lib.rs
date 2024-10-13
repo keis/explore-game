@@ -77,7 +77,7 @@ pub trait DataBindingExt {
     fn bind_to(&mut self, source: Entity) -> &mut Self;
 }
 
-impl<'a> DataBindingExt for EntityCommands<'a> {
+impl DataBindingExt for EntityCommands<'_> {
     /// Bind the entity to another entity `source`
     fn bind_to(&mut self, source: Entity) -> &mut Self {
         let sink = self.id();
@@ -103,7 +103,7 @@ where
     expired_events: EventWriter<'w, DataBindingExpired>,
 }
 
-impl<'w, 's, Source, Sink, Filter> DataBindingUpdate<'w, 's, Source, Sink, Filter>
+impl<Source, Sink, Filter> DataBindingUpdate<'_, '_, Source, Sink, Filter>
 where
     Source: QueryData<ReadOnly = Source> + 'static,
     Sink: QueryData + 'static,
