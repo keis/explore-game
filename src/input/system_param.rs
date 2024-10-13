@@ -12,7 +12,7 @@ pub struct NextSelectionQuery<'w, 's> {
         Query<'w, 's, (Entity, &'static Selection, Option<&'static Movement>), With<MapPresence>>,
 }
 
-impl<'w, 's> NextSelectionQuery<'w, 's> {
+impl NextSelectionQuery<'_, '_> {
     pub fn get(&self) -> Option<Entity> {
         let mut selected = None;
         for (entity, selection, m) in &self.selection_query {
@@ -53,7 +53,7 @@ where
     commands: Commands<'w, 's>,
 }
 
-impl<'w, 's, Filter> SelectionUpdate<'w, 's, Filter>
+impl<Filter> SelectionUpdate<'_, '_, Filter>
 where
     Filter: QueryFilter + 'static,
 {

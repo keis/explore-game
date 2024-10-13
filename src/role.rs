@@ -19,7 +19,7 @@ pub trait RoleCommandsExt {
     fn attach_role<R: Role>(&mut self, role: R) -> &mut Self;
 }
 
-impl<'a> RoleCommandsExt for EntityCommands<'a> {
+impl RoleCommandsExt for EntityCommands<'_> {
     fn attach_role<R: Role + std::marker::Send>(&mut self, role: R) -> &mut Self {
         let entity = self.id();
         self.commands().add(AttachRole { entity, role });

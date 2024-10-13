@@ -80,7 +80,7 @@ impl<'a, 'c, RawEntry, Entry> CodexVisitor<'a, 'c, RawEntry, Entry> {
     }
 }
 
-impl<'a, 'c, 'de, RawEntry, Entry> Visitor<'de> for CodexVisitor<'a, 'c, RawEntry, Entry>
+impl<'de, RawEntry, Entry> Visitor<'de> for CodexVisitor<'_, '_, RawEntry, Entry>
 where
     RawEntry: Deserialize<'de>,
     Entry: fmt::Debug + TypePath + Send + Sync + FromWithLoadContext<RawEntry>,

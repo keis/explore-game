@@ -9,7 +9,7 @@ pub struct CreatureCodex<'w> {
     creature_codex_assets: Res<'w, Assets<Codex<Creature>>>,
 }
 
-impl<'w> CreatureCodex<'w> {
+impl CreatureCodex<'_> {
     pub fn get(&self) -> Result<&Codex<Creature>, ExplError> {
         self.creature_codex_assets
             .get(&self.codex_assets.creature_codex)
