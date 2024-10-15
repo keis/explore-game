@@ -54,9 +54,7 @@ impl<Layout: GridLayout, Item: Copy + Eq + Hash> Hash for Tile<'_, Layout, Item>
     }
 }
 
-impl<Layout: GridLayout, Item: Copy + PartialEq + Eq + Hash> PartialEq
-    for Tile<'_, Layout, Item>
-{
+impl<Layout: GridLayout, Item: Copy + PartialEq + Eq + Hash> PartialEq for Tile<'_, Layout, Item> {
     fn eq(&self, other: &Self) -> bool {
         self.iter().zip(other.iter()).all(|(s, o)| s.eq(&o))
     }
