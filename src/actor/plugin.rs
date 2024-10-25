@@ -8,7 +8,8 @@ pub struct ActorPlugin;
 impl Plugin for ActorPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SlideEvent>()
-            .add_event::<GroupEvent>()
+            .add_event::<MemberAdded>()
+            .add_event::<MemberRemoved>()
             .init_asset::<Codex<Actor>>()
             .init_asset_loader::<CodexLoader<RawActor, Actor>>()
             .register_type::<ActorId>()
@@ -19,6 +20,7 @@ impl Plugin for ActorPlugin {
             .register_type::<Group>()
             .register_type::<Party>()
             .register_type::<Slide>()
+            .observe(despawn_empty_party)
             .add_systems(
                 OnEnter(SceneState::Active),
                 (
@@ -30,8 +32,6 @@ impl Plugin for ActorPlugin {
             .add_systems(
                 Update,
                 (
-                    derive_party_action_points.run_if(on_event::<GroupEvent>()),
-                    despawn_empty_party.run_if(on_event::<GroupEvent>()),
                     slide.run_if(in_state(SceneState::Active)),
                     update_enemy_visibility,
                 ),

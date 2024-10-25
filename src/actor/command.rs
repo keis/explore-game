@@ -57,7 +57,8 @@ fn update_group_member(world: &mut World, member: Entity, new_group: Entity) -> 
 }
 
 impl Command for AddMembers {
-    fn apply(mut self, world: &mut World) {
+    fn apply(self, world: &mut World) {
+        let mut added: Vec<MemberAdded> = vec![];
         for &member in &self.members {
             let previous_group = update_group_member(world, member, self.group);
             if let Some(previous_group) = previous_group {
@@ -67,20 +68,16 @@ impl Command for AddMembers {
                 if let Some(mut members) = world.entity_mut(previous_group).get_mut::<Members>() {
                     members.0.retain(|m| *m != member);
                 }
-                world.send_event(GroupEvent::MemberRemoved {
-                    group: previous_group,
-                    member,
-                });
+                world.trigger_targets(MemberRemoved(member), previous_group);
             }
-            world.send_event(GroupEvent::MemberAdded {
-                group: self.group,
-                member,
-            });
+            added.push(MemberAdded(member));
         }
-
         let mut group_entity = world.entity_mut(self.group);
         if let Some(mut members) = group_entity.get_mut::<Members>() {
-            members.0.append(&mut self.members);
+            members.0.extend(self.members);
+        }
+        for added in added {
+            world.trigger_targets(added, self.group);
         }
     }
 }
@@ -93,10 +90,7 @@ impl Command for RemoveMembers {
         }
         for member in self.members {
             world.entity_mut(member).remove::<Parent>();
-            world.send_event(GroupEvent::MemberRemoved {
-                group: self.group,
-                member,
-            });
+            world.trigger_targets(MemberRemoved(member), self.group);
         }
     }
 }

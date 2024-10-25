@@ -17,16 +17,14 @@ pub use system_param::*;
 
 #[cfg(test)]
 mod tests {
-    use super::{command::AddMembers, system::derive_party_action_points, Group, Members, Party};
+    use super::{Group, GroupCommandsExt, Members, Party};
     use crate::action::ActionPoints;
-    use bevy::{ecs::world::Command, prelude::*};
+    use bevy::prelude::*;
     use rstest::*;
-    use smallvec::SmallVec;
 
     #[fixture]
     fn app() -> App {
         let mut app = App::new();
-        app.add_systems(Update, derive_party_action_points);
         let party_entity = app
             .world_mut()
             .spawn((
@@ -42,11 +40,11 @@ mod tests {
                 reset: 2,
             })
             .id();
-        let addmembers = AddMembers {
-            group: party_entity,
-            members: SmallVec::from_slice(&[member_entity]),
-        };
-        addmembers.apply(app.world_mut());
+        app.world_mut()
+            .commands()
+            .entity(party_entity)
+            .add_members(&[member_entity]);
+        app.world_mut().flush();
         app
     }
 
@@ -76,11 +74,11 @@ mod tests {
             .single(app.world());
 
         let new_group_entity = app.world_mut().spawn(Members::default()).id();
-        let addmembers = AddMembers {
-            group: new_group_entity,
-            members: SmallVec::from_slice(&[member_entity]),
-        };
-        addmembers.apply(app.world_mut());
+        app.world_mut()
+            .commands()
+            .entity(new_group_entity)
+            .add_members(&[member_entity]);
+        app.world_mut().flush();
 
         let group = app
             .world_mut()
@@ -93,22 +91,5 @@ mod tests {
 
         let member = app.world_mut().query::<&Group>().single(app.world());
         assert_eq!(member.0, new_group_entity);
-    }
-
-    #[rstest]
-    fn party_action_points(mut app: App) {
-        let (mut action_points, _member) = app
-            .world_mut()
-            .query::<(&mut ActionPoints, &Group)>()
-            .single_mut(app.world_mut());
-        action_points.current = 3;
-
-        app.update();
-
-        let (party_action_points, _party) = app
-            .world_mut()
-            .query::<(&ActionPoints, &Party)>()
-            .single(app.world());
-        assert_eq!(party_action_points.current, 3);
     }
 }

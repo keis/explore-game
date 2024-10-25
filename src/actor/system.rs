@@ -1,5 +1,5 @@
 use super::{bundle::*, component::*, event::*, system_param::*};
-use crate::{action::ActionPoints, role::RoleCommandsExt, terrain::HeightQuery, ExplError};
+use crate::{role::RoleCommandsExt, terrain::HeightQuery, ExplError};
 use bevy::prelude::*;
 use expl_map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer};
 use interpolation::Ease;
@@ -77,36 +77,19 @@ pub fn update_enemy_visibility(
 
 #[allow(clippy::type_complexity)]
 pub fn despawn_empty_party(
-    mut commands: Commands,
-    party_query: Query<(Entity, &Members), (With<Party>, With<MapPresence>, Changed<Members>)>,
+    trigger: Trigger<MemberRemoved>,
+    party_query: Query<&Members, (With<Party>, With<MapPresence>)>,
     map_query: Query<Entity, With<PresenceLayer>>,
+    mut commands: Commands,
 ) {
     let Ok(map_entity) = map_query.get_single() else {
         return;
     };
-    for (entity, members) in &party_query {
-        if members.is_empty() {
-            commands.entity(map_entity).despawn_presence(entity);
-        }
-    }
-}
-
-#[allow(clippy::type_complexity)]
-pub fn derive_party_action_points(
-    mut party_query: Query<(&Members, &mut ActionPoints), (With<Party>, Changed<Members>)>,
-    action_points_query: Query<&ActionPoints, Without<Party>>,
-) {
-    for (members, mut party_action_points) in party_query.iter_mut() {
-        party_action_points.current = action_points_query
-            .iter_many(members.iter())
-            .map(|m| m.current)
-            .min()
-            .unwrap_or(0);
-        party_action_points.reset = action_points_query
-            .iter_many(members.iter())
-            .map(|m| m.reset)
-            .min()
-            .unwrap_or(0);
+    let members = party_query.get(trigger.entity()).unwrap();
+    if members.is_empty() {
+        commands
+            .entity(map_entity)
+            .despawn_presence(trigger.entity());
     }
 }
 

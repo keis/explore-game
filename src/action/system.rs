@@ -1,7 +1,8 @@
-use super::{component::ActionPoints, plugin::ActionUpdate, queue::*};
+use super::{component::ActionPoints, event::*, plugin::ActionUpdate, queue::*};
 use crate::{
     actor::{
-        ActorCodex, ActorParams, GroupCommandsExt, Members, Party, PartyBundle, Slide, SlideEvent,
+        ActorCodex, ActorParams, GroupCommandsExt, MemberAdded, MemberRemoved, Members, Party,
+        PartyBundle, Slide, SlideEvent,
     },
     combat::CombatEvent,
     inventory::Inventory,
@@ -33,20 +34,27 @@ pub fn apply_action(world: &mut World) -> Result<(), ExplError> {
 
     let my_action = action.clone();
 
-    let result = world.run_system_with_input(system, my_action.clone())??;
+    let result = world.run_system_with_input(system, my_action.clone())?;
 
     match result {
-        GameActionStatus::Waiting => {
+        Ok(GameActionStatus::Waiting) => {
             let mut queue = world
                 .get_resource_mut::<GameActionQueue>()
                 .ok_or(ExplError::ResourceMissing)?;
             queue.wait();
             return Ok(());
         }
-        GameActionStatus::Ready => {
+        Ok(GameActionStatus::Ready) => {
             panic!("Oh no")
         }
-        GameActionStatus::Resolved => {}
+        Ok(GameActionStatus::Resolved) => {}
+        Err(e) => {
+            let mut queue = world
+                .get_resource_mut::<GameActionQueue>()
+                .ok_or(ExplError::ResourceMissing)?;
+            queue.ready();
+            return Err(e);
+        }
     }
 
     world.run_schedule(ActionUpdate);
@@ -128,9 +136,67 @@ pub fn follow_up_action(
     None
 }
 
-pub fn reset_action_points(mut action_points_query: Query<&mut ActionPoints>) {
+pub fn reset_action_points(mut action_points_query: Query<&mut ActionPoints, Without<Members>>) {
     for mut action_points in action_points_query.iter_mut() {
         action_points.reset();
+    }
+}
+
+fn _update_action_points(
+    members: &Members,
+    action_points: &mut ActionPoints,
+    member_action_points_query: &Query<&ActionPoints, Without<Members>>,
+) {
+    action_points.current = member_action_points_query
+        .iter_many(members.iter())
+        .map(|m| m.current)
+        .min()
+        .unwrap_or(0);
+    action_points.reset = member_action_points_query
+        .iter_many(members.iter())
+        .map(|m| m.reset)
+        .min()
+        .unwrap_or(0);
+}
+
+pub fn reset_group_action_points(
+    mut action_points_query: Query<(&Members, &mut ActionPoints)>,
+    member_action_points_query: Query<&ActionPoints, Without<Members>>,
+) {
+    for (members, mut action_points) in action_points_query.iter_mut() {
+        _update_action_points(members, &mut action_points, &member_action_points_query);
+    }
+}
+
+pub fn update_action_points_on_member_added(
+    trigger: Trigger<MemberAdded>,
+    mut action_points_query: Query<(&Members, &mut ActionPoints)>,
+    member_action_points_query: Query<&ActionPoints, Without<Members>>,
+) {
+    let (members, mut action_points) = action_points_query.get_mut(trigger.entity()).unwrap();
+    _update_action_points(members, &mut action_points, &member_action_points_query);
+}
+
+pub fn update_action_points_on_member_removed(
+    trigger: Trigger<MemberRemoved>,
+    mut action_points_query: Query<(&Members, &mut ActionPoints)>,
+    member_action_points_query: Query<&ActionPoints, Without<Members>>,
+) {
+    let (members, mut action_points) = action_points_query.get_mut(trigger.entity()).unwrap();
+    _update_action_points(members, &mut action_points, &member_action_points_query);
+}
+
+pub fn propagate_action_points_consumed(
+    trigger: Trigger<ActionPointsConsumed>,
+    group_query: Query<&Members>,
+    mut action_points_query: Query<&mut ActionPoints>,
+) {
+    let Ok(members) = group_query.get(trigger.entity()) else {
+        return;
+    };
+    let mut iter = action_points_query.iter_many_mut(&members.0);
+    while let Some(mut action_points) = iter.fetch_next() {
+        action_points.consume().unwrap();
     }
 }
 
@@ -140,22 +206,15 @@ pub fn handle_move(
     In(action): In<GameAction>,
     mut commands: Commands,
     mut party_query: Query<
-        (
-            &mut Slide,
-            &mut Transform,
-            &MapPresence,
-            &mut ActionPoints,
-            Option<&Members>,
-        ),
+        (&mut Slide, &mut Transform, &MapPresence, &mut ActionPoints),
         Without<MapPosition>,
     >,
-    mut member_action_points_query: Query<&mut ActionPoints, Without<MapPresence>>,
     zone_layer_query: Query<(Entity, &ZoneLayer)>,
     map_position_query: Query<(&MapPosition, &Transform)>,
     fog_query: Query<&Fog>,
     height_query: HeightQuery,
 ) -> GameActionResult {
-    let (mut slide, mut transform, presence, mut action_points, maybe_members) =
+    let (mut slide, mut transform, presence, mut action_points) =
         party_query.get_mut(action.source)?;
     let (map_entity, zone_layer) = zone_layer_query.get_single()?;
     let (next_position, next_transform) = map_position_query.get(action.target()?)?;
@@ -165,13 +224,7 @@ pub fn handle_move(
         .and_then(|&e| fog_query.get(e).map_err(ExplError::from))?;
 
     action_points.consume()?;
-
-    if let Some(members) = maybe_members {
-        let mut iter = member_action_points_query.iter_many_mut(members.iter());
-        while let Some(mut action_points) = iter.fetch_next() {
-            action_points.consume().unwrap();
-        }
-    }
+    commands.trigger_targets(ActionPointsConsumed, action.source);
 
     if source_fog.visible {
         slide.start = transform.translation;

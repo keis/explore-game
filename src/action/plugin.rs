@@ -1,4 +1,4 @@
-use super::{component::*, queue::*, system::*};
+use super::{component::*, event::*, queue::*, system::*};
 use crate::{
     actor::SlideEvent,
     scene::SceneState,
@@ -33,11 +33,17 @@ impl Plugin for ActionPlugin {
         app.insert_resource(GameActionQueue::default())
             .insert_resource(game_action_follow_up_system)
             .insert_resource(game_action_systems)
+            .add_event::<ActionPointsConsumed>()
             .init_schedule(ActionUpdate)
             .register_type::<ActionPoints>()
+            .observe(update_action_points_on_member_added)
+            .observe(update_action_points_on_member_removed)
+            .observe(propagate_action_points_consumed)
             .add_systems(
                 OnEnter(TurnState::Player),
-                reset_action_points.run_if(in_state(SceneState::Active)),
+                (reset_action_points, reset_group_action_points)
+                    .chain()
+                    .run_if(in_state(SceneState::Active)),
             )
             .add_systems(
                 Update,
