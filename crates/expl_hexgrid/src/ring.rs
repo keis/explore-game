@@ -38,7 +38,7 @@ mod tests {
     #[test]
     fn test_spiral() {
         let center = HexCoord::new(4, 4);
-        let spiralgroups = spiral(center).group_by(|coord| coord.distance(center));
+        let spiralgroups = spiral(center).chunk_by(|coord| coord.distance(center));
         let mut sgiter = spiralgroups.into_iter();
 
         let (distance, group) = sgiter.next().unwrap();
