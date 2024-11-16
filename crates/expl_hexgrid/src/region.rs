@@ -41,7 +41,7 @@ where
                 if let Some(neighbour) = coord.neighbours().find(|&neighbour| {
                     self.grid
                         .get(neighbour)
-                        .map_or(false, |other| (self.predicate)(item, other))
+                        .is_some_and(|other| (self.predicate)(item, other))
                 }) {
                     (coord, neighbour)
                 } else {
