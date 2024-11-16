@@ -1,9 +1,8 @@
 use super::{component::*, event::*, system_param::*};
 use crate::{
-    action::{GameAction, GameActionQueue},
+    action::{ActionPoints, GameAction, GameActionQueue},
     color,
     combat::Combat,
-    creature::Movement,
     path::{PathFinder, PathGuided},
     terrain::TerrainId,
 };
@@ -80,7 +79,13 @@ pub fn handle_pointer_out_events(
 
 pub fn apply_zone_activated_event(
     trigger: Trigger<ZoneActivated>,
-    mut presence_query: Query<(Entity, &MapPresence, &Movement, &mut PathGuided, &Selection)>,
+    mut presence_query: Query<(
+        Entity,
+        &MapPresence,
+        &ActionPoints,
+        &mut PathGuided,
+        &Selection,
+    )>,
     mut game_action_queue: ResMut<GameActionQueue>,
     zone_query: Query<Entity, With<TerrainId>>,
     combat_query: Query<&Combat>,
@@ -94,7 +99,7 @@ pub fn apply_zone_activated_event(
     let Ok(target) = zone_query.get(trigger.entity()) else {
         return;
     };
-    for (entity, presence, movement, mut pathguided, _) in presence_query
+    for (entity, presence, action_points, mut pathguided, _) in presence_query
         .iter_mut()
         .filter(|(_, _, _, _, s)| s.is_selected)
     {
@@ -108,7 +113,7 @@ pub fn apply_zone_activated_event(
             continue;
         };
         pathguided.path(path.into_iter().map(|(_, e)| e));
-        if movement.current > 0 {
+        if action_points.current > 0 {
             if let Some(next) = pathguided.next() {
                 game_action_queue.add(GameAction::new_move(entity, *next));
             }

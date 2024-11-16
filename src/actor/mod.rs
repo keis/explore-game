@@ -17,32 +17,34 @@ pub use system_param::*;
 
 #[cfg(test)]
 mod tests {
-    use super::{command::AddMembers, system::derive_party_movement, Group, Members, Party};
-    use crate::creature::Movement;
-    use bevy::{ecs::world::Command, prelude::*};
+    use super::{Group, GroupCommandsExt, Members, Party};
+    use crate::action::ActionPoints;
+    use bevy::prelude::*;
     use rstest::*;
-    use smallvec::SmallVec;
 
     #[fixture]
     fn app() -> App {
         let mut app = App::new();
-        app.add_systems(Update, derive_party_movement);
         let party_entity = app
             .world_mut()
-            .spawn((Party::default(), Members::default(), Movement::default()))
+            .spawn((
+                Party::default(),
+                Members::default(),
+                ActionPoints::default(),
+            ))
             .id();
         let member_entity = app
             .world_mut()
-            .spawn(Movement {
+            .spawn(ActionPoints {
                 current: 2,
                 reset: 2,
             })
             .id();
-        let addmembers = AddMembers {
-            group: party_entity,
-            members: SmallVec::from_slice(&[member_entity]),
-        };
-        addmembers.apply(app.world_mut());
+        app.world_mut()
+            .commands()
+            .entity(party_entity)
+            .add_members(&[member_entity]);
+        app.world_mut().flush();
         app
     }
 
@@ -72,11 +74,11 @@ mod tests {
             .single(app.world());
 
         let new_group_entity = app.world_mut().spawn(Members::default()).id();
-        let addmembers = AddMembers {
-            group: new_group_entity,
-            members: SmallVec::from_slice(&[member_entity]),
-        };
-        addmembers.apply(app.world_mut());
+        app.world_mut()
+            .commands()
+            .entity(new_group_entity)
+            .add_members(&[member_entity]);
+        app.world_mut().flush();
 
         let group = app
             .world_mut()
@@ -89,22 +91,5 @@ mod tests {
 
         let member = app.world_mut().query::<&Group>().single(app.world());
         assert_eq!(member.0, new_group_entity);
-    }
-
-    #[rstest]
-    fn party_movement(mut app: App) {
-        let (mut movement, _member) = app
-            .world_mut()
-            .query::<(&mut Movement, &Group)>()
-            .single_mut(app.world_mut());
-        movement.current = 3;
-
-        app.update();
-
-        let (party_movement, _party) = app
-            .world_mut()
-            .query::<(&Movement, &Party)>()
-            .single(app.world());
-        assert_eq!(party_movement.current, 3);
     }
 }

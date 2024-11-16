@@ -1,11 +1,11 @@
 [warrior]
 attack = { low = 0, high = 8 }
 health = 10
-movement = 2
+action_points = 2
 view_radius = 2
 
 [slime]
 attack = { low = 1, high = 10 }
 health = 10
-movement = 1
+action_points = 1
 view_radius = 2

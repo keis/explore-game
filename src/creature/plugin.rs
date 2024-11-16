@@ -12,7 +12,6 @@ impl Plugin for CreaturePlugin {
             .register_type::<Corpse>()
             .register_type::<CreatureId>()
             .register_type::<Health>()
-            .register_type::<Id<Creature>>()
-            .register_type::<Movement>();
+            .register_type::<Id<Creature>>();
     }
 }

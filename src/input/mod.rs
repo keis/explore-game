@@ -26,7 +26,7 @@ pub use system_param::*;
 #[cfg(test)]
 mod tests {
     use super::{action::*, system::*, Action, ActionState, Deselect, Select, Selection};
-    use crate::{camera::CameraControl, creature::Movement, test_fixture::spawn_game_map};
+    use crate::{action::ActionPoints, camera::CameraControl, test_fixture::spawn_game_map};
     use bevy::prelude::*;
     use expl_map::MapPresence;
     use rstest::*;
@@ -44,7 +44,7 @@ mod tests {
                 position: (1, 1).into(),
             },
             Selection::default(),
-            Movement {
+            ActionPoints {
                 current: 2,
                 reset: 2,
             },
@@ -54,7 +54,7 @@ mod tests {
                 position: (2, 0).into(),
             },
             Selection::default(),
-            Movement {
+            ActionPoints {
                 current: 2,
                 reset: 2,
             },

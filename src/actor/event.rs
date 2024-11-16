@@ -6,7 +6,7 @@ pub enum SlideEvent {
 }
 
 #[derive(Event)]
-pub enum GroupEvent {
-    MemberAdded { group: Entity, member: Entity },
-    MemberRemoved { group: Entity, member: Entity },
-}
+pub struct MemberAdded(pub Entity);
+
+#[derive(Event)]
+pub struct MemberRemoved(pub Entity);

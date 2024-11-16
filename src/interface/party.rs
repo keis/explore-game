@@ -7,8 +7,8 @@ use super::{
     InterfaceAssets, DEFAULT_FONT,
 };
 use crate::{
+    action::ActionPoints,
     actor::{Character, Members, Party},
-    creature::Movement,
     input::{Selection, SelectionUpdate},
     inventory::Inventory,
 };
@@ -102,7 +102,7 @@ impl ViewTemplate for PartyDetails {
     fn create(&self, cx: &mut Cx) -> Self::View {
         let assets = cx.use_resource::<InterfaceAssets>();
         let party = cx.use_component::<Party>(self.target).unwrap();
-        let movement = cx.use_component::<Movement>(self.target).unwrap();
+        let action_points = cx.use_component::<ActionPoints>(self.target).unwrap();
         let members = cx.use_component::<Members>(self.target).unwrap();
         let inventory = cx.use_component::<Inventory>(self.target).unwrap();
 
@@ -113,7 +113,7 @@ impl ViewTemplate for PartyDetails {
             Element::<NodeBundle>::new().children((
                 StatDisplay::new(
                     assets.footsteps_icon.clone(),
-                    format!("{}", movement.current),
+                    format!("{}", action_points.current),
                 ),
                 StatDisplay::new(assets.person_icon.clone(), format!("{}", members.len())),
                 StatDisplay::new(

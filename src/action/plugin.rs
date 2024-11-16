@@ -1,6 +1,7 @@
-use super::{queue::*, system::*};
+use super::{component::*, event::*, queue::*, system::*};
 use crate::{
     actor::SlideEvent,
+    scene::SceneState,
     turn::{set_player_turn, TurnState},
 };
 use bevy::{ecs::schedule::ScheduleLabel, prelude::*};
@@ -12,27 +13,71 @@ pub struct ActionPlugin;
 
 impl Plugin for ActionPlugin {
     fn build(&self, app: &mut App) {
-        let game_action_systems = GameActionSystems::builder(app.world_mut())
-            .register_action(GameActionType::Move, handle_move)
-            .register_action(GameActionType::MakeCamp, handle_make_camp)
-            .register_action(GameActionType::BreakCamp, handle_break_camp)
-            .register_action(GameActionType::EnterCamp, handle_enter_camp)
-            .register_action(GameActionType::SplitParty, handle_split_party)
-            .register_action(GameActionType::MergeParty, handle_merge_party)
+        let game_action_systems = GameActions::builder(app.world_mut())
+            .register_action(GameActionType::Move, ActionCost::World, handle_move)
+            .register_action(
+                GameActionType::MakeCamp,
+                ActionCost::World,
+                handle_make_camp,
+            )
+            .register_action(
+                GameActionType::BreakCamp,
+                ActionCost::World,
+                handle_break_camp,
+            )
+            .register_action(
+                GameActionType::EnterCamp,
+                ActionCost::Free,
+                handle_enter_camp,
+            )
+            .register_action(
+                GameActionType::SplitParty,
+                ActionCost::Free,
+                handle_split_party,
+            )
+            .register_action(
+                GameActionType::MergeParty,
+                ActionCost::Free,
+                handle_merge_party,
+            )
             .register_action(
                 GameActionType::CreatePartyFromCamp,
+                ActionCost::Free,
                 handle_create_party_from_camp,
             )
-            .register_action(GameActionType::CollectCrystals, handle_collect_crystals)
-            .register_action(GameActionType::OpenPortal, handle_open_portal)
-            .register_action(GameActionType::EnterPortal, handle_enter_portal)
+            .register_action(
+                GameActionType::CollectCrystals,
+                ActionCost::World,
+                handle_collect_crystals,
+            )
+            .register_action(
+                GameActionType::OpenPortal,
+                ActionCost::World,
+                handle_open_portal,
+            )
+            .register_action(
+                GameActionType::EnterPortal,
+                ActionCost::World,
+                handle_enter_portal,
+            )
             .build();
         let game_action_follow_up_system =
             GameActionFollowUpSystem(app.world_mut().register_system(follow_up_action));
         app.insert_resource(GameActionQueue::default())
             .insert_resource(game_action_follow_up_system)
             .insert_resource(game_action_systems)
+            .add_event::<ActionPointsConsumed>()
             .init_schedule(ActionUpdate)
+            .register_type::<ActionPoints>()
+            .observe(update_action_points_on_member_added)
+            .observe(update_action_points_on_member_removed)
+            .observe(propagate_action_points_consumed)
+            .add_systems(
+                OnEnter(TurnState::Player),
+                (reset_action_points, reset_group_action_points)
+                    .chain()
+                    .run_if(in_state(SceneState::Active)),
+            )
             .add_systems(
                 Update,
                 (

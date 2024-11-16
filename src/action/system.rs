@@ -1,10 +1,10 @@
-use super::{plugin::ActionUpdate, queue::*};
+use super::{component::ActionPoints, event::*, plugin::ActionUpdate, queue::*};
 use crate::{
     actor::{
-        ActorCodex, ActorParams, GroupCommandsExt, Members, Party, PartyBundle, Slide, SlideEvent,
+        ActorCodex, ActorParams, GroupCommandsExt, MemberAdded, MemberRemoved, Members, Party,
+        PartyBundle, Slide, SlideEvent,
     },
     combat::CombatEvent,
-    creature::Movement,
     inventory::Inventory,
     path::PathGuided,
     role::RoleCommandsExt,
@@ -18,36 +18,62 @@ use expl_map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, Zon
 use smallvec::SmallVec;
 
 pub fn apply_action(world: &mut World) -> Result<(), ExplError> {
-    let systems = world
-        .get_resource::<GameActionSystems>()
-        .ok_or(ExplError::ResourceMissing)?;
     let queue = world
         .get_resource::<GameActionQueue>()
+        .ok_or(ExplError::ResourceMissing)?;
+    let systems = world
+        .get_resource::<GameActions>()
         .ok_or(ExplError::ResourceMissing)?;
 
     let Some(action) = queue.current() else {
         return Ok(());
     };
-    let Some(system) = systems.get(action.action_type) else {
+    let Some(action_info) = systems.get(action.action_type) else {
         return Ok(());
     };
 
-    let my_action = action.clone();
+    let action = action.clone();
+    let action_system = action_info.system;
+    let action_point_cost = action_info.action_cost;
 
-    let result = world.run_system_with_input(system, my_action.clone())??;
+    match action_point_cost {
+        ActionCost::Free => {}
+        ActionCost::World => {
+            let mut source = world.get_entity_mut(action.source).unwrap();
+            if let Some(mut action_points) = source.get_mut::<ActionPoints>() {
+                if let Err(e) = action_points.consume() {
+                    let mut queue = world
+                        .get_resource_mut::<GameActionQueue>()
+                        .ok_or(ExplError::ResourceMissing)?;
+                    queue.ready();
+                    return Err(e);
+                }
+                world.trigger_targets(ActionPointsConsumed, action.source);
+            }
+        }
+    }
+
+    let result = world.run_system_with_input(action_system, action.clone())?;
 
     match result {
-        GameActionStatus::Waiting => {
+        Ok(GameActionStatus::Waiting) => {
             let mut queue = world
                 .get_resource_mut::<GameActionQueue>()
                 .ok_or(ExplError::ResourceMissing)?;
             queue.wait();
             return Ok(());
         }
-        GameActionStatus::Ready => {
+        Ok(GameActionStatus::Ready) => {
             panic!("Oh no")
         }
-        GameActionStatus::Resolved => {}
+        Ok(GameActionStatus::Resolved) => {}
+        Err(e) => {
+            let mut queue = world
+                .get_resource_mut::<GameActionQueue>()
+                .ok_or(ExplError::ResourceMissing)?;
+            queue.ready();
+            return Err(e);
+        }
     }
 
     world.run_schedule(ActionUpdate);
@@ -56,7 +82,7 @@ pub fn apply_action(world: &mut World) -> Result<(), ExplError> {
         .get_resource::<GameActionFollowUpSystem>()
         .ok_or(ExplError::ResourceMissing)?;
     let maybe_follow_up: Option<GameAction> =
-        world.run_system_with_input(**follow_up_system, my_action.clone())?;
+        world.run_system_with_input(**follow_up_system, action.clone())?;
 
     if let Some(follow_up) = maybe_follow_up {
         let mut queue = world
@@ -107,9 +133,9 @@ pub fn resolve_action(world: &mut World) -> Result<(), ExplError> {
 pub fn follow_up_action(
     In(action): In<GameAction>,
     mut combat_events: EventReader<CombatEvent>,
-    mut path_guided_query: Query<(&Movement, &mut PathGuided)>,
+    mut path_guided_query: Query<(&ActionPoints, &mut PathGuided)>,
 ) -> Option<GameAction> {
-    let Ok((party_movement, mut pathguided)) = path_guided_query.get_mut(action.source) else {
+    let Ok((party_action_points, mut pathguided)) = path_guided_query.get_mut(action.source) else {
         return None;
     };
 
@@ -120,7 +146,7 @@ pub fn follow_up_action(
     }
 
     // Keep moving if a path is set
-    if party_movement.current > 0 {
+    if party_action_points.current > 0 {
         if let Some(next) = pathguided.next() {
             return Some(GameAction::new_move(action.source, *next));
         }
@@ -129,44 +155,88 @@ pub fn follow_up_action(
     None
 }
 
+pub fn reset_action_points(mut action_points_query: Query<&mut ActionPoints, Without<Members>>) {
+    for mut action_points in action_points_query.iter_mut() {
+        action_points.reset();
+    }
+}
+
+fn _update_action_points(
+    members: &Members,
+    action_points: &mut ActionPoints,
+    member_action_points_query: &Query<&ActionPoints, Without<Members>>,
+) {
+    action_points.current = member_action_points_query
+        .iter_many(members.iter())
+        .map(|m| m.current)
+        .min()
+        .unwrap_or(0);
+    action_points.reset = member_action_points_query
+        .iter_many(members.iter())
+        .map(|m| m.reset)
+        .min()
+        .unwrap_or(0);
+}
+
+pub fn reset_group_action_points(
+    mut action_points_query: Query<(&Members, &mut ActionPoints)>,
+    member_action_points_query: Query<&ActionPoints, Without<Members>>,
+) {
+    for (members, mut action_points) in action_points_query.iter_mut() {
+        _update_action_points(members, &mut action_points, &member_action_points_query);
+    }
+}
+
+pub fn update_action_points_on_member_added(
+    trigger: Trigger<MemberAdded>,
+    mut action_points_query: Query<(&Members, &mut ActionPoints)>,
+    member_action_points_query: Query<&ActionPoints, Without<Members>>,
+) {
+    let (members, mut action_points) = action_points_query.get_mut(trigger.entity()).unwrap();
+    _update_action_points(members, &mut action_points, &member_action_points_query);
+}
+
+pub fn update_action_points_on_member_removed(
+    trigger: Trigger<MemberRemoved>,
+    mut action_points_query: Query<(&Members, &mut ActionPoints)>,
+    member_action_points_query: Query<&ActionPoints, Without<Members>>,
+) {
+    let (members, mut action_points) = action_points_query.get_mut(trigger.entity()).unwrap();
+    _update_action_points(members, &mut action_points, &member_action_points_query);
+}
+
+pub fn propagate_action_points_consumed(
+    trigger: Trigger<ActionPointsConsumed>,
+    group_query: Query<&Members>,
+    mut action_points_query: Query<&mut ActionPoints>,
+) {
+    let Ok(members) = group_query.get(trigger.entity()) else {
+        return;
+    };
+    let mut iter = action_points_query.iter_many_mut(&members.0);
+    while let Some(mut action_points) = iter.fetch_next() {
+        action_points.consume().unwrap();
+    }
+}
+
 #[allow(clippy::type_complexity)]
 #[allow(clippy::too_many_arguments)]
 pub fn handle_move(
     In(action): In<GameAction>,
     mut commands: Commands,
-    mut party_query: Query<
-        (
-            &mut Slide,
-            &mut Transform,
-            &MapPresence,
-            &mut Movement,
-            Option<&Members>,
-        ),
-        Without<MapPosition>,
-    >,
-    mut member_movement_query: Query<&mut Movement, Without<MapPresence>>,
+    mut party_query: Query<(&mut Slide, &mut Transform, &MapPresence), Without<MapPosition>>,
     zone_layer_query: Query<(Entity, &ZoneLayer)>,
     map_position_query: Query<(&MapPosition, &Transform)>,
     fog_query: Query<&Fog>,
     height_query: HeightQuery,
 ) -> GameActionResult {
-    let (mut slide, mut transform, presence, mut movement, maybe_members) =
-        party_query.get_mut(action.source)?;
+    let (mut slide, mut transform, presence) = party_query.get_mut(action.source)?;
     let (map_entity, zone_layer) = zone_layer_query.get_single()?;
     let (next_position, next_transform) = map_position_query.get(action.target()?)?;
     let source_fog = zone_layer
         .get(presence.position)
         .ok_or(ExplError::OutOfBounds)
         .and_then(|&e| fog_query.get(e).map_err(ExplError::from))?;
-
-    movement.consume()?;
-
-    if let Some(members) = maybe_members {
-        let mut iter = member_movement_query.iter_many_mut(members.iter());
-        while let Some(mut movement) = iter.fetch_next() {
-            movement.consume().unwrap();
-        }
-    }
 
     if source_fog.visible {
         slide.start = transform.translation;
