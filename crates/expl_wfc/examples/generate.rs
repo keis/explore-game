@@ -66,7 +66,7 @@ fn generate_map<Layout>(
             generator
                 .grid
                 .dump_with(&mut io::stdout(), |cell| match cell {
-                    Cell::Collapsed(tile) => template.contribution(*tile).into(),
+                    Cell::Collapsed(tile) => template.contribution(*tile),
                     Cell::Alternatives(alts, _) if alts < &template.available_tiles() => '?',
                     Cell::Alternatives(_, _) => '.',
                 })

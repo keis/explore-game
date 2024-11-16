@@ -52,7 +52,7 @@ pub fn generate_map(
         .find(|&c| {
             terrain
                 .get(c)
-                .map_or(false, |terrain| terrain_codex[terrain].allow_walking)
+                .is_some_and(|terrain| terrain_codex[terrain].allow_walking)
         })
         .ok_or(ExplError::CouldNotPlaceParty)?;
 
@@ -62,7 +62,7 @@ pub fn generate_map(
     .find(|&c| {
         terrain
             .get(c)
-            .map_or(false, |terrain| terrain_codex[terrain].allow_structure)
+            .is_some_and(|terrain| terrain_codex[terrain].allow_structure)
     })
     .ok_or(ExplError::CouldNotPlacePortal)?;
 
@@ -72,7 +72,7 @@ pub fn generate_map(
     .find(|&c| {
         terrain
             .get(c)
-            .map_or(false, |terrain| terrain_codex[terrain].allow_structure)
+            .is_some_and(|terrain| terrain_codex[terrain].allow_structure)
     })
     .ok_or(ExplError::CouldNotPlaceSpawner)?;
 

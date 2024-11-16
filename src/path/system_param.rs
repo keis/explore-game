@@ -52,9 +52,7 @@ impl BoundPathFinder<'_, '_> {
         self.terrain_query
             .get(entity)
             .ok()
-            .map_or(false, |terrain_id| {
-                self.terrain_codex[terrain_id].allow_walking
-            })
+            .is_some_and(|terrain_id| self.terrain_codex[terrain_id].allow_walking)
     }
 }
 
