@@ -66,4 +66,21 @@ mod tests {
             .single(app.world());
         assert_eq!(group_action_points.current, 2);
     }
+
+    #[rstest]
+    fn group_change_without_action_points(mut app: App) {
+        let group_entity = app.world_mut().spawn(Members::default()).id();
+        let member = app
+            .world_mut()
+            .spawn(ActionPoints {
+                current: 2,
+                reset: 2,
+            })
+            .id();
+        app.world_mut()
+            .commands()
+            .entity(group_entity)
+            .add_members(&[member]);
+        app.world_mut().flush();
+    }
 }
