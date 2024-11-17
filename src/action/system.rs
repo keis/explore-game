@@ -192,8 +192,9 @@ pub fn update_action_points_on_member_added(
     mut action_points_query: Query<(&Members, &mut ActionPoints)>,
     member_action_points_query: Query<&ActionPoints, Without<Members>>,
 ) {
-    let (members, mut action_points) = action_points_query.get_mut(trigger.entity()).unwrap();
-    _update_action_points(members, &mut action_points, &member_action_points_query);
+    if let Ok((members, mut action_points)) = action_points_query.get_mut(trigger.entity()) {
+        _update_action_points(members, &mut action_points, &member_action_points_query);
+    }
 }
 
 pub fn update_action_points_on_member_removed(
@@ -201,8 +202,9 @@ pub fn update_action_points_on_member_removed(
     mut action_points_query: Query<(&Members, &mut ActionPoints)>,
     member_action_points_query: Query<&ActionPoints, Without<Members>>,
 ) {
-    let (members, mut action_points) = action_points_query.get_mut(trigger.entity()).unwrap();
-    _update_action_points(members, &mut action_points, &member_action_points_query);
+    if let Ok((members, mut action_points)) = action_points_query.get_mut(trigger.entity()) {
+        _update_action_points(members, &mut action_points, &member_action_points_query);
+    }
 }
 
 pub fn propagate_action_points_consumed(
