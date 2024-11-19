@@ -1,13 +1,12 @@
-use super::{
-    camp::CampList,
+use super::super::{
     color::*,
-    party::PartyList,
+    component::{CampList, PartyList},
     prelude::*,
-    selected::SelectedDisplay,
     styles::{style_button, style_icon, style_outliner, style_root_container},
     widget::{Opt, Tooltip, TooltipPosition},
     InterfaceAssets, DEFAULT_FONT,
 };
+use super::SelectedView;
 use crate::{
     input::{Action, ActionState, InputMap, MapHover},
     turn::Turn,
@@ -297,9 +296,9 @@ impl ViewTemplate for NextTurnButton {
 }
 
 #[derive(Clone, PartialEq)]
-pub struct ShellScreen;
+pub struct ShellView;
 
-impl ViewTemplate for ShellScreen {
+impl ViewTemplate for ShellView {
     type View = impl View;
 
     fn create(&self, _cx: &mut Cx) -> Self::View {
@@ -321,7 +320,7 @@ impl ViewTemplate for ShellScreen {
                 Element::<NodeBundle>::new()
                     .named("Bottom")
                     .style(style_bar)
-                    .children((SelectedDisplay, NextTurnButton)),
+                    .children((SelectedView, NextTurnButton)),
             ))
     }
 }

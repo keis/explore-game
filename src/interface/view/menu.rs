@@ -1,4 +1,4 @@
-use super::{
+use super::super::{
     color::{BACKGROUND, MENU},
     prelude::*,
     styles::style_root_container,
@@ -84,9 +84,9 @@ impl ViewTemplate for Menu {
 }
 
 #[derive(Clone, PartialEq)]
-pub struct MenuScreen;
+pub struct MenuView;
 
-impl ViewTemplate for MenuScreen {
+impl ViewTemplate for MenuView {
     type View = impl View;
 
     fn create(&self, _cx: &mut Cx) -> Self::View {

@@ -1,7 +1,7 @@
-use super::{
+use super::super::{
     color::{NORMAL, SELECTED},
     prelude::*,
-    stat::StatDisplay,
+    widget::StatDisplay,
     InterfaceAssets, DEFAULT_FONT,
 };
 use crate::{

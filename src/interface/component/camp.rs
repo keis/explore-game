@@ -1,9 +1,9 @@
-use super::{
+use super::super::{
     color::{NORMAL, SELECTED},
     prelude::*,
     resource::*,
-    stat::StatDisplay,
     styles::{style_button, style_icon, style_outliner},
+    widget::StatDisplay,
     InterfaceAssets, DEFAULT_FONT,
 };
 use crate::{
