@@ -1,8 +1,6 @@
-use super::{
-    camp::CampDetails,
-    character::CharacterList,
+use super::super::{
     color::*,
-    party::PartyDetails,
+    component::{CampDetails, CharacterList, PartyDetails},
     prelude::*,
     styles::{style_button, style_icon},
     widget::Opt,
@@ -47,7 +45,7 @@ impl SelectedType {
 }
 
 #[derive(Clone, PartialEq)]
-pub struct SelectedDisplay;
+pub struct SelectedView;
 
 #[derive(Clone, PartialEq)]
 pub struct SelectedTabHeaderIcon {
@@ -138,7 +136,7 @@ impl ViewTemplate for SelectedTabViewContent {
     }
 }
 
-impl ViewTemplate for SelectedDisplay {
+impl ViewTemplate for SelectedView {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {

@@ -1,4 +1,4 @@
-use super::{prelude::*, styles::style_small_icon, DEFAULT_FONT};
+use super::super::{prelude::*, styles::style_small_icon, DEFAULT_FONT};
 
 fn style_stat_display(style: &mut StyleBuilder) {
     style.padding(Val::Px(2.0)).align_items(AlignItems::Center);

@@ -1,17 +1,11 @@
 mod assets;
-mod camp;
-mod character;
 mod color;
-mod game_over;
-mod menu;
-mod party;
+mod component;
 mod plugin;
 mod resource;
 mod root;
-mod selected;
-mod shell;
-mod stat;
 mod styles;
+mod view;
 mod widget;
 
 pub use assets::InterfaceAssets;

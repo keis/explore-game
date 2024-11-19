@@ -1,6 +1,7 @@
 use super::{
-    game_over::GameOverScreen, menu::MenuScreen, plugin::InterfaceState, prelude::*,
-    shell::ShellScreen,
+    plugin::InterfaceState,
+    prelude::*,
+    view::{GameOverView, MenuView, ShellView},
 };
 
 #[derive(Clone, PartialEq)]
@@ -13,9 +14,9 @@ impl ViewTemplate for Interface {
         let interface_state = cx.use_resource::<State<InterfaceState>>();
         Switch::new(*interface_state.get())
             .case(InterfaceState::Hidden, ())
-            .case(InterfaceState::Shell, ShellScreen)
-            .case(InterfaceState::Menu, MenuScreen)
-            .case(InterfaceState::GameOver, GameOverScreen)
+            .case(InterfaceState::Shell, ShellView)
+            .case(InterfaceState::Menu, MenuView)
+            .case(InterfaceState::GameOver, GameOverView)
     }
 }
 

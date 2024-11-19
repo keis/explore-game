@@ -1,4 +1,4 @@
-use super::{
+use super::super::{
     color::*, prelude::*, styles::style_root_container, widget::Button, InterfaceState,
     DEFAULT_FONT,
 };
@@ -46,9 +46,9 @@ fn style_detail_text_red(style: &mut StyleBuilder) {
 }
 
 #[derive(Clone, PartialEq)]
-pub struct GameOverScreen;
+pub struct GameOverView;
 
-impl ViewTemplate for GameOverScreen {
+impl ViewTemplate for GameOverView {
     type View = impl View;
 
     fn create(&self, _cx: &mut Cx) -> Self::View {
