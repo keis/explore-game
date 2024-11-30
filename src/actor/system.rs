@@ -85,7 +85,9 @@ pub fn despawn_empty_party(
     let Ok(map_entity) = map_query.get_single() else {
         return;
     };
-    let members = party_query.get(trigger.entity()).unwrap();
+    let Ok(members) = party_query.get(trigger.entity()) else {
+        return;
+    };
     if members.is_empty() {
         commands
             .entity(map_entity)
