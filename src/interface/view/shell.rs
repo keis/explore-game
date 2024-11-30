@@ -2,8 +2,8 @@ use super::super::{
     color::*,
     component::{CampList, PartyList},
     prelude::*,
-    styles::{style_button, style_icon, style_outliner, style_root_container},
-    widget::{Opt, Tooltip, TooltipPosition},
+    styles::{style_icon, style_outliner, style_root_container},
+    widget::{Button, Opt, Tooltip, TooltipPosition},
     InterfaceAssets, DEFAULT_FONT,
 };
 use super::SelectedView;
@@ -170,31 +170,23 @@ impl ViewTemplate for ToolbarItem {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
-        let id = cx.create_entity();
         let icon = self.icon.clone();
         let action = self.action;
         let inputmap = cx.use_resource::<InputMap<Action>>();
         let keybind = get_keybind_for_action(inputmap, &action);
-        Element::<ButtonBundle>::for_entity(id)
-            .insert_dyn(
-                move |_| {
-                    On::<Pointer<Click>>::run(
-                        move |mut action_state: ResMut<ActionState<Action>>| {
-                            action_state.press(&action);
-                        },
-                    )
-                },
-                (),
+        Button::new()
+            .on_click(
+                cx.create_callback(move |mut action_state: ResMut<ActionState<Action>>| {
+                    action_state.press(&action);
+                }),
             )
-            .style((style_button, style_icon, move |sb: &mut StyleBuilder| {
+            .style((style_icon, move |sb: &mut StyleBuilder| {
                 sb.background_image(icon.clone());
             }))
-            .children(
-                Tooltip::for_parent(id)
-                    .position(TooltipPosition::Below)
-                    .children(
-                        TooltipContent::new(self.tooltip_text.clone()).maybe_keybind(keybind),
-                    ),
+            .tooltip(
+                Tooltip::new().position(TooltipPosition::Below).children(
+                    TooltipContent::new(self.tooltip_text.clone()).maybe_keybind(keybind),
+                ),
             )
     }
 }

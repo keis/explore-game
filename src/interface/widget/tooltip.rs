@@ -14,20 +14,28 @@ fn style_tooltip(style: &mut StyleBuilder) {
         .background_color(NORMAL);
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Default, PartialEq)]
 pub struct Tooltip {
-    parent: Entity,
+    parent: Option<Entity>,
     position: TooltipPosition,
     children: ViewChild,
 }
 
 impl Tooltip {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn for_parent(parent: Entity) -> Self {
         Self {
-            parent,
-            position: TooltipPosition::default(),
-            children: ViewChild::default(),
+            parent: Some(parent),
+            ..default()
         }
+    }
+
+    pub fn parent(mut self, parent: Entity) -> Self {
+        self.parent = Some(parent);
+        self
     }
 
     pub fn position(mut self, position: TooltipPosition) -> Self {
@@ -46,7 +54,7 @@ impl ViewTemplate for Tooltip {
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         let interaction = cx
-            .use_component::<Interaction>(self.parent)
+            .use_component::<Interaction>(self.parent.expect("Tooltip must have a parent"))
             .cloned()
             .unwrap_or_default();
         Cond::new(
