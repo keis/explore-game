@@ -5,5 +5,5 @@ mod character;
 mod party;
 
 pub use camp::{CampDetails, CampList};
-pub use character::CharacterList;
+pub use character::{CharacterDetails, CharacterList};
 pub use party::{PartyDetails, PartyList};

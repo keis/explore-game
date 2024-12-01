@@ -33,4 +33,6 @@ pub struct InterfaceAssets {
     pub magic_swirl_icon: Handle<Image>,
     #[asset(path = "icons/brutal-helm.png")]
     pub brutal_helm_icon: Handle<Image>,
+    #[asset(path = "icons/checklist.png")]
+    pub checklist_icon: Handle<Image>,
 }

@@ -1,6 +1,4 @@
-use super::color::*;
-use bevy::prelude::*;
-use bevy_mod_stylebuilder::*;
+use super::{color, prelude::*};
 
 pub fn style_root_container(style: &mut StyleBuilder) {
     style.width(Val::Percent(100.0)).height(Val::Percent(100.0));
@@ -8,7 +6,7 @@ pub fn style_root_container(style: &mut StyleBuilder) {
 
 pub fn style_button(style: &mut StyleBuilder) {
     style
-        .background_color(NORMAL)
+        .background_color(color::NORMAL)
         .align_items(AlignItems::Center)
         .justify_content(JustifyContent::SpaceAround)
         .margin(Val::Px(2.0));

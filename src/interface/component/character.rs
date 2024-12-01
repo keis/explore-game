@@ -47,6 +47,12 @@ pub struct CharacterDetails {
     target: Entity,
 }
 
+impl CharacterDetails {
+    pub fn new(target: Entity) -> Self {
+        Self { target }
+    }
+}
+
 impl ViewTemplate for CharacterList {
     type View = impl View;
 

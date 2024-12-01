@@ -9,7 +9,7 @@ mod view;
 mod widget;
 
 pub use assets::InterfaceAssets;
-pub use plugin::{InterfacePlugin, InterfaceState};
+pub use plugin::{InterfacePlugin, InterfaceState, ShellState};
 
 const DEFAULT_FONT: &str = "fonts/FiraMono-Medium.ttf";
 
