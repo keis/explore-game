@@ -3,8 +3,8 @@ use super::super::{
     prelude::*,
     resource::*,
     styles::{style_button, style_icon, style_outliner},
-    widget::StatDisplay,
-    InterfaceAssets, DEFAULT_FONT,
+    widget::{Button, StatDisplay},
+    InterfaceAssets, ShellState, DEFAULT_FONT,
 };
 use crate::{
     actor::{Character, Members},
@@ -100,19 +100,40 @@ impl ViewTemplate for CampDetails {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
+        let target = self.target;
         let assets = cx.use_resource::<InterfaceAssets>();
-        let camp = cx.use_component::<Camp>(self.target).unwrap();
-        let members = cx.use_component::<Members>(self.target).unwrap();
-        let inventory = cx.use_component::<Inventory>(self.target).unwrap();
+        let checklist_icon = assets.checklist_icon.clone();
+        let person_icon = assets.person_icon.clone();
+        let crystals_icon = assets.crystals_icon.clone();
+        let manage_camp_callback =
+            cx.create_callback(move |mut next_shell_state: ResMut<NextState<ShellState>>| {
+                next_shell_state.set(ShellState::Camp { target });
+            });
+        let camp = cx.use_component::<Camp>(target).unwrap();
+        let members = cx.use_component::<Members>(target).unwrap();
+        let inventory = cx.use_component::<Inventory>(target).unwrap();
 
         (
             Element::<NodeBundle>::new()
-                .style(style_title_text)
-                .children(camp.name.clone()),
+                .style(|style: &mut StyleBuilder| {
+                    style
+                        .width(Val::Percent(100.0))
+                        .justify_content(JustifyContent::SpaceBetween);
+                })
+                .children((
+                    Element::<NodeBundle>::new()
+                        .style(style_title_text)
+                        .children(camp.name.clone()),
+                    Button::new()
+                        .style((style_icon, move |style: &mut StyleBuilder| {
+                            style.background_image(checklist_icon.clone());
+                        }))
+                        .on_click(manage_camp_callback),
+                )),
             Element::<NodeBundle>::new().children((
-                StatDisplay::new(assets.person_icon.clone(), format!("{}", members.len())),
+                StatDisplay::new(person_icon.clone(), format!("{}", members.len())),
                 StatDisplay::new(
-                    assets.crystals_icon.clone(),
+                    crystals_icon.clone(),
                     format!("{}", inventory.count_item(Inventory::CRYSTAL)),
                 ),
             )),

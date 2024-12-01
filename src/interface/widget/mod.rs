@@ -1,6 +1,6 @@
 /// Widgets are generalised interface bits, they typically get their entire external state passed
 /// as arguments.
-mod button;
+pub mod button;
 mod opt;
 mod stat;
 mod tooltip;

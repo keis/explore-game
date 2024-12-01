@@ -12,6 +12,7 @@
   - assets/icons/contract.png
   - assets/icons/person.png
   - assets/icons/hearth-shield.png
+  - assets/icons/checklist.png
 * By Skoll under CC-BY 3.0 (https://game-icons.net)
   - assets/icons/footsteps.png
   - assets/icons/gladius.png

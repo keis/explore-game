@@ -8,6 +8,14 @@ use bevy_mod_picking::prelude::*;
 use bevy_mod_stylebuilder::*;
 use bevy_quill_core::{prelude::*, IntoViewChild, ViewChild};
 
+pub fn style_button_interaction(interaction: Interaction, style: &mut StyleBuilder) {
+    style.background_color(match interaction {
+        Interaction::Pressed => PRESSED,
+        Interaction::Hovered => HOVERED,
+        Interaction::None => NORMAL,
+    });
+}
+
 #[derive(Clone, Default, PartialEq)]
 pub struct Button {
     pub entity: Option<Entity>,
@@ -60,16 +68,7 @@ impl ViewTemplate for Button {
 
         Element::<ButtonBundle>::for_entity(id)
             .style((style_button, self.style.clone()))
-            .style_dyn(
-                |interaction, sb| {
-                    sb.background_color(match interaction {
-                        Interaction::Pressed => PRESSED,
-                        Interaction::Hovered => HOVERED,
-                        Interaction::None => NORMAL,
-                    });
-                },
-                interaction,
-            )
+            .style_dyn(style_button_interaction, interaction)
             .insert_dyn(
                 move |_| {
                     On::<Pointer<Click>>::run(move |world: &mut World| {

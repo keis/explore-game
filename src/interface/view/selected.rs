@@ -127,6 +127,7 @@ impl ViewTemplate for SelectedTabViewContent {
         let target = self.target;
 
         Element::<NodeBundle>::new()
+            .named("Selected details")
             .style(style_selected_item)
             .children(
                 Switch::new(selected_type)
