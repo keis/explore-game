@@ -225,6 +225,7 @@ mod tests {
         AssetApp, AssetPlugin, AssetServer, Assets, Handle, LoadContext,
     };
     use bevy_core::TaskPoolPlugin;
+    use bevy_ecs::component::Component;
     use std::path::Path;
 
     #[derive(Debug, TypePath, Deserialize)]
@@ -239,6 +240,10 @@ mod tests {
         value: u32,
         text: String,
     }
+
+    #[allow(dead_code)]
+    #[derive(Component)]
+    struct CodexHandle(Handle<Codex<MenuItem>>);
 
     impl MenuItem {
         pub fn new(value: u32) -> Self {
@@ -324,7 +329,7 @@ text = 'some other text'
 
         let handle: Handle<Codex<MenuItem>> = asset_server.load("some.menu.toml");
         let asset_id = handle.id();
-        app.world_mut().spawn(handle);
+        app.world_mut().spawn(CodexHandle(handle));
         for _ in 0..100 {
             app.update();
             if let Some(codex) = app

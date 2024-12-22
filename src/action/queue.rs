@@ -181,7 +181,7 @@ pub enum ActionCost {
 }
 
 pub struct GameActionInfo {
-    pub(super) system: SystemId<GameAction, GameActionResult>,
+    pub(super) system: SystemId<In<GameAction>, GameActionResult>,
     pub(super) action_cost: ActionCost,
 }
 
@@ -218,7 +218,7 @@ impl<'a> GameActionSystemsBuilder<'a> {
         f: F,
     ) -> Self
     where
-        F: IntoSystem<GameAction, GameActionResult, Marker> + 'static,
+        F: IntoSystem<In<GameAction>, GameActionResult, Marker> + 'static,
     {
         self.enum_map[action] = Some(GameActionInfo {
             system: self.world.register_system(f),
@@ -233,7 +233,7 @@ impl<'a> GameActionSystemsBuilder<'a> {
 }
 
 #[derive(Resource, Deref)]
-pub struct GameActionFollowUpSystem(pub(super) SystemId<GameAction, Option<GameAction>>);
+pub struct GameActionFollowUpSystem(pub(super) SystemId<In<GameAction>, Option<GameAction>>);
 
 pub fn has_ready_action(
     game_action_queue: Res<GameActionQueue>,

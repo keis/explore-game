@@ -51,7 +51,7 @@ impl ViewTemplate for Tooltip {
             .unwrap_or_default();
         Cond::new(
             interaction == Interaction::Hovered,
-            Element::<NodeBundle>::new()
+            Element::<Node>::new()
                 .named("Tooltip")
                 .style(style_tooltip)
                 .style_dyn(

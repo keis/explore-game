@@ -47,7 +47,7 @@ impl PresenceBuilder<'_, '_> {
 impl MapCommandsExt for EntityCommands<'_> {
     fn add_presence(&mut self, presence: Entity, position: HexCoord) -> &mut Self {
         let map = self.id();
-        self.commands().add(AddMapPresence {
+        self.commands().queue(AddMapPresence {
             map,
             presence: SmallVec::from_slice(&[presence]),
             position,
@@ -57,7 +57,7 @@ impl MapCommandsExt for EntityCommands<'_> {
 
     fn move_presence(&mut self, presence: Entity, position: HexCoord) -> &mut Self {
         let map = self.id();
-        self.commands().add(MoveMapPresence {
+        self.commands().queue(MoveMapPresence {
             map,
             presence,
             position,
@@ -81,13 +81,13 @@ impl MapCommandsExt for EntityCommands<'_> {
         };
         spawn_presence(&mut builder);
         let add_map_presence = builder.add_map_presence;
-        self.commands().add(add_map_presence);
+        self.commands().queue(add_map_presence);
         self
     }
 
     fn despawn_presence(&mut self, presence: Entity) -> &mut Self {
         let map = self.id();
-        self.commands().add(DespawnPresence { map, presence });
+        self.commands().queue(DespawnPresence { map, presence });
         self
     }
 }
@@ -165,6 +165,6 @@ impl Command for DespawnPresence {
             }
         }
 
-        despawn_with_children_recursive(world, self.presence);
+        despawn_with_children_recursive(world, self.presence, false);
     }
 }

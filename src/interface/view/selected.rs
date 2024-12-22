@@ -7,6 +7,7 @@ use super::super::{
     InterfaceAssets,
 };
 use crate::{actor::Party, input::SelectedIndex, structure::Camp};
+use bevy::ecs::world::DeferredWorld;
 
 fn style_selected_display(style: &mut StyleBuilder) {
     style
@@ -74,6 +75,7 @@ impl ViewTemplate for SelectedTabHeaderIcon {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
+        let id = cx.create_entity();
         let selected_type = SelectedType::use_selected_type(cx, self.target);
         let assets = cx.use_resource::<InterfaceAssets>();
 
@@ -82,17 +84,17 @@ impl ViewTemplate for SelectedTabHeaderIcon {
         let brutal_helm_icon = assets.brutal_helm_icon.clone();
         let campfire_icon = assets.campfire_icon.clone();
 
+        cx.create_observer(
+            move |_click: Trigger<Pointer<Click>>, mut world: DeferredWorld| {
+                focused.set(&mut world, Some(target));
+            },
+            id,
+            target,
+        );
+
         Cond::new(
             selected_type != SelectedType::Other,
-            Element::<ButtonBundle>::new()
-                .insert_dyn(
-                    move |_| {
-                        On::<Pointer<Click>>::run(move |world: &mut World| {
-                            focused.set(world, Some(target));
-                        })
-                    },
-                    (),
-                )
+            Element::<Button>::for_entity(id)
                 .style((style_button, style_icon, move |sb: &mut StyleBuilder| {
                     match selected_type {
                         SelectedType::Party => {
@@ -126,13 +128,11 @@ impl ViewTemplate for SelectedTabViewContent {
         let selected_type = SelectedType::use_selected_type(cx, self.target);
         let target = self.target;
 
-        Element::<NodeBundle>::new()
-            .style(style_selected_item)
-            .children(
-                Switch::new(selected_type)
-                    .case(SelectedType::Party, PartyDetails::new(target))
-                    .case(SelectedType::Camp, CampDetails::new(target)),
-            )
+        Element::<Node>::new().style(style_selected_item).children(
+            Switch::new(selected_type)
+                .case(SelectedType::Party, PartyDetails::new(target))
+                .case(SelectedType::Camp, CampDetails::new(target)),
+        )
     }
 }
 
@@ -156,21 +156,19 @@ impl ViewTemplate for SelectedView {
 
         let focused_entity = focused.get(cx);
 
-        Element::<NodeBundle>::new()
-            .named("Selected Display")
-            .children((
-                Element::<NodeBundle>::new()
-                    .named("tab-view")
-                    .style(style_selected_display)
-                    .children((
-                        Element::<NodeBundle>::new()
-                            .named("tab-header")
-                            .children(For::each(selected, move |&target| {
-                                SelectedTabHeaderIcon::new(target, focused)
-                            })),
-                        Opt::new(focused_entity.map(SelectedTabViewContent::new)),
-                    )),
-                CharacterList,
-            ))
+        Element::<Node>::new().named("Selected Display").children((
+            Element::<Node>::new()
+                .named("tab-view")
+                .style(style_selected_display)
+                .children((
+                    Element::<Node>::new()
+                        .named("tab-header")
+                        .children(For::each(selected, move |&target| {
+                            SelectedTabHeaderIcon::new(target, focused)
+                        })),
+                    Opt::new(focused_entity.map(SelectedTabViewContent::new)),
+                )),
+            CharacterList,
+        ))
     }
 }

@@ -62,7 +62,7 @@ impl ViewTemplate for Menu {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
-        Element::<NodeBundle>::new().style(style_menu).children((
+        Element::<Node>::new().style(style_menu).children((
             MenuItem {
                 label: "Resume",
                 on_click: cx.create_callback(handle_resume),
@@ -90,7 +90,7 @@ impl ViewTemplate for MenuView {
     type View = impl View;
 
     fn create(&self, _cx: &mut Cx) -> Self::View {
-        Element::<NodeBundle>::new()
+        Element::<Node>::new()
             .named("Menu screen")
             .style((style_root_container, style_menu_container))
             .children(Menu)

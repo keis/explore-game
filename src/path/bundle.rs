@@ -10,7 +10,9 @@ pub type PathDisplayParams<'w> = (
 #[derive(Bundle)]
 pub struct PathDisplayBundle {
     path_display: PathDisplay,
-    pbr_bundle: PbrBundle,
+    mesh: Mesh3d,
+    material: MeshMaterial3d<StandardMaterial>,
+    transform: Transform,
     not_shadow_caster: NotShadowCaster,
 }
 
@@ -22,12 +24,9 @@ impl PathDisplayBundle {
     ) -> Self {
         Self {
             path_display: PathDisplay { path_guided },
-            pbr_bundle: PbrBundle {
-                mesh: meshes.add(path),
-                material: standard_materials.add(Color::srgba(0.8, 0.8, 0.8, 0.6)),
-                transform: Transform::from_translation(Vec3::new(0.0, 0.5, 0.0)),
-                ..default()
-            },
+            mesh: Mesh3d(meshes.add(path)),
+            material: MeshMaterial3d(standard_materials.add(Color::srgba(0.8, 0.8, 0.8, 0.6))),
+            transform: Transform::from_translation(Vec3::new(0.0, 0.5, 0.0)),
             not_shadow_caster: NotShadowCaster,
         }
     }

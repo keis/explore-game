@@ -52,7 +52,7 @@ impl ViewTemplate for GameOverView {
     type View = impl View;
 
     fn create(&self, _cx: &mut Cx) -> Self::View {
-        Element::<NodeBundle>::new()
+        Element::<Node>::new()
             .named("Game over screen")
             .style((style_root_container, style_game_over_layer))
             .children(GameOverDisplay)
@@ -68,13 +68,13 @@ impl ViewTemplate for GameOverDisplay {
     fn create(&self, cx: &mut Cx) -> Self::View {
         let on_click = cx.create_callback(handle_new_game_button);
         let score = cx.use_resource::<Score>();
-        Element::<NodeBundle>::new()
+        Element::<Node>::new()
             .style(style_game_over_display)
             .children((
-                Element::<NodeBundle>::new()
+                Element::<Node>::new()
                     .style(style_game_over_text)
                     .children("Game Over"),
-                Element::<NodeBundle>::new()
+                Element::<Node>::new()
                     .style(style_detail_text)
                     .children(format!(
                         "Survivors: {}",
@@ -83,7 +83,7 @@ impl ViewTemplate for GameOverDisplay {
                             v => format!("{}", v),
                         }
                     )),
-                Element::<NodeBundle>::new()
+                Element::<Node>::new()
                     .style(style_detail_text)
                     .children(format!(
                         "Dead: {}",
@@ -92,7 +92,7 @@ impl ViewTemplate for GameOverDisplay {
                             v => format!("{}", v),
                         }
                     )),
-                Element::<NodeBundle>::new()
+                Element::<Node>::new()
                     .style(style_detail_text_red)
                     .children(format!(
                         "Crystals: {}",

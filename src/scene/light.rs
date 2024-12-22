@@ -1,6 +1,6 @@
 use crate::turn::Period;
 use bevy::prelude::*;
-use bevy_tweening::{Animator, EaseFunction, Lens, Targetable, Tracks, Tween};
+use bevy_tweening::{Animator, Lens, Targetable, Tracks, Tween};
 use std::time::Duration;
 
 // Yoinked from bevy_tweening
@@ -47,17 +47,14 @@ impl Lens<DirectionalLight> for LightColorLens {
 pub fn spawn_light(mut commands: Commands) {
     commands.spawn((
         Name::new("Lucifer"),
-        DirectionalLightBundle {
-            directional_light: DirectionalLight {
-                illuminance: 0.0,
-                shadows_enabled: true,
-                ..default()
-            },
-            transform: Transform {
-                translation: Vec3::new(0.0, 10.0, 0.0),
-                rotation: Quat::from_rotation_x(-std::f32::consts::FRAC_PI_3),
-                ..default()
-            },
+        DirectionalLight {
+            illuminance: 0.0,
+            shadows_enabled: true,
+            ..default()
+        },
+        Transform {
+            translation: Vec3::new(0.0, 10.0, 0.0),
+            rotation: Quat::from_rotation_x(-std::f32::consts::FRAC_PI_3),
             ..default()
         },
         Animator::new(Tween::new(

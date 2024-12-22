@@ -3,7 +3,7 @@ use super::super::{
     styles::style_button,
 };
 use bevy::prelude::*;
-use bevy_mod_picking::prelude::*;
+//use bevy_mod_picking::prelude::*;
 use bevy_mod_stylebuilder::*;
 use bevy_quill_core::{prelude::*, IntoViewChild, ViewChild};
 
@@ -46,7 +46,17 @@ impl ViewTemplate for Button {
             .unwrap_or_default();
         let on_click = self.on_click;
 
-        Element::<ButtonBundle>::for_entity(id)
+        cx.create_observer(
+            move |_click: Trigger<Pointer<Click>>, mut commands: Commands| {
+                if let Some(on_click) = on_click {
+                    commands.run_callback(on_click, ());
+                }
+            },
+            id,
+            on_click,
+        );
+
+        Element::<bevy::ui::widget::Button>::for_entity(id)
             .style((style_button, self.style.clone()))
             .style_dyn(
                 |interaction, sb| {
@@ -57,16 +67,6 @@ impl ViewTemplate for Button {
                     });
                 },
                 interaction,
-            )
-            .insert_dyn(
-                move |_| {
-                    On::<Pointer<Click>>::run(move |world: &mut World| {
-                        if let Some(on_click) = on_click {
-                            world.run_callback(on_click, ());
-                        }
-                    })
-                },
-                (),
             )
             .children(self.children.clone())
     }

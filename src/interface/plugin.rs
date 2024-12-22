@@ -21,10 +21,10 @@ impl Plugin for InterfacePlugin {
         .init_state::<InterfaceState>()
         .init_resource::<Index<Party>>()
         .init_resource::<Index<Camp>>()
-        .observe(Index::<Party>::on_add)
-        .observe(Index::<Party>::on_remove)
-        .observe(Index::<Camp>::on_add)
-        .observe(Index::<Camp>::on_remove)
+        .add_observer(Index::<Party>::on_add)
+        .add_observer(Index::<Party>::on_remove)
+        .add_observer(Index::<Camp>::on_add)
+        .add_observer(Index::<Camp>::on_remove)
         .add_systems(
             OnEnter(AssetState::Loaded),
             (

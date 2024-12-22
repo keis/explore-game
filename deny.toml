@@ -10,11 +10,14 @@ skip = [
     "regex-automata",
     "libloading",
     "inotify",
-    "image",
     "fixedbitset",
     "event-listener",
     "cfg_aliases",
     "base64",
+    "bit-set",
+    "bit-vec",
+    "core-foundation",
+    "ttf-parser",
 ]
 skip-tree = [
     "windows",

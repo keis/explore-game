@@ -22,17 +22,17 @@ pub fn spawn_floating_text(
 pub fn float_and_fade(
     mut commands: Commands,
     time: Res<Time>,
-    mut floating_text_query: Query<(Entity, &mut FloatingText, &mut Transform, &mut Text)>,
+    mut floating_text_query: Query<(Entity, &mut FloatingText, &mut Transform, &mut TextColor)>,
 ) {
-    for (entity, mut floating_text, mut transform, mut text) in &mut floating_text_query {
-        let progress = 0.6 * time.delta_seconds();
+    for (entity, mut floating_text, mut transform, mut text_color) in &mut floating_text_query {
+        let progress = 0.6 * time.delta_secs();
         floating_text.progress += progress;
         if floating_text.progress >= 1.0 {
             commands.entity(entity).despawn();
             continue;
         }
         transform.translation.y += progress;
-        text.sections[0].style.color.set_alpha(
+        text_color.set_alpha(
             1.0 - ((floating_text.progress - 0.5) / 0.5)
                 .clamp(0.0, 1.0)
                 .quadratic_out(),

@@ -6,7 +6,12 @@ use bevy_mod_billboard::prelude::*;
 #[derive(Bundle, Default)]
 pub struct FloatingTextBundle {
     floating_text: FloatingText,
-    billboard_text_bundle: BillboardTextBundle,
+    billboard_text: BillboardText,
+    transform: Transform,
+    text: Text,
+    text_font: TextFont,
+    text_color: TextColor,
+    text_layout: TextLayout,
 }
 
 impl FloatingTextBundle {
@@ -20,27 +25,23 @@ impl FloatingTextBundle {
         }: FloatingTextPrototype,
     ) -> Self {
         Self {
-            billboard_text_bundle: BillboardTextBundle {
-                transform: Transform::from_translation(
-                    source
-                        + match alignment {
-                            FloatingTextAlignment::Center => Vec3::new(-0.0, 0.0, 0.2),
-                            FloatingTextAlignment::Left => Vec3::new(-0.1, 0.0, 0.2),
-                            FloatingTextAlignment::Right => Vec3::new(0.1, 0.0, 0.2),
-                        },
-                )
-                .with_scale(Vec3::new(0.01, 0.01, 0.01)),
-                text: Text::from_sections([TextSection {
-                    value,
-                    style: TextStyle {
-                        font_size: 26.0,
-                        font: interface_assets.font.clone(),
-                        color,
+            transform: Transform::from_translation(
+                source
+                    + match alignment {
+                        FloatingTextAlignment::Center => Vec3::new(-0.0, 0.0, 0.2),
+                        FloatingTextAlignment::Left => Vec3::new(-0.1, 0.0, 0.2),
+                        FloatingTextAlignment::Right => Vec3::new(0.1, 0.0, 0.2),
                     },
-                }])
-                .with_justify(JustifyText::Center),
+            )
+            .with_scale(Vec3::new(0.01, 0.01, 0.01)),
+            text: Text::new(value),
+            text_font: TextFont {
+                font: interface_assets.font.clone(),
+                font_size: 26.0,
                 ..default()
             },
+            text_color: TextColor(color),
+            text_layout: TextLayout::new_with_justify(JustifyText::Center),
             ..default()
         }
     }

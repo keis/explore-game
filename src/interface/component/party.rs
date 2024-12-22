@@ -47,7 +47,7 @@ impl ViewTemplate for PartyList {
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         let party_index = cx.use_resource::<Index<Party>>();
-        Element::<NodeBundle>::new()
+        Element::<Node>::new()
             .style(style_outliner)
             .children(For::each(party_index.0.clone(), |&target| {
                 PartyIcon::new(target)
@@ -59,6 +59,7 @@ impl ViewTemplate for PartyIcon {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
+        let id = cx.create_entity();
         let target = self.target;
         let assets = cx.use_resource::<InterfaceAssets>();
         let icon = assets.brutal_helm_icon.clone();
@@ -66,12 +67,17 @@ impl ViewTemplate for PartyIcon {
             .use_component::<Selection>(target)
             .cloned()
             .unwrap_or_default();
-        let on_click = cx.create_callback(
-            move |party: In<Entity>, mut selection: SelectionUpdate<Without<Character>>| {
-                selection.toggle(*party);
+
+        cx.create_observer(
+            move |_click: Trigger<Pointer<Click>>,
+                  mut selection: SelectionUpdate<Without<Character>>| {
+                selection.toggle(target);
             },
+            id,
+            target,
         );
-        Element::<ButtonBundle>::new()
+
+        Element::<Button>::for_entity(id)
             .style((style_button, style_icon, move |sb: &mut StyleBuilder| {
                 sb.background_image(icon.clone());
             }))
@@ -84,14 +90,6 @@ impl ViewTemplate for PartyIcon {
                     });
                 },
                 selection,
-            )
-            .insert_dyn(
-                move |_| {
-                    On::<Pointer<Click>>::run(move |world: &mut World| {
-                        world.run_callback(on_click, target);
-                    })
-                },
-                (),
             )
     }
 }
@@ -107,10 +105,10 @@ impl ViewTemplate for PartyDetails {
         let inventory = cx.use_component::<Inventory>(self.target).unwrap();
 
         (
-            Element::<NodeBundle>::new()
+            Element::<Node>::new()
                 .style(style_title_text)
                 .children(party.name.clone()),
-            Element::<NodeBundle>::new().children((
+            Element::<Node>::new().children((
                 StatDisplay::new(
                     assets.footsteps_icon.clone(),
                     format!("{}", action_points.current),

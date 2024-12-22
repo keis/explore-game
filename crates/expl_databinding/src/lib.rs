@@ -17,7 +17,7 @@ impl Plugin for DataBindingPlugin {
             .add_event::<DataBindingExpired>()
             .add_systems(
                 PostUpdate,
-                remove_expired_data_bindings.run_if(on_event::<DataBindingExpired>()),
+                remove_expired_data_bindings.run_if(on_event::<DataBindingExpired>),
             );
     }
 }
@@ -81,7 +81,7 @@ impl DataBindingExt for EntityCommands<'_> {
     /// Bind the entity to another entity `source`
     fn bind_to(&mut self, source: Entity) -> &mut Self {
         let sink = self.id();
-        self.commands().add(Bind { source, sink });
+        self.commands().queue(Bind { source, sink });
         self
     }
 }
@@ -187,7 +187,7 @@ mod tests {
     fn configure_bindings() {
         let mut app = App::new();
         app.add_plugins(DataBindingPlugin);
-        app.world_mut().run_system_once(configure);
+        assert!(app.world_mut().run_system_once(configure).is_ok());
 
         let temps: Vec<_> = app
             .world_mut()
@@ -210,7 +210,7 @@ mod tests {
     fn update_sink() {
         let mut app = App::new();
         app.add_plugins(DataBindingPlugin);
-        app.world_mut().run_system_once(configure);
+        assert!(app.world_mut().run_system_once(configure).is_ok());
 
         let mut schedule = Schedule::default();
         schedule.add_systems((update_temperature, update_display.after(update_temperature)));
@@ -247,7 +247,7 @@ mod tests {
     fn expire_deleted_entity() {
         let mut app = App::new();
         app.add_plugins(DataBindingPlugin);
-        app.world_mut().run_system_once(configure);
+        assert!(app.world_mut().run_system_once(configure).is_ok());
 
         let display = app
             .world_mut()

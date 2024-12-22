@@ -82,8 +82,8 @@ pub fn fluff_zone(
     mut zone_params: ZoneParams,
     map_query: Query<(&MapLayout, &ZoneLayer)>,
     mut zone_query: ParamSet<(
-        Query<(&MapPosition, &TerrainId), Without<GlobalTransform>>,
-        Query<(Entity, &TerrainId, &MapPosition, &Fog), Without<GlobalTransform>>,
+        Query<(&MapPosition, &TerrainId), Without<Visibility>>,
+        Query<(Entity, &TerrainId, &MapPosition, &Fog), Without<Visibility>>,
     )>,
     neighbour_fog_query: Query<&Fog>,
 ) -> Result<(), ExplError> {

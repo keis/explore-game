@@ -1,3 +1,4 @@
+use bevy::ecs::{entity::Entity, query::QueryEntityError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -6,8 +7,12 @@ pub enum ExplError {
     IOError(#[from] std::io::Error),
     #[error(transparent)]
     WFCError(#[from] expl_wfc::WFCError),
-    #[error(transparent)]
-    QueryEntityError(#[from] bevy::ecs::query::QueryEntityError),
+    #[error("query does not match `{0}`")]
+    QueryDoesNotMatch(Entity),
+    #[error("no such entity `{0}`")]
+    NoSuchEntity(Entity),
+    #[error("aliased mutability `{0}`")]
+    AliasedMutability(Entity),
     #[error(transparent)]
     QuerySingleError(#[from] bevy::ecs::query::QuerySingleError),
     #[error(transparent)]
@@ -44,8 +49,21 @@ pub enum ExplError {
     InvalidTarget,
 }
 
-impl<I, O> From<bevy::ecs::system::RegisteredSystemError<I, O>> for ExplError {
+impl<I, O> From<bevy::ecs::system::RegisteredSystemError<I, O>> for ExplError
+where
+    I: bevy::ecs::system::SystemInput,
+{
     fn from(_err: bevy::ecs::system::RegisteredSystemError<I, O>) -> Self {
         Self::RegisteredSystemError
+    }
+}
+
+impl<'a> From<bevy::ecs::query::QueryEntityError<'a>> for ExplError {
+    fn from(err: bevy::ecs::query::QueryEntityError<'a>) -> Self {
+        match err {
+            QueryEntityError::QueryDoesNotMatch(e, _) => Self::QueryDoesNotMatch(e),
+            QueryEntityError::NoSuchEntity(e) => Self::NoSuchEntity(e),
+            QueryEntityError::AliasedMutability(e) => Self::AliasedMutability(e),
+        }
     }
 }

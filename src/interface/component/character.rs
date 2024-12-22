@@ -58,7 +58,7 @@ impl ViewTemplate for CharacterList {
             .flat_map(|&entity| cx.use_component::<Members>(entity))
             .flat_map(|members| members.iter().cloned())
             .collect();
-        Element::<NodeBundle>::new()
+        Element::<Node>::new()
             .style(style_character_list)
             .children(For::each(characters, |&target| CharacterDisplay { target }))
     }
@@ -68,31 +68,27 @@ impl ViewTemplate for CharacterDisplay {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
+        let id = cx.create_entity();
         let target = self.target;
         let is_selected = cx
             .use_component::<Selection>(self.target)
             .unwrap()
             .is_selected;
-        let on_click = cx.create_callback(
-            move |character: In<Entity>, mut selection: SelectionUpdate<With<Character>>| {
-                selection.toggle(*character);
+        cx.create_observer(
+            move |_click: Trigger<Pointer<Click>>,
+                  mut selection: SelectionUpdate<With<Character>>| {
+                selection.toggle(target);
             },
+            id,
+            target,
         );
-        Element::<ButtonBundle>::new()
+        Element::<Button>::for_entity(id)
             .style(style_character_display)
             .style_dyn(
                 move |is_selected, sb| {
                     sb.background_color(if is_selected { SELECTED } else { NORMAL });
                 },
                 is_selected,
-            )
-            .insert_dyn(
-                move |_| {
-                    On::<Pointer<Click>>::run(move |world: &mut World| {
-                        world.run_callback(on_click, target);
-                    })
-                },
-                (),
             )
             .children(CharacterDetails {
                 target: self.target,
@@ -110,10 +106,10 @@ impl ViewTemplate for CharacterDetails {
         let health = cx.use_component::<Health>(self.target).unwrap();
 
         (
-            Element::<NodeBundle>::new()
+            Element::<Node>::new()
                 .style(style_title_text)
                 .children(character.name.clone()),
-            Element::<NodeBundle>::new().children((
+            Element::<Node>::new().children((
                 StatDisplay::new(
                     assets.gladius_icon.clone(),
                     format!("{}-{}", attack.low, attack.high),

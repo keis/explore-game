@@ -21,7 +21,7 @@ pub trait GroupCommandsExt {
 impl GroupCommandsExt for EntityCommands<'_> {
     fn add_members(&mut self, members: &[Entity]) -> &mut Self {
         let group = self.id();
-        self.commands().add(AddMembers {
+        self.commands().queue(AddMembers {
             group,
             members: SmallVec::from(members),
         });
@@ -30,7 +30,7 @@ impl GroupCommandsExt for EntityCommands<'_> {
 
     fn remove_members(&mut self, members: &[Entity]) -> &mut Self {
         let group = self.id();
-        self.commands().add(RemoveMembers {
+        self.commands().queue(RemoveMembers {
             group,
             members: SmallVec::from(members),
         });
@@ -39,7 +39,7 @@ impl GroupCommandsExt for EntityCommands<'_> {
 
     fn join_group(&mut self, group: Entity) -> &mut Self {
         let members = SmallVec::from_slice(&[self.id()]);
-        self.commands().add(AddMembers { group, members });
+        self.commands().queue(AddMembers { group, members });
         self
     }
 }

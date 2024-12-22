@@ -100,7 +100,7 @@ impl ViewTemplate for KeybindText {
     type View = impl View;
 
     fn create(&self, _cx: &mut Cx) -> Self::View {
-        Element::<NodeBundle>::new()
+        Element::<Node>::new()
             .style(style_keybind_text)
             .children(self.keybind_text())
     }
@@ -130,12 +130,10 @@ impl ViewTemplate for TooltipContent {
     type View = impl View;
 
     fn create(&self, _cx: &mut Cx) -> Self::View {
-        Element::<NodeBundle>::new()
-            .style(style_tooltip_text)
-            .children((
-                self.tooltip_text.clone(),
-                Opt::new(self.keybind.map(KeybindText::new)),
-            ))
+        Element::<Node>::new().style(style_tooltip_text).children((
+            self.tooltip_text.clone(),
+            Opt::new(self.keybind.map(KeybindText::new)),
+        ))
     }
 }
 
@@ -175,17 +173,17 @@ impl ViewTemplate for ToolbarItem {
         let action = self.action;
         let inputmap = cx.use_resource::<InputMap<Action>>();
         let keybind = get_keybind_for_action(inputmap, &action);
-        Element::<ButtonBundle>::for_entity(id)
-            .insert_dyn(
-                move |_| {
-                    On::<Pointer<Click>>::run(
-                        move |mut action_state: ResMut<ActionState<Action>>| {
-                            action_state.press(&action);
-                        },
-                    )
-                },
-                (),
-            )
+
+        cx.create_observer(
+            move |_click: Trigger<Pointer<Click>>,
+                  mut action_state: ResMut<ActionState<Action>>| {
+                action_state.press(&action);
+            },
+            id,
+            action,
+        );
+
+        Element::<Button>::for_entity(id)
             .style((style_button, style_icon, move |sb: &mut StyleBuilder| {
                 sb.background_image(icon.clone());
             }))
@@ -207,7 +205,7 @@ impl ViewTemplate for Toolbar {
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         let assets = cx.use_resource::<InterfaceAssets>();
-        Element::<NodeBundle>::new().style(style_toolbar).children((
+        Element::<Node>::new().style(style_toolbar).children((
             ToolbarItem::for_action(Action::ResumeMove)
                 .icon(assets.arrow_icon.clone())
                 .tooltip_text("Resume move"),
@@ -255,7 +253,7 @@ impl ViewTemplate for ZoneDisplay {
         } else {
             String::from("")
         };
-        Element::<NodeBundle>::new()
+        Element::<Node>::new()
             .named("Zone Display")
             .style((style_zone_display, style_zone_display_text))
             .children(text)
@@ -270,23 +268,24 @@ impl ViewTemplate for NextTurnButton {
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         let id = cx.create_entity();
-        let turn = cx.use_resource::<Turn>();
         let action = Action::NextTurn;
         let inputmap = cx.use_resource::<InputMap<Action>>();
         let keybind = get_keybind_for_action(inputmap, &action);
-        Element::<ButtonBundle>::for_entity(id)
+
+        cx.create_observer(
+            move |_click: Trigger<Pointer<Click>>,
+                  mut action_state: ResMut<ActionState<Action>>| {
+                action_state.press(&action);
+            },
+            id,
+            action,
+        );
+
+        let turn = cx.use_resource::<Turn>();
+
+        Element::<Button>::for_entity(id)
             .named("Next Turn Button")
             .style(style_next_turn_button)
-            .insert_dyn(
-                move |_| {
-                    On::<Pointer<Click>>::run(
-                        move |mut action_state: ResMut<ActionState<Action>>| {
-                            action_state.press(&action);
-                        },
-                    )
-                },
-                (),
-            )
             .children((
                 format!("Turn {}", **turn),
                 Tooltip::for_parent(id)
@@ -302,22 +301,24 @@ impl ViewTemplate for ShellView {
     type View = impl View;
 
     fn create(&self, _cx: &mut Cx) -> Self::View {
-        Element::<NodeBundle>::new()
+        Element::<Node>::new()
             .named("Shell screen")
             .style((style_root_container, style_shell_container))
+            .insert(PickingBehavior::IGNORE)
             .children((
-                Element::<NodeBundle>::new()
+                Element::<Node>::new()
                     .named("Top")
                     .style(style_bar)
+                    .insert(PickingBehavior::IGNORE)
                     .children((
-                        Element::<NodeBundle>::new()
+                        Element::<Node>::new()
                             .named("Outliner")
                             .style(style_outliner)
                             .children((CampList, PartyList)),
                         Toolbar,
                         ZoneDisplay,
                     )),
-                Element::<NodeBundle>::new()
+                Element::<Node>::new()
                     .named("Bottom")
                     .style(style_bar)
                     .children((SelectedView, NextTurnButton)),

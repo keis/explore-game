@@ -140,7 +140,7 @@ fn camera_control(
         delta -= Vec3::Y;
     }
 
-    control.velocity += delta.normalize_or_zero() * time.delta_seconds() * acceleration;
+    control.velocity += delta.normalize_or_zero() * time.delta_secs() * acceleration;
 }
 
 fn camera_target(
@@ -151,7 +151,7 @@ fn camera_target(
     if let Ok((entity, transform, mut control, target)) = camera_query.get_single_mut() {
         let acceleration = control.acceleration;
         let delta = target.translation - transform.translation;
-        control.velocity += delta.normalize_or_zero() * time.delta_seconds() * acceleration;
+        control.velocity += delta.normalize_or_zero() * time.delta_secs() * acceleration;
         if delta.length_squared() < 1.0 {
             commands.entity(entity).remove::<CameraTarget>();
         }
@@ -160,8 +160,8 @@ fn camera_target(
 
 fn camera_movement(time: Res<Time>, mut camera_query: Query<(&mut Transform, &mut CameraControl)>) {
     let (mut transform, mut control) = camera_query.single_mut();
-    transform.translation += control.velocity * time.delta_seconds();
-    control.velocity *= 1.0 - 4.0 * time.delta_seconds();
+    transform.translation += control.velocity * time.delta_secs();
+    control.velocity *= 1.0 - 4.0 * time.delta_secs();
 }
 
 fn cursor_grab(
@@ -173,13 +173,13 @@ fn cursor_grab(
     };
 
     if action_state.just_pressed(&Action::PanCamera) {
-        window.cursor.grab_mode = CursorGrabMode::Locked;
-        window.cursor.visible = false;
+        window.cursor_options.visible = false;
+        window.cursor_options.grab_mode = CursorGrabMode::Locked;
     }
 
     if action_state.just_released(&Action::PanCamera) {
-        window.cursor.grab_mode = CursorGrabMode::None;
-        window.cursor.visible = true;
+        window.cursor_options.visible = true;
+        window.cursor_options.grab_mode = CursorGrabMode::None;
     }
 }
 
