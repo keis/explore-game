@@ -92,4 +92,29 @@ mod tests {
         let member = app.world_mut().query::<&Group>().single(app.world());
         assert_eq!(member.0, new_group_entity);
     }
+
+    #[rstest]
+    fn remove_from_non_party(mut app: App) {
+        let member_entity = app.world_mut().spawn_empty().id();
+        let group_entity = app
+            .world_mut()
+            .commands()
+            .spawn(Members::default())
+            .add_members(&[member_entity])
+            .id();
+        app.world_mut().flush();
+
+        app.world_mut()
+            .commands()
+            .entity(group_entity)
+            .remove_members(&[member_entity]);
+        app.world_mut().flush();
+
+        let group = app
+            .world_mut()
+            .query::<&Members>()
+            .get(app.world(), group_entity)
+            .unwrap();
+        assert_eq!(group.len(), 0);
+    }
 }
