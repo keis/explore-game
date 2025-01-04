@@ -6,7 +6,7 @@ use std::iter;
 
 pub fn update_path_display(
     path_guided_query: Query<(Entity, &PathGuided), Changed<PathGuided>>,
-    path_display_query: Query<(Entity, &PathDisplay, &mut Handle<Mesh>)>,
+    path_display_query: Query<(Entity, &PathDisplay, &mut Mesh3d)>,
     transform_query: Query<&Transform>,
     mut path_display_params: PathDisplayParams,
     mut commands: Commands,

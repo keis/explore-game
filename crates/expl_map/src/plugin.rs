@@ -23,7 +23,7 @@ impl Plugin for MapPlugin {
                     update_terrain_visibility.after(update_zone_visibility),
                     update_presence_fog.after(update_zone_visibility),
                 )
-                    .run_if(on_event::<MapEvent>()),
+                    .run_if(on_event::<MapEvent>),
             )
             .add_event::<MapEvent>();
     }

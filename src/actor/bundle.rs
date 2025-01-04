@@ -2,14 +2,14 @@ use super::{asset::*, component::*};
 use crate::{
     action::ActionPoints,
     creature::{Creature, CreatureBundle},
-    input::{DefaultOutlineVolume, Selection, SelectionBundle},
+    input::{DefaultOutlineVolume, Selection},
     inventory::Inventory,
     path::PathGuided,
     role::Role,
     terrain::HeightQuery,
 };
 use bevy::prelude::*;
-use bevy_mod_outline::{OutlineBundle, OutlineVolume};
+use bevy_mod_outline::OutlineVolume;
 use expl_codex::{Codex, Id};
 use expl_map::{FogRevealer, HexCoord, MapPresence, ViewRadius};
 
@@ -18,11 +18,14 @@ pub type ActorParams<'w, 's> = (ResMut<'w, Assets<StandardMaterial>>, HeightQuer
 #[derive(Default)]
 pub struct ActorRole {
     // Insert
-    spatial_bundle: SpatialBundle,
+    transform: Transform,
+    visibility: Visibility,
     // Child
-    pbr_bundle: PbrBundle,
+    child_transform: Transform,
+    mesh: Mesh3d,
+    material: MeshMaterial3d<StandardMaterial>,
     default_outline_volume: DefaultOutlineVolume,
-    outline_bundle: OutlineBundle,
+    outline_volume: OutlineVolume,
 }
 
 impl ActorRole {
@@ -34,30 +37,20 @@ impl ActorRole {
     ) -> Self {
         let actor_data = &actor_codex[&actor_id];
         let offset = Vec3::new(0.0, actor_data.offset, 0.0);
-        let outline = OutlineVolume {
+        let outline_volume = OutlineVolume {
             visible: true,
             width: 2.0,
             colour: actor_data.outline_color,
         };
         Self {
-            spatial_bundle: SpatialBundle {
-                transform: Transform::from_translation(
-                    height_query.adjust(presence.position.into()),
-                ),
-                ..default()
-            },
-            pbr_bundle: PbrBundle {
-                mesh: actor_data.mesh.clone(),
-                material: standard_materials.add(actor_data.color),
-                transform: Transform::from_translation(offset)
-                    .with_scale(Vec3::splat(actor_data.scale)),
-                ..default()
-            },
-            default_outline_volume: DefaultOutlineVolume(outline.clone()),
-            outline_bundle: OutlineBundle {
-                outline,
-                ..default()
-            },
+            transform: Transform::from_translation(height_query.adjust(presence.position.into())),
+            visibility: Visibility::default(),
+            mesh: Mesh3d(actor_data.mesh.clone()),
+            material: MeshMaterial3d(standard_materials.add(actor_data.color)),
+            child_transform: Transform::from_translation(offset)
+                .with_scale(Vec3::splat(actor_data.scale)),
+            default_outline_volume: DefaultOutlineVolume(outline_volume.clone()),
+            outline_volume,
         }
     }
 }
@@ -65,12 +58,14 @@ impl ActorRole {
 impl Role for ActorRole {
     fn attach(self, entity: &mut EntityWorldMut) {
         entity
-            .insert((self.spatial_bundle,))
+            .insert((self.transform, self.visibility))
             .with_children(|parent| {
                 parent.spawn((
-                    self.pbr_bundle,
+                    self.child_transform,
+                    self.mesh,
+                    self.material,
                     self.default_outline_volume,
-                    self.outline_bundle,
+                    self.outline_volume,
                 ));
             });
     }
@@ -79,13 +74,13 @@ impl Role for ActorRole {
 #[derive(Default)]
 pub struct PartyRole {
     // Insert
-    selection_bundle: SelectionBundle,
+    selection: Selection,
     path_guided: PathGuided,
 }
 
 impl Role for PartyRole {
     fn attach(self, entity: &mut EntityWorldMut) {
-        entity.insert((self.selection_bundle, self.path_guided));
+        entity.insert((self.selection, self.path_guided));
     }
 }
 

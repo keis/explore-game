@@ -1,8 +1,7 @@
 use crate::{terrain::Terrain, ExplError};
 use bevy::{
-    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
+    asset::{io::Reader, AssetLoader, LoadContext},
     prelude::*,
-    reflect::TypePath,
 };
 use expl_codex::{Codex, Id};
 use expl_hexgrid::{layout::HexagonalGridLayout, Grid};
@@ -31,16 +30,16 @@ impl AssetLoader for TemplateLoader {
         &["template.txt"]
     }
 
-    async fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader<'_>,
-        _settings: &'a Self::Settings,
-        load_context: &'a mut LoadContext<'_>,
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let terrain_codex: Codex<Terrain> = load_context
             .loader()
-            .direct()
-            .untyped()
+            .with_unknown_type()
+            .immediate()
             .load("codex/default.terrain.toml")
             .await
             .map_err(Box::new)?

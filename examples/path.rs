@@ -31,70 +31,62 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Plane3d::default().mesh().size(5.0, 5.0)),
-        material: standard_materials.add(Color::srgb(0.3, 0.5, 0.3)),
-        ..default()
-    });
+    commands.spawn((
+        Mesh3d(meshes.add(Plane3d::default().mesh().size(5.0, 5.0))),
+        MeshMaterial3d(standard_materials.add(Color::srgb(0.3, 0.5, 0.3))),
+    ));
 
     commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(Path {
-                spline: Spline::from_vec(vec![
-                    Key::new(
-                        0.0,
-                        Vec3::new(0.0, 0.0, 0.0),
-                        Interpolation::Bezier(Vec3::new(-2.0, 0.0, 0.5)),
-                    ),
-                    Key::new(1.0, Vec3::new(4.0, 0.0, 2.0), Interpolation::default()),
-                ]),
-                steps: 40,
-                stroke: 0.1,
-            }),
-            material: standard_materials.add(Color::srgb(1.0, 0.8, 0.8)),
-            transform: Transform::from_translation(Vec3::new(-2.0, 0.5, 0.0)),
-            ..default()
-        },
+        Mesh3d(meshes.add(Path {
+            spline: Spline::from_vec(vec![
+                Key::new(
+                    0.0,
+                    Vec3::new(0.0, 0.0, 0.0),
+                    Interpolation::Bezier(Vec3::new(-2.0, 0.0, 0.5)),
+                ),
+                Key::new(1.0, Vec3::new(4.0, 0.0, 2.0), Interpolation::default()),
+            ]),
+            steps: 40,
+            stroke: 0.1,
+        })),
+        MeshMaterial3d(standard_materials.add(Color::srgb(1.0, 0.8, 0.8))),
+        Transform::from_translation(Vec3::new(-2.0, 0.5, 0.0)),
         Wireframe,
     ));
 
     commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(Path {
-                spline: Spline::from_vec(vec![
-                    Key::new(
-                        0.0,
-                        Vec3::new(0.0, 0.0, 0.0),
-                        Interpolation::Bezier(Vec3::new(0.0, 0.0, 1.0)),
-                    ),
-                    Key::new(1.0, Vec3::new(1.0, 0.0, 1.0), Interpolation::default()),
-                ]),
-                steps: 8,
-                stroke: 0.1,
-            }),
-            material: standard_materials.add(Color::srgb(0.8, 1.0, 0.8)),
-            transform: Transform::from_translation(Vec3::new(2.0, 0.5, 0.0)),
-            ..default()
-        },
+        Mesh3d(meshes.add(Path {
+            spline: Spline::from_vec(vec![
+                Key::new(
+                    0.0,
+                    Vec3::new(0.0, 0.0, 0.0),
+                    Interpolation::Bezier(Vec3::new(0.0, 0.0, 1.0)),
+                ),
+                Key::new(1.0, Vec3::new(1.0, 0.0, 1.0), Interpolation::default()),
+            ]),
+            steps: 8,
+            stroke: 0.1,
+        })),
+        MeshMaterial3d(standard_materials.add(Color::srgb(0.8, 1.0, 0.8))),
+        Transform::from_translation(Vec3::new(2.0, 0.5, 0.0)),
         Wireframe,
     ));
 
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
+    commands.spawn((
+        DirectionalLight {
             illuminance: 20000.0,
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform {
+        Transform {
             translation: Vec3::new(0.0, 10.0, 0.0),
             rotation: Quat::from_rotation_x(-std::f32::consts::FRAC_PI_4),
             ..default()
         },
-        ..default()
-    });
+    ));
 
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
+    commands.spawn((
+        Camera3d::default(),
+        Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+    ));
 }

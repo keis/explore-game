@@ -3,14 +3,14 @@ use crate::{
     actor::{Actor, Members},
     creature::Creature,
     floating_text::FloatingTextSource,
-    input::{DefaultOutlineVolume, SelectionBundle},
+    input::{DefaultOutlineVolume, Selection},
     inventory::Inventory,
     material::{StructureBuffer, StructureMaterial},
     role::Role,
     terrain::HeightQuery,
 };
 use bevy::prelude::*;
-use bevy_mod_outline::{OutlineBundle, OutlineVolume};
+use bevy_mod_outline::OutlineVolume;
 use expl_codex::{Codex, Id};
 use expl_map::{Fog, FogRevealer, HexCoord, MapPresence, ViewRadius};
 
@@ -23,13 +23,16 @@ pub type StructureParams<'w, 's> = (
 #[derive(Default)]
 pub struct StructureRole {
     // Insert
-    spatial_bundle: SpatialBundle,
-    selection: SelectionBundle,
+    transform: Transform,
+    visibility: Visibility,
+    selection: Selection,
     floating_text_source: FloatingTextSource,
     // Child
-    material_mesh_bundle: MaterialMeshBundle<StructureMaterial>,
+    child_transform: Transform,
+    mesh: Mesh3d,
+    material: MeshMaterial3d<StructureMaterial>,
+    outline_volume: OutlineVolume,
     default_outline_volume: DefaultOutlineVolume,
-    outline_bundle: OutlineBundle,
 }
 
 impl StructureRole {
@@ -41,41 +44,30 @@ impl StructureRole {
         fog: &Fog,
     ) -> Self {
         let structure = &structure_codex[&structure_id];
-        let outline = OutlineVolume {
+        let outline_volume = OutlineVolume {
             visible: true,
             width: 2.0,
             colour: structure.color_a,
         };
         Self {
             floating_text_source: FloatingTextSource::with_offset(Vec3::new(0.0, 0.5, 0.0)),
-            spatial_bundle: SpatialBundle {
-                transform: Transform::from_translation(
-                    height_query.adjust(presence.position.into()),
-                ),
-                visibility: if fog.explored {
-                    Visibility::Inherited
-                } else {
-                    Visibility::Hidden
-                },
-                ..default()
+            transform: Transform::from_translation(height_query.adjust(presence.position.into())),
+            visibility: if fog.explored {
+                Visibility::Inherited
+            } else {
+                Visibility::Hidden
             },
-            material_mesh_bundle: MaterialMeshBundle {
-                mesh: structure.mesh.clone(),
-                material: structure_materials.add(StructureMaterial::from_structure(
-                    &structure_id,
-                    fog,
-                    structure_buffer,
-                )),
-                transform: Transform::from_translation(Vec3::ZERO)
-                    .with_scale(Vec3::splat(structure.scale))
-                    .with_rotation(Quat::from_rotation_y(structure.rotation)),
-                ..default()
-            },
-            default_outline_volume: DefaultOutlineVolume(outline.clone()),
-            outline_bundle: OutlineBundle {
-                outline,
-                ..default()
-            },
+            mesh: Mesh3d(structure.mesh.clone()),
+            material: MeshMaterial3d(structure_materials.add(StructureMaterial::from_structure(
+                &structure_id,
+                fog,
+                structure_buffer,
+            ))),
+            child_transform: Transform::from_translation(Vec3::ZERO)
+                .with_scale(Vec3::splat(structure.scale))
+                .with_rotation(Quat::from_rotation_y(structure.rotation)),
+            default_outline_volume: DefaultOutlineVolume(outline_volume.clone()),
+            outline_volume,
             ..default()
         }
     }
@@ -85,15 +77,18 @@ impl Role for StructureRole {
     fn attach(self, entity: &mut EntityWorldMut) {
         entity
             .insert((
-                self.spatial_bundle,
+                self.transform,
+                self.visibility,
                 self.selection,
                 self.floating_text_source,
             ))
             .with_children(|parent| {
                 parent.spawn((
-                    self.material_mesh_bundle,
+                    self.child_transform,
+                    self.mesh,
+                    self.material,
+                    self.outline_volume,
                     self.default_outline_volume,
-                    self.outline_bundle,
                 ));
             });
     }

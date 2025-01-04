@@ -16,7 +16,7 @@ pub fn fluff_structure(
     mut commands: Commands,
     mut structure_params: StructureParams,
     structure_codex: StructureCodex,
-    structure_query: Query<(Entity, &StructureId, &MapPresence, &Fog), Without<GlobalTransform>>,
+    structure_query: Query<(Entity, &StructureId, &MapPresence, &Fog), Without<Visibility>>,
 ) -> Result<(), ExplError> {
     let structure_codex = structure_codex.get()?;
     for (entity, structure_id, presence, fog) in &structure_query {
@@ -89,19 +89,15 @@ pub fn update_portal_effect(
             commands
                 .spawn((
                     NotShadowCaster,
-                    MaterialMeshBundle {
-                        mesh: meshes.add(Plane3d::default().mesh().size(2.0, 2.0)),
-                        material: portal_materials.add(PortalMaterial {
-                            base_color: Color::srgba(0.2, 0.7, 0.1, 0.3),
-                            swirl_color: Color::srgba(0.4, 0.2, 0.7, 0.7),
-                        }),
-                        transform: Transform::from_translation(Vec3::new(0.0, 0.9, 0.0))
-                            .with_rotation(
-                                Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)
-                                    * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2),
-                            ),
-                        ..default()
-                    },
+                    Mesh3d(meshes.add(Plane3d::default().mesh().size(2.0, 2.0))),
+                    MeshMaterial3d(portal_materials.add(PortalMaterial {
+                        base_color: Color::srgba(0.2, 0.7, 0.1, 0.3),
+                        swirl_color: Color::srgba(0.4, 0.2, 0.7, 0.7),
+                    })),
+                    Transform::from_translation(Vec3::new(0.0, 0.9, 0.0)).with_rotation(
+                        Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)
+                            * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2),
+                    ),
                 ))
                 .set_parent(entity);
         }

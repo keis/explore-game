@@ -8,7 +8,7 @@ use interpolation::Ease;
 pub fn fluff_actor(
     mut commands: Commands,
     actor_codex: ActorCodex,
-    creature_query: Query<(Entity, &ActorId, &MapPresence), Without<GlobalTransform>>,
+    creature_query: Query<(Entity, &ActorId, &MapPresence), Without<Visibility>>,
     mut creature_params: ActorParams,
 ) -> Result<(), ExplError> {
     let actor_codex = actor_codex.get()?;
@@ -26,7 +26,7 @@ pub fn fluff_actor(
 #[allow(clippy::type_complexity)]
 pub fn fluff_party(
     mut commands: Commands,
-    party_query: Query<Entity, (With<Party>, Without<GlobalTransform>)>,
+    party_query: Query<Entity, (With<Party>, Without<Visibility>)>,
 ) -> Result<(), ExplError> {
     for entity in &party_query {
         commands.entity(entity).attach_role(PartyRole::default());
@@ -81,16 +81,15 @@ pub fn despawn_empty_party(
     party_query: Query<&Members, (With<Party>, With<MapPresence>)>,
     map_query: Query<Entity, With<PresenceLayer>>,
     mut commands: Commands,
-) {
-    let Ok(map_entity) = map_query.get_single() else {
-        return;
-    };
-    let members = party_query.get(trigger.entity()).unwrap();
+) -> Result<(), ExplError> {
+    let map_entity = map_query.get_single()?;
+    let members = party_query.get(trigger.entity())?;
     if members.is_empty() {
         commands
             .entity(map_entity)
             .despawn_presence(trigger.entity());
     }
+    Ok(())
 }
 
 const SLIDE_SPEED: f32 = 1.7;
@@ -105,7 +104,7 @@ pub fn slide(
         if slide.progress == 1.0 {
             continue;
         }
-        slide.progress = (slide.progress + time.delta_seconds() * SLIDE_SPEED).clamp(0.0, 1.0);
+        slide.progress = (slide.progress + time.delta_secs() * SLIDE_SPEED).clamp(0.0, 1.0);
         let position = slide
             .start
             .lerp(slide.end, slide.progress.quadratic_in_out());

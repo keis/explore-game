@@ -69,9 +69,9 @@ impl Plugin for ActionPlugin {
             .add_event::<ActionPointsConsumed>()
             .init_schedule(ActionUpdate)
             .register_type::<ActionPoints>()
-            .observe(update_action_points_on_member_added)
-            .observe(update_action_points_on_member_removed)
-            .observe(propagate_action_points_consumed)
+            .add_observer(update_action_points_on_member_added)
+            .add_observer(update_action_points_on_member_removed)
+            .add_observer(propagate_action_points_consumed)
             .add_systems(
                 OnEnter(TurnState::Player),
                 (reset_action_points, reset_group_action_points)
@@ -83,7 +83,7 @@ impl Plugin for ActionPlugin {
                 (
                     (
                         apply_action.map(bevy::utils::warn).run_if(has_ready_action),
-                        handle_slide_stopped.run_if(on_event::<SlideEvent>()),
+                        handle_slide_stopped.run_if(on_event::<SlideEvent>),
                         resolve_action
                             .map(bevy::utils::warn)
                             .run_if(has_resolved_action),

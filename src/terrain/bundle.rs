@@ -5,7 +5,6 @@ use crate::{
     role::Role,
 };
 use bevy::{pbr::NotShadowCaster, prelude::*};
-use bevy_mod_picking::prelude::{Pickable, PickingInteraction};
 use expl_codex::{Codex, Id};
 use expl_hexgrid::Neighbours;
 use expl_map::{Fog, HexCoord, MapPosition};
@@ -20,7 +19,10 @@ pub type ZoneDecorationParams<'w> = (
 pub struct ZoneDecorationBundle<Tag: Component> {
     fog: Fog,
     tag: Tag,
-    material_mesh_bundle: MaterialMeshBundle<DecorationMaterial>,
+    mesh: Mesh3d,
+    material: MeshMaterial3d<DecorationMaterial>,
+    visibility: Visibility,
+    transform: Transform,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -39,26 +41,23 @@ impl<Tag: Component> ZoneDecorationBundle<Tag> {
         Self {
             fog: *fog,
             tag,
-            material_mesh_bundle: MaterialMeshBundle {
-                mesh: decoration.mesh.clone(),
-                material: decoration_materials.add(DecorationMaterial::new(
-                    &decoration_id,
-                    fog,
-                    decoration_buffer,
-                )),
-                visibility: if fog.explored {
-                    Visibility::Inherited
-                } else {
-                    Visibility::Hidden
-                },
-                transform: Transform::from_translation(Vec3::new(
-                    detail.relative.x,
-                    height.height_at(detail.relative, Vec3::from(position).xz() + detail.relative),
-                    detail.relative.y,
-                ))
-                .with_scale(Vec3::splat(detail.scale * decoration.scale)),
-                ..default()
+            mesh: Mesh3d(decoration.mesh.clone()),
+            material: MeshMaterial3d(decoration_materials.add(DecorationMaterial::new(
+                &decoration_id,
+                fog,
+                decoration_buffer,
+            ))),
+            visibility: if fog.explored {
+                Visibility::Inherited
+            } else {
+                Visibility::Hidden
             },
+            transform: Transform::from_translation(Vec3::new(
+                detail.relative.x,
+                height.height_at(detail.relative, Vec3::from(position).xz() + detail.relative),
+                detail.relative.y,
+            ))
+            .with_scale(Vec3::splat(detail.scale * decoration.scale)),
         }
     }
 }
@@ -70,20 +69,19 @@ pub struct WaterBundle {
     water: Water,
     fog: Fog,
     not_shadow_caster: NotShadowCaster,
-    material_mesh_bundle: MaterialMeshBundle<WaterMaterial>,
+    mesh: Mesh3d,
+    material: MeshMaterial3d<WaterMaterial>,
+    transform: Transform,
 }
 
 impl WaterBundle {
     pub fn new((hex_assets, water_materials): &mut WaterParams) -> Self {
         Self {
-            material_mesh_bundle: MaterialMeshBundle {
-                mesh: hex_assets.mesh.clone(),
-                material: water_materials.add(WaterMaterial {
-                    color: Color::srgba(0.1, 0.1, 0.8, 0.4),
-                }),
-                transform: Transform::from_translation(Vec3::new(0.0, -0.1, 0.0)),
-                ..default()
-            },
+            mesh: Mesh3d(hex_assets.mesh.clone()),
+            material: MeshMaterial3d(water_materials.add(WaterMaterial {
+                color: Color::srgba(0.1, 0.1, 0.8, 0.4),
+            })),
+            transform: Transform::from_translation(Vec3::new(0.0, -0.1, 0.0)),
             ..default()
         }
     }
@@ -98,10 +96,10 @@ pub type ZoneParams<'w> = (
 #[derive(Default)]
 pub struct ZoneRole {
     // Insert
-    pickable: Pickable,
-    interaction: PickingInteraction,
     not_shadow_caster: NotShadowCaster,
-    material_mesh_bundle: MaterialMeshBundle<ZoneMaterial>,
+    mesh: Mesh3d,
+    material: MeshMaterial3d<ZoneMaterial>,
+    transform: Transform,
     outer_visible: OuterVisible,
     outer_terrain: OuterTerrain,
 }
@@ -116,18 +114,15 @@ impl ZoneRole {
         outer_terrain: Neighbours<Id<Terrain>>,
     ) -> Self {
         Self {
-            material_mesh_bundle: MaterialMeshBundle {
-                mesh: hex_assets.mesh.clone(),
-                material: zone_materials.add(ZoneMaterial::new(
-                    terrain,
-                    fog,
-                    &outer_visible,
-                    &outer_terrain,
-                    codex_buffer,
-                )),
-                transform: Transform::from_translation(position.0.into()),
-                ..default()
-            },
+            mesh: Mesh3d(hex_assets.mesh.clone()),
+            material: MeshMaterial3d(zone_materials.add(ZoneMaterial::new(
+                terrain,
+                fog,
+                &outer_visible,
+                &outer_terrain,
+                codex_buffer,
+            ))),
+            transform: Transform::from_translation(position.0.into()),
             outer_visible,
             outer_terrain: OuterTerrain(outer_terrain),
             ..default()
@@ -138,10 +133,10 @@ impl ZoneRole {
 impl Role for ZoneRole {
     fn attach(self, entity: &mut EntityWorldMut) {
         entity.insert((
-            self.pickable,
-            self.interaction,
             self.not_shadow_caster,
-            self.material_mesh_bundle,
+            self.mesh,
+            self.material,
+            self.transform,
             self.outer_visible,
             self.outer_terrain,
         ));

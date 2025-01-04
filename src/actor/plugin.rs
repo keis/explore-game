@@ -20,7 +20,7 @@ impl Plugin for ActorPlugin {
             .register_type::<Group>()
             .register_type::<Party>()
             .register_type::<Slide>()
-            .observe(despawn_empty_party)
+            .add_observer(despawn_empty_party.map(bevy::utils::warn))
             .add_systems(
                 OnEnter(SceneState::Active),
                 (

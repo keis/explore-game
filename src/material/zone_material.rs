@@ -19,8 +19,8 @@ impl Plugin for ZoneMaterialPlugin {
             CodexBufferPlugin::<TerrainData>::default(),
             MaterialPlugin::<ZoneMaterial>::default(),
         ))
-        .observe(handle_zone_over)
-        .observe(handle_zone_out)
+        .add_observer(handle_zone_over)
+        .add_observer(handle_zone_out)
         .add_systems(Update, apply_to_material);
     }
 }
@@ -178,7 +178,7 @@ impl Material for ZoneMaterial {
 fn apply_to_material(
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     zone_query: Query<
-        (&Fog, &OuterVisible, &Handle<ZoneMaterial>),
+        (&Fog, &OuterVisible, &MeshMaterial3d<ZoneMaterial>),
         Or<(Changed<Fog>, Changed<OuterVisible>)>,
     >,
 ) {
@@ -195,7 +195,7 @@ fn apply_to_material(
 fn handle_zone_over(
     trigger: Trigger<ZoneOver>,
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
-    material_query: Query<&Handle<ZoneMaterial>>,
+    material_query: Query<&MeshMaterial3d<ZoneMaterial>>,
 ) {
     let Ok(handle) = material_query.get(trigger.entity()) else {
         return;
@@ -209,7 +209,7 @@ fn handle_zone_over(
 fn handle_zone_out(
     trigger: Trigger<ZoneOut>,
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
-    material_query: Query<&Handle<ZoneMaterial>>,
+    material_query: Query<&MeshMaterial3d<ZoneMaterial>>,
 ) {
     let Ok(handle) = material_query.get(trigger.entity()) else {
         return;

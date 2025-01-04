@@ -47,7 +47,7 @@ impl ViewTemplate for CampList {
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         let camp_index = cx.use_resource::<Index<Camp>>();
-        Element::<NodeBundle>::new()
+        Element::<Node>::new()
             .style(style_outliner)
             .children(For::each(camp_index.0.clone(), |&target| {
                 CampIcon::new(target)
@@ -59,6 +59,7 @@ impl ViewTemplate for CampIcon {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
+        let id = cx.create_entity();
         let target = self.target;
         let assets = cx.use_resource::<InterfaceAssets>();
         let icon = assets.campfire_icon.clone();
@@ -71,7 +72,14 @@ impl ViewTemplate for CampIcon {
                 selection.toggle(*camp);
             },
         );
-        Element::<ButtonBundle>::new()
+        cx.create_observer(
+            move |_click: Trigger<Pointer<Click>>, mut commands: Commands| {
+                commands.run_callback(on_click, target);
+            },
+            id,
+            target,
+        );
+        Element::<Button>::for_entity(id)
             .style((style_button, style_icon, move |sb: &mut StyleBuilder| {
                 sb.background_image(icon.clone());
             }))
@@ -84,14 +92,6 @@ impl ViewTemplate for CampIcon {
                     });
                 },
                 selection,
-            )
-            .insert_dyn(
-                move |_| {
-                    On::<Pointer<Click>>::run(move |world: &mut World| {
-                        world.run_callback(on_click, target);
-                    })
-                },
-                (),
             )
     }
 }
@@ -106,10 +106,10 @@ impl ViewTemplate for CampDetails {
         let inventory = cx.use_component::<Inventory>(self.target).unwrap();
 
         (
-            Element::<NodeBundle>::new()
+            Element::<Node>::new()
                 .style(style_title_text)
                 .children(camp.name.clone()),
-            Element::<NodeBundle>::new().children((
+            Element::<Node>::new().children((
                 StatDisplay::new(assets.person_icon.clone(), format!("{}", members.len())),
                 StatDisplay::new(
                     assets.crystals_icon.clone(),

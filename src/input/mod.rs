@@ -1,7 +1,6 @@
 #![allow(clippy::type_complexity)]
 
 mod action;
-mod bundle;
 mod component;
 mod event;
 mod plugin;
@@ -10,7 +9,6 @@ mod system;
 mod system_param;
 
 pub use action::Action;
-pub use bundle::*;
 pub use component::*;
 pub use event::*;
 pub use leafwing_input_manager::{
@@ -79,8 +77,8 @@ mod tests {
 
     #[rstest]
     pub fn select_next(mut app: App) {
-        app.observe(apply_select_event)
-            .observe(apply_deselect_event)
+        app.add_observer(apply_select_event)
+            .add_observer(apply_deselect_event)
             .add_systems(Update, handle_select_next);
 
         press_select_next(&mut app);

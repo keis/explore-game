@@ -109,7 +109,7 @@ impl Material for DecorationMaterial {
 #[allow(clippy::type_complexity)]
 fn apply_to_material(
     mut terrain_materials: ResMut<Assets<DecorationMaterial>>,
-    terrain_query: Query<(&Fog, &Handle<DecorationMaterial>), Changed<Fog>>,
+    terrain_query: Query<(&Fog, &MeshMaterial3d<DecorationMaterial>), Changed<Fog>>,
 ) {
     for (fog, handle) in &terrain_query {
         let Some(material) = terrain_materials.get_mut(handle) else {

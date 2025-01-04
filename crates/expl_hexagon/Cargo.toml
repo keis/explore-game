@@ -7,4 +7,4 @@ license = "ISC"
 [dependencies]
 bevy_render = { workspace = true }
 glam = { workspace = true }
-hexasphere = "12"
+hexasphere = "15"

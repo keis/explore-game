@@ -8,7 +8,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_mod_outline::OutlineVolume;
-use bevy_mod_picking::prelude::{Click, Out, Over, Pointer, PointerButton};
+//use bevy_mod_picking::prelude::{Click, Out, Over, Pointer, PointerButton};
 use expl_map::{MapPosition, MapPresence};
 use std::iter;
 
@@ -95,7 +95,6 @@ pub fn apply_zone_activated_event(
     if !combat_query.is_empty() {
         return;
     }
-
     let Ok(target) = zone_query.get(trigger.entity()) else {
         return;
     };

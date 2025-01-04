@@ -1,5 +1,5 @@
 use super::Codex;
-use bevy_asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext};
+use bevy_asset::{io::Reader, AssetLoader, LoadContext};
 use bevy_reflect::TypePath;
 use serde::de::{Deserialize, DeserializeSeed, Deserializer, MapAccess, Visitor};
 use std::{fmt, marker::PhantomData};
@@ -134,11 +134,11 @@ where
         &[Entry::EXTENSION]
     }
 
-    async fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader<'_>,
-        _settings: &'a (),
-        load_context: &'a mut LoadContext<'_>,
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;

@@ -27,12 +27,12 @@ impl ViewTemplate for StatDisplay {
     type View = impl View;
 
     fn create(&self, _cx: &mut Cx) -> Self::View {
-        Element::<NodeBundle>::new()
+        Element::<Node>::new()
             .style((style_stat_display, style_stat_display_text))
             .children((
-                Element::<ImageBundle>::new()
+                Element::<ImageNode>::new()
                     .style(style_small_icon)
-                    .insert(UiImage::from(self.icon.clone())),
+                    .insert(ImageNode::from(self.icon.clone())),
                 self.children.clone(),
             ))
     }

@@ -22,7 +22,7 @@ pub trait RoleCommandsExt {
 impl RoleCommandsExt for EntityCommands<'_> {
     fn attach_role<R: Role + std::marker::Send>(&mut self, role: R) -> &mut Self {
         let entity = self.id();
-        self.commands().add(AttachRole { entity, role });
+        self.commands().queue(AttachRole { entity, role });
         self
     }
 }

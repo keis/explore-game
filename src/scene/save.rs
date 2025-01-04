@@ -1,7 +1,7 @@
 use crate::{action, actor, creature, input, inventory, structure, terrain, turn};
 use bevy::prelude::*;
 use expl_map;
-use moonshine_save::save::SaveFilter;
+use moonshine_save::save::SaveInput;
 use platform_dirs::AppDirs;
 use std::path::PathBuf;
 
@@ -22,7 +22,7 @@ pub fn save_location() -> PathBuf {
         .unwrap()
 }
 
-pub fn filter_with_enabled_components() -> SaveFilter {
+pub fn filter_with_enabled_components() -> SaveInput {
     let components = SceneFilter::deny_all()
         .allow::<Name>()
         .allow::<Save>()
@@ -58,7 +58,7 @@ pub fn filter_with_enabled_components() -> SaveFilter {
 
     let resources = SceneFilter::deny_all().allow::<turn::Turn>();
 
-    SaveFilter {
+    SaveInput {
         components,
         resources,
         ..default()
