@@ -22,7 +22,7 @@ clap = { workspace = true, features = ["derive"] }
 criterion = "0.5"
 more-asserts = "0.3"
 pprof = { version = "0.13", features = ["flamegraph", "criterion"] }
-rstest = { version = "0.22", default-features = false }
+rstest = { version = "0.24", default-features = false }
 serde-jsonlines = "0.6"
 
 [[bench]]
