@@ -1,8 +1,5 @@
 use super::codex_buffer::{CodexBuffer, CodexBufferPlugin, CodexBufferValue};
-use crate::{
-    input::{ZoneOut, ZoneOver},
-    terrain::{OuterVisible, Terrain, TerrainId},
-};
+use crate::terrain::{OuterVisible, Terrain, TerrainId};
 use bevy::{prelude::*, render::render_resource::*};
 use expl_codex::Id;
 use expl_hexgrid::Neighbours;
@@ -19,8 +16,6 @@ impl Plugin for ZoneMaterialPlugin {
             CodexBufferPlugin::<TerrainData>::default(),
             MaterialPlugin::<ZoneMaterial>::default(),
         ))
-        .add_observer(handle_zone_over)
-        .add_observer(handle_zone_out)
         .add_systems(Update, apply_to_material);
     }
 }
@@ -134,25 +129,25 @@ impl ZoneMaterial {
         }
     }
 
-    fn set_hover(&mut self, hover: bool) {
+    pub fn set_hover(&mut self, hover: bool) {
         let mut flags = ZoneFlags::from_bits_retain(self.uniform.flags);
         flags.set(ZoneFlags::HOVER, hover);
         self.uniform.flags = flags.bits();
     }
 
-    fn set_visible(&mut self, visible: bool) {
+    pub fn set_visible(&mut self, visible: bool) {
         let mut flags = ZoneFlags::from_bits_retain(self.uniform.flags);
         flags.set(ZoneFlags::VISIBLE, visible);
         self.uniform.flags = flags.bits();
     }
 
-    fn set_explored(&mut self, explored: bool) {
+    pub fn set_explored(&mut self, explored: bool) {
         let mut flags = ZoneFlags::from_bits_retain(self.uniform.flags);
         flags.set(ZoneFlags::EXPLORED, explored);
         self.uniform.flags = flags.bits();
     }
 
-    fn set_outer_visible(&mut self, outer_visible: Neighbours<bool>) {
+    pub fn set_outer_visible(&mut self, outer_visible: Neighbours<bool>) {
         let mut flags = ZoneFlags::from_bits_retain(self.uniform.flags);
         flags.set(ZoneFlags::OUTER_VISIBLE_E, outer_visible[0]);
         flags.set(ZoneFlags::OUTER_VISIBLE_SE, outer_visible[1]);
@@ -190,34 +185,6 @@ fn apply_to_material(
         material.set_explored(fog.explored);
         material.set_outer_visible(**outer_visible);
     }
-}
-
-fn handle_zone_over(
-    trigger: Trigger<ZoneOver>,
-    mut zone_materials: ResMut<Assets<ZoneMaterial>>,
-    material_query: Query<&MeshMaterial3d<ZoneMaterial>>,
-) {
-    let Ok(handle) = material_query.get(trigger.entity()) else {
-        return;
-    };
-    let Some(material) = zone_materials.get_mut(handle) else {
-        return;
-    };
-    material.set_hover(true);
-}
-
-fn handle_zone_out(
-    trigger: Trigger<ZoneOut>,
-    mut zone_materials: ResMut<Assets<ZoneMaterial>>,
-    material_query: Query<&MeshMaterial3d<ZoneMaterial>>,
-) {
-    let Ok(handle) = material_query.get(trigger.entity()) else {
-        return;
-    };
-    let Some(material) = zone_materials.get_mut(handle) else {
-        return;
-    };
-    material.set_hover(false);
 }
 
 /*

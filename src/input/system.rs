@@ -3,78 +3,29 @@ use crate::{
     action::{ActionPoints, GameAction, GameActionQueue},
     color,
     combat::Combat,
+    material::ZoneMaterial,
     path::{PathFinder, PathGuided},
     terrain::TerrainId,
+    ExplError,
 };
 use bevy::prelude::*;
 use bevy_mod_outline::OutlineVolume;
-//use bevy_mod_picking::prelude::{Click, Out, Over, Pointer, PointerButton};
 use expl_map::{MapPosition, MapPresence};
-use std::iter;
 
-#[allow(clippy::too_many_arguments)]
-pub fn handle_pointer_click_events(
-    mut commands: Commands,
-    mut click_events: EventReader<Pointer<Click>>,
-    parent_query: Query<&Parent>,
-    zone_query: Query<Entity, With<MapPosition>>,
-    selection_query: Query<Entity, With<Selection>>,
-    mut selection_update: SelectionUpdate<()>,
-) {
-    for event in click_events.read() {
-        if event.event.button != PointerButton::Primary {
-            continue;
-        }
-        for entity in iter::once(event.target).chain(parent_query.iter_ancestors(event.target)) {
-            if zone_query.get(entity).is_ok() {
-                commands.trigger_targets(ZoneActivated, entity);
-                break;
-            } else if selection_query.get(entity).is_ok() {
-                selection_update.toggle(entity);
-                break;
-            }
-        }
-    }
+pub fn map_position_added(trigger: Trigger<OnAdd, MapPosition>, mut commands: Commands) {
+    commands
+        .entity(trigger.entity())
+        .observe(handle_zone_click)
+        .observe(handle_zone_over.map(bevy::utils::warn))
+        .observe(handle_zone_out.map(bevy::utils::warn));
 }
 
-pub fn handle_pointer_over_events(
-    mut commands: Commands,
-    mut events: EventReader<Pointer<Over>>,
-    parent_query: Query<&Parent>,
-    zone_query: Query<Entity, With<MapPosition>>,
-    selection_query: Query<Entity, With<Selection>>,
-) {
-    for event in events.read() {
-        for entity in iter::once(event.target).chain(parent_query.iter_ancestors(event.target)) {
-            if zone_query.get(entity).is_ok() {
-                commands.trigger_targets(ZoneOver, entity);
-                break;
-            } else if selection_query.get(entity).is_ok() {
-                commands.trigger_targets(SelectionOver, entity);
-                break;
-            }
-        }
-    }
-}
-
-pub fn handle_pointer_out_events(
-    mut commands: Commands,
-    mut events: EventReader<Pointer<Out>>,
-    parent_query: Query<&Parent>,
-    zone_query: Query<Entity, With<MapPosition>>,
-    selection_query: Query<Entity, With<Selection>>,
-) {
-    for event in events.read() {
-        for entity in iter::once(event.target).chain(parent_query.iter_ancestors(event.target)) {
-            if zone_query.get(entity).is_ok() {
-                commands.trigger_targets(ZoneOut, entity);
-                break;
-            } else if selection_query.get(entity).is_ok() {
-                commands.trigger_targets(SelectionOut, entity);
-                break;
-            }
-        }
-    }
+pub fn selection_added(trigger: Trigger<OnAdd, Selection>, mut commands: Commands) {
+    commands
+        .entity(trigger.entity())
+        .observe(handle_selection_click)
+        .observe(handle_selection_over.map(bevy::utils::warn))
+        .observe(handle_selection_out.map(bevy::utils::warn));
 }
 
 pub fn apply_zone_activated_event(
@@ -91,23 +42,17 @@ pub fn apply_zone_activated_event(
     combat_query: Query<&Combat>,
     map_position_query: Query<&MapPosition>,
     path_finder: PathFinder,
-) {
+) -> Result<(), ExplError> {
     if !combat_query.is_empty() {
-        return;
+        return Ok(());
     }
-    let Ok(target) = zone_query.get(trigger.entity()) else {
-        return;
-    };
+    let target = zone_query.get(trigger.entity())?;
     for (entity, presence, action_points, mut pathguided, _) in presence_query
         .iter_mut()
         .filter(|(_, _, _, _, s)| s.is_selected)
     {
-        let Ok(goal) = map_position_query.get(target) else {
-            continue;
-        };
-        let Ok(path_finder) = path_finder.get() else {
-            continue;
-        };
+        let goal = map_position_query.get(target)?;
+        let path_finder = path_finder.get()?;
         let Some(path) = path_finder.find_path(presence.position, goal.0) else {
             continue;
         };
@@ -118,6 +63,7 @@ pub fn apply_zone_activated_event(
             }
         }
     }
+    Ok(())
 }
 
 pub fn apply_select_event(
@@ -152,29 +98,67 @@ pub fn apply_deselect_event(
     }
 }
 
-pub fn apply_selection_over_event(
-    trigger: Trigger<SelectionOver>,
-    selection_query: Query<(&Selection, &Children)>,
-    mut outline_volume_query: Query<(&mut OutlineVolume, &DefaultOutlineVolume)>,
-) {
-    let Ok((_, children)) = selection_query.get(trigger.entity()) else {
-        return;
-    };
-    for &child in children.iter() {
-        if let Ok((mut outline_volume, _)) = outline_volume_query.get_mut(child) {
-            outline_volume.colour = color::OUTLINE_HOVER;
-        }
+fn handle_zone_click(trigger: Trigger<Pointer<Click>>, mut commands: Commands) {
+    if trigger.event().button == PointerButton::Primary {
+        commands.trigger_targets(ZoneActivated, trigger.entity());
     }
 }
 
-pub fn apply_selection_out_event(
-    trigger: Trigger<SelectionOut>,
+fn handle_zone_over(
+    trigger: Trigger<Pointer<Over>>,
+    mut zone_materials: ResMut<Assets<ZoneMaterial>>,
+    material_query: Query<&MeshMaterial3d<ZoneMaterial>>,
+) -> Result<(), ExplError> {
+    let handle = material_query.get(trigger.entity())?;
+    let material = zone_materials
+        .get_mut(handle)
+        .ok_or(ExplError::MissingMaterial)?;
+    material.set_hover(true);
+    Ok(())
+}
+
+fn handle_zone_out(
+    trigger: Trigger<Pointer<Out>>,
+    mut zone_materials: ResMut<Assets<ZoneMaterial>>,
+    material_query: Query<&MeshMaterial3d<ZoneMaterial>>,
+) -> Result<(), ExplError> {
+    let handle = material_query.get(trigger.entity())?;
+    let material = zone_materials
+        .get_mut(handle)
+        .ok_or(ExplError::MissingMaterial)?;
+    material.set_hover(false);
+    Ok(())
+}
+
+fn handle_selection_click(
+    trigger: Trigger<Pointer<Click>>,
+    mut selection_update: SelectionUpdate<()>,
+) {
+    if trigger.event().button == PointerButton::Primary {
+        selection_update.toggle(trigger.entity());
+    }
+}
+
+fn handle_selection_over(
+    trigger: Trigger<Pointer<Over>>,
+    selection_query: Query<&Children, With<Selection>>,
+    mut outline_volume_query: Query<&mut OutlineVolume>,
+) -> Result<(), ExplError> {
+    let children = selection_query.get(trigger.entity())?;
+    for &child in children.iter() {
+        if let Ok(mut outline_volume) = outline_volume_query.get_mut(child) {
+            outline_volume.colour = color::OUTLINE_HOVER;
+        }
+    }
+    Ok(())
+}
+
+fn handle_selection_out(
+    trigger: Trigger<Pointer<Out>>,
     selection_query: Query<(&Selection, &Children)>,
     mut outline_volume_query: Query<(&mut OutlineVolume, &DefaultOutlineVolume)>,
-) {
-    let Ok((selection, children)) = selection_query.get(trigger.entity()) else {
-        return;
-    };
+) -> Result<(), ExplError> {
+    let (selection, children) = selection_query.get(trigger.entity())?;
     for &child in children.iter() {
         if let Ok((mut outline_volume, default)) = outline_volume_query.get_mut(child) {
             if selection.is_selected {
@@ -184,4 +168,5 @@ pub fn apply_selection_out_event(
             };
         }
     }
+    Ok(())
 }

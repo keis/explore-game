@@ -3,7 +3,6 @@ use super::super::{
     styles::style_button,
 };
 use bevy::prelude::*;
-//use bevy_mod_picking::prelude::*;
 use bevy_mod_stylebuilder::*;
 use bevy_quill_core::{prelude::*, IntoViewChild, ViewChild};
 
