@@ -18,12 +18,21 @@ skip = [
     "bit-vec",
     "core-foundation",
     "ttf-parser",
-]
-skip-tree = [
     "windows",
+    "windows-core",
+    "windows-result",
     "windows-sys",
     "toml_edit",
     "libredox",
+    "redox_syscall",
     "ndk",
+    "winnow",
+    "syn",
+    "ndk-sys",
+    "hashbrown",
+    "bitflags",
+]
+skip-tree = [
+    { crate = "windows-targets", depth = 2 },
 ]
 deny = [ ]
