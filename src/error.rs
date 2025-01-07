@@ -47,6 +47,8 @@ pub enum ExplError {
     MissingTemplate,
     #[error("invalid action target")]
     InvalidTarget,
+    #[error("missing material")]
+    MissingMaterial,
 }
 
 impl<I, O> From<bevy::ecs::system::RegisteredSystemError<I, O>> for ExplError

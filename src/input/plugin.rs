@@ -1,5 +1,5 @@
 use super::{action::*, component::*, resource::*, system::*};
-use crate::{scene::SceneState, turn};
+use crate::turn;
 use bevy::{picking::PickSet, prelude::*};
 use leafwing_input_manager::{
     common_conditions::action_just_pressed, plugin::InputManagerSystem, prelude::*,
@@ -37,11 +37,11 @@ impl Plugin for InputPlugin {
             .init_resource::<MapHover>()
             .add_observer(MapHover::on_zone_over)
             .insert_resource(input_map())
-            .add_observer(apply_zone_activated_event)
+            .add_observer(apply_zone_activated_event.map(bevy::utils::warn))
             .add_observer(apply_select_event)
             .add_observer(apply_deselect_event)
-            .add_observer(apply_selection_over_event)
-            .add_observer(apply_selection_out_event)
+            .add_observer(map_position_added)
+            .add_observer(selection_added)
             .add_systems(
                 Update,
                 (
@@ -68,16 +68,6 @@ impl Plugin for InputPlugin {
                     .chain()
                     .in_set(InputSet::ProcessInput)
                     .in_set(InputManagerSystem::ManualControl),
-            )
-            .add_systems(
-                PreUpdate,
-                (
-                    handle_pointer_click_events.run_if(on_event::<Pointer<Click>>),
-                    handle_pointer_over_events.run_if(on_event::<Pointer<Over>>),
-                    handle_pointer_out_events.run_if(on_event::<Pointer<Out>>),
-                )
-                    .in_set(InputSet::ProcessInput)
-                    .run_if(in_state(SceneState::Active)),
             );
     }
 }

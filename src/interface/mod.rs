@@ -15,7 +15,6 @@ const DEFAULT_FONT: &str = "fonts/FiraMono-Medium.ttf";
 
 mod prelude {
     pub use bevy::{color::palettes::css, prelude::*};
-    //pub use bevy_mod_picking::prelude::*;
     pub use bevy_mod_stylebuilder::*;
     pub use bevy_quill_core::prelude::*;
 }
