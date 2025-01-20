@@ -1581,7 +1581,7 @@ dependencies = [
  "bitflags 2.6.0",
  "cexpr",
  "clang-sys",
- "itertools 0.13.0",
+ "itertools 0.10.5",
  "log",
  "prettyplease",
  "proc-macro2",
@@ -3412,6 +3412,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3519,13 +3528,13 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "leafwing-input-manager"
 version = "0.16.0"
-source = "git+https://github.com/Leafwing-Studios/leafwing-input-manager.git?branch=main#74a8d8a55f6bef0dcb5ee4ea774e5c1803d542c7"
+source = "git+https://github.com/Leafwing-Studios/leafwing-input-manager.git?branch=main#3eda257f56a2e0e6821d50e744f6a7a0dc823a26"
 dependencies = [
  "bevy",
  "dyn-clone",
  "dyn-eq",
  "dyn-hash",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "leafwing_input_manager_macros",
  "serde",
  "serde_flexitos",
@@ -3534,7 +3543,7 @@ dependencies = [
 [[package]]
 name = "leafwing_input_manager_macros"
 version = "0.16.0"
-source = "git+https://github.com/Leafwing-Studios/leafwing-input-manager.git?branch=main#74a8d8a55f6bef0dcb5ee4ea774e5c1803d542c7"
+source = "git+https://github.com/Leafwing-Studios/leafwing-input-manager.git?branch=main#3eda257f56a2e0e6821d50e744f6a7a0dc823a26"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
