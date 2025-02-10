@@ -43,7 +43,7 @@ opt-level = 3
 
 [dependencies]
 bevy_asset_loader = "0.22"
-bevy-inspector-egui = "0.28"
+bevy-inspector-egui = "0.29"
 bevy_mod_billboard = { version = "0.7.0", git = "https://github.com/voximity/bevy_mod_billboard.git", branch = "migrate-0.15" }
 bevy_mod_outline = { version = "0.9", git = "https://github.com/komadori/bevy_mod_outline.git", branch = "master" }
 bevy_obj = "0.15"
