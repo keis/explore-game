@@ -2,8 +2,8 @@ use super::super::{
     color::{NORMAL, SELECTED},
     prelude::*,
     resource::*,
-    styles::{style_button, style_icon, style_outliner},
-    widget::StatDisplay,
+    styles::{style_icon, style_outliner},
+    widget::{Button, StatDisplay},
     InterfaceAssets, DEFAULT_FONT,
 };
 use crate::{
@@ -59,37 +59,33 @@ impl ViewTemplate for PartyIcon {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
-        let id = cx.create_entity();
         let target = self.target;
         let assets = cx.use_resource::<InterfaceAssets>();
         let icon = assets.brutal_helm_icon.clone();
-        let selection = cx
+        let is_selected = cx
             .use_component::<Selection>(target)
             .cloned()
-            .unwrap_or_default();
+            .unwrap_or_default()
+            .is_selected;
 
-        cx.create_observer(
-            move |_click: Trigger<Pointer<Click>>,
-                  mut selection: SelectionUpdate<Without<Character>>| {
+        let callback =
+            cx.create_callback(move |mut selection: SelectionUpdate<Without<Character>>| {
                 selection.toggle(target);
-            },
-            id,
-            target,
-        );
+            });
 
-        Element::<Button>::for_entity(id)
-            .style((style_button, style_icon, move |sb: &mut StyleBuilder| {
-                sb.background_image(icon.clone());
-            }))
+        Button::new()
+            .icon(icon.clone())
+            .on_click(callback)
+            .style(style_icon)
             .style_dyn(
-                |selection, sb| {
-                    sb.background_color(if selection.is_selected {
+                |is_selected, sb| {
+                    sb.border(Val::Px(4.0)).border_color(if is_selected {
                         SELECTED
                     } else {
                         NORMAL
                     });
                 },
-                selection,
+                is_selected,
             )
     }
 }

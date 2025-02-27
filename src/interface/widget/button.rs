@@ -5,23 +5,47 @@ use super::super::{
 use super::Tooltip;
 use bevy::prelude::*;
 use bevy_mod_stylebuilder::*;
-use bevy_quill_core::{prelude::*, IntoViewChild, ViewChild};
+use bevy_quill_core::{
+    effects::{AppendEffect, EffectTuple, EntityEffect},
+    prelude::*,
+    style::{ApplyDynamicStylesEffect, ApplyStaticStylesEffect},
+    IntoViewChild, ViewChild,
+};
 
-#[derive(Clone, Default, PartialEq)]
-pub struct Button {
+pub fn style_button_interaction(interaction: Interaction, style: &mut StyleBuilder) {
+    style.background_color(match interaction {
+        Interaction::Pressed => PRESSED,
+        Interaction::Hovered => HOVERED,
+        Interaction::None => NORMAL,
+    });
+}
+
+#[derive(Clone, PartialEq)]
+pub struct Button<E: EffectTuple = ()> {
     pub entity: Option<Entity>,
     pub children: ViewChild,
     pub on_click: Option<Callback>,
     pub style: StyleHandle,
     pub tooltip: Option<Tooltip>,
     pub icon: Option<Handle<Image>>,
+    pub effects: E,
 }
 
-impl Button {
+impl Button<()> {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            entity: None,
+            children: ViewChild::default(),
+            on_click: None,
+            style: StyleHandle::default(),
+            tooltip: None,
+            icon: None,
+            effects: (),
+        }
     }
+}
 
+impl<E: EffectTuple> Button<E> {
     pub fn on_click(mut self, callback: Callback) -> Self {
         self.on_click = Some(callback);
         self
@@ -32,9 +56,30 @@ impl Button {
         self
     }
 
-    pub fn style<S: StyleTuple + 'static>(mut self, style: S) -> Self {
-        self.style = style.into_handle();
-        self
+    pub fn style<S: StyleTuple + Clone + 'static>(
+        self,
+        styles: S,
+    ) -> Button<<E as AppendEffect<ApplyStaticStylesEffect<StyleHandle>>>::Result>
+    where
+        E: AppendEffect<ApplyStaticStylesEffect<StyleHandle>>,
+    {
+        self.add_effect(ApplyStaticStylesEffect {
+            styles: styles.into_handle(),
+        })
+    }
+
+    pub fn style_dyn<
+        S: Fn(D, &mut StyleBuilder) + Clone + Send + Sync,
+        D: PartialEq + Clone + Send + Sync,
+    >(
+        self,
+        style_fn: S,
+        deps: D,
+    ) -> Button<<E as AppendEffect<ApplyDynamicStylesEffect<S, D>>>::Result>
+    where
+        E: AppendEffect<ApplyDynamicStylesEffect<S, D>>,
+    {
+        self.add_effect(ApplyDynamicStylesEffect { style_fn, deps })
     }
 
     pub fn tooltip(mut self, tooltip: Tooltip) -> Self {
@@ -46,9 +91,24 @@ impl Button {
         self.icon = Some(icon);
         self
     }
+
+    pub fn add_effect<E1: EntityEffect>(self, effect: E1) -> Button<<E as AppendEffect<E1>>::Result>
+    where
+        E: AppendEffect<E1>,
+    {
+        Button {
+            entity: self.entity,
+            children: self.children,
+            on_click: self.on_click,
+            style: self.style,
+            tooltip: self.tooltip,
+            icon: self.icon,
+            effects: self.effects.append_effect(effect),
+        }
+    }
 }
 
-impl ViewTemplate for Button {
+impl<E: EffectTuple + 'static> ViewTemplate for Button<E> {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
@@ -84,16 +144,8 @@ impl ViewTemplate for Button {
                 },
                 icon,
             )
-            .style_dyn(
-                |interaction, sb| {
-                    sb.background_color(match interaction {
-                        Interaction::Pressed => PRESSED,
-                        Interaction::Hovered => HOVERED,
-                        Interaction::None => NORMAL,
-                    });
-                },
-                interaction,
-            )
+            .style_dyn(style_button_interaction, interaction)
+            .add_effect(self.effects.clone())
             .children((self.children.clone(), tooltip))
     }
 }

@@ -2,8 +2,8 @@ use super::super::{
     color::*,
     component::{CampDetails, CharacterList, PartyDetails},
     prelude::*,
-    styles::{style_button, style_icon},
-    widget::Opt,
+    styles::style_icon,
+    widget::{Button, Opt},
     InterfaceAssets,
 };
 use crate::{actor::Party, input::SelectedIndex, structure::Camp};
@@ -92,27 +92,28 @@ impl ViewTemplate for SelectedTabHeaderIcon {
             target,
         );
 
+        let callback = cx.create_callback(move |mut world: DeferredWorld| {
+            focused.set(&mut world, Some(target));
+        });
+
         Cond::new(
             selected_type != SelectedType::Other,
-            Element::<Button>::for_entity(id)
-                .style((style_button, style_icon, move |sb: &mut StyleBuilder| {
-                    match selected_type {
-                        SelectedType::Party => {
-                            sb.background_image(brutal_helm_icon.clone());
-                        }
-                        SelectedType::Camp => {
-                            sb.background_image(campfire_icon.clone());
-                        }
-                        _ => (),
-                    };
-                }))
+            Button::new()
+                .on_click(callback)
+                .icon(match selected_type {
+                    SelectedType::Party => brutal_helm_icon.clone(),
+                    SelectedType::Camp => campfire_icon.clone(),
+                    _ => brutal_helm_icon.clone(),
+                })
+                .style(style_icon)
                 .style_dyn(
                     move |focused, sb| {
-                        sb.background_color(if focused == Some(target) {
-                            SELECTED
-                        } else {
-                            NORMAL
-                        });
+                        sb.border(Val::Px(2.0))
+                            .border_color(if focused == Some(target) {
+                                SELECTED
+                            } else {
+                                NORMAL
+                            });
                     },
                     focused.get(cx),
                 ),
@@ -128,11 +129,14 @@ impl ViewTemplate for SelectedTabViewContent {
         let selected_type = SelectedType::use_selected_type(cx, self.target);
         let target = self.target;
 
-        Element::<Node>::new().style(style_selected_item).children(
-            Switch::new(selected_type)
-                .case(SelectedType::Party, PartyDetails::new(target))
-                .case(SelectedType::Camp, CampDetails::new(target)),
-        )
+        Element::<Node>::new()
+            .named("Selected details")
+            .style(style_selected_item)
+            .children(
+                Switch::new(selected_type)
+                    .case(SelectedType::Party, PartyDetails::new(target))
+                    .case(SelectedType::Camp, CampDetails::new(target)),
+            )
     }
 }
 

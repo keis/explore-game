@@ -1,7 +1,7 @@
 use super::super::{
     color::{NORMAL, SELECTED},
     prelude::*,
-    widget::StatDisplay,
+    widget::{Button, StatDisplay},
     InterfaceAssets, DEFAULT_FONT,
 };
 use crate::{
@@ -25,8 +25,8 @@ fn style_character_list(style: &mut StyleBuilder) {
 
 fn style_character_display(style: &mut StyleBuilder) {
     style
-        .width(Val::Percent(100.0))
-        .height(Val::Px(60.0))
+        .width(Val::Percent(120.0))
+        .height(Val::Px(80.0))
         .margin(Val::Px(2.0))
         .flex_direction(FlexDirection::Column)
         .justify_content(JustifyContent::SpaceBetween)
@@ -45,6 +45,12 @@ pub struct CharacterDisplay {
 #[derive(Clone, PartialEq)]
 pub struct CharacterDetails {
     target: Entity,
+}
+
+impl CharacterDetails {
+    pub fn new(target: Entity) -> Self {
+        Self { target }
+    }
 }
 
 impl ViewTemplate for CharacterList {
@@ -68,31 +74,29 @@ impl ViewTemplate for CharacterDisplay {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
-        let id = cx.create_entity();
         let target = self.target;
         let is_selected = cx
             .use_component::<Selection>(self.target)
             .unwrap()
             .is_selected;
-        cx.create_observer(
-            move |_click: Trigger<Pointer<Click>>,
-                  mut selection: SelectionUpdate<With<Character>>| {
+        let callback =
+            cx.create_callback(move |mut selection: SelectionUpdate<With<Character>>| {
                 selection.toggle(target);
-            },
-            id,
-            target,
-        );
-        Element::<Button>::for_entity(id)
+            });
+        Button::new()
+            .on_click(callback)
             .style(style_character_display)
             .style_dyn(
                 move |is_selected, sb| {
-                    sb.background_color(if is_selected { SELECTED } else { NORMAL });
+                    sb.border(Val::Px(4.0)).border_color(if is_selected {
+                        SELECTED
+                    } else {
+                        NORMAL
+                    });
                 },
                 is_selected,
             )
-            .children(CharacterDetails {
-                target: self.target,
-            })
+            .children(CharacterDetails::new(self.target))
     }
 }
 
