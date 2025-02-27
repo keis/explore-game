@@ -2,8 +2,8 @@ use super::super::{
     color::{NORMAL, SELECTED},
     prelude::*,
     resource::*,
-    styles::{style_button, style_icon, style_outliner},
-    widget::StatDisplay,
+    styles::{style_icon, style_outliner},
+    widget::{Button, StatDisplay},
     InterfaceAssets, DEFAULT_FONT,
 };
 use crate::{
@@ -59,7 +59,6 @@ impl ViewTemplate for CampIcon {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
-        let id = cx.create_entity();
         let target = self.target;
         let assets = cx.use_resource::<InterfaceAssets>();
         let icon = assets.campfire_icon.clone();
@@ -67,29 +66,22 @@ impl ViewTemplate for CampIcon {
             .use_component::<Selection>(target)
             .cloned()
             .unwrap_or_default();
-        let on_click = cx.create_callback(
-            move |camp: In<Entity>, mut selection: SelectionUpdate<Without<Character>>| {
-                selection.toggle(*camp);
-            },
-        );
-        cx.create_observer(
-            move |_click: Trigger<Pointer<Click>>, mut commands: Commands| {
-                commands.run_callback(on_click, target);
-            },
-            id,
-            target,
-        );
-        Element::<Button>::for_entity(id)
-            .style((style_button, style_icon, move |sb: &mut StyleBuilder| {
-                sb.background_image(icon.clone());
-            }))
+        let callback =
+            cx.create_callback(move |mut selection: SelectionUpdate<Without<Character>>| {
+                selection.toggle(target);
+            });
+        Button::new()
+            .on_click(callback)
+            .icon(icon.clone())
+            .style(style_icon)
             .style_dyn(
                 |selection, sb| {
-                    sb.background_color(if selection.is_selected {
-                        SELECTED
-                    } else {
-                        NORMAL
-                    });
+                    sb.border(Val::Px(2.))
+                        .border_color(if selection.is_selected {
+                            SELECTED
+                        } else {
+                            NORMAL
+                        });
                 },
                 selection,
             )
@@ -100,19 +92,28 @@ impl ViewTemplate for CampDetails {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
+        let target = self.target;
         let assets = cx.use_resource::<InterfaceAssets>();
-        let camp = cx.use_component::<Camp>(self.target).unwrap();
-        let members = cx.use_component::<Members>(self.target).unwrap();
-        let inventory = cx.use_component::<Inventory>(self.target).unwrap();
+        let person_icon = assets.person_icon.clone();
+        let crystals_icon = assets.crystals_icon.clone();
+        let camp = cx.use_component::<Camp>(target).unwrap();
+        let members = cx.use_component::<Members>(target).unwrap();
+        let inventory = cx.use_component::<Inventory>(target).unwrap();
 
         (
             Element::<Node>::new()
-                .style(style_title_text)
-                .children(camp.name.clone()),
+                .style(|style: &mut StyleBuilder| {
+                    style
+                        .width(Val::Percent(100.0))
+                        .justify_content(JustifyContent::SpaceBetween);
+                })
+                .children((Element::<Node>::new()
+                    .style(style_title_text)
+                    .children(camp.name.clone()),)),
             Element::<Node>::new().children((
-                StatDisplay::new(assets.person_icon.clone(), format!("{}", members.len())),
+                StatDisplay::new(person_icon.clone(), format!("{}", members.len())),
                 StatDisplay::new(
-                    assets.crystals_icon.clone(),
+                    crystals_icon.clone(),
                     format!("{}", inventory.count_item(Inventory::CRYSTAL)),
                 ),
             )),

@@ -31,6 +31,7 @@ skip = [
     "ndk-sys",
     "hashbrown",
     "bitflags",
+    "itertools",
 ]
 skip-tree = [
     { crate = "windows-targets", depth = 2 },

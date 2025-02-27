@@ -73,8 +73,8 @@ smallvec = { workspace = true }
 splines = { features = ["glam"], git = "https://git.sr.ht/~hadronized/splines", version = "4.3.2-dev", branch = "master" }
 thiserror = { workspace = true }
 bevy_tweening = "0.12.0"
-bevy_mod_stylebuilder = { version = "0.1.3", git = "https://github.com/viridia/quill.git", branch = "main" }
-bevy_quill_core = { version = "0.1.3", git = "https://github.com/viridia/quill.git", branch = "main" }
+bevy_mod_stylebuilder = { version = "0.1.3", git = "https://github.com/keis/quill.git", branch = "effects" }
+bevy_quill_core = { version = "0.1.3", git = "https://github.com/keis/quill.git", branch = "effects" }
 
 [dev-dependencies]
 approx = "0.5"
