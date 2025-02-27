@@ -3,8 +3,9 @@ use super::super::{
     component::{CampList, PartyList},
     prelude::*,
     styles::{style_icon, style_outliner, style_root_container},
+    view::CampView,
     widget::{Button, Opt, Tooltip, TooltipPosition},
-    InterfaceAssets, DEFAULT_FONT,
+    InterfaceAssets, ShellState, DEFAULT_FONT,
 };
 use super::SelectedView;
 use crate::{
@@ -286,6 +287,35 @@ impl ViewTemplate for NextTurnButton {
 }
 
 #[derive(Clone, PartialEq)]
+enum ShellRoute {
+    Map,
+    Camp,
+}
+
+impl From<ShellState> for ShellRoute {
+    fn from(state: ShellState) -> Self {
+        match state {
+            ShellState::Map => ShellRoute::Map,
+            ShellState::Camp { .. } => ShellRoute::Camp,
+        }
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub struct ShellRouter;
+
+impl ViewTemplate for ShellRouter {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let shell_state = cx.use_resource::<State<ShellState>>();
+        Switch::new((*shell_state.get()).into())
+            .case(ShellRoute::Map, ())
+            .case(ShellRoute::Camp, CampView)
+    }
+}
+
+#[derive(Clone, PartialEq)]
 pub struct ShellView;
 
 impl ViewTemplate for ShellView {
@@ -300,14 +330,17 @@ impl ViewTemplate for ShellView {
                 Element::<Node>::new()
                     .named("Top")
                     .style(style_bar)
-                    .insert(PickingBehavior::IGNORE)
+                    .children((Element::<Node>::new(), Toolbar, ZoneDisplay)),
+                Element::<Node>::new()
+                    .style(|style: &mut StyleBuilder| {
+                        style.flex_grow(1.0).pointer_events(false);
+                    })
                     .children((
                         Element::<Node>::new()
                             .named("Outliner")
                             .style(style_outliner)
                             .children((CampList, PartyList)),
-                        Toolbar,
-                        ZoneDisplay,
+                        ShellRouter,
                     )),
                 Element::<Node>::new()
                     .named("Bottom")

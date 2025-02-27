@@ -4,7 +4,7 @@ mod plugin;
 mod queue;
 mod system;
 
-pub use component::ActionPoints;
+pub use component::{ActionPoints, CampActionAssignment};
 pub use plugin::{ActionPlugin, ActionUpdate};
 pub use queue::{GameAction, GameActionQueue, GameActionType};
 

@@ -27,6 +27,7 @@ pub fn filter_with_enabled_components() -> SaveInput {
         .allow::<Name>()
         .allow::<Save>()
         .allow::<action::ActionPoints>()
+        .allow::<action::CampActionAssignment>()
         .allow::<actor::ActorId>()
         .allow::<actor::Character>()
         .allow::<actor::Enemy>()

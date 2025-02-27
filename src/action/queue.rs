@@ -4,7 +4,7 @@ use enum_map::{Enum, EnumMap};
 use smallvec::SmallVec;
 use std::collections::VecDeque;
 
-#[derive(Clone, Copy, Debug, Enum)]
+#[derive(Clone, Copy, Debug, Enum, Reflect, PartialEq)]
 pub enum GameActionType {
     Move,
     MakeCamp,
@@ -16,6 +16,8 @@ pub enum GameActionType {
     CollectCrystals,
     OpenPortal,
     EnterPortal,
+    ManageCamp,
+    GuardCamp,
 }
 
 #[derive(Default, Debug, Hash, PartialEq, Eq, Clone)]
@@ -178,6 +180,7 @@ impl GameActionQueue {
 pub enum ActionCost {
     Free,
     World,
+    Camp,
 }
 
 pub struct GameActionInfo {

@@ -51,6 +51,9 @@ pub fn apply_action(world: &mut World) -> Result<(), ExplError> {
                 world.trigger_targets(ActionPointsConsumed, action.source);
             }
         }
+        ActionCost::Camp => {
+            todo!();
+        }
     }
 
     let result = world.run_system_with_input(action_system, action.clone())?;
@@ -533,5 +536,17 @@ pub fn handle_enter_portal(
 
     safe_inventory.take_all(&mut party_inventory);
 
+    Ok(GameActionStatus::Resolved)
+}
+
+#[allow(clippy::type_complexity)]
+pub fn handle_manage_camp(In(_action): In<GameAction>) -> GameActionResult {
+    info!("Placeholder manage camp");
+    Ok(GameActionStatus::Resolved)
+}
+
+#[allow(clippy::type_complexity)]
+pub fn handle_guard_camp(In(_action): In<GameAction>) -> GameActionResult {
+    info!("Placeholder guard camp");
     Ok(GameActionStatus::Resolved)
 }

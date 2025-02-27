@@ -1,6 +1,6 @@
 use super::{asset::*, component::*};
 use crate::{
-    action::ActionPoints,
+    action::{ActionPoints, CampActionAssignment},
     creature::{Creature, CreatureBundle},
     input::{DefaultOutlineVolume, Selection},
     inventory::Inventory,
@@ -89,6 +89,7 @@ pub struct CharacterBundle {
     pub creature: CreatureBundle,
     pub character: Character,
     pub selection: Selection,
+    pub camp_action_assignment: CampActionAssignment,
 }
 
 #[derive(Bundle, Default)]

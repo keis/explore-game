@@ -19,6 +19,7 @@ impl Plugin for InterfacePlugin {
                 .load_collection::<InterfaceAssets>(),
         )
         .init_state::<InterfaceState>()
+        .add_sub_state::<ShellState>()
         .init_resource::<Index<Party>>()
         .init_resource::<Index<Camp>>()
         .add_observer(Index::<Party>::on_add)
@@ -58,6 +59,16 @@ pub enum InterfaceState {
     Shell,
     Menu,
     GameOver,
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, SubStates, Default)]
+#[source(InterfaceState = InterfaceState::Shell)]
+pub enum ShellState {
+    #[default]
+    Map,
+    Camp {
+        target: Entity,
+    },
 }
 
 pub fn handle_toggle_main_menu(

@@ -60,6 +60,16 @@ impl Plugin for ActionPlugin {
                 ActionCost::World,
                 handle_enter_portal,
             )
+            .register_action(
+                GameActionType::ManageCamp,
+                ActionCost::Camp,
+                handle_manage_camp,
+            )
+            .register_action(
+                GameActionType::GuardCamp,
+                ActionCost::Camp,
+                handle_guard_camp,
+            )
             .build();
         let game_action_follow_up_system =
             GameActionFollowUpSystem(app.world_mut().register_system(follow_up_action));
@@ -69,6 +79,7 @@ impl Plugin for ActionPlugin {
             .add_event::<ActionPointsConsumed>()
             .init_schedule(ActionUpdate)
             .register_type::<ActionPoints>()
+            .register_type::<CampActionAssignment>()
             .add_observer(update_action_points_on_member_added)
             .add_observer(update_action_points_on_member_removed)
             .add_observer(propagate_action_points_consumed)

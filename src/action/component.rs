@@ -1,3 +1,4 @@
+use super::queue::GameActionType;
 use crate::ExplError;
 use bevy::prelude::*;
 
@@ -26,6 +27,20 @@ impl ActionPoints {
         } else {
             self.current -= 1;
             Ok(())
+        }
+    }
+}
+
+#[derive(Component, Copy, Clone, Reflect, Debug, PartialEq)]
+#[reflect(Component)]
+pub struct CampActionAssignment {
+    pub action_type: GameActionType,
+}
+
+impl Default for CampActionAssignment {
+    fn default() -> Self {
+        Self {
+            action_type: GameActionType::Move,
         }
     }
 }
