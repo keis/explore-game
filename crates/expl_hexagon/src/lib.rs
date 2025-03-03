@@ -48,9 +48,8 @@ impl MeshBuilder for HexagonMeshBuilder {
             .iter()
             .map(|&p| (p * self.hexagon.radius).into())
             .collect::<Vec<[f32; 3]>>();
-        let normals: Vec<_> = iter::repeat([0.0, 1.0, 0.0])
-            .take(positions.len())
-            .collect::<Vec<[f32; 3]>>();
+        let normals: Vec<_> =
+            iter::repeat_n([0.0, 1.0, 0.0], positions.len()).collect::<Vec<[f32; 3]>>();
         let uvs: Vec<_> = generated
             .raw_points()
             .iter()
