@@ -6,7 +6,7 @@ pub fn ring(center: HexCoord, radius: i32) -> impl Iterator<Item = HexCoord> {
     let mut coord = center + HexCoord::new(0, -1) * (radius - 1);
     HexCoord::ZERO
         .neighbours()
-        .flat_map(move |n| iter::repeat(n).take((radius - 1) as usize))
+        .flat_map(move |n| iter::repeat_n(n, (radius - 1) as usize))
         .map(move |step| {
             coord += step;
             coord
