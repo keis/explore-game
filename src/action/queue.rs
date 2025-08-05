@@ -189,7 +189,7 @@ pub struct GameActionInfo {
 pub struct GameActions(EnumMap<GameActionType, Option<GameActionInfo>>);
 
 impl GameActions {
-    pub fn builder(world: &mut World) -> GameActionSystemsBuilder {
+    pub fn builder(world: &mut World) -> GameActionSystemsBuilder<'_> {
         GameActionSystemsBuilder::from_world(world)
     }
 
