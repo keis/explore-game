@@ -15,7 +15,7 @@ pub struct PathFinder<'w, 's> {
 }
 
 impl PathFinder<'_, '_> {
-    pub fn get(&self) -> Result<BoundPathFinder, ExplError> {
+    pub fn get(&self) -> Result<BoundPathFinder<'_, '_>, ExplError> {
         Ok(BoundPathFinder {
             zone_layer: self.map_query.get_single()?,
             terrain_codex: self.terrain_codex.get()?,

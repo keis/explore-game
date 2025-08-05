@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use bevy::{prelude::*, reflect::TypePath, render::render_resource::*};
 
 #[derive(Default)]
