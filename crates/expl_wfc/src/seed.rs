@@ -1,12 +1,11 @@
 use super::WFCError;
-use bincode::Options;
+use bincode::{Decode, Encode};
 use data_encoding::BASE32_NOPAD;
 use expl_hexgrid::layout::{HexagonalGridLayout, SquareGridLayout};
 use rand::{Rng, SeedableRng};
-use serde::{Deserialize, Serialize};
 use std::{fmt, str::FromStr};
 
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
+#[derive(Encode, Decode, Copy, Clone, Debug, PartialEq)]
 pub enum SeedType {
     Hexagonal(u16),
     Square(u16, u16),
@@ -53,7 +52,7 @@ impl From<SquareGridLayout> for SeedType {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
+#[derive(Encode, Decode, Copy, Clone, Debug, PartialEq)]
 pub struct Seed {
     pub seed_type: SeedType,
     rng_seed: u64,
@@ -71,7 +70,7 @@ impl Seed {
 
 impl fmt::Display for Seed {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Ok(bytes) = bincode::config::DefaultOptions::new().serialize(self) {
+        if let Ok(bytes) = bincode::encode_to_vec(self, bincode::config::standard()) {
             write!(f, "{}", BASE32_NOPAD.encode(&bytes))
         } else {
             Err(fmt::Error)
@@ -87,8 +86,8 @@ impl FromStr for Seed {
             .decode(string.as_bytes())
             .ok()
             .and_then(|bytes| {
-                bincode::config::DefaultOptions::new()
-                    .deserialize::<Seed>(&bytes)
+                bincode::decode_from_slice(&bytes, bincode::config::standard())
+                    .map(|(seed, _)| seed)
                     .ok()
             })
             .ok_or(WFCError::InvalidSeed)
