@@ -3,15 +3,14 @@ members = [".", "crates/*"]
 default-members = [".", "crates/*"]
 
 [workspace.dependencies]
-bevy_app = "0.15"
-bevy_asset = "0.15"
-bevy_core = "0.15"
-bevy_derive = "0.15"
-bevy_ecs = "0.15"
-bevy_hierarchy = "0.15"
-bevy_log = "0.15"
-bevy_reflect = "0.15"
-bevy_render = "0.15"
+bevy_app = "0.16"
+bevy_asset = "0.16"
+bevy_derive = "0.16"
+bevy_ecs = "0.16"
+bevy_hierarchy = "0.16"
+bevy_log = "0.16"
+bevy_reflect = "0.16"
+bevy_render = "0.16"
 clap = "4.5"
 expl_codex = { version = "0.1.0", path = "crates/expl_codex" }
 expl_databinding = { version = "0.1.0", path = "crates/expl_databinding" }
@@ -48,7 +47,7 @@ bevy_mod_billboard = { version = "0.7.0", git = "https://github.com/voximity/bev
 bevy_mod_outline = { version = "0.9", git = "https://github.com/komadori/bevy_mod_outline.git", branch = "master" }
 bevy_obj = "0.15"
 bevy_sprite3d = "4.0"
-bevy = { version = "0.15", features = ["wayland", "dynamic_linking", "file_watcher"] }
+bevy = { version = "0.16", features = ["wayland", "dynamic_linking", "file_watcher"] }
 bitflags = "2"
 clap = { workspace = true, features = ["derive"] }
 enum-map = "2.7.3"
