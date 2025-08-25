@@ -9,7 +9,7 @@ pub struct InspectorPlugin;
 
 impl Plugin for InspectorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((DefaultInspectorConfigPlugin, EguiPlugin))
+        app.add_plugins((DefaultInspectorConfigPlugin, EguiPlugin::default()))
             .add_systems(
                 Update,
                 inspector_ui.run_if(action_toggle_active(false, Action::ToggleInspector)),
@@ -20,7 +20,7 @@ impl Plugin for InspectorPlugin {
 fn inspector_ui(world: &mut World) {
     let Ok(egui_context) = world
         .query_filtered::<&mut EguiContext, With<PrimaryWindow>>()
-        .get_single(world)
+        .single(world)
     else {
         return;
     };

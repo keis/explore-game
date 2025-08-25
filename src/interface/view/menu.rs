@@ -121,5 +121,5 @@ pub fn handle_save(mut action_state: ResMut<ActionState<Action>>) {
 }
 
 pub fn handle_quit(mut event_writer: EventWriter<bevy::app::AppExit>) {
-    event_writer.send(bevy::app::AppExit::Success);
+    event_writer.write(bevy::app::AppExit::Success);
 }

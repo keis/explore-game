@@ -1,6 +1,7 @@
 use super::{asset::*, component::*, system::*};
 use crate::{
     assets::AssetState,
+    error,
     scene::{SceneSet, SceneState},
     turn::TurnState,
 };
@@ -22,14 +23,12 @@ impl Plugin for StructurePlugin {
             .add_systems(Update, (update_camp_view_radius, update_portal_effect))
             .add_systems(
                 OnEnter(SceneState::Active),
-                fluff_structure
-                    .map(bevy::utils::warn)
-                    .in_set(SceneSet::Populate),
+                fluff_structure.map(error::warn).in_set(SceneSet::Populate),
             )
             .add_systems(OnEnter(TurnState::Player), heal_characters)
             .add_systems(
                 OnEnter(TurnState::System),
-                (charge_spawner, spawn_enemy.map(bevy::utils::warn))
+                (charge_spawner, spawn_enemy.map(error::warn))
                     .run_if(in_state(AssetState::Loaded))
                     .chain(),
             );

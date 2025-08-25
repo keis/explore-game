@@ -30,7 +30,7 @@ pub fn watch_map_generation_task(
     mut generate_map_task: Query<(Entity, &mut GenerateMapTask)>,
     mut scene_state: ResMut<NextState<SceneState>>,
 ) {
-    let Ok((entity, mut task)) = generate_map_task.get_single_mut() else {
+    let Ok((entity, mut task)) = generate_map_task.single_mut() else {
         return;
     };
     match future::block_on(future::poll_once(&mut task.0)) {

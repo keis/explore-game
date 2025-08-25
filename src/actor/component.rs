@@ -42,7 +42,7 @@ pub struct Members(pub SmallVec<[Entity; 8]>);
 impl MapEntities for Members {
     fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
         for entity in &mut self.0 {
-            *entity = entity_mapper.map_entity(*entity);
+            *entity = entity_mapper.get_mapped(*entity);
         }
     }
 }
@@ -67,7 +67,7 @@ impl FromWorld for Group {
 
 impl MapEntities for Group {
     fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
-        self.0 = entity_mapper.map_entity(self.0);
+        self.0 = entity_mapper.get_mapped(self.0);
     }
 }
 
