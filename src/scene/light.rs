@@ -1,4 +1,4 @@
-use crate::turn::Period;
+use crate::{turn::Period, ExplError};
 use bevy::prelude::*;
 use bevy_tweening::{Animator, Lens, Targetable, Tracks, Tween};
 use std::time::Duration;
@@ -71,8 +71,8 @@ pub fn spawn_light(mut commands: Commands) {
 pub fn apply_period_light(
     period: Res<Period>,
     mut light_query: Query<(&DirectionalLight, &mut Animator<DirectionalLight>)>,
-) {
-    let (light, mut animator) = light_query.single_mut();
+) -> Result<(), ExplError> {
+    let (light, mut animator) = light_query.single_mut()?;
     let (illuminance, color) = match *period {
         Period::Morning => (8_000.0, Color::srgb(1.0, 0.9, 0.9)),
         Period::Day => (11_000.0, Color::srgb(1.0, 1.0, 1.0)),
@@ -98,4 +98,5 @@ pub fn apply_period_light(
         ),
     ]);
     animator.set_tweenable(tween);
+    Ok(())
 }

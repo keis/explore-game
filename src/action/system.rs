@@ -53,7 +53,7 @@ pub fn apply_action(world: &mut World) -> Result<(), ExplError> {
         }
     }
 
-    let result = world.run_system_with_input(action_system, action.clone())?;
+    let result = world.run_system_with(action_system, action.clone())?;
 
     match result {
         Ok(GameActionStatus::Waiting) => {
@@ -82,7 +82,7 @@ pub fn apply_action(world: &mut World) -> Result<(), ExplError> {
         .get_resource::<GameActionFollowUpSystem>()
         .ok_or(ExplError::ResourceMissing)?;
     let maybe_follow_up: Option<GameAction> =
-        world.run_system_with_input(**follow_up_system, action.clone())?;
+        world.run_system_with(**follow_up_system, action.clone())?;
 
     if let Some(follow_up) = maybe_follow_up {
         let mut queue = world
@@ -113,7 +113,7 @@ pub fn resolve_action(world: &mut World) -> Result<(), ExplError> {
         return Ok(());
     };
     let maybe_follow_up: Option<GameAction> =
-        world.run_system_with_input(**follow_up_system, my_action)?;
+        world.run_system_with(**follow_up_system, my_action)?;
 
     if let Some(follow_up) = maybe_follow_up {
         let mut queue = world
@@ -192,7 +192,7 @@ pub fn update_action_points_on_member_added(
     mut action_points_query: Query<(&Members, &mut ActionPoints)>,
     member_action_points_query: Query<&ActionPoints, Without<Members>>,
 ) {
-    if let Ok((members, mut action_points)) = action_points_query.get_mut(trigger.entity()) {
+    if let Ok((members, mut action_points)) = action_points_query.get_mut(trigger.target()) {
         _update_action_points(members, &mut action_points, &member_action_points_query);
     }
 }
@@ -202,7 +202,7 @@ pub fn update_action_points_on_member_removed(
     mut action_points_query: Query<(&Members, &mut ActionPoints)>,
     member_action_points_query: Query<&ActionPoints, Without<Members>>,
 ) {
-    if let Ok((members, mut action_points)) = action_points_query.get_mut(trigger.entity()) {
+    if let Ok((members, mut action_points)) = action_points_query.get_mut(trigger.target()) {
         _update_action_points(members, &mut action_points, &member_action_points_query);
     }
 }
@@ -212,7 +212,7 @@ pub fn propagate_action_points_consumed(
     group_query: Query<&Members>,
     mut action_points_query: Query<&mut ActionPoints>,
 ) {
-    let Ok(members) = group_query.get(trigger.entity()) else {
+    let Ok(members) = group_query.get(trigger.target()) else {
         return;
     };
     let mut iter = action_points_query.iter_many_mut(&members.0);
@@ -233,7 +233,7 @@ pub fn handle_move(
     height_query: HeightQuery,
 ) -> GameActionResult {
     let (mut slide, mut transform, presence) = party_query.get_mut(action.source)?;
-    let (map_entity, zone_layer) = zone_layer_query.get_single()?;
+    let (map_entity, zone_layer) = zone_layer_query.single()?;
     let (next_position, next_transform) = map_position_query.get(action.target()?)?;
     let source_fog = zone_layer
         .get(presence.position)
@@ -263,7 +263,7 @@ pub fn handle_slide_stopped(
     map_query: Query<Entity, With<PresenceLayer>>,
     map_position_query: Query<&MapPosition>,
 ) {
-    let Ok(map_entity) = map_query.get_single() else {
+    let Ok(map_entity) = map_query.single() else {
         return;
     };
     for _ in events.read() {
@@ -300,7 +300,7 @@ pub fn handle_make_camp(
     let structure_codex = structure_codex.get()?;
 
     let (mut party_inventory, members, presence) = party_query.get_mut(action.source)?;
-    let (map_entity, zone_layer, presence_layer) = map_query.get_single()?;
+    let (map_entity, zone_layer, presence_layer) = map_query.single()?;
     let terrain_id = zone_layer
         .get(presence.position)
         .ok_or(ExplError::OutOfBounds)
@@ -346,7 +346,7 @@ pub fn handle_break_camp(
     camp_query: Query<(Entity, &Members), With<Camp>>,
 ) -> GameActionResult {
     let (mut inventory, presence) = party_query.get_mut(action.source)?;
-    let (map_entity, presence_layer) = map_query.get_single()?;
+    let (map_entity, presence_layer) = map_query.single()?;
     let (camp_entity, members) = camp_query
         .iter_many(presence_layer.presence(presence.position))
         .next()
@@ -391,7 +391,7 @@ pub fn handle_create_party_from_camp(
         action.source, action.targets
     );
     let (mut camp_inventory, presence) = camp_query.get_mut(action.source)?;
-    let map_entity = map_query.get_single()?;
+    let map_entity = map_query.single()?;
 
     let new_supplies = camp_inventory.take_item(Inventory::SUPPLY, 1).unwrap_or(0);
 
@@ -421,7 +421,7 @@ pub fn handle_split_party(
 ) -> GameActionResult {
     let actor_codex = actor_codex.get()?;
     let (mut party_inventory, members, presence) = party_query.get_mut(action.source)?;
-    let map_entity = map_query.get_single()?;
+    let map_entity = map_query.single()?;
     if members.len() == action.targets.len() {
         return Err(ExplError::InvalidPartySplit);
     }
@@ -474,7 +474,7 @@ pub fn handle_collect_crystals(
     mut crystal_deposit_query: Query<&mut CrystalDeposit>,
 ) -> GameActionResult {
     let (mut inventory, presence) = party_query.get_mut(action.source)?;
-    let zone_layer = map_query.get_single()?;
+    let zone_layer = map_query.single()?;
 
     let mut crystal_deposit = zone_layer
         .get(presence.position)
@@ -493,7 +493,7 @@ pub fn handle_open_portal(
     mut portal_query: Query<&mut Portal>,
 ) -> GameActionResult {
     let presence = party_query.get(action.source)?;
-    let presence_layer = map_query.get_single()?;
+    let presence_layer = map_query.single()?;
 
     let mut portal_iter = portal_query.iter_many_mut(presence_layer.presence(presence.position));
     let mut portal = portal_iter
@@ -517,7 +517,7 @@ pub fn handle_enter_portal(
     mut safe_haven_query: Query<(Entity, &mut Inventory), (With<SafeHaven>, Without<Party>)>,
 ) -> GameActionResult {
     let (presence, members, mut party_inventory) = party_query.get_mut(action.source)?;
-    let presence_layer = map_query.get_single()?;
+    let presence_layer = map_query.single()?;
 
     let portal = portal_query
         .iter_many(presence_layer.presence(presence.position))
@@ -528,7 +528,7 @@ pub fn handle_enter_portal(
         return Err(ExplError::InvalidLocation("portal not active".to_string()));
     }
 
-    let (safe_haven_entity, mut safe_inventory) = safe_haven_query.get_single_mut()?;
+    let (safe_haven_entity, mut safe_inventory) = safe_haven_query.single_mut()?;
     commands.entity(safe_haven_entity).add_members(members);
 
     safe_inventory.take_all(&mut party_inventory);

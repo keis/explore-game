@@ -3,6 +3,7 @@ use crate::{
     action::{ActionPoints, GameAction, GameActionQueue},
     color,
     combat::Combat,
+    error,
     material::ZoneMaterial,
     path::{PathFinder, PathGuided},
     terrain::TerrainId,
@@ -14,18 +15,18 @@ use expl_map::{MapPosition, MapPresence};
 
 pub fn map_position_added(trigger: Trigger<OnAdd, MapPosition>, mut commands: Commands) {
     commands
-        .entity(trigger.entity())
+        .entity(trigger.target())
         .observe(handle_zone_click)
-        .observe(handle_zone_over.map(bevy::utils::warn))
-        .observe(handle_zone_out.map(bevy::utils::warn));
+        .observe(handle_zone_over.map(error::warn))
+        .observe(handle_zone_out.map(error::warn));
 }
 
 pub fn selection_added(trigger: Trigger<OnAdd, Selection>, mut commands: Commands) {
     commands
-        .entity(trigger.entity())
+        .entity(trigger.target())
         .observe(handle_selection_click)
-        .observe(handle_selection_over.map(bevy::utils::warn))
-        .observe(handle_selection_out.map(bevy::utils::warn));
+        .observe(handle_selection_over.map(error::warn))
+        .observe(handle_selection_out.map(error::warn));
 }
 
 pub fn apply_zone_activated_event(
@@ -46,7 +47,7 @@ pub fn apply_zone_activated_event(
     if !combat_query.is_empty() {
         return Ok(());
     }
-    let target = zone_query.get(trigger.entity())?;
+    let target = zone_query.get(trigger.target())?;
     for (entity, presence, action_points, mut pathguided, _) in presence_query
         .iter_mut()
         .filter(|(_, _, _, _, s)| s.is_selected)
@@ -71,11 +72,11 @@ pub fn apply_select_event(
     mut selection_query: Query<(&mut Selection, Option<&Children>)>,
     mut outline_volume_query: Query<(&mut OutlineVolume, &DefaultOutlineVolume)>,
 ) {
-    let Ok((mut selection, children)) = selection_query.get_mut(trigger.entity()) else {
+    let Ok((mut selection, children)) = selection_query.get_mut(trigger.target()) else {
         return;
     };
     selection.is_selected = true;
-    for &child in children.iter().flat_map(|c| c.iter()) {
+    for child in children.iter().flat_map(|c| c.iter()) {
         if let Ok((mut outline_volume, _)) = outline_volume_query.get_mut(child) {
             outline_volume.colour = color::OUTLINE_SELECTED;
         }
@@ -87,11 +88,11 @@ pub fn apply_deselect_event(
     mut selection_query: Query<(&mut Selection, Option<&Children>)>,
     mut outline_volume_query: Query<(&mut OutlineVolume, &DefaultOutlineVolume)>,
 ) {
-    let Ok((mut selection, children)) = selection_query.get_mut(trigger.entity()) else {
+    let Ok((mut selection, children)) = selection_query.get_mut(trigger.target()) else {
         return;
     };
     selection.is_selected = false;
-    for &child in children.iter().flat_map(|c| c.iter()) {
+    for child in children.iter().flat_map(|c| c.iter()) {
         if let Ok((mut outline_volume, default)) = outline_volume_query.get_mut(child) {
             *outline_volume = (*default).clone();
         }
@@ -100,7 +101,7 @@ pub fn apply_deselect_event(
 
 fn handle_zone_click(trigger: Trigger<Pointer<Click>>, mut commands: Commands) {
     if trigger.event().button == PointerButton::Primary {
-        commands.trigger_targets(ZoneActivated, trigger.entity());
+        commands.trigger_targets(ZoneActivated, trigger.target());
     }
 }
 
@@ -109,7 +110,7 @@ fn handle_zone_over(
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     material_query: Query<&MeshMaterial3d<ZoneMaterial>>,
 ) -> Result<(), ExplError> {
-    let handle = material_query.get(trigger.entity())?;
+    let handle = material_query.get(trigger.target())?;
     let material = zone_materials
         .get_mut(handle)
         .ok_or(ExplError::MissingMaterial)?;
@@ -122,7 +123,7 @@ fn handle_zone_out(
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     material_query: Query<&MeshMaterial3d<ZoneMaterial>>,
 ) -> Result<(), ExplError> {
-    let handle = material_query.get(trigger.entity())?;
+    let handle = material_query.get(trigger.target())?;
     let material = zone_materials
         .get_mut(handle)
         .ok_or(ExplError::MissingMaterial)?;
@@ -135,7 +136,7 @@ fn handle_selection_click(
     mut selection_update: SelectionUpdate<()>,
 ) {
     if trigger.event().button == PointerButton::Primary {
-        selection_update.toggle(trigger.entity());
+        selection_update.toggle(trigger.target());
     }
 }
 
@@ -144,8 +145,8 @@ fn handle_selection_over(
     selection_query: Query<&Children, With<Selection>>,
     mut outline_volume_query: Query<&mut OutlineVolume>,
 ) -> Result<(), ExplError> {
-    let children = selection_query.get(trigger.entity())?;
-    for &child in children.iter() {
+    let children = selection_query.get(trigger.target())?;
+    for child in children.iter() {
         if let Ok(mut outline_volume) = outline_volume_query.get_mut(child) {
             outline_volume.colour = color::OUTLINE_HOVER;
         }
@@ -158,8 +159,8 @@ fn handle_selection_out(
     selection_query: Query<(&Selection, &Children)>,
     mut outline_volume_query: Query<(&mut OutlineVolume, &DefaultOutlineVolume)>,
 ) -> Result<(), ExplError> {
-    let (selection, children) = selection_query.get(trigger.entity())?;
-    for &child in children.iter() {
+    let (selection, children) = selection_query.get(trigger.target())?;
+    for child in children.iter() {
         if let Ok((mut outline_volume, default)) = outline_volume_query.get_mut(child) {
             if selection.is_selected {
                 outline_volume.colour = Color::srgb(0.75, 0.50, 0.50);

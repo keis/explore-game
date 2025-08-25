@@ -1,5 +1,5 @@
 use bevy::{
-    ecs::{system::EntityCommands, world::Command},
+    ecs::system::{Command, EntityCommands},
     prelude::*,
 };
 

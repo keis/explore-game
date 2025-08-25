@@ -44,7 +44,8 @@ mod tests {
         let (group_action_points, _members) = app
             .world_mut()
             .query::<(&ActionPoints, &Members)>()
-            .single(app.world());
+            .single(app.world())
+            .unwrap();
         assert_eq!(group_action_points.current, 3);
 
         let slow_member = app
@@ -63,7 +64,8 @@ mod tests {
         let (group_action_points, _members) = app
             .world_mut()
             .query::<(&ActionPoints, &Members)>()
-            .single(app.world());
+            .single(app.world())
+            .unwrap();
         assert_eq!(group_action_points.current, 2);
     }
 

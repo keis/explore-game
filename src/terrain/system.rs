@@ -26,7 +26,7 @@ pub fn hide_decorations_behind_camp(
     zone_query: Query<&Children>,
     mut decoration_query: Query<(&mut Visibility, &Transform), With<ZoneDecorationTree>>,
 ) {
-    let Ok(map) = map_query.get_single() else {
+    let Ok(map) = map_query.single() else {
         return;
     };
     for presence in &presence_query {
@@ -52,7 +52,7 @@ pub fn show_decorations_behind_camp(
     camp_query: Query<&Camp>,
     mut decoration_query: Query<&mut Visibility, With<ZoneDecorationTree>>,
 ) {
-    let Ok((map, presence_layer)) = map_query.get_single() else {
+    let Ok((map, presence_layer)) = map_query.single() else {
         return;
     };
     for event in events.read() {
@@ -87,7 +87,7 @@ pub fn fluff_zone(
     )>,
     neighbour_fog_query: Query<&Fog>,
 ) -> Result<(), ExplError> {
-    let (&MapLayout(layout), zone_layer) = map_query.get_single()?;
+    let (&MapLayout(layout), zone_layer) = map_query.single()?;
 
     let mut terrain_grid = Grid::<_, Id<Terrain>>::new(layout);
     for (position, terrain) in &zone_query.p0() {
@@ -204,7 +204,7 @@ pub fn update_outer_visible(
     changed_zone_query: Query<(Entity, &Fog, &MapPosition), Changed<Fog>>,
     mut zone_query: Query<(&Fog, &mut OuterVisible)>,
 ) {
-    let Ok(map) = map_query.get_single() else {
+    let Ok(map) = map_query.single() else {
         return;
     };
     for (entity, fog, position) in &changed_zone_query {

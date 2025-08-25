@@ -24,7 +24,7 @@ pub use system_param::*;
 #[cfg(test)]
 mod tests {
     use super::{action::*, system::*, Action, ActionState, Deselect, Select, Selection};
-    use crate::{action::ActionPoints, camera::CameraControl, test_fixture::spawn_game_map};
+    use crate::{action::ActionPoints, camera::CameraControl, error, test_fixture::spawn_game_map};
     use bevy::prelude::*;
     use expl_map::MapPresence;
     use rstest::*;
@@ -79,7 +79,7 @@ mod tests {
     pub fn select_next(mut app: App) {
         app.add_observer(apply_select_event)
             .add_observer(apply_deselect_event)
-            .add_systems(Update, handle_select_next);
+            .add_systems(Update, handle_select_next.map(error::warn));
 
         press_select_next(&mut app);
         app.update();

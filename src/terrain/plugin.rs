@@ -1,5 +1,8 @@
 use super::{asset::*, component::*, system::*};
-use crate::scene::{SceneSet, SceneState};
+use crate::{
+    error,
+    scene::{SceneSet, SceneState},
+};
 use bevy::prelude::*;
 use expl_codex::{Codex, CodexLoader, Id};
 
@@ -39,10 +42,8 @@ impl Plugin for TerrainPlugin {
             .add_systems(
                 OnEnter(SceneState::Active),
                 (
-                    fluff_zone.map(bevy::utils::warn).in_set(SceneSet::Terrain),
-                    decorate_zone
-                        .map(bevy::utils::warn)
-                        .in_set(SceneSet::Populate),
+                    fluff_zone.map(error::warn).in_set(SceneSet::Terrain),
+                    decorate_zone.map(error::warn).in_set(SceneSet::Populate),
                 ),
             );
     }

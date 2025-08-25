@@ -41,7 +41,7 @@ pub fn fluff_loaded_map(
     zone_query: Query<(&MapPosition, Entity), With<TerrainId>>,
     presence_query: Query<(Entity, &MapPresence), Without<Visibility>>,
 ) -> Result<(), ExplError> {
-    let (entity, &MapLayout(layout)) = map_query.get_single()?;
+    let (entity, &MapLayout(layout)) = map_query.single()?;
     let zone_lookup: HashMap<HexCoord, _> = zone_query
         .iter()
         .map(|(&MapPosition(p), e)| (p, e))
@@ -62,7 +62,7 @@ pub fn spawn_generated_map(
     mut zone_params: ZoneParams,
     map_prototype_query: Query<&MapPrototype>,
 ) -> Result<(), ExplError> {
-    let prototype = map_prototype_query.get_single()?;
+    let prototype = map_prototype_query.single()?;
     let void = Id::from_tag("void");
     let tiles = prototype
         .tiles
@@ -108,8 +108,8 @@ pub fn spawn_portal(
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
-    let prototype = map_prototype_query.get_single()?;
-    let map_entity = map_query.get_single()?;
+    let prototype = map_prototype_query.single()?;
+    let map_entity = map_query.single()?;
     let structure_codex = structure_codex.get()?;
 
     commands
@@ -132,8 +132,8 @@ pub fn spawn_spawner(
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
-    let prototype = map_prototype_query.get_single()?;
-    let map_entity = map_query.get_single()?;
+    let prototype = map_prototype_query.single()?;
+    let map_entity = map_query.single()?;
     let structure_codex = structure_codex.get()?;
 
     commands
@@ -161,8 +161,8 @@ pub fn spawn_party(
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
-    let prototype = map_prototype_query.get_single()?;
-    let map_entity = map_query.get_single()?;
+    let prototype = map_prototype_query.single()?;
+    let map_entity = map_query.single()?;
     let actor_codex = actor_codex.get()?;
     let creature_codex = creature_codex.get()?;
 
@@ -208,7 +208,7 @@ pub fn spawn_safe_haven(
     map_prototype_query: Query<&MapPrototype>,
 ) -> Result<(), ExplError> {
     // Check for existence of map prototype
-    let _prototype = map_prototype_query.get_single()?;
+    let _prototype = map_prototype_query.single()?;
 
     commands.spawn((
         save::Save,
