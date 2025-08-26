@@ -17,7 +17,7 @@ impl Plugin for CameraControlPlugin {
             Update,
             (
                 camera_control.map(error::warn).before(camera_movement),
-                camera_target.map(error::warn).before(camera_movement),
+                camera_target.before(camera_movement),
                 cursor_grab.map(error::warn),
                 camera_movement.map(error::warn),
             ),
@@ -152,15 +152,15 @@ fn camera_target(
     mut commands: Commands,
     time: Res<Time>,
     mut camera_query: Query<(Entity, &Transform, &mut CameraControl, &CameraTarget)>,
-) -> Result<(), ExplError> {
-    let (entity, transform, mut control, target) = camera_query.single_mut()?;
-    let acceleration = control.acceleration;
-    let delta = target.translation - transform.translation;
-    control.velocity += delta.normalize_or_zero() * time.delta_secs() * acceleration;
-    if delta.length_squared() < 1.0 {
-        commands.entity(entity).remove::<CameraTarget>();
+) {
+    if let Ok((entity, transform, mut control, target)) = camera_query.single_mut() {
+        let acceleration = control.acceleration;
+        let delta = target.translation - transform.translation;
+        control.velocity += delta.normalize_or_zero() * time.delta_secs() * acceleration;
+        if delta.length_squared() < 1.0 {
+            commands.entity(entity).remove::<CameraTarget>();
+        }
     }
-    Ok(())
 }
 
 fn camera_movement(
