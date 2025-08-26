@@ -76,13 +76,14 @@ mod tests {
         mut commands: Commands,
         path_finder: PathFinder,
         params_query: Query<(Entity, &Start, &Goal)>,
-    ) {
-        let (entity, start, goal) = params_query.single();
+    ) -> Result {
+        let (entity, start, goal) = params_query.single()?;
         if let Some(path) = path_finder.get().unwrap().find_path(start.0, goal.0) {
             commands.entity(entity).insert(Path(path));
         } else {
             println!("WHAT");
         }
+        Ok(())
     }
 
     #[rstest]
@@ -93,7 +94,11 @@ mod tests {
 
         app.update();
 
-        let path = app.world_mut().query::<&Path>().single(app.world());
+        let path = app
+            .world_mut()
+            .query::<&Path>()
+            .single(app.world())
+            .unwrap();
         println!("path {:?}", path.0);
         assert_eq!(path.0.len(), 2);
     }
@@ -106,7 +111,11 @@ mod tests {
 
         app.update();
 
-        let path = app.world_mut().query::<&Path>().single(app.world());
+        let path = app
+            .world_mut()
+            .query::<&Path>()
+            .single(app.world())
+            .unwrap();
         println!("path {:?}", path.0);
         assert_eq!(path.0.len(), 6);
     }

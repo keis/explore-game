@@ -194,11 +194,16 @@ fn cursor_grab(
 
 #[cfg(test)]
 mod tests {
-    use crate::camera::{
-        camera_control, camera_movement, camera_target, CameraBounds, CameraControl, CameraTarget,
+    use crate::{
+        camera::{
+            camera_control, camera_movement, camera_target, CameraBounds, CameraControl,
+            CameraTarget,
+        },
+        error,
+        input::Action,
     };
-    use crate::input::Action;
-    use bevy::{prelude::*, time::Time, utils::Duration};
+    use bevy::{prelude::*, time::Time};
+    use core::time::Duration;
     use leafwing_input_manager::prelude::ActionState;
 
     fn init_bare_app() -> App {
@@ -206,9 +211,9 @@ mod tests {
         app.add_systems(
             Update,
             (
-                camera_control.before(camera_movement),
-                camera_target.before(camera_movement),
-                camera_movement,
+                camera_control.map(error::warn).before(camera_movement),
+                camera_target.map(error::warn).before(camera_movement),
+                camera_movement.map(error::warn),
             ),
         );
 
