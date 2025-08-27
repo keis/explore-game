@@ -47,7 +47,7 @@ bevy_mod_billboard = { version = "0.7.0", git = "https://github.com/mcobzarenco/
 bevy_mod_outline = { version = "0.10.3" }
 bevy_obj = "0.16"
 bevy_sprite3d = "5.0"
-bevy = { version = "0.16", features = ["wayland", "dynamic_linking", "file_watcher"] }
+bevy = { version = "0.16", features = ["wayland", "dynamic_linking", "file_watcher", "track_location"] }
 bitflags = "2"
 clap = { workspace = true, features = ["derive"] }
 enum-map = "2.7.3"
