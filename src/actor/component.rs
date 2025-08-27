@@ -1,9 +1,6 @@
 use super::asset::Actor;
 use bevy::{
-    ecs::{
-        entity::{EntityMapper, MapEntities},
-        reflect::ReflectMapEntities,
-    },
+    ecs::{entity::MapEntities, reflect::ReflectMapEntities},
     prelude::*,
 };
 use expl_codex::Id;
@@ -39,9 +36,9 @@ pub struct Party {
 #[reflect(Component, MapEntities)]
 pub struct Members(#[entities] pub SmallVec<[Entity; 8]>);
 
-#[derive(Component, Reflect)]
+#[derive(Component, MapEntities, Reflect)]
 #[reflect(Component, MapEntities)]
-pub struct Group(pub(super) Entity);
+pub struct Group(#[entities] pub(super) Entity);
 
 impl Group {
     #[inline(always)]
@@ -54,12 +51,6 @@ impl FromWorld for Group {
     #[inline(always)]
     fn from_world(_world: &mut World) -> Self {
         Self(Entity::PLACEHOLDER)
-    }
-}
-
-impl MapEntities for Group {
-    fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
-        self.0 = entity_mapper.get_mapped(self.0);
     }
 }
 
