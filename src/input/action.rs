@@ -6,6 +6,7 @@ use crate::{
     interface::InterfaceState,
     path::PathGuided,
     structure::Camp,
+    ExplError,
 };
 use bevy::prelude::*;
 use expl_map::{MapPresence, PresenceLayer};
@@ -97,10 +98,10 @@ pub fn handle_select_next(
     next_selection_query: NextSelectionQuery,
     selection_query: Query<(Entity, &Selection, &MapPresence)>,
     camera_query: Query<Entity, With<CameraControl>>,
-) {
-    let camera_entity = camera_query.single();
+) -> Result<(), ExplError> {
+    let camera_entity = camera_query.single()?;
     let Some(next) = next_selection_query.get() else {
-        return;
+        return Ok(());
     };
     for (entity, selection, presence) in &selection_query {
         if entity == next {
@@ -112,6 +113,7 @@ pub fn handle_select_next(
             commands.trigger_targets(Deselect, entity);
         }
     }
+    Ok(())
 }
 
 pub fn handle_camp(
@@ -121,7 +123,7 @@ pub fn handle_camp(
     mut game_action_queue: ResMut<GameActionQueue>,
 ) {
     for (entity, presence, _) in party_query.iter().filter(|(_, _, s)| s.is_selected) {
-        let Ok(presence_layer) = map_query.get_single() else {
+        let Ok(presence_layer) = map_query.single() else {
             continue;
         };
         if let Some(camp_entity) = camp_query

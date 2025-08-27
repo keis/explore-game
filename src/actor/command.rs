@@ -1,5 +1,8 @@
 use super::{component::*, event::*};
-use bevy::{ecs::system::EntityCommands, ecs::world::Command, prelude::*};
+use bevy::{
+    ecs::system::{Command, EntityCommands},
+    prelude::*,
+};
 use smallvec::SmallVec;
 
 pub(super) struct AddMembers {
@@ -89,7 +92,7 @@ impl Command for RemoveMembers {
             members.0.retain(|member| !self.members.contains(member));
         }
         for member in self.members {
-            world.entity_mut(member).remove::<Parent>();
+            world.entity_mut(member).remove::<ChildOf>();
             world.trigger_targets(MemberRemoved(member), self.group);
         }
     }

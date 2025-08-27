@@ -44,7 +44,7 @@ pub fn update_enemy_visibility(
     changed_zone_query: Query<(&MapPosition, &Fog), Changed<Fog>>,
     any_zone_query: Query<&Fog>,
 ) {
-    let Ok((zone_layer, presence_layer)) = map_query.get_single() else {
+    let Ok((zone_layer, presence_layer)) = map_query.single() else {
         return;
     };
     // Update enemies at locations that had their fog status changed
@@ -82,12 +82,12 @@ pub fn despawn_empty_party(
     map_query: Query<Entity, With<PresenceLayer>>,
     mut commands: Commands,
 ) -> Result<(), ExplError> {
-    let map_entity = map_query.get_single()?;
-    let members = party_query.get(trigger.entity())?;
+    let map_entity = map_query.single()?;
+    let members = party_query.get(trigger.target())?;
     if members.is_empty() {
         commands
             .entity(map_entity)
-            .despawn_presence(trigger.entity());
+            .despawn_presence(trigger.target());
     }
     Ok(())
 }
@@ -110,7 +110,7 @@ pub fn slide(
             .lerp(slide.end, slide.progress.quadratic_in_out());
         transform.translation = height_query.adjust(position);
         if slide.progress == 1.0 {
-            events.send(SlideEvent::Stopped);
+            events.write(SlideEvent::Stopped);
         }
     }
 }

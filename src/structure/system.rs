@@ -48,7 +48,7 @@ pub fn spawn_enemy(
 ) -> Result<(), ExplError> {
     let actor_codex = actor_codex.get()?;
     let creature_codex = creature_codex.get()?;
-    let (map_entity, presence_layer) = map_query.get_single()?;
+    let (map_entity, presence_layer) = map_query.single()?;
     for (presence, mut spawner) in &mut spawner_query {
         if spawner.charge >= 3
             && presence_query
@@ -86,20 +86,19 @@ pub fn update_portal_effect(
 ) {
     for (entity, portal) in &portal_query {
         if portal.open {
-            commands
-                .spawn((
-                    NotShadowCaster,
-                    Mesh3d(meshes.add(Plane3d::default().mesh().size(2.0, 2.0))),
-                    MeshMaterial3d(portal_materials.add(PortalMaterial {
-                        base_color: Color::srgba(0.2, 0.7, 0.1, 0.3),
-                        swirl_color: Color::srgba(0.4, 0.2, 0.7, 0.7),
-                    })),
-                    Transform::from_translation(Vec3::new(0.0, 0.9, 0.0)).with_rotation(
-                        Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)
-                            * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2),
-                    ),
-                ))
-                .set_parent(entity);
+            commands.spawn((
+                NotShadowCaster,
+                Mesh3d(meshes.add(Plane3d::default().mesh().size(2.0, 2.0))),
+                MeshMaterial3d(portal_materials.add(PortalMaterial {
+                    base_color: Color::srgba(0.2, 0.7, 0.1, 0.3),
+                    swirl_color: Color::srgba(0.4, 0.2, 0.7, 0.7),
+                })),
+                Transform::from_translation(Vec3::new(0.0, 0.9, 0.0)).with_rotation(
+                    Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)
+                        * Quat::from_rotation_z(std::f32::consts::FRAC_PI_2),
+                ),
+                ChildOf(entity),
+            ));
         }
     }
 }

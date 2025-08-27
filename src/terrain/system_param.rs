@@ -21,7 +21,8 @@ impl HeightQuery<'_, '_> {
         let zone_layer = self.map_query.single();
         let coord: HexCoord = point.into();
         zone_layer
-            .get(coord)
+            .ok()
+            .and_then(|zone_layer| zone_layer.get(coord))
             .and_then(|&entity| self.terrain_query.get(entity).ok())
             .map_or(0.0, |(terrain_id, outer_terrain)| {
                 let height = Height::new(terrain_codex, **terrain_id, outer_terrain);

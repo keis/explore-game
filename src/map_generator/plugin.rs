@@ -1,5 +1,5 @@
 use super::{asset::*, system::*};
-use crate::{assets::AssetState, scene::SceneState};
+use crate::{assets::AssetState, error, scene::SceneState};
 use bevy::prelude::*;
 
 pub struct MapGeneratorPlugin;
@@ -12,7 +12,7 @@ impl Plugin for MapGeneratorPlugin {
                 Update,
                 (
                     start_map_generation
-                        .map(bevy::utils::warn)
+                        .map(error::warn)
                         .run_if(in_state(SceneState::Reset)),
                     watch_map_generation_task
                         .run_if(in_state(AssetState::Loaded))

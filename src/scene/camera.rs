@@ -13,5 +13,6 @@ pub fn spawn_camera(mut commands: Commands) {
             gap: 1.0,
         },
         CameraControl::default(),
+        bevy_inspector_egui::bevy_egui::PrimaryEguiContext,
     ));
 }

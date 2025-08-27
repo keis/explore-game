@@ -1,5 +1,8 @@
 use super::{asset::*, component::*, event::*, system::*};
-use crate::scene::{SceneSet, SceneState};
+use crate::{
+    error,
+    scene::{SceneSet, SceneState},
+};
 use bevy::prelude::*;
 use expl_codex::{Codex, CodexLoader, Id};
 
@@ -20,13 +23,10 @@ impl Plugin for ActorPlugin {
             .register_type::<Group>()
             .register_type::<Party>()
             .register_type::<Slide>()
-            .add_observer(despawn_empty_party.map(bevy::utils::warn))
+            .add_observer(despawn_empty_party.map(error::warn))
             .add_systems(
                 OnEnter(SceneState::Active),
-                (
-                    fluff_party.map(bevy::utils::warn),
-                    fluff_actor.map(bevy::utils::warn),
-                )
+                (fluff_party.map(error::warn), fluff_actor.map(error::warn))
                     .in_set(SceneSet::Populate),
             )
             .add_systems(

@@ -1,6 +1,5 @@
 use super::{component::*, event::*};
 use bevy_ecs::prelude::*;
-use bevy_hierarchy::Children;
 use bevy_log::info;
 use bevy_render::view::visibility::Visibility;
 
@@ -9,7 +8,7 @@ pub fn log_moves(
     presence_query: Query<&MapPresence>,
     presence_layer_query: Query<&PresenceLayer>,
 ) {
-    let Ok(presence_layer) = presence_layer_query.get_single() else {
+    let Ok(presence_layer) = presence_layer_query.single() else {
         return;
     };
     for event in map_events.read() {
@@ -75,7 +74,7 @@ pub fn update_presence_fog(
     map_query: Query<&PresenceLayer>,
     mut presence_query: Query<(&mut Fog, &mut Visibility), With<MapPresence>>,
 ) {
-    let Ok(presence_layer) = map_query.get_single() else {
+    let Ok(presence_layer) = map_query.single() else {
         return;
     };
     for (position, zone_fog) in &zone_query {

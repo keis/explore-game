@@ -16,7 +16,7 @@ pub fn move_enemy(
     target: Target,
     path_finder: PathFinder,
 ) -> Result<(), ExplError> {
-    let (zone_layer, presence_layer) = map_query.get_single()?;
+    let (zone_layer, presence_layer) = map_query.single()?;
     let pf = path_finder.get()?;
     let mut rng = thread_rng();
     for (entity, presence, view_radius) in &enemy_query {

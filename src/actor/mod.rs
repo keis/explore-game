@@ -53,14 +53,16 @@ mod tests {
         let (group_entity, group) = app
             .world_mut()
             .query::<(Entity, &Members)>()
-            .single(app.world());
+            .single(app.world())
+            .unwrap();
         assert_eq!(group.len(), 1);
         let member_from_group_entity = group[0];
 
         let (member_entity, member) = app
             .world_mut()
             .query::<(Entity, &Group)>()
-            .single(app.world());
+            .single(app.world())
+            .unwrap();
 
         assert_eq!(member_from_group_entity, member_entity);
         assert_eq!(member.get(), group_entity);
@@ -71,7 +73,8 @@ mod tests {
         let (member_entity, _) = app
             .world_mut()
             .query::<(Entity, &Group)>()
-            .single(app.world());
+            .single(app.world())
+            .unwrap();
 
         let new_group_entity = app.world_mut().spawn(Members::default()).id();
         app.world_mut()
@@ -89,7 +92,11 @@ mod tests {
         assert_eq!(group.len(), 1);
         assert_eq!(group[0], member_entity);
 
-        let member = app.world_mut().query::<&Group>().single(app.world());
+        let member = app
+            .world_mut()
+            .query::<&Group>()
+            .single(app.world())
+            .unwrap();
         assert_eq!(member.0, new_group_entity);
     }
 
