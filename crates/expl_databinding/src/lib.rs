@@ -2,8 +2,7 @@ use bevy_app::prelude::*;
 use bevy_ecs::{
     prelude::*,
     query::{QueryData, QueryFilter},
-    system::{EntityCommands, SystemParam},
-    world::Command,
+    system::{Command, EntityCommands, SystemParam},
 };
 use bevy_reflect::prelude::*;
 use core::slice;
@@ -123,7 +122,7 @@ where
                     Ok((_, None)) => { /* Entity exists but without the desired components */ }
                     Err(_) => {
                         self.expired_events
-                            .send(DataBindingExpired { source, sink });
+                            .write(DataBindingExpired { source, sink });
                     }
                 }
             }

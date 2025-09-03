@@ -1,6 +1,7 @@
 use super::{component::*, event::*, queue::*, system::*};
 use crate::{
     actor::SlideEvent,
+    error,
     scene::SceneState,
     turn::{set_player_turn, TurnState},
 };
@@ -82,11 +83,9 @@ impl Plugin for ActionPlugin {
                 Update,
                 (
                     (
-                        apply_action.map(bevy::utils::warn).run_if(has_ready_action),
+                        apply_action.map(error::warn).run_if(has_ready_action),
                         handle_slide_stopped.run_if(on_event::<SlideEvent>),
-                        resolve_action
-                            .map(bevy::utils::warn)
-                            .run_if(has_resolved_action),
+                        resolve_action.map(error::warn).run_if(has_resolved_action),
                     )
                         .chain(),
                     set_player_turn

@@ -13,5 +13,4 @@ toml = "0.8"
 
 [dev-dependencies]
 bevy_app = { workspace = true }
-bevy_core = { workspace = true }
 bevy_ecs = { workspace = true }

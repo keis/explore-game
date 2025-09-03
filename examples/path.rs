@@ -20,7 +20,7 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins(WireframePlugin)
+        .add_plugins(WireframePlugin::default())
         .add_systems(Startup, setup);
 
     app.run();

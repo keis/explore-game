@@ -60,12 +60,19 @@ where
     }
 }
 
-impl<'a> From<bevy::ecs::query::QueryEntityError<'a>> for ExplError {
-    fn from(err: bevy::ecs::query::QueryEntityError<'a>) -> Self {
+impl From<bevy::ecs::query::QueryEntityError> for ExplError {
+    fn from(err: bevy::ecs::query::QueryEntityError) -> Self {
         match err {
             QueryEntityError::QueryDoesNotMatch(e, _) => Self::QueryDoesNotMatch(e),
-            QueryEntityError::NoSuchEntity(e) => Self::NoSuchEntity(e),
+            QueryEntityError::EntityDoesNotExist(e) => Self::NoSuchEntity(e.entity),
             QueryEntityError::AliasedMutability(e) => Self::AliasedMutability(e),
         }
+    }
+}
+
+/// Processes a [`Result`] by calling the [`tracing::warn!`] macro in case of an [`Err`] value.
+pub fn warn<E: core::fmt::Debug>(result: Result<(), E>) {
+    if let Err(warn) = result {
+        ::tracing::warn!("{:?}", warn);
     }
 }

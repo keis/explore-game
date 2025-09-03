@@ -1,4 +1,8 @@
-use crate::input::{Action, ActionState};
+use crate::{
+    error,
+    input::{Action, ActionState},
+    ExplError,
+};
 use bevy::{
     prelude::*,
     window::{CursorGrabMode, PrimaryWindow},
@@ -12,10 +16,10 @@ impl Plugin for CameraControlPlugin {
         app.add_systems(
             Update,
             (
-                camera_control.before(camera_movement),
+                camera_control.map(error::warn).before(camera_movement),
                 camera_target.before(camera_movement),
-                cursor_grab,
-                camera_movement,
+                cursor_grab.map(error::warn),
+                camera_movement.map(error::warn),
             ),
         );
     }
@@ -74,8 +78,8 @@ fn camera_control(
     time: Res<Time>,
     mut camera_query: Query<(&Transform, &CameraBounds, &mut CameraControl)>,
     action_state: Res<ActionState<Action>>,
-) {
-    let (transform, bounds, mut control) = camera_query.single_mut();
+) -> Result<(), ExplError> {
+    let (transform, bounds, mut control) = camera_query.single_mut()?;
     let acceleration = control.acceleration;
     let mut delta = Vec3::ZERO;
 
@@ -141,6 +145,7 @@ fn camera_control(
     }
 
     control.velocity += delta.normalize_or_zero() * time.delta_secs() * acceleration;
+    Ok(())
 }
 
 fn camera_target(
@@ -148,7 +153,7 @@ fn camera_target(
     time: Res<Time>,
     mut camera_query: Query<(Entity, &Transform, &mut CameraControl, &CameraTarget)>,
 ) {
-    if let Ok((entity, transform, mut control, target)) = camera_query.get_single_mut() {
+    if let Ok((entity, transform, mut control, target)) = camera_query.single_mut() {
         let acceleration = control.acceleration;
         let delta = target.translation - transform.translation;
         control.velocity += delta.normalize_or_zero() * time.delta_secs() * acceleration;
@@ -158,19 +163,21 @@ fn camera_target(
     }
 }
 
-fn camera_movement(time: Res<Time>, mut camera_query: Query<(&mut Transform, &mut CameraControl)>) {
-    let (mut transform, mut control) = camera_query.single_mut();
+fn camera_movement(
+    time: Res<Time>,
+    mut camera_query: Query<(&mut Transform, &mut CameraControl)>,
+) -> Result<(), ExplError> {
+    let (mut transform, mut control) = camera_query.single_mut()?;
     transform.translation += control.velocity * time.delta_secs();
     control.velocity *= 1.0 - 4.0 * time.delta_secs();
+    Ok(())
 }
 
 fn cursor_grab(
     mut window_query: Query<&mut Window, With<PrimaryWindow>>,
     action_state: Res<ActionState<Action>>,
-) {
-    let Ok(mut window) = window_query.get_single_mut() else {
-        return;
-    };
+) -> Result<(), ExplError> {
+    let mut window = window_query.single_mut()?;
 
     if action_state.just_pressed(&Action::PanCamera) {
         window.cursor_options.visible = false;
@@ -181,15 +188,22 @@ fn cursor_grab(
         window.cursor_options.visible = true;
         window.cursor_options.grab_mode = CursorGrabMode::None;
     }
+
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::camera::{
-        camera_control, camera_movement, camera_target, CameraBounds, CameraControl, CameraTarget,
+    use crate::{
+        camera::{
+            camera_control, camera_movement, camera_target, CameraBounds, CameraControl,
+            CameraTarget,
+        },
+        error,
+        input::Action,
     };
-    use crate::input::Action;
-    use bevy::{prelude::*, time::Time, utils::Duration};
+    use bevy::{prelude::*, time::Time};
+    use core::time::Duration;
     use leafwing_input_manager::prelude::ActionState;
 
     fn init_bare_app() -> App {
@@ -197,9 +211,9 @@ mod tests {
         app.add_systems(
             Update,
             (
-                camera_control.before(camera_movement),
+                camera_control.map(error::warn).before(camera_movement),
                 camera_target.before(camera_movement),
-                camera_movement,
+                camera_movement.map(error::warn),
             ),
         );
 

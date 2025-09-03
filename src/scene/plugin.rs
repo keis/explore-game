@@ -1,6 +1,6 @@
 use crate::{
     assets::AssetState,
-    cleanup,
+    cleanup, error,
     input::{action_just_pressed, Action},
     turn::{TurnSet, TurnState},
 };
@@ -43,7 +43,7 @@ impl Plugin for ScenePlugin {
             )
             .add_systems(
                 Update, // PreUpdate
-                save_with::<With<Save>, _, _>(filter_with_enabled_components)
+                save_with(filter_with_enabled_components)
                     .into(static_file(save_location()))
                     .run_if(action_just_pressed(Action::Save)),
             )
@@ -67,12 +67,12 @@ impl Plugin for ScenePlugin {
             )
             .add_systems(
                 OnEnter(TurnState::Player),
-                apply_period_light.in_set(TurnSet::Effects),
+                apply_period_light.map(error::warn).in_set(TurnSet::Effects),
             )
             .add_systems(
                 OnEnter(SceneState::Reset),
                 (
-                    cleanup::despawn_all::<(With<Save>, Without<Parent>)>,
+                    cleanup::despawn_all::<(With<Save>, Without<ChildOf>)>,
                     reset_turn_counter,
                     create_map_seed,
                 ),
@@ -81,18 +81,18 @@ impl Plugin for ScenePlugin {
                 OnEnter(SceneState::Active),
                 (
                     fluff_loaded_map
-                        .map(bevy::utils::warn)
+                        .map(error::warn)
                         .in_set(SceneSet::InitialSetup),
                     spawn_generated_map
-                        .map(bevy::utils::warn)
+                        .map(error::warn)
                         .in_set(SceneSet::InitialSetup),
-                    apply_deferred.in_set(SceneSet::InitialFlush),
-                    apply_deferred.in_set(SceneSet::TerrainFlush),
+                    ApplyDeferred.in_set(SceneSet::InitialFlush),
+                    ApplyDeferred.in_set(SceneSet::TerrainFlush),
                     (
-                        spawn_party.map(bevy::utils::warn),
-                        spawn_portal.map(bevy::utils::warn),
-                        spawn_spawner.map(bevy::utils::warn),
-                        spawn_safe_haven.map(bevy::utils::warn),
+                        spawn_party.map(error::warn),
+                        spawn_portal.map(error::warn),
+                        spawn_spawner.map(error::warn),
+                        spawn_safe_haven.map(error::warn),
                     )
                         .in_set(SceneSet::Populate),
                     cleanup_map_generation_task.in_set(SceneSet::Cleanup),

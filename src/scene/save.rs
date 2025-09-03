@@ -5,7 +5,10 @@ use moonshine_save::save::SaveInput;
 use platform_dirs::AppDirs;
 use std::path::PathBuf;
 
-pub use moonshine_save::prelude::{save_with, LoadSystem, Save};
+pub use moonshine_save::{
+    prelude::{save_with, LoadSystem, Save},
+    save::EntityFilter,
+};
 
 #[derive(Resource)]
 pub struct Loaded;
@@ -22,7 +25,8 @@ pub fn save_location() -> PathBuf {
         .unwrap()
 }
 
-pub fn filter_with_enabled_components() -> SaveInput {
+pub fn filter_with_enabled_components(entities: Query<Entity, With<Save>>) -> SaveInput {
+    let entities = EntityFilter::allow(entities);
     let components = SceneFilter::deny_all()
         .allow::<Name>()
         .allow::<Save>()
@@ -59,6 +63,7 @@ pub fn filter_with_enabled_components() -> SaveInput {
     let resources = SceneFilter::deny_all().allow::<turn::Turn>();
 
     SaveInput {
+        entities,
         components,
         resources,
         ..default()

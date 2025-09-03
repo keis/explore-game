@@ -216,7 +216,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bevy_app::App;
+    use bevy_app::{App, TaskPoolPlugin};
     use bevy_asset::{
         io::{
             memory::{Dir, MemoryAssetReader},
@@ -224,7 +224,6 @@ mod tests {
         },
         AssetApp, AssetPlugin, AssetServer, Assets, Handle, LoadContext,
     };
-    use bevy_core::TaskPoolPlugin;
     use bevy_ecs::component::Component;
     use std::path::Path;
 

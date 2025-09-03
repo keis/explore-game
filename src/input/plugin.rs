@@ -1,5 +1,5 @@
 use super::{action::*, component::*, resource::*, system::*};
-use crate::turn;
+use crate::{error, turn};
 use bevy::{picking::PickSet, prelude::*};
 use leafwing_input_manager::{
     common_conditions::action_just_pressed, plugin::InputManagerSystem, prelude::*,
@@ -37,7 +37,7 @@ impl Plugin for InputPlugin {
             .init_resource::<MapHover>()
             .add_observer(MapHover::on_zone_over)
             .insert_resource(input_map())
-            .add_observer(apply_zone_activated_event.map(bevy::utils::warn))
+            .add_observer(apply_zone_activated_event.map(error::warn))
             .add_observer(apply_select_event)
             .add_observer(apply_deselect_event)
             .add_observer(map_position_added)
@@ -46,7 +46,9 @@ impl Plugin for InputPlugin {
                 Update,
                 (
                     handle_enter_portal.run_if(action_just_pressed(Action::EnterPortal)),
-                    handle_select_next.run_if(action_just_pressed(Action::SelectNext)),
+                    handle_select_next
+                        .map(error::warn)
+                        .run_if(action_just_pressed(Action::SelectNext)),
                     handle_resume_move.run_if(action_just_pressed(Action::ResumeMove)),
                     handle_camp.run_if(action_just_pressed(Action::Camp)),
                     handle_break_camp.run_if(action_just_pressed(Action::BreakCamp)),

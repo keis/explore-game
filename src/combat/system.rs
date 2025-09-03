@@ -50,7 +50,7 @@ pub fn initiate_combat(
     character_query: Query<Entity, With<Character>>,
     foe_query: Query<Entity, With<Enemy>>,
 ) {
-    let Ok(presence_layer) = map_query.get_single() else {
+    let Ok(presence_layer) = map_query.single() else {
         return;
     };
     for event in map_events.read() {
@@ -73,7 +73,7 @@ pub fn initiate_combat(
                     initiative_order,
                 ))
                 .id();
-            combat_events.send(CombatEvent::Initiate(entity));
+            combat_events.write(CombatEvent::Initiate(entity));
         }
     }
 }
@@ -103,7 +103,7 @@ pub fn combat_round(
             }
             let damage = rng.gen_range(attack.range()).min(health.current);
             health.current -= damage;
-            combat_events.send(if maybe_target_enemy.is_some() {
+            combat_events.write(if maybe_target_enemy.is_some() {
                 CombatEvent::EnemyDamage(entity, damage)
             } else {
                 CombatEvent::FriendDamage(entity, damage)
@@ -119,7 +119,7 @@ pub fn make_corpses(
     map_query: Query<Entity, With<PresenceLayer>>,
     health_query: Query<(Entity, &Health, Option<&Group>, Option<&Enemy>), Without<Corpse>>,
 ) {
-    let Ok(map_entity) = map_query.get_single() else {
+    let Ok(map_entity) = map_query.single() else {
         return;
     };
     for (entity, health, maybe_member, maybe_enemy) in &health_query {

@@ -1,6 +1,8 @@
 use super::{HexCoord, MapEvent, MapPresence, PresenceLayer};
-use bevy_ecs::{prelude::*, system::EntityCommands, world::Command};
-use bevy_hierarchy::despawn_with_children_recursive;
+use bevy_ecs::{
+    prelude::*,
+    system::{Command, EntityCommands},
+};
 use smallvec::SmallVec;
 
 struct AddMapPresence {
@@ -165,6 +167,6 @@ impl Command for DespawnPresence {
             }
         }
 
-        despawn_with_children_recursive(world, self.presence, false);
+        world.despawn(self.presence);
     }
 }

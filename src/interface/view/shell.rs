@@ -175,6 +175,7 @@ impl ViewTemplate for ToolbarItem {
         Button::new()
             .on_click(
                 cx.create_callback(move |mut action_state: ResMut<ActionState<Action>>| {
+                    action_state.release(&action);
                     action_state.press(&action);
                 }),
             )
@@ -295,12 +296,12 @@ impl ViewTemplate for ShellView {
         Element::<Node>::new()
             .named("Shell screen")
             .style((style_root_container, style_shell_container))
-            .insert(PickingBehavior::IGNORE)
+            .insert(Pickable::IGNORE)
             .children((
                 Element::<Node>::new()
                     .named("Top")
                     .style(style_bar)
-                    .insert(PickingBehavior::IGNORE)
+                    .insert(Pickable::IGNORE)
                     .children((
                         Element::<Node>::new()
                             .named("Outliner")

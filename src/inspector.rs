@@ -1,7 +1,7 @@
 use crate::input::{action_toggle_active, Action};
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::prelude::*;
 use bevy_inspector_egui::{
-    bevy_egui::{egui, EguiContext, EguiPlugin},
+    bevy_egui::{egui, EguiContext, EguiPlugin, EguiPrimaryContextPass, PrimaryEguiContext},
     DefaultInspectorConfigPlugin,
 };
 
@@ -9,9 +9,9 @@ pub struct InspectorPlugin;
 
 impl Plugin for InspectorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((DefaultInspectorConfigPlugin, EguiPlugin))
+        app.add_plugins((DefaultInspectorConfigPlugin, EguiPlugin::default()))
             .add_systems(
-                Update,
+                EguiPrimaryContextPass,
                 inspector_ui.run_if(action_toggle_active(false, Action::ToggleInspector)),
             );
     }
@@ -19,8 +19,8 @@ impl Plugin for InspectorPlugin {
 
 fn inspector_ui(world: &mut World) {
     let Ok(egui_context) = world
-        .query_filtered::<&mut EguiContext, With<PrimaryWindow>>()
-        .get_single(world)
+        .query_filtered::<&mut EguiContext, With<PrimaryEguiContext>>()
+        .single(world)
     else {
         return;
     };
