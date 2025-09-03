@@ -19,7 +19,7 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 clap = { workspace = true, features = ["derive"] }
-criterion = "0.5"
+criterion = "0.7"
 more-asserts = "0.3"
 pprof = { version = "0.14", features = ["flamegraph", "criterion"] }
 rstest = { version = "0.24", default-features = false }
