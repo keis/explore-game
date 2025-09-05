@@ -4000,9 +4000,9 @@ checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 
 [[package]]
 name = "noisy_bevy"
-version = "0.9.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da92b36f3af1e81a7eb06474162a789372bdce2574982c7b8d8c301afe72edb6"
+checksum = "6091c1edbdaeb288e4108f56310c0b3fe597133a0f5be9f39fc54a3940834271"
 dependencies = [
  "bevy",
 ]
