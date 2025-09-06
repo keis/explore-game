@@ -3841,9 +3841,9 @@ dependencies = [
 
 [[package]]
 name = "moonshine-save"
-version = "0.4.0"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38b6e2955c0dbfb0784c3648b5a5c85da0957c435790d253f1263e6d0c1a066b"
+checksum = "09b361d891442074d821cd2896b8b0d2091bc8530a2d867b4ae831c965bdff4e"
 dependencies = [
  "bevy_app",
  "bevy_ecs",

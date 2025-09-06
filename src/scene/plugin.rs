@@ -6,7 +6,6 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_tweening::{component_animator_system, AnimationSystem, TweeningPlugin};
-use moonshine_save::{load::load, static_file};
 
 use super::{camera::*, light::*, save::*, score::*, world::*};
 
@@ -33,19 +32,10 @@ impl Plugin for ScenePlugin {
                 )
                     .chain(),
             )
+            .add_systems(Startup, (spawn_camera, spawn_light, load_saved_scene))
             .add_systems(
-                Startup,
-                (
-                    spawn_camera,
-                    spawn_light,
-                    load(static_file(save_location())),
-                ),
-            )
-            .add_systems(
-                Update, // PreUpdate
-                save_with(filter_with_enabled_components)
-                    .into(static_file(save_location()))
-                    .run_if(action_just_pressed(Action::Save)),
+                Update,
+                handle_save.run_if(action_just_pressed(Action::Save)),
             )
             .add_systems(
                 Update,

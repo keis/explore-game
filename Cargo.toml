@@ -62,7 +62,7 @@ glam.workspace = true
 interpolation = "0.3"
 itertools = { workspace = true }
 leafwing-input-manager = { version = "0.17", features = ["ui", "picking"] }
-moonshine-save = "=0.4.0"
+moonshine-save = "=0.5.2"
 noisy_bevy = "0.9"
 pathfinding = "4"
 platform-dirs = "0.3"

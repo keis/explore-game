@@ -1,22 +1,34 @@
 use crate::{action, actor, creature, input, inventory, structure, terrain, turn};
 use bevy::prelude::*;
 use expl_map;
-use moonshine_save::save::SaveInput;
+use moonshine_save::{
+    load::{LoadWorld, TriggerLoad},
+    save::{SaveWorld, TriggerSave},
+};
 use platform_dirs::AppDirs;
 use std::path::PathBuf;
 
-pub use moonshine_save::{
-    prelude::{save_with, LoadSystem, Save},
-    save::EntityFilter,
-};
+pub use moonshine_save::save::Save;
 
 #[derive(Resource)]
 pub struct Loaded;
+
+pub fn load_saved_scene(mut commands: Commands) {
+    commands.trigger_load(LoadWorld::default_from_file(save_location()))
+}
 
 pub fn maybe_mark_as_loaded(world: &mut World) {
     if world.query::<&expl_map::MapLayout>().iter(world).len() != 0 {
         world.insert_resource(Loaded);
     }
+}
+
+#[allow(deprecated)]
+pub fn handle_save(mut commands: Commands) {
+    let mut save_world = SaveWorld::<With<Save>>::into_file(save_location());
+    save_world.input.components = component_filter();
+    save_world.input.resources = resource_filter();
+    commands.trigger_save(save_world);
 }
 
 pub fn save_location() -> PathBuf {
@@ -25,9 +37,8 @@ pub fn save_location() -> PathBuf {
         .unwrap()
 }
 
-pub fn filter_with_enabled_components(entities: Query<Entity, With<Save>>) -> SaveInput {
-    let entities = EntityFilter::allow(entities);
-    let components = SceneFilter::deny_all()
+pub fn component_filter() -> SceneFilter {
+    SceneFilter::deny_all()
         .allow::<Name>()
         .allow::<Save>()
         .allow::<action::ActionPoints>()
@@ -58,14 +69,9 @@ pub fn filter_with_enabled_components(entities: Query<Entity, With<Save>>) -> Sa
         .allow::<terrain::CrystalDeposit>()
         .allow::<terrain::TerrainId>()
         .allow::<terrain::ZoneDecorations>()
-        .allow::<Transform>();
+        .allow::<Transform>()
+}
 
-    let resources = SceneFilter::deny_all().allow::<turn::Turn>();
-
-    SaveInput {
-        entities,
-        components,
-        resources,
-        ..default()
-    }
+pub fn resource_filter() -> SceneFilter {
+    SceneFilter::deny_all().allow::<turn::Turn>()
 }
