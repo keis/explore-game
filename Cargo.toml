@@ -46,7 +46,7 @@ bevy-inspector-egui = "0.33"
 bevy_mod_billboard = { version = "0.7.0", git = "https://github.com/mcobzarenco/bevy_mod_billboard.git", branch = "migrate-0.16" }
 bevy_mod_outline = { version = "0.10.3" }
 bevy_obj = "0.16"
-bevy_sprite3d = "5.0"
+bevy_sprite3d = "6.0"
 bevy = { version = "0.16", features = ["wayland", "dynamic_linking", "file_watcher", "track_location"] }
 bitflags = "2"
 clap = { workspace = true, features = ["derive"] }
