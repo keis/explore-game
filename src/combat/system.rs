@@ -1,6 +1,7 @@
 use super::{bundle::*, component::*, event::*};
 use crate::{
     actor::{Character, Enemy, Group, GroupCommandsExt, Members},
+    assets::MainAssets,
     creature::{Attack, Corpse, Health},
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
 };
@@ -44,7 +45,7 @@ pub fn initiate_combat(
     mut commands: Commands,
     mut map_events: EventReader<MapEvent>,
     mut combat_events: EventWriter<CombatEvent>,
-    mut combat_params: CombatParams,
+    main_assets: Res<MainAssets>,
     map_query: Query<&PresenceLayer>,
     friend_query: Query<&Members>,
     character_query: Query<Entity, With<Character>>,
@@ -67,11 +68,7 @@ pub fn initiate_combat(
         let initiative_order = friends.iter().chain(foes.iter()).cloned().collect();
         if !friends.is_empty() && !foes.is_empty() {
             let entity = commands
-                .spawn(CombatBundle::new(
-                    &mut combat_params,
-                    *position,
-                    initiative_order,
-                ))
+                .spawn(CombatBundle::new(&main_assets, *position, initiative_order))
                 .id();
             combat_events.write(CombatEvent::Initiate(entity));
         }
