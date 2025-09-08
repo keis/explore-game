@@ -1070,7 +1070,7 @@ dependencies = [
  "approx",
  "bevy_reflect",
  "derive_more",
- "glam",
+ "glam 0.29.3",
  "itertools 0.14.0",
  "libm",
  "rand",
@@ -1112,7 +1112,7 @@ version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8bb60c753b968a2de0fd279b76a3d19517695e771edb4c23575c7f92156315de"
 dependencies = [
- "glam",
+ "glam 0.29.3",
 ]
 
 [[package]]
@@ -1271,7 +1271,7 @@ dependencies = [
  "downcast-rs 2.0.1",
  "erased-serde",
  "foldhash",
- "glam",
+ "glam 0.29.3",
  "petgraph",
  "serde",
  "smallvec",
@@ -2552,7 +2552,7 @@ checksum = "b0a05902cf601ed11d564128448097b98ebe3c6574bd7b6a653a3d56d54aa020"
 dependencies = [
  "const_panic",
  "encase_derive",
- "glam",
+ "glam 0.29.3",
  "thiserror 1.0.69",
 ]
 
@@ -2739,7 +2739,7 @@ name = "expl_hexagon"
 version = "0.1.0"
 dependencies = [
  "bevy_render",
- "glam",
+ "glam 0.30.5",
  "hexasphere",
 ]
 
@@ -2749,7 +2749,7 @@ version = "0.1.0"
 dependencies = [
  "bevy_reflect",
  "disjoint-hash-set",
- "glam",
+ "glam 0.30.5",
  "itertools 0.14.0",
  "serde_with",
  "thiserror 1.0.69",
@@ -2814,7 +2814,7 @@ dependencies = [
  "expl_map",
  "expl_wfc",
  "futures-lite",
- "glam",
+ "glam 0.30.5",
  "interpolation",
  "itertools 0.14.0",
  "leafwing-input-manager",
@@ -3105,6 +3105,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "glam"
+version = "0.30.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2d1aab06663bdce00d6ca5e5ed586ec8d18033a771906c993a1e3755b368d85"
+
+[[package]]
 name = "glob"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3312,7 +3318,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "741ab88b8cc670443da777c3daab02cebf5a3caccfc04e3c052f55c94d1643fe"
 dependencies = [
  "constgebra",
- "glam",
+ "glam 0.29.3",
 ]
 
 [[package]]
@@ -5365,7 +5371,7 @@ version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b882be9bf6b37258bfba80ed5b5eeccccd6700bfbaca202bbd53e4c13bf3daa7"
 dependencies = [
- "glam",
+ "glam 0.30.5",
 ]
 
 [[package]]
