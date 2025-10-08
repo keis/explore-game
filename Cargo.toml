@@ -63,7 +63,7 @@ interpolation = "0.3"
 itertools = { workspace = true }
 leafwing-input-manager = { version = "0.17", features = ["ui", "picking"] }
 moonshine-save = "=0.5.2"
-noisy_bevy = "0.9"
+noisy_bevy = "0.10"
 pathfinding = "4"
 platform-dirs = "0.3"
 rand = { workspace = true }
