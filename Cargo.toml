@@ -3,13 +3,13 @@ members = [".", "crates/*"]
 default-members = [".", "crates/*"]
 
 [workspace.dependencies]
-bevy_app = "0.16"
+bevy_app = "0.18"
 bevy_asset = "0.16"
-bevy_derive = "0.16"
-bevy_ecs = "0.16"
+bevy_derive = "0.18"
+bevy_ecs = "0.18"
 bevy_hierarchy = "0.16"
-bevy_log = "0.16"
-bevy_reflect = "0.16"
+bevy_log = "0.18"
+bevy_reflect = "0.18"
 bevy_render = "0.16"
 clap = "4.5"
 expl_codex = { version = "0.1.0", path = "crates/expl_codex" }
