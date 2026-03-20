@@ -45,7 +45,7 @@ pub fn component_filter() -> SceneFilter {
         .allow::<actor::ActorId>()
         .allow::<actor::Character>()
         .allow::<actor::Enemy>()
-        .allow::<actor::Group>()
+        .allow::<actor::MemberOf>()
         .allow::<actor::Members>()
         .allow::<actor::Party>()
         .allow::<actor::Slide>()

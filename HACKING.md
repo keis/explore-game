@@ -1,6 +1,6 @@
 # Conventions
 
-Components are named so that they are something the entity HAS rather than
+Components are named so that they are some property the entity HAS rather than
 something the entity IS, e.g `Parent` is a component you would expect a *child*
 in a hierarchy to have that references the parents.
 

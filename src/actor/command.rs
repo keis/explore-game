@@ -49,12 +49,12 @@ impl GroupCommandsExt for EntityCommands<'_> {
 
 fn update_group_member(world: &mut World, member: Entity, new_group: Entity) -> Option<Entity> {
     let mut member = world.entity_mut(member);
-    if let Some(mut group_member) = member.get_mut::<Group>() {
+    if let Some(mut group_member) = member.get_mut::<MemberOf>() {
         let previous = group_member.get();
-        *group_member = Group(new_group);
+        *group_member = MemberOf(new_group);
         Some(previous)
     } else {
-        member.insert(Group(new_group));
+        member.insert(MemberOf(new_group));
         None
     }
 }

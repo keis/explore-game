@@ -20,7 +20,7 @@ impl Plugin for ActorPlugin {
             .register_type::<Character>()
             .register_type::<Enemy>()
             .register_type::<Members>()
-            .register_type::<Group>()
+            .register_type::<MemberOf>()
             .register_type::<Party>()
             .register_type::<Slide>()
             .add_observer(despawn_empty_party.map(error::warn))

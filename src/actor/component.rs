@@ -38,16 +38,16 @@ pub struct Members(#[entities] pub SmallVec<[Entity; 8]>);
 
 #[derive(Component, MapEntities, Reflect)]
 #[reflect(Component, MapEntities)]
-pub struct Group(#[entities] pub(super) Entity);
+pub struct MemberOf(#[entities] pub(super) Entity);
 
-impl Group {
+impl MemberOf {
     #[inline(always)]
     pub fn get(&self) -> Entity {
         self.0
     }
 }
 
-impl FromWorld for Group {
+impl FromWorld for MemberOf {
     #[inline(always)]
     fn from_world(_world: &mut World) -> Self {
         Self(Entity::PLACEHOLDER)
