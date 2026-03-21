@@ -11,7 +11,7 @@ pub use queue::{GameAction, GameActionQueue, GameActionType};
 #[cfg(test)]
 mod tests {
     use super::{ActionPlugin, ActionPoints};
-    use crate::actor::{GroupCommandsExt, Members};
+    use crate::actor::{GroupCommandsExt, Members, SlideEvent};
     use bevy::prelude::*;
     use rstest::*;
 
@@ -19,6 +19,7 @@ mod tests {
     fn app() -> App {
         let mut app = App::new();
         app.add_plugins(ActionPlugin);
+        app.add_event::<SlideEvent>();
         app
     }
 
@@ -39,7 +40,7 @@ mod tests {
             .commands()
             .entity(group_entity)
             .add_members(&[speedy_member]);
-        app.world_mut().flush();
+        app.update();
 
         let (group_action_points, _members) = app
             .world_mut()
@@ -59,7 +60,7 @@ mod tests {
             .commands()
             .entity(group_entity)
             .add_members(&[slow_member]);
-        app.world_mut().flush();
+        app.update();
 
         let (group_action_points, _members) = app
             .world_mut()

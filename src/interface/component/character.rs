@@ -62,7 +62,7 @@ impl ViewTemplate for CharacterList {
             .0
             .iter()
             .flat_map(|&entity| cx.use_component::<Members>(entity))
-            .flat_map(|members| members.iter().cloned())
+            .flat_map(|members| members.iter())
             .collect();
         Element::<Node>::new()
             .style(style_character_list)

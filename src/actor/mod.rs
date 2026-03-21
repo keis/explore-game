@@ -117,11 +117,6 @@ mod tests {
             .remove_members(&[member_entity]);
         app.world_mut().flush();
 
-        let group = app
-            .world_mut()
-            .query::<&Members>()
-            .get(app.world(), group_entity)
-            .unwrap();
-        assert_eq!(group.len(), 0);
+        assert!(!app.world().entity(group_entity).contains::<Members>());
     }
 }

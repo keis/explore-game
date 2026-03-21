@@ -97,7 +97,9 @@ impl ViewTemplate for PartyDetails {
         let assets = cx.use_resource::<InterfaceAssets>();
         let party = cx.use_component::<Party>(self.target).unwrap();
         let action_points = cx.use_component::<ActionPoints>(self.target).unwrap();
-        let members = cx.use_component::<Members>(self.target).unwrap();
+        let members = cx
+            .use_component::<Members>(self.target)
+            .map_or(0, |m| m.len());
         let inventory = cx.use_component::<Inventory>(self.target).unwrap();
 
         (
@@ -109,7 +111,7 @@ impl ViewTemplate for PartyDetails {
                     assets.footsteps_icon.clone(),
                     format!("{}", action_points.current),
                 ),
-                StatDisplay::new(assets.person_icon.clone(), format!("{}", members.len())),
+                StatDisplay::new(assets.person_icon.clone(), format!("{}", members)),
                 StatDisplay::new(
                     assets.crystals_icon.clone(),
                     format!("{}", inventory.count_item(Inventory::CRYSTAL)),

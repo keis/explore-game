@@ -32,11 +32,13 @@ pub struct Party {
     pub name: String,
 }
 
-#[derive(Component, MapEntities, Reflect, Default, Deref)]
+#[derive(Component, MapEntities, Reflect, Clone, Default, Deref)]
+#[relationship_target(relationship = MemberOf)]
 #[reflect(Component, MapEntities)]
-pub struct Members(#[entities] pub SmallVec<[Entity; 8]>);
+pub struct Members(#[entities] SmallVec<[Entity; 8]>);
 
 #[derive(Component, MapEntities, Reflect)]
+#[relationship(relationship_target = Members)]
 #[reflect(Component, MapEntities)]
 pub struct MemberOf(#[entities] pub(super) Entity);
 

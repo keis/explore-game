@@ -70,9 +70,8 @@ impl Plugin for ActionPlugin {
             .add_event::<ActionPointsConsumed>()
             .init_schedule(ActionUpdate)
             .register_type::<ActionPoints>()
-            .add_observer(update_action_points_on_member_added)
-            .add_observer(update_action_points_on_member_removed)
             .add_observer(propagate_action_points_consumed)
+            .add_systems(Update, update_action_points_on_members_changed)
             .add_systems(
                 OnEnter(TurnState::Player),
                 (reset_action_points, reset_group_action_points)

@@ -77,18 +77,18 @@ pub fn update_enemy_visibility(
 
 #[allow(clippy::type_complexity)]
 pub fn despawn_empty_party(
-    trigger: Trigger<MemberRemoved>,
-    party_query: Query<&Members, (With<Party>, With<MapPresence>)>,
+    trigger: Trigger<OnRemove, Members>,
+    party_query: Query<(&Party, &MapPresence)>,
     map_query: Query<Entity, With<PresenceLayer>>,
     mut commands: Commands,
 ) -> Result<(), ExplError> {
-    let map_entity = map_query.single()?;
-    let members = party_query.get(trigger.target())?;
-    if members.is_empty() {
-        commands
-            .entity(map_entity)
-            .despawn_presence(trigger.target());
+    if party_query.get(trigger.target()).is_err() {
+        return Ok(());
     }
+    let map_entity = map_query.single()?;
+    commands
+        .entity(map_entity)
+        .despawn_presence(trigger.target());
     Ok(())
 }
 
