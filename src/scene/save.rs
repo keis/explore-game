@@ -1,3 +1,4 @@
+use super::plugin::SceneState;
 use crate::{action, actor, creature, input, inventory, structure, terrain, turn};
 use bevy::prelude::*;
 use expl_map;
@@ -16,6 +17,7 @@ use std::path::PathBuf;
 /// entities indistinguishable for scene resets, which despawn `With<Save>`.
 #[derive(Component, Reflect, Default, Debug, Clone, Serialize, Deserialize)]
 #[reflect(Component, Serialize, Deserialize)]
+#[require(DespawnOnEnter::<SceneState>(SceneState::Reset))]
 pub struct Save;
 
 #[derive(Resource)]
@@ -137,6 +139,12 @@ mod tests {
             .iter(app.world())
             .collect();
         assert_eq!(marked.len(), 1);
+        let scoped: Vec<Entity> = app
+            .world_mut()
+            .query_filtered::<Entity, With<DespawnOnEnter<SceneState>>>()
+            .iter(app.world())
+            .collect();
+        assert_eq!(scoped, marked);
         std::fs::remove_file(PATH).unwrap();
     }
 }

@@ -1,6 +1,6 @@
 use crate::{
     assets::AssetState,
-    cleanup, error,
+    error,
     input::{action_just_pressed, Action},
     turn::{TurnSet, TurnState},
 };
@@ -31,7 +31,6 @@ impl Plugin for ScenePlugin {
                     SceneSet::Terrain,
                     SceneSet::TerrainFlush,
                     SceneSet::Populate,
-                    SceneSet::Cleanup,
                 )
                     .chain(),
             )
@@ -59,11 +58,7 @@ impl Plugin for ScenePlugin {
             )
             .add_systems(
                 OnEnter(SceneState::Reset),
-                (
-                    cleanup::despawn_all::<(With<Save>, Without<ChildOf>)>,
-                    reset_turn_counter,
-                    create_map_seed,
-                ),
+                (reset_turn_counter, create_map_seed),
             )
             .add_systems(
                 OnEnter(SceneState::Active),
@@ -83,7 +78,6 @@ impl Plugin for ScenePlugin {
                         spawn_safe_haven.map(error::warn),
                     )
                         .in_set(SceneSet::Populate),
-                    cleanup_map_generation_task.in_set(SceneSet::Cleanup),
                 ),
             );
     }
@@ -96,7 +90,6 @@ pub enum SceneSet {
     Terrain,
     TerrainFlush,
     Populate,
-    Cleanup,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, States, Default)]

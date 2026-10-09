@@ -4,7 +4,6 @@ pub mod action;
 pub mod actor;
 pub mod assets;
 pub mod camera;
-pub mod cleanup;
 pub mod color;
 pub mod combat;
 pub mod creature;
