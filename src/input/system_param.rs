@@ -65,18 +65,20 @@ where
         if let Ok((entity, selection)) = self.selection_query.get(entity) {
             if self.action_state.pressed(&Action::MultiSelect) {
                 if selection.is_selected {
-                    self.commands.trigger_targets(Deselect, entity);
+                    self.commands.trigger(Deselect { entity });
                 } else {
-                    self.commands.trigger_targets(Select, entity);
+                    self.commands.trigger(Select { entity });
                 }
             } else {
                 for (other_entity, selection) in self.selection_query.iter() {
                     if other_entity != entity && selection.is_selected {
-                        self.commands.trigger_targets(Deselect, other_entity);
+                        self.commands.trigger(Deselect {
+                            entity: other_entity,
+                        });
                     }
                 }
                 if !selection.is_selected {
-                    self.commands.trigger_targets(Select, entity);
+                    self.commands.trigger(Select { entity });
                 }
             }
         }

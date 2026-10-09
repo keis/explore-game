@@ -8,8 +8,8 @@ pub struct CombatPlugin;
 
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<CombatEvent>()
-            .add_systems(ActionUpdate, initiate_combat.run_if(on_event::<MapEvent>))
+        app.add_message::<CombatEvent>()
+            .add_systems(ActionUpdate, initiate_combat.run_if(on_message::<MapEvent>))
             .add_systems(
                 Update,
                 (

@@ -8,7 +8,7 @@ use crate::{
     scene::save,
     ExplError,
 };
-use bevy::{color::palettes::css, pbr::NotShadowCaster, prelude::*};
+use bevy::{color::palettes::css, light::NotShadowCaster, prelude::*};
 use expl_map::{Fog, MapCommandsExt, MapPresence, PresenceLayer, ViewRadius};
 
 #[allow(clippy::type_complexity)]

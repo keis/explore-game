@@ -1,6 +1,6 @@
 use super::{action::*, component::*, resource::*, system::*};
 use crate::{error, turn};
-use bevy::{picking::PickSet, prelude::*};
+use bevy::{picking::PickingSystems, prelude::*};
 use leafwing_input_manager::{
     common_conditions::action_just_pressed, plugin::InputManagerSystem, prelude::*,
 };
@@ -25,7 +25,7 @@ impl Plugin for InputPlugin {
                     InputSet::Selection,
                     InputSet::PostSelection,
                 )
-                    .in_set(PickSet::Last)
+                    .in_set(PickingSystems::Last)
                     .chain(),
             )
             .register_type::<Selection>()

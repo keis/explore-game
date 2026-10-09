@@ -1,5 +1,5 @@
 use super::component::*;
-use bevy::pbr::NotShadowCaster;
+use bevy::light::NotShadowCaster;
 use bevy::prelude::*;
 
 pub type PathDisplayParams<'w> = (

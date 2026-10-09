@@ -4,7 +4,7 @@ use crate::{
     material::{DecorationBuffer, DecorationMaterial, TerrainBuffer, WaterMaterial, ZoneMaterial},
     role::Role,
 };
-use bevy::{pbr::NotShadowCaster, prelude::*};
+use bevy::{light::NotShadowCaster, prelude::*};
 use expl_codex::{Codex, Id};
 use expl_hexgrid::Neighbours;
 use expl_map::{Fog, HexCoord, MapPosition};

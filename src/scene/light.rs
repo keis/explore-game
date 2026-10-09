@@ -1,6 +1,7 @@
 use crate::{turn::Period, ExplError};
+use bevy::ecs::change_detection::Mut;
 use bevy::prelude::*;
-use bevy_tweening::{Animator, Lens, Targetable, Tracks, Tween};
+use bevy_tweening::{Lens, Tween, TweenAnim};
 use std::time::Duration;
 
 // Yoinked from bevy_tweening
@@ -27,20 +28,24 @@ pub struct LightIlluminanceLens {
 }
 
 impl Lens<DirectionalLight> for LightIlluminanceLens {
-    fn lerp(&mut self, target: &mut dyn Targetable<DirectionalLight>, ratio: f32) {
-        target.illuminance = self.start.lerp(self.end, ratio);
+    fn lerp(&mut self, target: Mut<'_, DirectionalLight>, ratio: f32) {
+        target.into_inner().illuminance = self.start.lerp(self.end, ratio);
     }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-struct LightColorLens {
-    pub start: Color,
-    pub end: Color,
+struct LightLens {
+    pub start_illuminance: f32,
+    pub end_illuminance: f32,
+    pub start_color: Color,
+    pub end_color: Color,
 }
 
-impl Lens<DirectionalLight> for LightColorLens {
-    fn lerp(&mut self, target: &mut dyn Targetable<DirectionalLight>, ratio: f32) {
-        target.color = self.start.lerp(&self.end, ratio);
+impl Lens<DirectionalLight> for LightLens {
+    fn lerp(&mut self, target: Mut<'_, DirectionalLight>, ratio: f32) {
+        let target = target.into_inner();
+        target.illuminance = self.start_illuminance.lerp(self.end_illuminance, ratio);
+        target.color = self.start_color.lerp(&self.end_color, ratio);
     }
 }
 
@@ -57,7 +62,7 @@ pub fn spawn_light(mut commands: Commands) {
             rotation: Quat::from_rotation_x(-std::f32::consts::FRAC_PI_3),
             ..default()
         },
-        Animator::new(Tween::new(
+        TweenAnim::new(Tween::new(
             EaseFunction::QuadraticIn,
             Duration::from_secs(2),
             LightIlluminanceLens {
@@ -70,33 +75,26 @@ pub fn spawn_light(mut commands: Commands) {
 
 pub fn apply_period_light(
     period: Res<Period>,
-    mut light_query: Query<(&DirectionalLight, &mut Animator<DirectionalLight>)>,
+    light_query: Query<(Entity, &DirectionalLight)>,
+    mut commands: Commands,
 ) -> Result<(), ExplError> {
-    let (light, mut animator) = light_query.single_mut()?;
+    let (entity, light) = light_query.single()?;
     let (illuminance, color) = match *period {
         Period::Morning => (8_000.0, Color::srgb(1.0, 0.9, 0.9)),
         Period::Day => (11_000.0, Color::srgb(1.0, 1.0, 1.0)),
         Period::Evening => (10_000.0, Color::srgb(1.0, 0.8, 0.8)),
         Period::Night => (6_000.0, Color::srgb(0.8, 0.8, 1.0)),
     };
-    let tween = Tracks::new([
-        Tween::new(
-            EaseFunction::QuadraticInOut,
-            Duration::from_secs(2),
-            LightIlluminanceLens {
-                start: light.illuminance,
-                end: illuminance,
-            },
-        ),
-        Tween::new(
-            EaseFunction::QuadraticInOut,
-            Duration::from_secs(2),
-            LightColorLens {
-                start: light.color,
-                end: color,
-            },
-        ),
-    ]);
-    animator.set_tweenable(tween);
+    let tween = Tween::new(
+        EaseFunction::QuadraticInOut,
+        Duration::from_secs(2),
+        LightLens {
+            start_illuminance: light.illuminance,
+            end_illuminance: illuminance,
+            start_color: light.color,
+            end_color: color,
+        },
+    );
+    commands.entity(entity).insert(TweenAnim::new(tween));
     Ok(())
 }

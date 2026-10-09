@@ -13,15 +13,15 @@ pub struct DataBindingPlugin;
 impl Plugin for DataBindingPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<DataBindings>()
-            .add_event::<DataBindingExpired>()
+            .add_message::<DataBindingExpired>()
             .add_systems(
                 PostUpdate,
-                remove_expired_data_bindings.run_if(on_event::<DataBindingExpired>),
+                remove_expired_data_bindings.run_if(on_message::<DataBindingExpired>),
             );
     }
 }
 
-#[derive(Event)]
+#[derive(Message)]
 struct DataBindingExpired {
     source: Entity,
     sink: Entity,
@@ -99,7 +99,7 @@ where
 {
     source_query: Query<'w, 's, (Entity, &'static DataBindings, Source), Filter>,
     sink_query: Query<'w, 's, (Entity, Option<Sink>)>,
-    expired_events: EventWriter<'w, DataBindingExpired>,
+    expired_events: MessageWriter<'w, DataBindingExpired>,
 }
 
 impl<Source, Sink, Filter> DataBindingUpdate<'_, '_, Source, Sink, Filter>
@@ -111,7 +111,7 @@ where
     /// Apply the given function `f` to each binding of each matching source entity.
     pub fn for_each<F>(&mut self, mut f: F)
     where
-        F: FnMut(&Source::Item<'_>, &mut Sink::Item<'_>),
+        F: FnMut(&Source::Item<'_, '_>, &mut Sink::Item<'_, '_>),
     {
         for (source, bindings, source_data) in &self.source_query {
             for &sink in bindings {
@@ -131,7 +131,7 @@ where
 }
 
 fn remove_expired_data_bindings(
-    mut expired_events: EventReader<DataBindingExpired>,
+    mut expired_events: MessageReader<DataBindingExpired>,
     mut data_bindings_query: Query<&mut DataBindings>,
 ) {
     for DataBindingExpired { source, sink } in expired_events.read() {

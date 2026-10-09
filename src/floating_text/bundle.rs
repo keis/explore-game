@@ -41,7 +41,7 @@ impl FloatingTextBundle {
                 ..default()
             },
             text_color: TextColor(color),
-            text_layout: TextLayout::new_with_justify(JustifyText::Center),
+            text_layout: TextLayout::new_with_justify(Justify::Center),
             ..default()
         }
     }

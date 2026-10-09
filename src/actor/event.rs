@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Event)]
+#[derive(Message)]
 pub enum SlideEvent {
     Stopped,
 }

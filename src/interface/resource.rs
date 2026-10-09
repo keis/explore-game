@@ -5,11 +5,11 @@ use std::marker::PhantomData;
 pub struct Index<T: Component>(pub Vec<Entity>, PhantomData<T>);
 
 impl<T: Component> Index<T> {
-    pub fn on_add(trigger: Trigger<OnAdd, T>, mut index: ResMut<Self>) {
-        index.0.push(trigger.target())
+    pub fn on_add(trigger: On<Add, T>, mut index: ResMut<Self>) {
+        index.0.push(trigger.entity)
     }
 
-    pub fn on_remove(trigger: Trigger<OnRemove, T>, mut index: ResMut<Self>) {
-        index.0.retain(|&e| e != trigger.target());
+    pub fn on_remove(trigger: On<Remove, T>, mut index: ResMut<Self>) {
+        index.0.retain(|&e| e != trigger.entity);
     }
 }

@@ -5,7 +5,7 @@ use crate::{
 };
 use bevy::{
     prelude::*,
-    window::{CursorGrabMode, PrimaryWindow},
+    window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
 use expl_hexgrid::HexCoord;
 
@@ -16,11 +16,12 @@ impl Plugin for CameraControlPlugin {
         app.add_systems(
             Update,
             (
-                camera_control.map(error::warn).before(camera_movement),
-                camera_target.before(camera_movement),
+                camera_control.map(error::warn),
+                camera_target,
                 cursor_grab.map(error::warn),
                 camera_movement.map(error::warn),
-            ),
+            )
+                .chain(),
         );
     }
 }
@@ -174,19 +175,19 @@ fn camera_movement(
 }
 
 fn cursor_grab(
-    mut window_query: Query<&mut Window, With<PrimaryWindow>>,
+    mut cursor_options_query: Query<&mut CursorOptions, With<PrimaryWindow>>,
     action_state: Res<ActionState<Action>>,
 ) -> Result<(), ExplError> {
-    let mut window = window_query.single_mut()?;
+    let mut cursor_options = cursor_options_query.single_mut()?;
 
     if action_state.just_pressed(&Action::PanCamera) {
-        window.cursor_options.visible = false;
-        window.cursor_options.grab_mode = CursorGrabMode::Locked;
+        cursor_options.visible = false;
+        cursor_options.grab_mode = CursorGrabMode::Locked;
     }
 
     if action_state.just_released(&Action::PanCamera) {
-        window.cursor_options.visible = true;
-        window.cursor_options.grab_mode = CursorGrabMode::None;
+        cursor_options.visible = true;
+        cursor_options.grab_mode = CursorGrabMode::None;
     }
 
     Ok(())
@@ -211,10 +212,11 @@ mod tests {
         app.add_systems(
             Update,
             (
-                camera_control.map(error::warn).before(camera_movement),
-                camera_target.before(camera_movement),
+                camera_control.map(error::warn),
+                camera_target,
                 camera_movement.map(error::warn),
-            ),
+            )
+                .chain(),
         );
 
         app.init_resource::<Time>();

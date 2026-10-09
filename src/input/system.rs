@@ -13,24 +13,24 @@ use bevy::prelude::*;
 use bevy_mod_outline::OutlineVolume;
 use expl_map::{MapPosition, MapPresence};
 
-pub fn map_position_added(trigger: Trigger<OnAdd, MapPosition>, mut commands: Commands) {
+pub fn map_position_added(trigger: On<Add, MapPosition>, mut commands: Commands) {
     commands
-        .entity(trigger.target())
+        .entity(trigger.entity)
         .observe(handle_zone_click)
         .observe(handle_zone_over.map(error::warn))
         .observe(handle_zone_out.map(error::warn));
 }
 
-pub fn selection_added(trigger: Trigger<OnAdd, Selection>, mut commands: Commands) {
+pub fn selection_added(trigger: On<Add, Selection>, mut commands: Commands) {
     commands
-        .entity(trigger.target())
+        .entity(trigger.entity)
         .observe(handle_selection_click)
         .observe(handle_selection_over.map(error::warn))
         .observe(handle_selection_out.map(error::warn));
 }
 
 pub fn apply_zone_activated_event(
-    trigger: Trigger<ZoneActivated>,
+    trigger: On<ZoneActivated>,
     mut presence_query: Query<(
         Entity,
         &MapPresence,
@@ -47,7 +47,7 @@ pub fn apply_zone_activated_event(
     if !combat_query.is_empty() {
         return Ok(());
     }
-    let target = zone_query.get(trigger.target())?;
+    let target = zone_query.get(trigger.entity)?;
     for (entity, presence, action_points, mut pathguided, _) in presence_query
         .iter_mut()
         .filter(|(_, _, _, _, s)| s.is_selected)
@@ -68,11 +68,11 @@ pub fn apply_zone_activated_event(
 }
 
 pub fn apply_select_event(
-    trigger: Trigger<Select>,
+    trigger: On<Select>,
     mut selection_query: Query<(&mut Selection, Option<&Children>)>,
     mut outline_volume_query: Query<(&mut OutlineVolume, &DefaultOutlineVolume)>,
 ) {
-    let Ok((mut selection, children)) = selection_query.get_mut(trigger.target()) else {
+    let Ok((mut selection, children)) = selection_query.get_mut(trigger.entity) else {
         return;
     };
     selection.is_selected = true;
@@ -84,11 +84,11 @@ pub fn apply_select_event(
 }
 
 pub fn apply_deselect_event(
-    trigger: Trigger<Deselect>,
+    trigger: On<Deselect>,
     mut selection_query: Query<(&mut Selection, Option<&Children>)>,
     mut outline_volume_query: Query<(&mut OutlineVolume, &DefaultOutlineVolume)>,
 ) {
-    let Ok((mut selection, children)) = selection_query.get_mut(trigger.target()) else {
+    let Ok((mut selection, children)) = selection_query.get_mut(trigger.entity) else {
         return;
     };
     selection.is_selected = false;
@@ -99,18 +99,20 @@ pub fn apply_deselect_event(
     }
 }
 
-fn handle_zone_click(trigger: Trigger<Pointer<Click>>, mut commands: Commands) {
-    if trigger.event().button == PointerButton::Primary {
-        commands.trigger_targets(ZoneActivated, trigger.target());
+fn handle_zone_click(trigger: On<Pointer<Click>>, mut commands: Commands) {
+    if trigger.button == PointerButton::Primary {
+        commands.trigger(ZoneActivated {
+            entity: trigger.entity,
+        });
     }
 }
 
 fn handle_zone_over(
-    trigger: Trigger<Pointer<Over>>,
+    trigger: On<Pointer<Over>>,
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     material_query: Query<&MeshMaterial3d<ZoneMaterial>>,
 ) -> Result<(), ExplError> {
-    let handle = material_query.get(trigger.target())?;
+    let handle = material_query.get(trigger.entity)?;
     let material = zone_materials
         .get_mut(handle)
         .ok_or(ExplError::MissingMaterial)?;
@@ -119,11 +121,11 @@ fn handle_zone_over(
 }
 
 fn handle_zone_out(
-    trigger: Trigger<Pointer<Out>>,
+    trigger: On<Pointer<Out>>,
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     material_query: Query<&MeshMaterial3d<ZoneMaterial>>,
 ) -> Result<(), ExplError> {
-    let handle = material_query.get(trigger.target())?;
+    let handle = material_query.get(trigger.entity)?;
     let material = zone_materials
         .get_mut(handle)
         .ok_or(ExplError::MissingMaterial)?;
@@ -131,21 +133,18 @@ fn handle_zone_out(
     Ok(())
 }
 
-fn handle_selection_click(
-    trigger: Trigger<Pointer<Click>>,
-    mut selection_update: SelectionUpdate<()>,
-) {
-    if trigger.event().button == PointerButton::Primary {
-        selection_update.toggle(trigger.target());
+fn handle_selection_click(trigger: On<Pointer<Click>>, mut selection_update: SelectionUpdate<()>) {
+    if trigger.button == PointerButton::Primary {
+        selection_update.toggle(trigger.entity);
     }
 }
 
 fn handle_selection_over(
-    trigger: Trigger<Pointer<Over>>,
+    trigger: On<Pointer<Over>>,
     selection_query: Query<&Children, With<Selection>>,
     mut outline_volume_query: Query<&mut OutlineVolume>,
 ) -> Result<(), ExplError> {
-    let children = selection_query.get(trigger.target())?;
+    let children = selection_query.get(trigger.entity)?;
     for child in children.iter() {
         if let Ok(mut outline_volume) = outline_volume_query.get_mut(child) {
             outline_volume.colour = color::OUTLINE_HOVER;
@@ -155,11 +154,11 @@ fn handle_selection_over(
 }
 
 fn handle_selection_out(
-    trigger: Trigger<Pointer<Out>>,
+    trigger: On<Pointer<Out>>,
     selection_query: Query<(&Selection, &Children)>,
     mut outline_volume_query: Query<(&mut OutlineVolume, &DefaultOutlineVolume)>,
 ) -> Result<(), ExplError> {
-    let (selection, children) = selection_query.get(trigger.target())?;
+    let (selection, children) = selection_query.get(trigger.entity)?;
     for child in children.iter() {
         if let Ok((mut outline_volume, default)) = outline_volume_query.get_mut(child) {
             if selection.is_selected {

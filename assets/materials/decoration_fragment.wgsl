@@ -21,10 +21,10 @@ struct UniformData {
     flags: u32,
 }
 
-@group(2) @binding(0)
+@group(#{MATERIAL_BIND_GROUP}) @binding(0)
 var<storage> decoration_data: array<DecorationData>;
 
-@group(2) @binding(1)
+@group(#{MATERIAL_BIND_GROUP}) @binding(1)
 var<uniform> uniform_data: UniformData;
 
 @fragment

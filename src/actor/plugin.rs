@@ -10,7 +10,7 @@ pub struct ActorPlugin;
 
 impl Plugin for ActorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<SlideEvent>()
+        app.add_message::<SlideEvent>()
             .init_asset::<Codex<Actor>>()
             .init_asset_loader::<CodexLoader<RawActor, Actor>>()
             .register_type::<ActorId>()

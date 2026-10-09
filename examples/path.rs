@@ -12,7 +12,7 @@ fn main() {
     app.insert_resource(ClearColor(Color::srgb(0.1, 0.1, 0.1)))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                resolution: (800.0_f32, 600.0_f32).into(),
+                resolution: (800, 600).into(),
                 title: "Example".to_string(),
                 present_mode: PresentMode::Fifo,
                 resizable: false,

@@ -5,6 +5,7 @@ edition = "2021"
 license = "ISC"
 
 [dependencies]
-bevy_render = { workspace = true }
+bevy_asset = { workspace = true }
+bevy_mesh = { workspace = true }
 glam = { workspace = true }
-hexasphere = "15"
+hexasphere = "16"

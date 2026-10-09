@@ -1,4 +1,4 @@
-use super::{component::*, event::*, queue::*, system::*};
+use super::{component::*, queue::*, system::*};
 use crate::{
     actor::SlideEvent,
     error,
@@ -67,7 +67,6 @@ impl Plugin for ActionPlugin {
         app.insert_resource(GameActionQueue::default())
             .insert_resource(game_action_follow_up_system)
             .insert_resource(game_action_systems)
-            .add_event::<ActionPointsConsumed>()
             .init_schedule(ActionUpdate)
             .register_type::<ActionPoints>()
             .add_observer(propagate_action_points_consumed)
@@ -83,7 +82,7 @@ impl Plugin for ActionPlugin {
                 (
                     (
                         apply_action.map(error::warn).run_if(has_ready_action),
-                        handle_slide_stopped.run_if(on_event::<SlideEvent>),
+                        handle_slide_stopped.run_if(on_message::<SlideEvent>),
                         resolve_action.map(error::warn).run_if(has_resolved_action),
                     )
                         .chain(),

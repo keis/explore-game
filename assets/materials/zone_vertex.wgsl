@@ -16,10 +16,10 @@
     ZONE_FLAGS_OUTER_VISIBLE_NE_BIT
 }
 
-@group(2) @binding(0)
+@group(#{MATERIAL_BIND_GROUP}) @binding(0)
 var<storage> terrain_data: array<TerrainData>;
 
-@group(2) @binding(1)
+@group(#{MATERIAL_BIND_GROUP}) @binding(1)
 var<uniform> uniform_data: UniformData;
 
 fn corner(self_value: f32, a_value: f32, b_value: f32) -> f32 {

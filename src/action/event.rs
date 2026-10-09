@@ -1,4 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Event)]
-pub struct ActionPointsConsumed;
+#[derive(EntityEvent)]
+pub struct ActionPointsConsumed {
+    pub entity: Entity,
+}

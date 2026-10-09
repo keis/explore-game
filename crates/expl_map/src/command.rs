@@ -110,8 +110,8 @@ impl Command for MoveMapPresence {
             presence.position = self.position;
         }
 
-        if let Some(mut events) = world.get_resource_mut::<Events<MapEvent>>() {
-            events.send(MapEvent::PresenceMoved {
+        if let Some(mut messages) = world.get_resource_mut::<Messages<MapEvent>>() {
+            messages.write(MapEvent::PresenceMoved {
                 map: self.map,
                 presence: self.presence,
                 position: self.position,
@@ -137,8 +137,8 @@ impl Command for AddMapPresence {
                 });
             }
 
-            if let Some(mut events) = world.get_resource_mut::<Events<MapEvent>>() {
-                events.send(MapEvent::PresenceAdded {
+            if let Some(mut messages) = world.get_resource_mut::<Messages<MapEvent>>() {
+                messages.write(MapEvent::PresenceAdded {
                     map: self.map,
                     presence,
                     position: self.position,
@@ -158,8 +158,8 @@ impl Command for DespawnPresence {
             if let Some(mut map) = world.entity_mut(self.map).get_mut::<PresenceLayer>() {
                 map.remove_presence(position, self.presence);
             }
-            if let Some(mut events) = world.get_resource_mut::<Events<MapEvent>>() {
-                events.send(MapEvent::PresenceRemoved {
+            if let Some(mut messages) = world.get_resource_mut::<Messages<MapEvent>>() {
+                messages.write(MapEvent::PresenceRemoved {
                     map: self.map,
                     presence: self.presence,
                     position,

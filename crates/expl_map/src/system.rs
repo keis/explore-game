@@ -1,10 +1,10 @@
 use super::{component::*, event::*};
+use bevy_camera::visibility::Visibility;
 use bevy_ecs::prelude::*;
 use bevy_log::info;
-use bevy_render::view::visibility::Visibility;
 
 pub fn log_moves(
-    mut map_events: EventReader<MapEvent>,
+    mut map_events: MessageReader<MapEvent>,
     presence_query: Query<&MapPresence>,
     presence_layer_query: Query<&PresenceLayer>,
 ) {

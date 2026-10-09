@@ -1,8 +1,5 @@
-use bevy_render::{
-    mesh::{Indices, Meshable, PrimitiveTopology},
-    prelude::*,
-    render_asset::RenderAssetUsages,
-};
+use bevy_asset::RenderAssetUsages;
+use bevy_mesh::{Indices, Mesh, MeshBuilder, Meshable, PrimitiveTopology};
 use glam::Vec3A;
 use hexasphere::{interpolation, BaseShape, Subdivided, Triangle};
 use std::iter;
@@ -150,7 +147,7 @@ mod consts {
 #[cfg(test)]
 mod tests {
     use super::{Hexagon, SubdividedHexagon};
-    use bevy_render::mesh::{Mesh, MeshBuilder, Meshable};
+    use bevy_mesh::{Mesh, MeshBuilder, Meshable};
 
     #[test]
     fn base_hexagon() {

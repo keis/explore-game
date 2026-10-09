@@ -23,7 +23,7 @@ pub use system_param::*;
 
 #[cfg(test)]
 mod tests {
-    use super::{action::*, system::*, Action, ActionState, Deselect, Select, Selection};
+    use super::{action::*, system::*, Action, ActionState, Selection};
     use crate::{action::ActionPoints, camera::CameraControl, error, test_fixture::spawn_game_map};
     use bevy::prelude::*;
     use expl_map::MapPresence;
@@ -34,8 +34,6 @@ mod tests {
         let mut app = App::new();
         spawn_game_map(&mut app);
         app.insert_resource(ActionState::<Action>::default());
-        app.add_event::<Select>();
-        app.add_event::<Deselect>();
         app.world_mut().spawn(CameraControl::default());
         app.world_mut().spawn((
             MapPresence {

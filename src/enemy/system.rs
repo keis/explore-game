@@ -7,7 +7,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use expl_map::{HexCoord, MapPresence, PresenceLayer, ViewRadius, ZoneLayer};
-use rand::{seq::SliceRandom, thread_rng};
+use rand::{rng, seq::SliceRandom};
 
 pub fn move_enemy(
     mut queue: ResMut<GameActionQueue>,
@@ -18,7 +18,7 @@ pub fn move_enemy(
 ) -> Result<(), ExplError> {
     let (zone_layer, presence_layer) = map_query.single()?;
     let pf = path_finder.get()?;
-    let mut rng = thread_rng();
+    let mut rng = rng();
     for (entity, presence, view_radius) in &enemy_query {
         if let Some(target) = target.closest_in_view(presence.position, view_radius) {
             let Some(path) = pf.find_path(presence.position, target.position) else {

@@ -85,7 +85,7 @@ impl ViewTemplate for SelectedTabHeaderIcon {
         let campfire_icon = assets.campfire_icon.clone();
 
         cx.create_observer(
-            move |_click: Trigger<Pointer<Click>>, mut world: DeferredWorld| {
+            move |_click: On<Pointer<Click>>, mut world: DeferredWorld| {
                 focused.set(&mut world, Some(target));
             },
             id,
