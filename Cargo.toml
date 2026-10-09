@@ -18,7 +18,7 @@ expl_hexagon = { version = "0.1.0", path = "crates/expl_hexagon" }
 expl_hexgrid = { version = "0.1.0", path = "crates/expl_hexgrid", features = ["bevy-reflect"] }
 expl_map = { version = "0.1.0", path = "crates/expl_map" }
 expl_wfc = { version = "0.1.0", path = "crates/expl_wfc" }
-glam = "0.29"
+glam = "0.30"
 itertools = "0.14"
 rand = "0.8"
 serde = "1.0"
