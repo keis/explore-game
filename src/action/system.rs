@@ -1,8 +1,7 @@
 use super::{component::ActionPoints, event::*, plugin::ActionUpdate, queue::*};
 use crate::{
     actor::{
-        ActorCodex, ActorParams, GroupCommandsExt, MemberAdded, MemberRemoved, Members, Party,
-        PartyBundle, Slide, SlideEvent,
+        ActorCodex, ActorParams, GroupCommandsExt, Members, Party, PartyBundle, Slide, SlideEvent,
     },
     combat::CombatEvent,
     inventory::Inventory,
@@ -187,23 +186,12 @@ pub fn reset_group_action_points(
     }
 }
 
-pub fn update_action_points_on_member_added(
-    trigger: Trigger<MemberAdded>,
-    mut action_points_query: Query<(&Members, &mut ActionPoints)>,
-    member_action_points_query: Query<&ActionPoints, Without<Members>>,
+pub fn update_action_points_on_members_changed(
+    mut group_changed: Query<(&Members, &mut ActionPoints), Changed<Members>>,
+    member_action_points: Query<&ActionPoints, Without<Members>>,
 ) {
-    if let Ok((members, mut action_points)) = action_points_query.get_mut(trigger.target()) {
-        _update_action_points(members, &mut action_points, &member_action_points_query);
-    }
-}
-
-pub fn update_action_points_on_member_removed(
-    trigger: Trigger<MemberRemoved>,
-    mut action_points_query: Query<(&Members, &mut ActionPoints)>,
-    member_action_points_query: Query<&ActionPoints, Without<Members>>,
-) {
-    if let Ok((members, mut action_points)) = action_points_query.get_mut(trigger.target()) {
-        _update_action_points(members, &mut action_points, &member_action_points_query);
+    for (members, mut action_points) in &mut group_changed {
+        _update_action_points(members, &mut action_points, &member_action_points);
     }
 }
 
@@ -215,7 +203,7 @@ pub fn propagate_action_points_consumed(
     let Ok(members) = group_query.get(trigger.target()) else {
         return;
     };
-    let mut iter = action_points_query.iter_many_mut(&members.0);
+    let mut iter = action_points_query.iter_many_mut(members.iter());
     while let Some(mut action_points) = iter.fetch_next() {
         action_points.consume().unwrap();
     }
@@ -458,7 +446,7 @@ pub fn handle_merge_party(
             continue;
         }
         inventory.take_all(&mut party_inventory);
-        characters.append(&mut members.0.clone());
+        characters.insert_many(0, members.iter());
     }
     let (mut party_inventory, _, _) = party_query.get_mut(action.target()?)?;
     party_inventory.take_all(&mut inventory);

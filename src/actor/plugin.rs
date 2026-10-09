@@ -11,8 +11,6 @@ pub struct ActorPlugin;
 impl Plugin for ActorPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SlideEvent>()
-            .add_event::<MemberAdded>()
-            .add_event::<MemberRemoved>()
             .init_asset::<Codex<Actor>>()
             .init_asset_loader::<CodexLoader<RawActor, Actor>>()
             .register_type::<ActorId>()
@@ -20,7 +18,7 @@ impl Plugin for ActorPlugin {
             .register_type::<Character>()
             .register_type::<Enemy>()
             .register_type::<Members>()
-            .register_type::<Group>()
+            .register_type::<MemberOf>()
             .register_type::<Party>()
             .register_type::<Slide>()
             .add_observer(despawn_empty_party.map(error::warn))

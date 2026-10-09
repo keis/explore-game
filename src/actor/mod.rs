@@ -17,7 +17,7 @@ pub use system_param::*;
 
 #[cfg(test)]
 mod tests {
-    use super::{Group, GroupCommandsExt, Members, Party};
+    use super::{GroupCommandsExt, MemberOf, Members, Party};
     use crate::action::ActionPoints;
     use bevy::prelude::*;
     use rstest::*;
@@ -60,7 +60,7 @@ mod tests {
 
         let (member_entity, member) = app
             .world_mut()
-            .query::<(Entity, &Group)>()
+            .query::<(Entity, &MemberOf)>()
             .single(app.world())
             .unwrap();
 
@@ -72,7 +72,7 @@ mod tests {
     fn change_group(mut app: App) {
         let (member_entity, _) = app
             .world_mut()
-            .query::<(Entity, &Group)>()
+            .query::<(Entity, &MemberOf)>()
             .single(app.world())
             .unwrap();
 
@@ -94,7 +94,7 @@ mod tests {
 
         let member = app
             .world_mut()
-            .query::<&Group>()
+            .query::<&MemberOf>()
             .single(app.world())
             .unwrap();
         assert_eq!(member.0, new_group_entity);
@@ -117,11 +117,6 @@ mod tests {
             .remove_members(&[member_entity]);
         app.world_mut().flush();
 
-        let group = app
-            .world_mut()
-            .query::<&Members>()
-            .get(app.world(), group_entity)
-            .unwrap();
-        assert_eq!(group.len(), 0);
+        assert!(!app.world().entity(group_entity).contains::<Members>());
     }
 }

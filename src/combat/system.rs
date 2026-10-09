@@ -1,6 +1,6 @@
 use super::{bundle::*, component::*, event::*};
 use crate::{
-    actor::{Character, Enemy, Group, GroupCommandsExt, Members},
+    actor::{Character, Enemy, GroupCommandsExt, MemberOf, Members},
     assets::MainAssets,
     creature::{Attack, Corpse, Health},
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
@@ -114,7 +114,7 @@ pub fn combat_round(
 pub fn make_corpses(
     mut commands: Commands,
     map_query: Query<Entity, With<PresenceLayer>>,
-    health_query: Query<(Entity, &Health, Option<&Group>, Option<&Enemy>), Without<Corpse>>,
+    health_query: Query<(Entity, &Health, Option<&MemberOf>, Option<&Enemy>), Without<Corpse>>,
 ) {
     let Ok(map_entity) = map_query.single() else {
         return;
