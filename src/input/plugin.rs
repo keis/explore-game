@@ -1,4 +1,4 @@
-use super::{action::*, component::*, resource::*, system::*};
+use super::{action::*, resource::*, system::*};
 use crate::{error, turn};
 use bevy::{picking::PickingSystems, prelude::*};
 use leafwing_input_manager::{
@@ -28,7 +28,6 @@ impl Plugin for InputPlugin {
                     .in_set(PickingSystems::Last)
                     .chain(),
             )
-            .register_type::<Selection>()
             .init_resource::<ActionState<Action>>()
             .init_resource::<SelectedIndex>()
             .add_observer(SelectedIndex::on_select)

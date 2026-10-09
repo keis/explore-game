@@ -1,4 +1,4 @@
-use super::{asset::*, component::*, event::*, system::*};
+use super::{asset::*, event::*, system::*};
 use crate::{
     error,
     scene::{SceneSet, SceneState},
@@ -13,14 +13,7 @@ impl Plugin for ActorPlugin {
         app.add_message::<SlideEvent>()
             .init_asset::<Codex<Actor>>()
             .init_asset_loader::<CodexLoader<RawActor, Actor>>()
-            .register_type::<ActorId>()
             .register_type::<Id<Actor>>()
-            .register_type::<Character>()
-            .register_type::<Enemy>()
-            .register_type::<Members>()
-            .register_type::<MemberOf>()
-            .register_type::<Party>()
-            .register_type::<Slide>()
             .add_observer(despawn_empty_party.map(error::warn))
             .add_systems(
                 OnEnter(SceneState::Active),

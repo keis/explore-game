@@ -12,12 +12,10 @@ pub struct DataBindingPlugin;
 
 impl Plugin for DataBindingPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<DataBindings>()
-            .add_message::<DataBindingExpired>()
-            .add_systems(
-                PostUpdate,
-                remove_expired_data_bindings.run_if(on_message::<DataBindingExpired>),
-            );
+        app.add_message::<DataBindingExpired>().add_systems(
+            PostUpdate,
+            remove_expired_data_bindings.run_if(on_message::<DataBindingExpired>),
+        );
     }
 }
 

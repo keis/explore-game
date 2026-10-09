@@ -1,4 +1,4 @@
-use super::{asset::*, component::*};
+use super::asset::*;
 use bevy::prelude::*;
 use expl_codex::{Codex, CodexLoader, Id};
 
@@ -8,10 +8,6 @@ impl Plugin for CreaturePlugin {
     fn build(&self, app: &mut App) {
         app.init_asset::<Codex<Creature>>()
             .init_asset_loader::<CodexLoader<Creature>>()
-            .register_type::<Attack>()
-            .register_type::<Corpse>()
-            .register_type::<CreatureId>()
-            .register_type::<Health>()
             .register_type::<Id<Creature>>();
     }
 }

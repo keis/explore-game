@@ -1,4 +1,4 @@
-use super::{asset::*, component::*, system::*};
+use super::{asset::*, system::*};
 use crate::{
     assets::AssetState,
     error,
@@ -14,12 +14,7 @@ impl Plugin for StructurePlugin {
     fn build(&self, app: &mut App) {
         app.init_asset::<Codex<Structure>>()
             .init_asset_loader::<CodexLoader<RawStructure, Structure>>()
-            .register_type::<Camp>()
             .register_type::<Id<Structure>>()
-            .register_type::<Portal>()
-            .register_type::<SafeHaven>()
-            .register_type::<Spawner>()
-            .register_type::<StructureId>()
             .add_systems(Update, (update_camp_view_radius, update_portal_effect))
             .add_systems(
                 OnEnter(SceneState::Active),

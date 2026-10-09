@@ -1,4 +1,4 @@
-use super::{component::*, queue::*, system::*};
+use super::{queue::*, system::*};
 use crate::{
     actor::SlideEvent,
     error,
@@ -68,7 +68,6 @@ impl Plugin for ActionPlugin {
             .insert_resource(game_action_follow_up_system)
             .insert_resource(game_action_systems)
             .init_schedule(ActionUpdate)
-            .register_type::<ActionPoints>()
             .add_observer(propagate_action_points_consumed)
             .add_systems(Update, update_action_points_on_members_changed)
             .add_systems(
