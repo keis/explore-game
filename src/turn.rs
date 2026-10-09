@@ -47,7 +47,6 @@ pub struct TurnPlugin;
 impl Plugin for TurnPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<TurnState>()
-            .register_type::<Turn>()
             .insert_resource(Period::default())
             .insert_resource(Turn { number: 0 })
             .configure_sets(

@@ -79,7 +79,7 @@ pub fn magic_cancel(
 pub fn handle_deselect(mut commands: Commands, selection_query: Query<(Entity, &Selection)>) {
     for (entity, selection) in &selection_query {
         if selection.is_selected {
-            commands.trigger_targets(Deselect, entity);
+            commands.trigger(Deselect { entity });
         }
     }
 }
@@ -105,12 +105,12 @@ pub fn handle_select_next(
     };
     for (entity, selection, presence) in &selection_query {
         if entity == next {
-            commands.trigger_targets(Select, entity);
+            commands.trigger(Select { entity });
             commands
                 .entity(camera_entity)
                 .insert(CameraTarget::from_hexcoord(presence.position));
         } else if selection.is_selected {
-            commands.trigger_targets(Deselect, entity);
+            commands.trigger(Deselect { entity });
         }
     }
     Ok(())

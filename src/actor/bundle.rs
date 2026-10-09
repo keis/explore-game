@@ -57,17 +57,17 @@ impl ActorRole {
 
 impl Role for ActorRole {
     fn attach(self, entity: &mut EntityWorldMut) {
-        entity
-            .insert((self.transform, self.visibility))
-            .with_children(|parent| {
-                parent.spawn((
-                    self.child_transform,
-                    self.mesh,
-                    self.material,
-                    self.default_outline_volume,
-                    self.outline_volume,
-                ));
-            });
+        entity.insert((
+            self.transform,
+            self.visibility,
+            children![(
+                self.child_transform,
+                self.mesh,
+                self.material,
+                self.default_outline_volume,
+                self.outline_volume,
+            )],
+        ));
     }
 }
 

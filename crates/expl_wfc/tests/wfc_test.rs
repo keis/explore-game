@@ -107,7 +107,7 @@ fn test_fixed_seed() {
     }
     let output = generator.export().unwrap();
 
-    assert_eq!(steps, 405);
+    assert_eq!(steps, 325);
     assert_eq!(output.layout.radius, 10);
 
     write_json_lines("res/trace.jsonl", &new_trace).unwrap();

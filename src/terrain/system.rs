@@ -46,7 +46,7 @@ pub fn hide_decorations_behind_camp(
 }
 
 pub fn show_decorations_behind_camp(
-    mut events: EventReader<MapEvent>,
+    mut events: MessageReader<MapEvent>,
     map_query: Query<(&ZoneLayer, &PresenceLayer)>,
     zone_query: Query<&Children>,
     camp_query: Query<&Camp>,

@@ -77,18 +77,16 @@ pub fn update_enemy_visibility(
 
 #[allow(clippy::type_complexity)]
 pub fn despawn_empty_party(
-    trigger: Trigger<OnRemove, Members>,
+    trigger: On<Remove, Members>,
     party_query: Query<(&Party, &MapPresence)>,
     map_query: Query<Entity, With<PresenceLayer>>,
     mut commands: Commands,
 ) -> Result<(), ExplError> {
-    if party_query.get(trigger.target()).is_err() {
+    if party_query.get(trigger.entity).is_err() {
         return Ok(());
     }
     let map_entity = map_query.single()?;
-    commands
-        .entity(map_entity)
-        .despawn_presence(trigger.target());
+    commands.entity(map_entity).despawn_presence(trigger.entity);
     Ok(())
 }
 
@@ -97,7 +95,7 @@ const SLIDE_SPEED: f32 = 1.7;
 pub fn slide(
     mut slide_query: Query<(&mut Transform, &mut Slide)>,
     height_query: HeightQuery,
-    mut events: EventWriter<SlideEvent>,
+    mut events: MessageWriter<SlideEvent>,
     time: Res<Time>,
 ) {
     for (mut transform, mut slide) in slide_query.iter_mut() {

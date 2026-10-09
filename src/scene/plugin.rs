@@ -1,11 +1,11 @@
 use crate::{
     assets::AssetState,
-    cleanup, error,
+    error,
     input::{action_just_pressed, Action},
     turn::{TurnSet, TurnState},
 };
 use bevy::prelude::*;
-use bevy_tweening::{component_animator_system, AnimationSystem, TweeningPlugin};
+use bevy_tweening::TweeningPlugin;
 
 use super::{camera::*, light::*, save::*, score::*, world::*};
 
@@ -15,11 +15,14 @@ impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<SceneState>()
             .register_type::<Option<Entity>>()
-            .add_plugins((
-                moonshine_save::save::SavePlugin,
-                moonshine_save::load::LoadPlugin,
-                TweeningPlugin,
-            ))
+            .register_type::<Save>()
+            .add_plugins((TweeningPlugin,))
+            .add_observer(
+                moonshine_save::save::save_on::<moonshine_save::save::SaveWorld<With<Save>>>,
+            )
+            .add_observer(
+                moonshine_save::load::load_on::<moonshine_save::load::LoadWorld<With<Save>>>,
+            )
             .configure_sets(
                 OnEnter(SceneState::Active),
                 (
@@ -28,7 +31,6 @@ impl Plugin for ScenePlugin {
                     SceneSet::Terrain,
                     SceneSet::TerrainFlush,
                     SceneSet::Populate,
-                    SceneSet::Cleanup,
                 )
                     .chain(),
             )
@@ -47,12 +49,7 @@ impl Plugin for ScenePlugin {
                         .run_if(in_state(AssetState::Loaded))
                         .run_if(in_state(SceneState::Setup))
                         .run_if(has_resource::<Loaded>),
-                    (
-                        game_over,
-                        component_animator_system::<DirectionalLight>
-                            .in_set(AnimationSystem::AnimationUpdate),
-                    )
-                        .run_if(in_state(SceneState::Active)),
+                    game_over.run_if(in_state(SceneState::Active)),
                 ),
             )
             .add_systems(
@@ -61,11 +58,7 @@ impl Plugin for ScenePlugin {
             )
             .add_systems(
                 OnEnter(SceneState::Reset),
-                (
-                    cleanup::despawn_all::<(With<Save>, Without<ChildOf>)>,
-                    reset_turn_counter,
-                    create_map_seed,
-                ),
+                (reset_turn_counter, create_map_seed),
             )
             .add_systems(
                 OnEnter(SceneState::Active),
@@ -85,7 +78,6 @@ impl Plugin for ScenePlugin {
                         spawn_safe_haven.map(error::warn),
                     )
                         .in_set(SceneSet::Populate),
-                    cleanup_map_generation_task.in_set(SceneSet::Cleanup),
                 ),
             );
     }
@@ -98,7 +90,6 @@ pub enum SceneSet {
     Terrain,
     TerrainFlush,
     Populate,
-    Cleanup,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, States, Default)]

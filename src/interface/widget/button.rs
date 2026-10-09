@@ -125,7 +125,7 @@ impl<E: EffectTuple + 'static> ViewTemplate for Button<E> {
         );
 
         cx.create_observer(
-            move |_click: Trigger<Pointer<Click>>, mut commands: Commands| {
+            move |_click: On<Pointer<Click>>, mut commands: Commands| {
                 if let Some(on_click) = on_click {
                     commands.run_callback(on_click, ());
                 }

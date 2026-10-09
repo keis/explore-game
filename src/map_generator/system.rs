@@ -20,7 +20,9 @@ pub fn start_map_generation(
         let seed: Seed = map_seed.0;
         let thread_pool = AsyncComputeTaskPool::get();
         let task = thread_pool.spawn(async move { generate_map(&terrain_codex, &template, seed) });
-        commands.entity(entity).insert(GenerateMapTask(task));
+        commands
+            .entity(entity)
+            .insert((GenerateMapTask(task), DespawnOnEnter(SceneState::Active)));
     }
     Ok(())
 }

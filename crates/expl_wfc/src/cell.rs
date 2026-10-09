@@ -20,7 +20,7 @@ impl Cell {
             if *num_alts == 0usize {
                 return None;
             }
-            let choice = rng.gen_range(0..*num_alts);
+            let choice = rng.random_range(0..*num_alts);
             if let Some(tile_id) = alts.ones().nth(choice).map(|i| i as TileId) {
                 return Some(tile_id);
             }

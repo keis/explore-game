@@ -1,9 +1,9 @@
 use super::component::*;
 use bevy::{
+    asset::RenderAssetUsages,
     math::Vec3Swizzles,
+    mesh::{Indices, PrimitiveTopology},
     prelude::*,
-    render::mesh::Indices,
-    render::{mesh::PrimitiveTopology, render_asset::RenderAssetUsages},
 };
 use itertools::Itertools;
 
@@ -82,7 +82,7 @@ impl From<Path> for Mesh {
 #[cfg(test)]
 mod tests {
     use super::Path;
-    use bevy::{prelude::*, render::mesh::VertexAttributeValues};
+    use bevy::{mesh::VertexAttributeValues, prelude::*};
     use splines::{Interpolation, Key, Spline};
 
     #[test]

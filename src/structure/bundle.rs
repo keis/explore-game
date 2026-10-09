@@ -75,22 +75,19 @@ impl StructureRole {
 
 impl Role for StructureRole {
     fn attach(self, entity: &mut EntityWorldMut) {
-        entity
-            .insert((
-                self.transform,
-                self.visibility,
-                self.selection,
-                self.floating_text_source,
-            ))
-            .with_children(|parent| {
-                parent.spawn((
-                    self.child_transform,
-                    self.mesh,
-                    self.material,
-                    self.outline_volume,
-                    self.default_outline_volume,
-                ));
-            });
+        entity.insert((
+            self.transform,
+            self.visibility,
+            self.selection,
+            self.floating_text_source,
+            children![(
+                self.child_transform,
+                self.mesh,
+                self.material,
+                self.outline_volume,
+                self.default_outline_volume,
+            )],
+        ));
     }
 }
 

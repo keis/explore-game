@@ -2,7 +2,7 @@ use super::save;
 use crate::{
     actor::{ActorCodex, ActorParams, CharacterBundle, GroupCommandsExt, PartyBundle},
     creature::CreatureCodex,
-    map_generator::{GenerateMapTask, MapPrototype, MapSeed},
+    map_generator::{MapPrototype, MapSeed},
     role::RoleCommandsExt,
     structure::{PortalBundle, SafeHavenBundle, SpawnerBundle, StructureCodex, StructureParams},
     terrain::{CrystalDeposit, TerrainId, ZoneBundle, ZoneParams},
@@ -24,15 +24,6 @@ pub fn create_map_seed(mut commands: Commands, seed_query: Query<&MapSeed>) {
 
 pub fn reset_turn_counter(mut turn: ResMut<Turn>) {
     **turn = 1;
-}
-
-pub fn cleanup_map_generation_task(
-    mut commands: Commands,
-    generate_map_task_query: Query<Entity, With<GenerateMapTask>>,
-) {
-    for task_entity in &generate_map_task_query {
-        commands.entity(task_entity).despawn();
-    }
 }
 
 pub fn fluff_loaded_map(

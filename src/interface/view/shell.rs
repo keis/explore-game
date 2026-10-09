@@ -265,8 +265,7 @@ impl ViewTemplate for NextTurnButton {
         let keybind = get_keybind_for_action(inputmap, &action);
 
         cx.create_observer(
-            move |_click: Trigger<Pointer<Click>>,
-                  mut action_state: ResMut<ActionState<Action>>| {
+            move |_click: On<Pointer<Click>>, mut action_state: ResMut<ActionState<Action>>| {
                 action_state.press(&action);
             },
             id,

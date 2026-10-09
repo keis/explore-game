@@ -9,7 +9,7 @@ use bevy::{color::palettes::css, prelude::*};
 use expl_map::{MapCommandsExt, MapEvent, PresenceLayer};
 use rand::Rng;
 
-pub fn combat_log(mut combat_events: EventReader<CombatEvent>, combat_query: Query<&Combat>) {
+pub fn combat_log(mut combat_events: MessageReader<CombatEvent>, combat_query: Query<&Combat>) {
     for event in combat_events.read() {
         match event {
             CombatEvent::Initiate(entity) => {
@@ -43,8 +43,8 @@ pub fn combat_log(mut combat_events: EventReader<CombatEvent>, combat_query: Que
 #[allow(clippy::too_many_arguments)]
 pub fn initiate_combat(
     mut commands: Commands,
-    mut map_events: EventReader<MapEvent>,
-    mut combat_events: EventWriter<CombatEvent>,
+    mut map_events: MessageReader<MapEvent>,
+    mut combat_events: MessageWriter<CombatEvent>,
     main_assets: Res<MainAssets>,
     map_query: Query<&PresenceLayer>,
     friend_query: Query<&Members>,
@@ -78,11 +78,11 @@ pub fn initiate_combat(
 #[allow(clippy::type_complexity)]
 pub fn combat_round(
     mut combat_query: Query<(Entity, &mut Combat)>,
-    mut combat_events: EventWriter<CombatEvent>,
+    mut combat_events: MessageWriter<CombatEvent>,
     attacker_query: Query<(&Attack, Option<&Enemy>)>,
     mut target_query: Query<(&mut Health, Option<&Enemy>)>,
 ) {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     for (entity, mut combat) in &mut combat_query {
         info!("Combat at {}", combat.position);
 
@@ -98,7 +98,7 @@ pub fn combat_round(
             {
                 continue;
             }
-            let damage = rng.gen_range(attack.range()).min(health.current);
+            let damage = rng.random_range(attack.range()).min(health.current);
             health.current -= damage;
             combat_events.write(if maybe_target_enemy.is_some() {
                 CombatEvent::EnemyDamage(entity, damage)
@@ -165,7 +165,7 @@ pub fn finish_combat(
 }
 
 pub fn spawn_damage_text(
-    mut combat_events: EventReader<CombatEvent>,
+    mut combat_events: MessageReader<CombatEvent>,
     mut combat_query: Query<&mut FloatingTextSource, With<Combat>>,
 ) {
     for event in combat_events.read() {

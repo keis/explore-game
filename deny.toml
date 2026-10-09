@@ -6,12 +6,7 @@ workspace-default-features = "allow"
 external-default-features = "allow"
 skip = [
     "rustc-hash",
-    "regex-syntax",
-    "regex-automata",
     "libloading",
-    "base64",
-    "bit-set",
-    "bit-vec",
     "core-foundation",
     "ttf-parser",
     "windows",
@@ -35,6 +30,15 @@ skip = [
     "thiserror",
     "thiserror-impl",
     "wasi",
+    "core-graphics-types",
+    "foldhash",
+    "r-efi",
+    "redox_syscall",
+    "shlex",
+    "toml_datetime",
+    "windows-implement",
+    "windows-interface",
+    "windows-strings",
 ]
 skip-tree = [
     { crate = "windows-targets", depth = 2 },

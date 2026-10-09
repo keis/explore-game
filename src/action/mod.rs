@@ -19,7 +19,7 @@ mod tests {
     fn app() -> App {
         let mut app = App::new();
         app.add_plugins(ActionPlugin);
-        app.add_event::<SlideEvent>();
+        app.add_message::<SlideEvent>();
         app
     }
 

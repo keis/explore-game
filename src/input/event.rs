@@ -1,22 +1,36 @@
 use bevy::prelude::*;
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
-pub struct ZoneActivated;
+#[derive(Copy, Clone, Eq, PartialEq, Debug, EntityEvent)]
+pub struct ZoneActivated {
+    pub entity: Entity,
+}
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
-pub struct ZoneOver;
+#[derive(Copy, Clone, Eq, PartialEq, Debug, EntityEvent)]
+pub struct ZoneOver {
+    pub entity: Entity,
+}
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
-pub struct ZoneOut;
+#[derive(Copy, Clone, Eq, PartialEq, Debug, EntityEvent)]
+pub struct ZoneOut {
+    pub entity: Entity,
+}
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
-pub struct Select;
+#[derive(Copy, Clone, Eq, PartialEq, Debug, EntityEvent)]
+pub struct Select {
+    pub entity: Entity,
+}
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
-pub struct Deselect;
+#[derive(Copy, Clone, Eq, PartialEq, Debug, EntityEvent)]
+pub struct Deselect {
+    pub entity: Entity,
+}
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
-pub struct SelectionOver;
+#[derive(Copy, Clone, Eq, PartialEq, Debug, EntityEvent)]
+pub struct SelectionOver {
+    pub entity: Entity,
+}
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Event)]
-pub struct SelectionOut;
+#[derive(Copy, Clone, Eq, PartialEq, Debug, EntityEvent)]
+pub struct SelectionOut {
+    pub entity: Entity,
+}

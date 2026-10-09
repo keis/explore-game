@@ -5,16 +5,16 @@ use bevy::prelude::*;
 pub struct SelectedIndex(pub Vec<Entity>);
 
 impl SelectedIndex {
-    pub fn on_select(trigger: Trigger<Select>, mut index: ResMut<Self>) {
-        index.0.push(trigger.target())
+    pub fn on_select(trigger: On<Select>, mut index: ResMut<Self>) {
+        index.0.push(trigger.entity)
     }
 
-    pub fn on_deselect(trigger: Trigger<Deselect>, mut index: ResMut<Self>) {
-        index.0.retain(|&e| e != trigger.target());
+    pub fn on_deselect(trigger: On<Deselect>, mut index: ResMut<Self>) {
+        index.0.retain(|&e| e != trigger.entity);
     }
 
-    pub fn on_remove(trigger: Trigger<OnRemove, Selection>, mut index: ResMut<Self>) {
-        index.0.retain(|&e| e != trigger.target());
+    pub fn on_remove(trigger: On<Remove, Selection>, mut index: ResMut<Self>) {
+        index.0.retain(|&e| e != trigger.entity);
     }
 }
 
@@ -24,7 +24,7 @@ pub struct MapHover {
 }
 
 impl MapHover {
-    pub fn on_zone_over(trigger: Trigger<ZoneOver>, mut map_hover: ResMut<Self>) {
-        map_hover.zone = Some(trigger.target());
+    pub fn on_zone_over(trigger: On<ZoneOver>, mut map_hover: ResMut<Self>) {
+        map_hover.zone = Some(trigger.entity);
     }
 }

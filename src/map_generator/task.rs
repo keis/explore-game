@@ -7,23 +7,23 @@ use bevy::prelude::*;
 use expl_codex::{Codex, Id};
 use expl_hexgrid::{layout::SquareGridLayout, spiral, Grid, GridLayout, HexCoord};
 use expl_wfc::{Generator, Seed};
-use rand::{seq::SliceRandom, Rng};
+use rand::{seq::IndexedRandom, Rng};
 
 fn random_in_circle<R: Rng>(rng: &mut R, radius: f32) -> Vec2 {
     let max_r = radius * radius;
-    let sqrtr = rng.gen_range(0.0f32..max_r).sqrt();
-    let angle = rng.gen_range(0.0f32..(2.0 * std::f32::consts::PI));
+    let sqrtr = rng.random_range(0.0f32..max_r).sqrt();
+    let angle = rng.random_range(0.0f32..(2.0 * std::f32::consts::PI));
     Vec2::new(sqrtr * angle.cos(), sqrtr * angle.sin())
 }
 
 fn random_fill(fixed: Vec<(Vec2, f32)>) -> Vec<(Vec2, f32)> {
     // Pretty stupid algorithm that simply tries a few random positions and returns whatever didn't
     // overlap
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let mut result: Vec<(Vec2, f32)> = vec![];
     for _ in 0..16 {
         let newpos = random_in_circle(&mut rng, 0.8);
-        let newradius = rng.gen_range(0.18f32..0.22);
+        let newradius = rng.random_range(0.18f32..0.22);
         if !fixed
             .iter()
             .chain(result.iter())
@@ -93,7 +93,7 @@ pub fn generate_map(
             } else {
                 Vec::default()
             };
-            let crystals = with_crystals && rng.gen_range(0..8) == 0;
+            let crystals = with_crystals && rng.random_range(0..8) == 0;
             ZonePrototype {
                 terrain,
                 random_fill,

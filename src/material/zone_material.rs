@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use super::codex_buffer::{CodexBuffer, CodexBufferPlugin, CodexBufferValue};
 use crate::terrain::{OuterVisible, Terrain, TerrainId};
-use bevy::{prelude::*, render::render_resource::*};
+use bevy::{prelude::*, render::render_resource::*, shader::ShaderRef};
 use expl_codex::Id;
 use expl_hexgrid::Neighbours;
 use expl_map::Fog;

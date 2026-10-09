@@ -60,10 +60,10 @@ pub struct Seed {
 
 impl Seed {
     pub fn new(seed_type: SeedType) -> Self {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         Self {
             seed_type,
-            rng_seed: rng.gen(),
+            rng_seed: rng.random(),
         }
     }
 }

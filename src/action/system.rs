@@ -47,7 +47,9 @@ pub fn apply_action(world: &mut World) -> Result<(), ExplError> {
                     queue.ready();
                     return Err(e);
                 }
-                world.trigger_targets(ActionPointsConsumed, action.source);
+                world.trigger(ActionPointsConsumed {
+                    entity: action.source,
+                });
             }
         }
     }
@@ -131,7 +133,7 @@ pub fn resolve_action(world: &mut World) -> Result<(), ExplError> {
 
 pub fn follow_up_action(
     In(action): In<GameAction>,
-    mut combat_events: EventReader<CombatEvent>,
+    mut combat_events: MessageReader<CombatEvent>,
     mut path_guided_query: Query<(&ActionPoints, &mut PathGuided)>,
 ) -> Option<GameAction> {
     let Ok((party_action_points, mut pathguided)) = path_guided_query.get_mut(action.source) else {
@@ -196,11 +198,11 @@ pub fn update_action_points_on_members_changed(
 }
 
 pub fn propagate_action_points_consumed(
-    trigger: Trigger<ActionPointsConsumed>,
+    trigger: On<ActionPointsConsumed>,
     group_query: Query<&Members>,
     mut action_points_query: Query<&mut ActionPoints>,
 ) {
-    let Ok(members) = group_query.get(trigger.target()) else {
+    let Ok(members) = group_query.get(trigger.entity) else {
         return;
     };
     let mut iter = action_points_query.iter_many_mut(members.iter());
@@ -246,7 +248,7 @@ pub fn handle_move(
 
 pub fn handle_slide_stopped(
     mut commands: Commands,
-    mut events: EventReader<SlideEvent>,
+    mut events: MessageReader<SlideEvent>,
     mut queue: ResMut<GameActionQueue>,
     map_query: Query<Entity, With<PresenceLayer>>,
     map_position_query: Query<&MapPosition>,
