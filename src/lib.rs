@@ -1,4 +1,5 @@
 #![feature(impl_trait_in_assoc_type)]
+#![recursion_limit = "256"]
 pub mod action;
 pub mod actor;
 pub mod assets;
