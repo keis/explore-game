@@ -7,6 +7,8 @@ pub mod camera;
 pub mod color;
 pub mod combat;
 pub mod creature;
+#[cfg(feature = "brp")]
+pub mod debug;
 pub mod enemy;
 mod error;
 pub mod floating_text;

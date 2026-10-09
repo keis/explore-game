@@ -50,6 +50,7 @@ bevy_mod_outline = { version = "0.11" }
 bevy_obj = "0.17"
 bevy_sprite3d = "7.0"
 bevy = { version = "0.17", features = ["wayland", "dynamic_linking", "file_watcher", "track_location"] }
+bevy_brp_extras = { version = "0.17.2", optional = true }
 bitflags = "2"
 clap = { workspace = true, features = ["derive"] }
 enum-map = "2.7.3"
@@ -71,6 +72,7 @@ pathfinding = "4"
 platform-dirs = "0.3"
 rand = { workspace = true }
 serde = { workspace = true }
+serde_json = "1.0"
 smallvec = { workspace = true }
 splines = { features = ["glam"], version = "5" }
 thiserror = { workspace = true }
@@ -82,3 +84,6 @@ tracing = "0.1.41"
 [dev-dependencies]
 approx = "0.5"
 rstest = { version = "0.24.0", default-features = false }
+
+[features]
+brp = ["bevy_brp_extras", "bevy/png", "bevy/bevy_remote"]
