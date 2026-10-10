@@ -2,7 +2,7 @@ use bevy::{asset::LoadContext, prelude::*};
 use expl_codex::{CodexSource, FromWithLoadContext};
 use serde::Deserialize;
 
-#[derive(Clone, Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, TypePath)]
 pub(super) struct RawStructure {
     color_a: Color,
     color_b: Color,

@@ -64,7 +64,7 @@ impl From<bevy::ecs::query::QueryEntityError> for ExplError {
     fn from(err: bevy::ecs::query::QueryEntityError) -> Self {
         match err {
             QueryEntityError::QueryDoesNotMatch(e, _) => Self::QueryDoesNotMatch(e),
-            QueryEntityError::EntityDoesNotExist(e) => Self::NoSuchEntity(e.entity),
+            QueryEntityError::NotSpawned(e) => Self::NoSuchEntity(e.entity()),
             QueryEntityError::AliasedMutability(e) => Self::AliasedMutability(e),
         }
     }

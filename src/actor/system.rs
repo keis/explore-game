@@ -2,7 +2,6 @@ use super::{bundle::*, component::*, event::*, system_param::*};
 use crate::{role::RoleCommandsExt, terrain::HeightQuery, ExplError};
 use bevy::prelude::*;
 use expl_map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer};
-use interpolation::Ease;
 
 #[allow(clippy::type_complexity)]
 pub fn fluff_actor(
@@ -103,9 +102,10 @@ pub fn slide(
             continue;
         }
         slide.progress = (slide.progress + time.delta_secs() * SLIDE_SPEED).clamp(0.0, 1.0);
-        let position = slide
-            .start
-            .lerp(slide.end, slide.progress.quadratic_in_out());
+        let position = slide.start.lerp(
+            slide.end,
+            EaseFunction::QuadraticInOut.sample_clamped(slide.progress),
+        );
         transform.translation = height_query.adjust(position);
         if slide.progress == 1.0 {
             events.write(SlideEvent::Stopped);

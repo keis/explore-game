@@ -109,6 +109,7 @@ where
 }
 
 /// Loads codex assets from TOML-files
+#[derive(TypePath)]
 pub struct CodexLoader<RawEntry, Entry = RawEntry> {
     _phantom_data: PhantomData<(RawEntry, Entry)>,
 }
@@ -124,7 +125,7 @@ impl<RawEntry, Entry> Default for CodexLoader<RawEntry, Entry> {
 impl<RawEntry, Entry> AssetLoader for CodexLoader<RawEntry, Entry>
 where
     Entry: CodexSource + std::fmt::Debug + TypePath + Send + Sync + FromWithLoadContext<RawEntry>,
-    RawEntry: Send + Sync + for<'de> Deserialize<'de> + 'static,
+    RawEntry: TypePath + Send + Sync + for<'de> Deserialize<'de> + 'static,
 {
     type Asset = Codex<Entry>;
     type Settings = ();

@@ -18,7 +18,7 @@ pub struct MapTemplateAsset(pub Handle<MapTemplate>);
 #[derive(Clone, Asset, TypePath, Deref)]
 pub struct MapTemplate(Arc<Template<Id<Terrain>>>);
 
-#[derive(Default)]
+#[derive(Default, TypePath)]
 pub struct TemplateLoader;
 
 impl AssetLoader for TemplateLoader {

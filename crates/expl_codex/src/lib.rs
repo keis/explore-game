@@ -220,7 +220,7 @@ mod tests {
     use bevy_asset::{
         io::{
             memory::{Dir, MemoryAssetReader},
-            AssetSource, AssetSourceId,
+            AssetSourceBuilder, AssetSourceId,
         },
         AssetApp, AssetPlugin, AssetServer, Assets, Handle, LoadContext,
     };
@@ -261,7 +261,7 @@ mod tests {
     impl FromWithLoadContext<RawMenuItem> for MenuItem {
         fn from_with_load_context(raw: RawMenuItem, load_context: &mut LoadContext) -> Self {
             Self {
-                source: String::from(load_context.path().to_str().unwrap()),
+                source: String::from(load_context.path().path().to_str().unwrap()),
                 value: raw.value,
                 text: raw.text,
             }
@@ -319,7 +319,7 @@ text = 'some other text'
         let memory_asset_reader = MemoryAssetReader { root };
         app.register_asset_source(
             AssetSourceId::Default,
-            AssetSource::build().with_reader(move || Box::new(memory_asset_reader.clone())),
+            AssetSourceBuilder::new(move || Box::new(memory_asset_reader.clone())),
         )
         .add_plugins((TaskPoolPlugin::default(), AssetPlugin::default()))
         .init_asset::<Codex<MenuItem>>()
