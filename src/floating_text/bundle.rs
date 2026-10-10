@@ -8,7 +8,6 @@ pub struct FloatingTextBundle {
     floating_text: FloatingText,
     billboard_text: BillboardText,
     transform: Transform,
-    text: Text,
     text_font: TextFont,
     text_color: TextColor,
     text_layout: TextLayout,
@@ -25,6 +24,7 @@ impl FloatingTextBundle {
         }: FloatingTextPrototype,
     ) -> Self {
         Self {
+            billboard_text: BillboardText::new(value),
             transform: Transform::from_translation(
                 source
                     + match alignment {
@@ -34,7 +34,6 @@ impl FloatingTextBundle {
                     },
             )
             .with_scale(Vec3::new(0.01, 0.01, 0.01)),
-            text: Text::new(value),
             text_font: TextFont {
                 font: interface_assets.font.clone(),
                 font_size: 26.0,
