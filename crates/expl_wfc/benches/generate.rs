@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use expl_hexgrid::{
     layout::{HexagonalGridLayout, SquareGridLayout},
     Grid,
@@ -8,8 +8,7 @@ use expl_wfc::{
     util::{wrap_grid, LoadGrid},
     Generator, Seed, Template,
 };
-use pprof::criterion::{Output, PProfProfiler};
-use std::{fs::File, io, time::Duration};
+use std::{fs::File, hint::black_box, io, time::Duration};
 
 fn sample_grid() -> Result<Grid<HexagonalGridLayout, char>, &'static str> {
     let mut file =
@@ -91,8 +90,10 @@ pub fn benchmark_generate_large(c: &mut Criterion) {
 }
 
 criterion_group!(
-    name = benches;
-    config = Criterion::default().with_profiler(PProfProfiler::new(100, Output::Flamegraph(None)));
-    targets = benchmark_load_template, benchmark_generate_only, benchmark_generate_full, benchmark_generate_large
+    benches,
+    benchmark_load_template,
+    benchmark_generate_only,
+    benchmark_generate_full,
+    benchmark_generate_large
 );
 criterion_main!(benches);
