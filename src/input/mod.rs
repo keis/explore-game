@@ -17,6 +17,8 @@ pub use leafwing_input_manager::{
     plugin::InputManagerSystem,
     prelude::ActionState,
 };
+#[cfg(test)]
+pub(crate) use plugin::input_map;
 pub use plugin::{InputPlugin, InputSet};
 pub use resource::*;
 pub use system_param::*;
@@ -33,7 +35,7 @@ mod tests {
     pub fn app() -> App {
         let mut app = App::new();
         spawn_game_map(&mut app);
-        app.insert_resource(ActionState::<Action>::default());
+        app.world_mut().spawn(super::plugin::input_map());
         app.world_mut().spawn(CameraControl::default());
         app.world_mut().spawn((
             MapPresence {
@@ -68,8 +70,15 @@ mod tests {
     }
 
     pub fn press_select_next(app: &mut App) {
+        let input_entity = app
+            .world_mut()
+            .query_filtered::<Entity, With<ActionState<Action>>>()
+            .single(app.world())
+            .unwrap();
         app.world_mut()
-            .resource_mut::<ActionState<Action>>()
+            .entity_mut(input_entity)
+            .get_mut::<ActionState<Action>>()
+            .unwrap()
             .press(&Action::SelectNext);
     }
 

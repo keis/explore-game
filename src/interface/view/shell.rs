@@ -8,7 +8,7 @@ use super::super::{
 };
 use super::SelectedView;
 use crate::{
-    input::{Action, ActionState, InputMap, MapHover},
+    input::{Action, ActionState, InputMap, InputMapEntity, MapHover},
     turn::Turn,
 };
 use expl_map::MapPosition;
@@ -170,15 +170,17 @@ impl ViewTemplate for ToolbarItem {
     fn create(&self, cx: &mut Cx) -> Self::View {
         let icon = self.icon.clone();
         let action = self.action;
-        let inputmap = cx.use_resource::<InputMap<Action>>();
-        let keybind = get_keybind_for_action(inputmap, &action);
+        let input_entity = cx.use_resource::<InputMapEntity>().0;
+        let keybind = cx
+            .use_component::<InputMap<Action>>(input_entity)
+            .and_then(|inputmap| get_keybind_for_action(inputmap, &action));
         Button::new()
-            .on_click(
-                cx.create_callback(move |mut action_state: ResMut<ActionState<Action>>| {
+            .on_click(cx.create_callback(
+                move |mut action_state: Single<&mut ActionState<Action>>| {
                     action_state.release(&action);
                     action_state.press(&action);
-                }),
-            )
+                },
+            ))
             .style(style_icon)
             .icon(icon.clone())
             .tooltip(
@@ -261,11 +263,14 @@ impl ViewTemplate for NextTurnButton {
     fn create(&self, cx: &mut Cx) -> Self::View {
         let id = cx.create_entity();
         let action = Action::NextTurn;
-        let inputmap = cx.use_resource::<InputMap<Action>>();
-        let keybind = get_keybind_for_action(inputmap, &action);
+        let input_entity = cx.use_resource::<InputMapEntity>().0;
+        let keybind = cx
+            .use_component::<InputMap<Action>>(input_entity)
+            .and_then(|inputmap| get_keybind_for_action(inputmap, &action));
 
         cx.create_observer(
-            move |_click: On<Pointer<Click>>, mut action_state: ResMut<ActionState<Action>>| {
+            move |_click: On<Pointer<Click>>,
+                  mut action_state: Single<&mut ActionState<Action>>| {
                 action_state.press(&action);
             },
             id,

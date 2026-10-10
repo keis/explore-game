@@ -7,7 +7,7 @@ use crate::{
 };
 use bevy::{color::palettes::css, prelude::*};
 use expl_map::{MapCommandsExt, MapEvent, PresenceLayer};
-use rand::Rng;
+use rand::RngExt;
 
 pub fn combat_log(mut combat_events: MessageReader<CombatEvent>, combat_query: Query<&Combat>) {
     for event in combat_events.read() {

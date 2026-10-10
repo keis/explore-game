@@ -1,6 +1,6 @@
 use super::TileId;
 use fixedbitset::FixedBitSet;
-use rand::Rng;
+use rand::RngExt;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Cell {
@@ -15,7 +15,7 @@ impl Cell {
         Self::Alternatives(num_alts, alts)
     }
 
-    pub fn select<R: Rng + ?Sized>(&self, rng: &mut R) -> Option<TileId> {
+    pub fn select<R: RngExt + ?Sized>(&self, rng: &mut R) -> Option<TileId> {
         if let Cell::Alternatives(num_alts, alts) = self {
             if *num_alts == 0usize {
                 return None;

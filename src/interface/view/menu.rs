@@ -116,7 +116,7 @@ pub fn handle_new_game(
     next_scene_state.set(SceneState::Reset);
 }
 
-pub fn handle_save(mut action_state: ResMut<ActionState<Action>>) {
+pub fn handle_save(mut action_state: Single<&mut ActionState<Action>>) {
     action_state.press(&Action::Save);
 }
 

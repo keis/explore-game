@@ -6,7 +6,7 @@ use super::{
 };
 use expl_hexgrid::{Grid, GridLayout, HexCoord};
 use fixedbitset::FixedBitSet;
-use rand::RngCore;
+use rand::Rng;
 use std::{cmp::Reverse, collections::HashMap, hash::Hash};
 
 /// Generator is the state of the iterative process for generating a map using WFC
@@ -66,7 +66,7 @@ where
         })
     }
 
-    pub fn rand(self) -> impl RngCore {
+    pub fn rand(self) -> impl Rng {
         self.rand
     }
 

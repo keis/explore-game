@@ -7,9 +7,9 @@ use bevy::prelude::*;
 use expl_codex::{Codex, Id};
 use expl_hexgrid::{layout::SquareGridLayout, spiral, Grid, GridLayout, HexCoord};
 use expl_wfc::{Generator, Seed};
-use rand::{seq::IndexedRandom, Rng};
+use rand::{seq::IndexedRandom, RngExt};
 
-fn random_in_circle<R: Rng>(rng: &mut R, radius: f32) -> Vec2 {
+fn random_in_circle<R: RngExt>(rng: &mut R, radius: f32) -> Vec2 {
     let max_r = radius * radius;
     let sqrtr = rng.random_range(0.0f32..max_r).sqrt();
     let angle = rng.random_range(0.0f32..(2.0 * std::f32::consts::PI));
