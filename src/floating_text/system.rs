@@ -1,7 +1,6 @@
 use super::{bundle::*, component::*};
 use crate::interface::InterfaceAssets;
 use bevy::prelude::*;
-use interpolation::Ease;
 
 pub fn spawn_floating_text(
     mut commands: Commands,
@@ -33,9 +32,8 @@ pub fn float_and_fade(
         }
         transform.translation.y += progress;
         text_color.set_alpha(
-            1.0 - ((floating_text.progress - 0.5) / 0.5)
-                .clamp(0.0, 1.0)
-                .quadratic_out(),
+            1.0 - EaseFunction::QuadraticOut
+                .sample_clamped(((floating_text.progress - 0.5) / 0.5).clamp(0.0, 1.0)),
         );
     }
 }

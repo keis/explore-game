@@ -64,7 +64,6 @@ expl_wfc = { workspace = true }
 expl_map = { workspace = true }
 futures-lite = "2"
 glam.workspace = true
-interpolation = "0.3"
 itertools = { workspace = true }
 leafwing-input-manager = { version = "0.20", features = ["ui", "picking"] }
 moonshine-save = "=0.6.1"

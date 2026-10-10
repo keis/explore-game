@@ -3181,7 +3181,6 @@ dependencies = [
  "expl_wfc",
  "futures-lite",
  "glam",
- "interpolation",
  "itertools 0.14.0",
  "leafwing-input-manager",
  "moonshine-save",
