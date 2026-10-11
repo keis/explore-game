@@ -1,10 +1,9 @@
-use bevy::prelude::*;
-use splines::Spline;
+use bevy::{math::cubic_splines::CubicCurve, prelude::*};
 use std::collections::VecDeque;
 
 #[derive(Component)]
 pub struct Path {
-    pub spline: Spline<f32, Vec3>,
+    pub spline: CubicCurve<Vec3>,
     pub steps: u32,
     pub stroke: f32,
 }

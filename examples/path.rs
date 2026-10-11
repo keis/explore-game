@@ -1,10 +1,10 @@
 use bevy::{
+    math::cubic_splines::{CubicBezier, CubicGenerator},
     pbr::wireframe::{Wireframe, WireframePlugin},
     prelude::*,
     window::PresentMode,
 };
 use explore_game::path::Path;
-use splines::{Interpolation, Key, Spline};
 
 fn main() {
     let mut app = App::new();
@@ -37,36 +37,40 @@ fn setup(
     ));
 
     commands.spawn((
-        Mesh3d(meshes.add(Path {
-            spline: Spline::from_vec(vec![
-                Key::new(
-                    0.0,
+        Mesh3d(
+            meshes.add(Path {
+                spline: CubicBezier::new(vec![[
                     Vec3::new(0.0, 0.0, 0.0),
-                    Interpolation::Bezier(Vec3::new(-2.0, 0.0, 0.5)),
-                ),
-                Key::new(1.0, Vec3::new(4.0, 0.0, 2.0), Interpolation::default()),
-            ]),
-            steps: 40,
-            stroke: 0.1,
-        })),
+                    Vec3::new(-4.0 / 3.0, 0.0, 1.0 / 3.0),
+                    Vec3::new(0.0, 0.0, 1.0),
+                    Vec3::new(4.0, 0.0, 2.0),
+                ]])
+                .to_curve()
+                .unwrap(),
+                steps: 40,
+                stroke: 0.1,
+            }),
+        ),
         MeshMaterial3d(standard_materials.add(Color::srgb(1.0, 0.8, 0.8))),
         Transform::from_translation(Vec3::new(-2.0, 0.5, 0.0)),
         Wireframe,
     ));
 
     commands.spawn((
-        Mesh3d(meshes.add(Path {
-            spline: Spline::from_vec(vec![
-                Key::new(
-                    0.0,
+        Mesh3d(
+            meshes.add(Path {
+                spline: CubicBezier::new(vec![[
                     Vec3::new(0.0, 0.0, 0.0),
-                    Interpolation::Bezier(Vec3::new(0.0, 0.0, 1.0)),
-                ),
-                Key::new(1.0, Vec3::new(1.0, 0.0, 1.0), Interpolation::default()),
-            ]),
-            steps: 8,
-            stroke: 0.1,
-        })),
+                    Vec3::new(0.0, 0.0, 2.0 / 3.0),
+                    Vec3::new(1.0 / 3.0, 0.0, 1.0),
+                    Vec3::new(1.0, 0.0, 1.0),
+                ]])
+                .to_curve()
+                .unwrap(),
+                steps: 8,
+                stroke: 0.1,
+            }),
+        ),
         MeshMaterial3d(standard_materials.add(Color::srgb(0.8, 1.0, 0.8))),
         Transform::from_translation(Vec3::new(2.0, 0.5, 0.0)),
         Wireframe,
