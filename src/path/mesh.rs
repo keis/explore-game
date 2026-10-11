@@ -8,9 +8,10 @@ use bevy::{
 use itertools::Itertools;
 
 pub fn update_path_mesh(path: Path, mesh: &mut Mesh) {
-    let step = 1.0 / path.steps as f32;
-    let mut points =
-        (0..path.steps + 1).map(|i| path.spline.clamped_sample(i as f32 * step).unwrap());
+    if path.steps == 0 {
+        return;
+    }
+    let mut points = path.spline.iter_positions(path.steps as usize);
 
     // Compute orthogonal vector used for width for each point
     let mut segments = Vec::new();
@@ -82,34 +83,37 @@ impl From<Path> for Mesh {
 #[cfg(test)]
 mod tests {
     use super::Path;
-    use bevy::{mesh::VertexAttributeValues, prelude::*};
-    use splines::{Interpolation, Key, Spline};
+    use bevy::{
+        math::cubic_splines::{CubicBezier, CubicGenerator},
+        mesh::VertexAttributeValues,
+        prelude::*,
+    };
+
+    fn quadratic_segment(a: Vec3, u: Vec3, b: Vec3) -> CubicCurve<Vec3> {
+        CubicBezier::new(vec![[a, (a + 2.0 * u) / 3.0, (2.0 * u + b) / 3.0, b]])
+            .to_curve()
+            .unwrap()
+    }
 
     #[test]
-    fn splines() {
-        let spline = Spline::from_vec(vec![
-            Key::new(
-                0.0,
-                Vec3::new(0.0, 0.0, 0.0),
-                Interpolation::Bezier(Vec3::new(1.5, 0.0, -0.5)),
-            ),
-            Key::new(1.0, Vec3::new(1.0, 0.0, 1.0), Interpolation::default()),
-        ]);
+    fn bezier_midpoint() {
+        let curve = quadratic_segment(
+            Vec3::new(0.0, 0.0, 0.0),
+            Vec3::new(1.5, 0.0, -0.5),
+            Vec3::new(1.0, 0.0, 1.0),
+        );
 
-        assert_eq!(spline.sample(0.5), Some(Vec3::new(1.0, 0.0, 0.0)));
+        assert_eq!(curve.position(0.5), Vec3::new(1.0, 0.0, 0.0));
     }
 
     #[test]
     fn right_angle() {
         let path = Path {
-            spline: Spline::from_vec(vec![
-                Key::new(
-                    0.0,
-                    Vec3::new(0.0, 0.0, 0.0),
-                    Interpolation::Bezier(Vec3::new(1.5, 0.0, -0.5)),
-                ),
-                Key::new(1.0, Vec3::new(1.0, 0.0, 1.0), Interpolation::default()),
-            ]),
+            spline: quadratic_segment(
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(1.5, 0.0, -0.5),
+                Vec3::new(1.0, 0.0, 1.0),
+            ),
             steps: 2,
             stroke: 0.1,
         };
