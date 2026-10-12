@@ -14,6 +14,9 @@ pub struct ScenePlugin;
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<SceneState>()
+            .register_type::<SceneState>()
+            .register_type::<State<SceneState>>()
+            .register_type::<NextState<SceneState>>()
             .register_type::<Option<Entity>>()
             .register_type::<Save>()
             .add_plugins((TweeningPlugin,))
@@ -92,7 +95,7 @@ pub enum SceneSet {
     Populate,
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, States, Default)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, States, Default, Reflect)]
 pub enum SceneState {
     #[default]
     Setup,

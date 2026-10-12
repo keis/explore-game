@@ -19,6 +19,9 @@ impl Plugin for InterfacePlugin {
                 .load_collection::<InterfaceAssets>(),
         )
         .init_state::<InterfaceState>()
+        .register_type::<InterfaceState>()
+        .register_type::<State<InterfaceState>>()
+        .register_type::<NextState<InterfaceState>>()
         .init_resource::<Index<Party>>()
         .init_resource::<Index<Camp>>()
         .add_observer(Index::<Party>::on_add)
@@ -51,7 +54,7 @@ impl Plugin for InterfacePlugin {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, States, Default)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, States, Default, Reflect)]
 pub enum InterfaceState {
     #[default]
     Hidden,

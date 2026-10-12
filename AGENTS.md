@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Bevy 0.17 hex-grid tactics game. Workspace: root `explore_game` binary plus
+Bevy hex-grid tactics game. Workspace: root `explore_game` binary plus
 libraries in `crates/` (`expl_hexgrid`, `expl_wfc`, `expl_map`, `expl_codex`,
 `expl_databinding`, `expl_hexagon`). See `HACKING.md` for architecture and
 component naming
@@ -17,10 +17,18 @@ cargo deny check bans
 Keep commits small and individual with imperative messages
 (e.g. `Use children! macro for role child spawns`).
 
+Prefix the message with one `<scope>:` naming the crate in `crates/` or the
+module in `src/` (e.g. `actor:`, `scene:`). Always pick exactly one scope:
+the one holding the majority of the change, or its conceptual home.
+
+Use one `use` per top-level crate, grouping submodule imports with `{}`
+(e.g. `use bevy::{prelude::*, reflect::Reflect}`) instead of repeating the
+crate path.
+
 ## Debugging the live game via BRP MCP
 
 The game exposes the Bevy Remote Protocol when built with the `brp` feature
-(`bevy_brp_extras` 0.17.2, port 15702 or `$BRP_EXTRAS_PORT`):
+(port 15702 or `$BRP_EXTRAS_PORT`):
 
 ```sh
 cargo run --features brp
@@ -33,10 +41,16 @@ Useful flows:
 * See it: `brp_extras_screenshot` to `/tmp/*.png`, then read the image.
   The window must be visible; occluded windows capture black.
 * Touch it: `world_mutate_components`, `world_trigger_event`,
-  `brp_extras_send_keys`. Clicks go through stock `write_message` with
-  `WindowEvent`s (0.17 extras has no mouse methods). For menu and picking
+  `brp_extras_send_keys`, mouse tools. For menu and picking
   flows, prefer the app-defined `game/new_game` and `game/select`
-  (see `src/debug.rs`) — they replay the exact UI code paths.
+  — implemented in `src/debug.rs` and published as agent tools
+  (see `brp_list_agent_tools`) — they replay the exact UI code paths.
+* Drive states: `game/set_state` with `{"updates": {"InterfaceState": "Shell"}}`.
+  Batched (all entries validate before anything queues, then apply together),
+  generic over registered states, errors list valid options. Raw
+  `world_insert_resources` on `NextState<…>` (`{"Pending": "…"}`, read back via
+  `world_get_resources` on `State<…>`) works too — never poke `State` itself,
+  its transitions run the `OnExit`/`OnEnter` schedules.
 * Follow it: `world_get_components_watch` streams changes to a log file;
   read game logs instead of blocking on the process.
 * Formats: component/resource JSON shapes come from `brp_type_guide`
