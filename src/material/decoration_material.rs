@@ -113,7 +113,7 @@ fn apply_to_material(
     terrain_query: Query<(&Fog, &MeshMaterial3d<DecorationMaterial>), Changed<Fog>>,
 ) {
     for (fog, handle) in &terrain_query {
-        let Some(material) = terrain_materials.get_mut(handle) else {
+        let Some(mut material) = terrain_materials.get_mut(handle) else {
             continue;
         };
         material.set_visible(fog.visible);

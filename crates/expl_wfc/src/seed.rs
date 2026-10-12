@@ -2,7 +2,7 @@ use super::WFCError;
 use bincode::{Decode, Encode};
 use data_encoding::BASE32_NOPAD;
 use expl_hexgrid::layout::{HexagonalGridLayout, SquareGridLayout};
-use rand::{Rng, SeedableRng};
+use rand::{RngExt, SeedableRng};
 use std::{fmt, str::FromStr};
 
 #[derive(Encode, Decode, Copy, Clone, Debug, PartialEq)]

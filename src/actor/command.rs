@@ -57,6 +57,8 @@ fn update_group_member(world: &mut World, member: Entity, new_group: Entity) -> 
 }
 
 impl Command for AddMembers {
+    type Out = ();
+
     fn apply(self, world: &mut World) {
         for &member in &self.members {
             let previous_group = update_group_member(world, member, self.group);
@@ -68,6 +70,8 @@ impl Command for AddMembers {
 }
 
 impl Command for RemoveMembers {
+    type Out = ();
+
     fn apply(self, world: &mut World) {
         for member in self.members {
             world.entity_mut(member).remove::<MemberOf>();

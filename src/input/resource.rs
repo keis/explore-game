@@ -1,6 +1,11 @@
 use super::{component::Selection, event::*};
 use bevy::prelude::*;
 
+/// Handle to the entity holding the global input map, so quill views can
+/// look up keybinds without duplicating the map as a resource.
+#[derive(Resource)]
+pub struct InputMapEntity(pub Entity);
+
 #[derive(Resource, Default)]
 pub struct SelectedIndex(pub Vec<Entity>);
 

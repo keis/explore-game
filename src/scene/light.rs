@@ -54,7 +54,7 @@ pub fn spawn_light(mut commands: Commands) {
         Name::new("Lucifer"),
         DirectionalLight {
             illuminance: 0.0,
-            shadows_enabled: true,
+            shadow_maps_enabled: true,
             ..default()
         },
         Transform {

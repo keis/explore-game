@@ -1,6 +1,6 @@
 use super::plugin::SceneState;
 use crate::{action, actor, creature, input, inventory, structure, terrain, turn};
-use bevy::prelude::*;
+use bevy::{prelude::*, world_serialization::WorldFilter};
 use expl_map;
 use moonshine_save::{
     load::{LoadWorld, TriggerLoad},
@@ -47,8 +47,8 @@ pub fn save_location() -> PathBuf {
         .unwrap()
 }
 
-pub fn component_filter() -> SceneFilter {
-    SceneFilter::deny_all()
+pub fn component_filter() -> WorldFilter {
+    WorldFilter::deny_all()
         .allow::<Name>()
         .allow::<Save>()
         .allow::<action::ActionPoints>()
@@ -82,8 +82,8 @@ pub fn component_filter() -> SceneFilter {
         .allow::<Transform>()
 }
 
-pub fn resource_filter() -> SceneFilter {
-    SceneFilter::deny_all().allow::<turn::Turn>()
+pub fn resource_filter() -> WorldFilter {
+    WorldFilter::deny_all().allow::<turn::Turn>()
 }
 
 #[cfg(test)]
@@ -99,10 +99,15 @@ mod tests {
 
     fn test_app() -> App {
         let mut app = App::new();
-        app.add_plugins((MinimalPlugins, bevy::log::LogPlugin::default()))
-            .register_type::<Save>()
-            .add_observer(save_on::<SaveWorld<With<Save>>>)
-            .add_observer(load_on::<LoadWorld<With<Save>>>);
+        app.add_plugins((
+            MinimalPlugins,
+            bevy::log::LogPlugin::default(),
+            bevy::asset::AssetPlugin::default(),
+        ))
+        .register_type::<Save>()
+        .register_type::<turn::Turn>()
+        .add_observer(save_on::<SaveWorld<With<Save>>>)
+        .add_observer(load_on::<LoadWorld<With<Save>>>);
         app
     }
 
@@ -146,5 +151,31 @@ mod tests {
             .collect();
         assert_eq!(scoped, marked);
         std::fs::remove_file(PATH).unwrap();
+    }
+
+    #[test]
+    fn turn_resource_roundtrips_through_save_file() {
+        const TURN_PATH: &str = "/tmp/turn_roundtrip_test.ron";
+        let mut app = test_app();
+
+        app.insert_resource(turn::Turn { number: 7 });
+        app.world_mut()
+            .run_system_once(|mut commands: Commands| {
+                let mut save_world = SaveWorld::<With<Save>>::into_file(TURN_PATH);
+                save_world.resources = WorldFilter::deny_all().allow::<turn::Turn>();
+                commands.trigger_save(save_world);
+            })
+            .unwrap();
+
+        app.insert_resource(turn::Turn { number: 0 });
+        app.world_mut()
+            .run_system_once(|mut commands: Commands| {
+                commands.trigger_load(LoadWorld::<With<Save>>::from_file(TURN_PATH));
+            })
+            .unwrap();
+        app.update();
+
+        assert_eq!(app.world().resource::<turn::Turn>().number, 7);
+        std::fs::remove_file(TURN_PATH).unwrap();
     }
 }

@@ -52,7 +52,7 @@ impl Actionlike for Action {
 }
 
 pub fn magic_cancel(
-    mut action_state: ResMut<ActionState<Action>>,
+    mut action_state: Single<&mut ActionState<Action>>,
     interface_state: Res<State<InterfaceState>>,
     selection_query: Query<&Selection>,
 ) {

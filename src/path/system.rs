@@ -87,7 +87,7 @@ pub fn update_path_display(
             .find(|(_, path_display, _)| path_display.path_guided == entity)
         {
             let mesh = path_display_params.0.get_mut(mesh_handle).unwrap();
-            update_path_mesh(path, mesh);
+            update_path_mesh(path, mesh.into_inner());
         } else {
             commands.spawn((
                 Name::new("Path Display"),

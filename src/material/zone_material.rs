@@ -179,7 +179,7 @@ fn apply_to_material(
     >,
 ) {
     for (fog, outer_visible, handle) in &zone_query {
-        let Some(material) = zone_materials.get_mut(handle) else {
+        let Some(mut material) = zone_materials.get_mut(handle) else {
             continue;
         };
         material.set_visible(fog.visible);

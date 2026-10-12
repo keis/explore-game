@@ -9,6 +9,8 @@ struct AttachRole<R: Role> {
 }
 
 impl<R: Role> Command for AttachRole<R> {
+    type Out = ();
+
     fn apply(self, world: &mut World) {
         let mut entity = world.entity_mut(self.entity);
         self.role.attach(&mut entity);

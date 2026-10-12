@@ -14,7 +14,7 @@ impl PluginGroup for ExplPlugins {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
             .add(bevy_mod_billboard::prelude::BillboardPlugin)
-            .add(bevy_mod_outline::OutlinePlugin)
+            .add(bevy_mod_outline::OutlinePlugin::EXTRUDE_VERTEX)
             .add(bevy_obj::ObjPlugin)
             .add(bevy_quill_core::QuillPlugin)
             .add(bevy_sprite3d::Sprite3dPlugin)

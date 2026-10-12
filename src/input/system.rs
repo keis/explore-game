@@ -113,7 +113,7 @@ fn handle_zone_over(
     material_query: Query<&MeshMaterial3d<ZoneMaterial>>,
 ) -> Result<(), ExplError> {
     let handle = material_query.get(trigger.entity)?;
-    let material = zone_materials
+    let mut material = zone_materials
         .get_mut(handle)
         .ok_or(ExplError::MissingMaterial)?;
     material.set_hover(true);
@@ -126,7 +126,7 @@ fn handle_zone_out(
     material_query: Query<&MeshMaterial3d<ZoneMaterial>>,
 ) -> Result<(), ExplError> {
     let handle = material_query.get(trigger.entity)?;
-    let material = zone_materials
+    let mut material = zone_materials
         .get_mut(handle)
         .ok_or(ExplError::MissingMaterial)?;
     material.set_hover(false);

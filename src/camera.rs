@@ -78,7 +78,7 @@ impl CameraTarget {
 fn camera_control(
     time: Res<Time>,
     mut camera_query: Query<(&Transform, &CameraBounds, &mut CameraControl)>,
-    action_state: Res<ActionState<Action>>,
+    action_state: Single<&ActionState<Action>>,
 ) -> Result<(), ExplError> {
     let (transform, bounds, mut control) = camera_query.single_mut()?;
     let acceleration = control.acceleration;
@@ -176,7 +176,7 @@ fn camera_movement(
 
 fn cursor_grab(
     mut cursor_options_query: Query<&mut CursorOptions, With<PrimaryWindow>>,
-    action_state: Res<ActionState<Action>>,
+    action_state: Single<&ActionState<Action>>,
 ) -> Result<(), ExplError> {
     let mut cursor_options = cursor_options_query.single_mut()?;
 
@@ -201,7 +201,7 @@ mod tests {
             CameraTarget,
         },
         error,
-        input::Action,
+        input::{input_map, Action},
     };
     use bevy::{prelude::*, time::Time};
     use core::time::Duration;
@@ -224,7 +224,7 @@ mod tests {
         let mut time = app.world_mut().resource_mut::<Time>();
         time.advance_by(Duration::from_millis(10));
 
-        app.insert_resource(ActionState::<Action>::default());
+        app.world_mut().spawn(input_map());
 
         app
     }
@@ -273,8 +273,15 @@ mod tests {
             ))
             .id();
 
+        let input_entity = app
+            .world_mut()
+            .query_filtered::<Entity, With<ActionState<Action>>>()
+            .single(app.world())
+            .unwrap();
         app.world_mut()
-            .resource_mut::<ActionState<Action>>()
+            .entity_mut(input_entity)
+            .get_mut::<ActionState<Action>>()
+            .unwrap()
             .press(&Action::PanCameraRight);
 
         app.update();
@@ -298,8 +305,15 @@ mod tests {
             ))
             .id();
 
+        let input_entity = app
+            .world_mut()
+            .query_filtered::<Entity, With<ActionState<Action>>>()
+            .single(app.world())
+            .unwrap();
         app.world_mut()
-            .resource_mut::<ActionState<Action>>()
+            .entity_mut(input_entity)
+            .get_mut::<ActionState<Action>>()
+            .unwrap()
             .press(&Action::PanCameraRight);
 
         app.update();

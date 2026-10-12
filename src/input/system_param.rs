@@ -53,7 +53,7 @@ where
     Filter: QueryFilter + 'static,
 {
     selection_query: Query<'w, 's, (Entity, &'static Selection), Filter>,
-    action_state: Res<'w, ActionState<Action>>,
+    action_state: Single<'w, 's, &'static ActionState<Action>>,
     commands: Commands<'w, 's>,
 }
 

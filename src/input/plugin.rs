@@ -28,14 +28,13 @@ impl Plugin for InputPlugin {
                     .in_set(PickingSystems::Last)
                     .chain(),
             )
-            .init_resource::<ActionState<Action>>()
             .init_resource::<SelectedIndex>()
             .add_observer(SelectedIndex::on_select)
             .add_observer(SelectedIndex::on_deselect)
             .add_observer(SelectedIndex::on_remove)
             .init_resource::<MapHover>()
             .add_observer(MapHover::on_zone_over)
-            .insert_resource(input_map())
+            .add_systems(Startup, spawn_input_entity)
             .add_observer(apply_zone_activated_event.map(error::warn))
             .add_observer(apply_select_event)
             .add_observer(apply_deselect_event)
@@ -73,7 +72,12 @@ impl Plugin for InputPlugin {
     }
 }
 
-fn input_map() -> InputMap<Action> {
+fn spawn_input_entity(mut commands: Commands) {
+    let entity = commands.spawn(input_map()).id();
+    commands.insert_resource(InputMapEntity(entity));
+}
+
+pub(crate) fn input_map() -> InputMap<Action> {
     InputMap::default()
         .with(Action::PanCameraUp, KeyCode::ArrowUp)
         .with(Action::PanCameraDown, KeyCode::ArrowDown)

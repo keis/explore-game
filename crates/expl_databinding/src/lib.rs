@@ -1,7 +1,7 @@
 use bevy_app::prelude::*;
 use bevy_ecs::{
     prelude::*,
-    query::{QueryData, QueryFilter},
+    query::{IterQueryData, QueryData, QueryFilter},
     system::{Command, EntityCommands, SystemParam},
 };
 use bevy_reflect::prelude::*;
@@ -60,6 +60,8 @@ struct Bind {
 }
 
 impl Command for Bind {
+    type Out = ();
+
     fn apply(self, world: &mut World) {
         let mut source_entity = world.entity_mut(self.source);
         if let Some(mut data_bindings) = source_entity.get_mut::<DataBindings>() {
@@ -102,7 +104,7 @@ where
 
 impl<Source, Sink, Filter> DataBindingUpdate<'_, '_, Source, Sink, Filter>
 where
-    Source: QueryData<ReadOnly = Source> + 'static,
+    Source: QueryData<ReadOnly = Source> + IterQueryData + 'static,
     Sink: QueryData + 'static,
     Filter: QueryFilter + 'static,
 {

@@ -35,12 +35,12 @@ impl FloatingTextBundle {
             )
             .with_scale(Vec3::new(0.01, 0.01, 0.01)),
             text_font: TextFont {
-                font: interface_assets.font.clone(),
-                font_size: 26.0,
+                font: interface_assets.font.clone().into(),
+                font_size: FontSize::Px(26.0),
                 ..default()
             },
             text_color: TextColor(color),
-            text_layout: TextLayout::new_with_justify(Justify::Center),
+            text_layout: TextLayout::justify(Justify::Center),
             ..default()
         }
     }

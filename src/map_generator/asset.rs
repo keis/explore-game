@@ -37,10 +37,8 @@ impl AssetLoader for TemplateLoader {
         load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let terrain_codex: Codex<Terrain> = load_context
-            .loader()
-            .with_unknown_type()
-            .immediate()
-            .load("codex/default.terrain.toml")
+            .load_builder()
+            .load_untyped_value("codex/default.terrain.toml")
             .await
             .map_err(Box::new)?
             .take()
