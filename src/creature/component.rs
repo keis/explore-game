@@ -1,4 +1,5 @@
 use super::asset::Creature;
+use crate::action::ActionPoints;
 use bevy::prelude::*;
 use expl_codex::Id;
 use serde::Deserialize;
@@ -6,6 +7,7 @@ use std::ops::Range;
 
 #[derive(Component, Reflect, Default, Deref)]
 #[reflect(Component)]
+#[require(ActionPoints)]
 pub struct CreatureId(pub Id<Creature>);
 
 impl CreatureId {
@@ -43,5 +45,23 @@ pub struct Attack {
 impl Attack {
     pub fn range(&self) -> Range<u16> {
         self.low..self.high
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Attack, CreatureId, Health};
+    use crate::action::ActionPoints;
+    use bevy::prelude::*;
+
+    #[test]
+    fn creature_id_requires_action_points() {
+        let mut app = App::new();
+        let entity = app.world_mut().spawn(CreatureId::default()).id();
+        let entity = app.world().entity(entity);
+        assert!(entity.contains::<ActionPoints>());
+        // Stats are codex data; zeroed defaults would be lethal.
+        assert!(!entity.contains::<Attack>());
+        assert!(!entity.contains::<Health>());
     }
 }
