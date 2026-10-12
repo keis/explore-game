@@ -3,7 +3,7 @@ use crate::{
     actor::Party,
     assets::AssetState,
     input::{action_just_pressed, Action, InputManagerSystem},
-    scene::SceneState,
+    scene::{tally_score, SceneState},
     structure::Camp,
 };
 use bevy::prelude::*;
@@ -40,6 +40,7 @@ impl Plugin for InterfacePlugin {
                 next_state.set(InterfaceState::GameOver)
             },
         )
+        .add_systems(OnEnter(InterfaceState::GameOver), tally_score)
         .add_systems(
             Update,
             handle_toggle_main_menu
