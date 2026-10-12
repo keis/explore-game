@@ -4,7 +4,7 @@ use crate::{
     creature::{CreatureCodex, Health},
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     material::PortalMaterial,
-    role::RoleCommandsExt,
+    role::{AssumedRoles, RoleCommandsExt},
     scene::save,
     ExplError,
 };
@@ -16,7 +16,7 @@ pub fn fluff_structure(
     mut commands: Commands,
     mut structure_params: StructureParams,
     structure_codex: StructureCodex,
-    structure_query: Query<(Entity, &StructureId, &MapPresence, &Fog), Without<Visibility>>,
+    structure_query: Query<(Entity, &StructureId, &MapPresence, &Fog), Without<AssumedRoles>>,
 ) -> Result<(), ExplError> {
     let structure_codex = structure_codex.get()?;
     for (entity, structure_id, presence, fog) in &structure_query {

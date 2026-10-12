@@ -1,5 +1,9 @@
 use super::{bundle::*, component::*, event::*, system_param::*};
-use crate::{role::RoleCommandsExt, terrain::HeightQuery, ExplError};
+use crate::{
+    role::{AssumedRoles, RoleCommandsExt},
+    terrain::HeightQuery,
+    ExplError,
+};
 use bevy::prelude::*;
 use expl_map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer};
 
@@ -7,7 +11,7 @@ use expl_map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, Zon
 pub fn fluff_actor(
     mut commands: Commands,
     actor_codex: ActorCodex,
-    creature_query: Query<(Entity, &ActorId, &MapPresence), Without<Visibility>>,
+    creature_query: Query<(Entity, &ActorId, &MapPresence), Without<AssumedRoles>>,
     mut creature_params: ActorParams,
 ) -> Result<(), ExplError> {
     let actor_codex = actor_codex.get()?;
@@ -25,7 +29,7 @@ pub fn fluff_actor(
 #[allow(clippy::type_complexity)]
 pub fn fluff_party(
     mut commands: Commands,
-    party_query: Query<Entity, (With<Party>, Without<Visibility>)>,
+    party_query: Query<Entity, (With<Party>, Without<AssumedRoles>)>,
 ) -> Result<(), ExplError> {
     for entity in &party_query {
         commands.entity(entity).attach_role(PartyRole::default());

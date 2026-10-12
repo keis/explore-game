@@ -1,5 +1,5 @@
 use super::{asset::*, bundle::*, component::*, system_param::*};
-use crate::{role::RoleCommandsExt, structure::Camp, ExplError};
+use crate::{role::AssumedRoles, role::RoleCommandsExt, structure::Camp, ExplError};
 use bevy::prelude::*;
 use expl_codex::Id;
 use expl_hexgrid::{Grid, Neighbours};
@@ -82,8 +82,8 @@ pub fn fluff_zone(
     mut zone_params: ZoneParams,
     map_query: Query<(&MapLayout, &ZoneLayer)>,
     mut zone_query: ParamSet<(
-        Query<(&MapPosition, &TerrainId), Without<Visibility>>,
-        Query<(Entity, &TerrainId, &MapPosition, &Fog), Without<Visibility>>,
+        Query<(&MapPosition, &TerrainId), Without<AssumedRoles>>,
+        Query<(Entity, &TerrainId, &MapPosition, &Fog), Without<AssumedRoles>>,
     )>,
     neighbour_fog_query: Query<&Fog>,
 ) -> Result<(), ExplError> {
