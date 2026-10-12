@@ -1,6 +1,6 @@
 use super::{asset::*, component::*};
 use crate::{
-    actor::{Actor, Members},
+    actor::Actor,
     creature::Creature,
     floating_text::FloatingTextSource,
     input::Selection,
@@ -12,7 +12,7 @@ use crate::{
 use bevy::prelude::*;
 use bevy_mod_outline::OutlineVolume;
 use expl_codex::{Codex, Id};
-use expl_map::{Fog, FogRevealer, HexCoord, MapPresence, ViewRadius};
+use expl_map::{Fog, HexCoord, MapPresence};
 
 pub type StructureParams<'w, 's> = (
     Res<'w, StructureBuffer>,
@@ -132,10 +132,7 @@ pub struct CampBundle {
     camp: Camp,
     inventory: Inventory,
     presence: MapPresence,
-    members: Members,
-    view_radius: ViewRadius,
     fog: Fog,
-    fog_revealer: FogRevealer,
 }
 
 impl CampBundle {
@@ -149,7 +146,6 @@ impl CampBundle {
                 explored: true,
             },
             inventory,
-            ..default()
         }
     }
 
@@ -206,5 +202,4 @@ impl PortalBundle {
 pub struct SafeHavenBundle {
     safe_haven: SafeHaven,
     inventory: Inventory,
-    members: Members,
 }
