@@ -17,9 +17,13 @@ pub use system_param::*;
 
 #[cfg(test)]
 mod tests {
-    use super::{GroupCommandsExt, MemberOf, Members, Party};
+    use super::{Character, Enemy, GroupCommandsExt, MemberOf, Members, Party, PartyBundle, Slide};
     use crate::action::ActionPoints;
+    use crate::input::Selection;
+    use crate::inventory::Inventory;
+    use crate::path::PathGuided;
     use bevy::prelude::*;
+    use expl_map::{FogRevealer, HexCoord, MapPresence, ViewRadius};
     use rstest::*;
 
     #[fixture]
@@ -118,5 +122,58 @@ mod tests {
         app.world_mut().flush();
 
         assert!(!app.world().entity(group_entity).contains::<Members>());
+    }
+
+    #[rstest]
+    fn markers_require_bundle_companions(mut app: App) {
+        let party = app.world_mut().spawn(Party::default()).id();
+        let entity = app.world().entity(party);
+        assert!(entity.contains::<Inventory>());
+        assert!(entity.contains::<ActionPoints>());
+        assert!(entity.contains::<ViewRadius>());
+        assert!(entity.contains::<FogRevealer>());
+        assert!(entity.contains::<Selection>());
+        assert!(entity.contains::<PathGuided>());
+        assert!(entity.contains::<Transform>());
+        assert!(entity.contains::<Visibility>());
+
+        let character = app.world_mut().spawn(Character::default()).id();
+        assert!(app.world().entity(character).contains::<Selection>());
+
+        let enemy = app.world_mut().spawn(Enemy).id();
+        let entity = app.world().entity(enemy);
+        assert!(entity.contains::<Slide>());
+        assert!(entity.contains::<Transform>());
+        assert!(entity.contains::<Visibility>());
+    }
+
+    #[rstest]
+    fn thinned_bundles_spawn_complete_entities(mut app: App) {
+        let party = app
+            .world_mut()
+            .spawn(PartyBundle::new(HexCoord::ZERO, String::from("Test"), 3))
+            .id();
+        let entity = app.world().entity(party);
+        // Explicit bundle values win over require defaults.
+        assert_eq!(
+            entity
+                .get::<Inventory>()
+                .unwrap()
+                .count_item(Inventory::SUPPLY),
+            3
+        );
+        assert_eq!(
+            entity.get::<MapPresence>().unwrap().position,
+            HexCoord::ZERO
+        );
+        // Require defaults fill the thinned fields.
+        assert!(entity.contains::<ActionPoints>());
+        assert!(entity.contains::<ViewRadius>());
+        assert!(entity.contains::<Slide>());
+        assert!(entity.contains::<FogRevealer>());
+        assert!(entity.contains::<Selection>());
+        assert!(entity.contains::<PathGuided>());
+        assert!(entity.contains::<Transform>());
+        assert!(entity.contains::<Visibility>());
     }
 }

@@ -1,6 +1,5 @@
 use super::{asset::*, component::*};
 use crate::{
-    action::ActionPoints,
     creature::{Creature, CreatureBundle},
     input::Selection,
     inventory::Inventory,
@@ -11,7 +10,7 @@ use crate::{
 use bevy::prelude::*;
 use bevy_mod_outline::OutlineVolume;
 use expl_codex::{Codex, Id};
-use expl_map::{FogRevealer, HexCoord, MapPresence, ViewRadius};
+use expl_map::{HexCoord, MapPresence, ViewRadius};
 
 pub type ActorParams<'w, 's> = (ResMut<'w, Assets<StandardMaterial>>, HeightQuery<'w, 's>);
 
@@ -85,7 +84,6 @@ impl Role for PartyRole {
 pub struct CharacterBundle {
     pub creature: CreatureBundle,
     pub character: Character,
-    pub selection: Selection,
 }
 
 #[derive(Bundle, Default)]
@@ -94,11 +92,6 @@ pub struct PartyBundle {
     party: Party,
     inventory: Inventory,
     presence: MapPresence,
-    members: Members,
-    action_points: ActionPoints,
-    view_radius: ViewRadius,
-    slide: Slide,
-    fog_revealer: FogRevealer,
 }
 
 #[derive(Bundle, Default)]
@@ -108,7 +101,6 @@ pub struct EnemyBundle {
     enemy: Enemy,
     presence: MapPresence,
     view_radius: ViewRadius,
-    slide: Slide,
 }
 
 impl CharacterBundle {
@@ -116,7 +108,6 @@ impl CharacterBundle {
         Self {
             character: Character { name },
             creature: CreatureBundle::new(creature_codex, Id::from_tag("warrior")),
-            ..default()
         }
     }
 }
@@ -132,7 +123,6 @@ impl PartyBundle {
             actor_id,
             inventory,
             presence,
-            ..default()
         }
     }
 

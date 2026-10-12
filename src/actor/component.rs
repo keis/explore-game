@@ -1,9 +1,11 @@
 use super::asset::Actor;
+use crate::{action::ActionPoints, input::Selection, inventory::Inventory, path::PathGuided};
 use bevy::{
     ecs::{entity::MapEntities, reflect::ReflectMapEntities},
     prelude::*,
 };
 use expl_codex::Id;
+use expl_map::{FogRevealer, ViewRadius};
 use smallvec::SmallVec;
 
 #[derive(Component, Reflect, Default, Deref)]
@@ -18,16 +20,29 @@ impl ActorId {
 
 #[derive(Component, Reflect, Debug, Default)]
 #[reflect(Component)]
+#[require(Selection)]
 pub struct Character {
     pub name: String,
 }
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[require(Slide, Transform, Visibility)]
 pub struct Enemy;
 
 #[derive(Component, Reflect, Debug, Default)]
 #[reflect(Component)]
+#[require(
+    Inventory,
+    ActionPoints,
+    ViewRadius,
+    Slide,
+    FogRevealer,
+    Selection,
+    PathGuided,
+    Transform,
+    Visibility
+)]
 pub struct Party {
     pub name: String,
 }
