@@ -3359,6 +3359,7 @@ dependencies = [
  "platform-dirs",
  "rand",
  "rstest",
+ "schemars",
  "serde",
  "serde_json",
  "smallvec",
