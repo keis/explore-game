@@ -67,6 +67,8 @@ impl ViewTemplate for GameOverDisplay {
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         let on_click = cx.create_callback(handle_new_game_button);
+        // Always present while this screen is up: tallied on GameOver entry
+        // for organic and direct transitions alike.
         let score = cx.use_resource::<Score>();
         Element::<Node>::new()
             .style(style_game_over_display)
@@ -80,7 +82,7 @@ impl ViewTemplate for GameOverDisplay {
                         "Survivors: {}",
                         match score.survivors {
                             0 => String::from("None"),
-                            v => format!("{}", v),
+                            v => format!("{v}"),
                         }
                     )),
                 Element::<Node>::new()
@@ -89,16 +91,16 @@ impl ViewTemplate for GameOverDisplay {
                         "Dead: {}",
                         match score.dead {
                             0 => String::from("None"),
-                            v => format!("{}", v),
+                            v => format!("{v}"),
                         }
                     )),
                 Element::<Node>::new()
                     .style(style_detail_text_red)
                     .children(format!(
                         "Crystals: {}",
-                        match score.dead {
+                        match score.crystals {
                             0 => String::from("None"),
-                            v => format!("{}", v),
+                            v => format!("{v}"),
                         }
                     )),
                 Button::new()

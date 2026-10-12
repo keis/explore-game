@@ -60,6 +60,8 @@ impl Plugin for ScenePlugin {
                 OnEnter(SceneState::Reset),
                 (reset_turn_counter, create_map_seed),
             )
+            .add_systems(OnEnter(SceneState::GameOver), tally_score)
+            .add_systems(OnExit(SceneState::GameOver), clear_score)
             .add_systems(
                 OnEnter(SceneState::Active),
                 (
