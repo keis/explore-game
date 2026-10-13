@@ -1382,7 +1382,7 @@ dependencies = [
  "arrayvec",
  "bevy_reflect",
  "derive_more",
- "glam",
+ "glam 0.32.1",
  "itertools 0.14.0",
  "libm",
  "rand",
@@ -1412,9 +1412,9 @@ dependencies = [
  "bytemuck",
  "derive_more",
  "encase",
- "glam",
+ "glam 0.32.1",
  "half 2.7.1",
- "hexasphere",
+ "hexasphere 18.0.0",
  "serde",
  "thiserror 2.0.16",
  "tracing",
@@ -1622,7 +1622,7 @@ dependencies = [
  "downcast-rs 2.0.1",
  "erased-serde",
  "foldhash 0.2.0",
- "glam",
+ "glam 0.32.1",
  "indexmap 2.14.2",
  "inventory",
  "petgraph",
@@ -1712,7 +1712,7 @@ dependencies = [
  "derive_more",
  "downcast-rs 2.0.1",
  "encase",
- "glam",
+ "glam 0.32.1",
  "image",
  "indexmap 2.14.2",
  "itertools 0.14.0",
@@ -3274,8 +3274,8 @@ version = "0.1.0"
 dependencies = [
  "bevy_asset",
  "bevy_mesh",
- "glam",
- "hexasphere",
+ "glam 0.32.1",
+ "hexasphere 19.0.0",
 ]
 
 [[package]]
@@ -3284,7 +3284,7 @@ version = "0.1.0"
 dependencies = [
  "bevy_reflect",
  "disjoint-hash-set",
- "glam",
+ "glam 0.32.1",
  "itertools 0.14.0",
  "serde_with",
  "thiserror 1.0.69",
@@ -3349,7 +3349,7 @@ dependencies = [
  "expl_map",
  "expl_wfc",
  "futures-lite",
- "glam",
+ "glam 0.32.1",
  "itertools 0.14.0",
  "leafwing-input-manager",
  "moonshine-save",
@@ -3685,6 +3685,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "glam"
+version = "0.33.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37bfe73dc8ec21f54d181e5a60554327ec3f1c600c455a75ccbfc65d2106a6c4"
+
+[[package]]
 name = "glob"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3906,7 +3912,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "177ea6330876de4ef08e184f827b98acc037614a4ce409902c5b0d53a9c2e951"
 dependencies = [
  "constgebra",
- "glam",
+ "glam 0.32.1",
+ "tinyvec",
+]
+
+[[package]]
+name = "hexasphere"
+version = "19.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "163385eff5a0cf606ebe2c10b3a44ab02f4306e83fbd068a64f5e1d72a3049ac"
+dependencies = [
+ "constgebra",
+ "glam 0.33.12",
  "tinyvec",
 ]
 
