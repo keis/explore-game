@@ -9,7 +9,10 @@ use crate::{
     terrain::TerrainId,
     ExplError,
 };
-use bevy::prelude::*;
+use bevy::{
+    ecs::{lifecycle::HookContext, world::DeferredWorld},
+    prelude::*,
+};
 use bevy_mod_outline::OutlineVolume;
 use expl_map::{MapPosition, MapPresence};
 
@@ -27,6 +30,18 @@ pub fn selection_added(trigger: On<Add, Selection>, mut commands: Commands) {
         .observe(handle_selection_click)
         .observe(handle_selection_over.map(error::warn))
         .observe(handle_selection_out.map(error::warn));
+}
+
+/// Clone initial outline volume when added to be restored after hover cycle.
+pub fn outline_volume_added(mut world: DeferredWorld, context: HookContext) {
+    let outline_volume = world
+        .get_mut::<OutlineVolume>(context.entity)
+        .unwrap()
+        .clone();
+    world
+        .commands()
+        .entity(context.entity)
+        .insert(DefaultOutlineVolume(outline_volume));
 }
 
 pub fn apply_zone_activated_event(
@@ -169,4 +184,55 @@ fn handle_selection_out(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{outline_volume_added, DefaultOutlineVolume};
+    use crate::color;
+    use bevy::prelude::*;
+    use bevy_mod_outline::OutlineVolume;
+
+    #[test]
+    fn outline_volume_hook_seeds_default() {
+        let mut app = App::new();
+        app.world_mut()
+            .register_component_hooks::<OutlineVolume>()
+            .on_add(outline_volume_added);
+        let entity = app
+            .world_mut()
+            .spawn(OutlineVolume {
+                visible: true,
+                width: 2.0,
+                colour: Color::srgb(1.0, 0.0, 0.0),
+            })
+            .id();
+        app.world_mut().flush();
+        let default = app.world().get::<DefaultOutlineVolume>(entity).unwrap();
+        assert!(default.0.visible);
+        assert_eq!(default.0.width, 2.0);
+    }
+
+    #[test]
+    fn outline_volume_hover_leaves_default_intact() {
+        let mut app = App::new();
+        app.world_mut()
+            .register_component_hooks::<OutlineVolume>()
+            .on_add(outline_volume_added);
+        let entity = app
+            .world_mut()
+            .spawn(OutlineVolume {
+                visible: true,
+                width: 2.0,
+                colour: Color::srgb(1.0, 0.0, 0.0),
+            })
+            .id();
+        app.world_mut().flush();
+        app.world_mut()
+            .get_mut::<OutlineVolume>(entity)
+            .unwrap()
+            .colour = color::OUTLINE_HOVER;
+        let default = app.world().get::<DefaultOutlineVolume>(entity).unwrap();
+        assert_eq!(default.0.colour, Color::srgb(1.0, 0.0, 0.0));
+    }
 }

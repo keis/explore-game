@@ -1,6 +1,7 @@
 use super::{action::*, resource::*, system::*};
 use crate::{error, turn};
 use bevy::{picking::PickingSystems, prelude::*};
+use bevy_mod_outline::OutlineVolume;
 use leafwing_input_manager::{
     common_conditions::action_just_pressed, plugin::InputManagerSystem, prelude::*,
 };
@@ -16,6 +17,9 @@ pub struct InputPlugin;
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
+        app.world_mut()
+            .register_component_hooks::<OutlineVolume>()
+            .on_add(outline_volume_added);
         app.add_plugins(MeshPickingPlugin)
             .add_plugins(InputManagerPlugin::<Action>::default())
             .configure_sets(

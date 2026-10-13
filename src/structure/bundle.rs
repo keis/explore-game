@@ -3,7 +3,7 @@ use crate::{
     actor::{Actor, Members},
     creature::Creature,
     floating_text::FloatingTextSource,
-    input::{DefaultOutlineVolume, Selection},
+    input::Selection,
     inventory::Inventory,
     material::{StructureBuffer, StructureMaterial},
     role::Role,
@@ -32,7 +32,6 @@ pub struct StructureRole {
     mesh: Mesh3d,
     material: MeshMaterial3d<StructureMaterial>,
     outline_volume: OutlineVolume,
-    default_outline_volume: DefaultOutlineVolume,
 }
 
 impl StructureRole {
@@ -66,7 +65,6 @@ impl StructureRole {
             child_transform: Transform::from_translation(Vec3::ZERO)
                 .with_scale(Vec3::splat(structure.scale))
                 .with_rotation(Quat::from_rotation_y(structure.rotation)),
-            default_outline_volume: DefaultOutlineVolume(outline_volume.clone()),
             outline_volume,
             ..default()
         }
@@ -85,7 +83,6 @@ impl Role for StructureRole {
                 self.mesh,
                 self.material,
                 self.outline_volume,
-                self.default_outline_volume,
             )],
         ));
     }
