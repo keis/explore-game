@@ -8,4 +8,4 @@ license = "ISC"
 bevy_asset = { workspace = true }
 bevy_mesh = { workspace = true }
 glam = { workspace = true }
-hexasphere = "18"
+hexasphere = "19"
