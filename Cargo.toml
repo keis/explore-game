@@ -22,7 +22,7 @@ expl_hexgrid = { version = "0.1.0", path = "crates/expl_hexgrid", features = ["b
 expl_map = { version = "0.1.0", path = "crates/expl_map" }
 expl_wfc = { version = "0.1.0", path = "crates/expl_wfc" }
 glam = "0.32"
-itertools = "0.14"
+itertools = "0.15"
 rand = "0.10"
 rstest = { version = "0.27", default-features = false }
 serde = "1.0"
