@@ -3254,7 +3254,7 @@ dependencies = [
  "bevy_ecs",
  "bevy_reflect",
  "serde",
- "thiserror 1.0.69",
+ "thiserror 2.0.16",
  "toml",
 ]
 
@@ -3287,7 +3287,7 @@ dependencies = [
  "glam",
  "itertools 0.14.0",
  "serde_with",
- "thiserror 1.0.69",
+ "thiserror 2.0.16",
 ]
 
 [[package]]
@@ -3320,7 +3320,7 @@ dependencies = [
  "rstest",
  "serde",
  "serde-jsonlines",
- "thiserror 1.0.69",
+ "thiserror 2.0.16",
 ]
 
 [[package]]
@@ -3363,7 +3363,7 @@ dependencies = [
  "serde",
  "serde_json",
  "smallvec",
- "thiserror 1.0.69",
+ "thiserror 2.0.16",
  "tracing",
 ]
 
