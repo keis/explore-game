@@ -2,7 +2,7 @@ use super::{asset::*, component::*};
 use crate::{
     action::ActionPoints,
     creature::{Creature, CreatureBundle},
-    input::{DefaultOutlineVolume, Selection},
+    input::Selection,
     inventory::Inventory,
     path::PathGuided,
     role::Role,
@@ -24,7 +24,6 @@ pub struct ActorRole {
     child_transform: Transform,
     mesh: Mesh3d,
     material: MeshMaterial3d<StandardMaterial>,
-    default_outline_volume: DefaultOutlineVolume,
     outline_volume: OutlineVolume,
 }
 
@@ -49,7 +48,6 @@ impl ActorRole {
             material: MeshMaterial3d(standard_materials.add(actor_data.color)),
             child_transform: Transform::from_translation(offset)
                 .with_scale(Vec3::splat(actor_data.scale)),
-            default_outline_volume: DefaultOutlineVolume(outline_volume.clone()),
             outline_volume,
         }
     }
@@ -64,7 +62,6 @@ impl Role for ActorRole {
                 self.child_transform,
                 self.mesh,
                 self.material,
-                self.default_outline_volume,
                 self.outline_volume,
             )],
         ));

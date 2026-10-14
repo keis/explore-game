@@ -61,6 +61,11 @@ Gotchas:
 * Query/insert only works for `Reflect + Serialize/Deserialize` types that
   are `register_type`d (generics still need manual registration; see
   `src/scene/save.rs` for the pattern).
+* In `world_query`, `has: [...]` only reports presence per entity — it never
+  narrows the result set, so counts come back as all entities. Narrow with
+  `filter: {"with": [...]}` instead. Names resolve through the reflection
+  registry first, so a component lacking `Reflect + #[reflect(Component)]`
+  reads back as absent everywhere; reflect it if you need to query it.
 * `brp_extras/*` methods are auto-discovered; `rpc.discover` lists
   everything including app-defined methods.
 * `cargo run` blocks — launch the game detached and poll, or use the MCP

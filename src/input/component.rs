@@ -7,5 +7,6 @@ pub struct Selection {
     pub is_selected: bool,
 }
 
-#[derive(Component, Deref, Default)]
+#[derive(Component, Reflect, Deref, Default)]
+#[reflect(Component)]
 pub struct DefaultOutlineVolume(pub OutlineVolume);
