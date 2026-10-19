@@ -8,7 +8,7 @@ license = "ISC"
 bench = false
 
 [dependencies]
-bincode = "2.0"
+bincode = "3.0"
 data-encoding = "2.9"
 expl_hexgrid = { workspace = true }
 fixedbitset = "0.5"
