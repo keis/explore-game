@@ -1,11 +1,15 @@
 use super::WFCError;
-use bincode::{Decode, Encode};
 use data_encoding::BASE32_NOPAD;
 use expl_hexgrid::layout::{HexagonalGridLayout, SquareGridLayout};
 use rand::{RngExt, SeedableRng};
 use std::{fmt, str::FromStr};
+use wincode::{SchemaRead, SchemaWrite};
 
-#[derive(Encode, Decode, Copy, Clone, Debug, PartialEq)]
+// Seed strings use bincode 2's `standard()` wire format: little-endian
+// varints with `u32` enum tags. wincode defaults to fixed-width integers, so
+// the codec must stay explicit to keep existing seed strings valid.
+
+#[derive(SchemaRead, SchemaWrite, Copy, Clone, Debug, PartialEq)]
 pub enum SeedType {
     Hexagonal(u16),
     Square(u16, u16),
@@ -52,7 +56,7 @@ impl From<SquareGridLayout> for SeedType {
     }
 }
 
-#[derive(Encode, Decode, Copy, Clone, Debug, PartialEq)]
+#[derive(SchemaRead, SchemaWrite, Copy, Clone, Debug, PartialEq)]
 pub struct Seed {
     pub seed_type: SeedType,
     rng_seed: u64,
@@ -70,7 +74,8 @@ impl Seed {
 
 impl fmt::Display for Seed {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Ok(bytes) = bincode::encode_to_vec(self, bincode::config::standard()) {
+        let codec = wincode::config::Configuration::default().with_varint_encoding();
+        if let Ok(bytes) = wincode::config::serialize(self, codec) {
             write!(f, "{}", BASE32_NOPAD.encode(&bytes))
         } else {
             Err(fmt::Error)
@@ -82,14 +87,11 @@ impl FromStr for Seed {
     type Err = WFCError;
 
     fn from_str(string: &str) -> Result<Self, Self::Err> {
+        let codec = wincode::config::Configuration::default().with_varint_encoding();
         BASE32_NOPAD
             .decode(string.as_bytes())
             .ok()
-            .and_then(|bytes| {
-                bincode::decode_from_slice(&bytes, bincode::config::standard())
-                    .map(|(seed, _)| seed)
-                    .ok()
-            })
+            .and_then(|bytes| wincode::config::deserialize::<Seed, _>(&bytes, codec).ok())
             .ok_or(WFCError::InvalidSeed)
     }
 }
