@@ -104,28 +104,60 @@ impl From<Seed> for rand_xoshiro::Xoshiro256PlusPlus {
 mod tests {
     use super::{Seed, SeedType, WFCError};
 
-    #[test]
-    fn display_seed() {
-        assert_eq!(
+    /// Pins the wire format used by seed strings. Changing the codec must not
+    /// silently change these.
+    const SEED_VECTORS: &[(Seed, &str)] = &[
+        (
             Seed {
                 seed_type: SeedType::Hexagonal(8),
                 rng_seed: 1337,
-            }
-            .to_string(),
-            "AAEPWOIF"
-        );
+            },
+            "AAEPWOIF",
+        ),
+        (
+            Seed {
+                seed_type: SeedType::Hexagonal(10),
+                rng_seed: 12197247577502074490,
+            },
+            "AAFP26SGQFDAYVCFVE",
+        ),
+        (
+            Seed {
+                seed_type: SeedType::Square(120, 120),
+                rng_seed: 9627391014342469595,
+            },
+            "AF4HR7O3U6VZGHS5TOCQ",
+        ),
+        (
+            Seed {
+                seed_type: SeedType::Square(20, 10),
+                rng_seed: 299744052673790909,
+            },
+            "AEKAV7N5IMULPIHHFACA",
+        ),
+    ];
+
+    #[test]
+    fn display_seed() {
+        for (seed, encoded) in SEED_VECTORS {
+            assert_eq!(seed.to_string(), *encoded);
+        }
     }
 
     #[test]
     fn parse_seed() -> Result<(), WFCError> {
-        let seed: Seed = "AAEPWOIF".parse()?;
-        assert_eq!(
-            seed,
-            Seed {
-                seed_type: SeedType::Hexagonal(8),
-                rng_seed: 1337,
-            }
-        );
+        for (seed, encoded) in SEED_VECTORS {
+            let parsed: Seed = encoded.parse()?;
+            assert_eq!(parsed, *seed);
+        }
         Ok(())
+    }
+
+    #[test]
+    fn parse_invalid_seed() {
+        assert!(matches!(
+            "not a seed".parse::<Seed>(),
+            Err(WFCError::InvalidSeed)
+        ));
     }
 }
