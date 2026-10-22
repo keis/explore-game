@@ -78,4 +78,14 @@ mod tests {
         assert_abs_diff_eq!(amp, 0.3, epsilon = 0.001);
         assert_abs_diff_eq!(base, 0.2, epsilon = 0.001);
     }
+
+    #[test]
+    fn terrain_id_requires_companions() {
+        let mut app = App::new();
+        let entity = app.world_mut().spawn(TerrainId::default()).id();
+        let entity = app.world().entity(entity);
+        assert!(entity.contains::<expl_map::Fog>());
+        assert!(entity.contains::<Transform>());
+        assert!(entity.contains::<Visibility>());
+    }
 }

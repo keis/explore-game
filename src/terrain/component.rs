@@ -2,11 +2,13 @@ use super::asset::Terrain;
 use bevy::prelude::*;
 use expl_codex::{Codex, Id};
 use expl_hexgrid::Neighbours;
+use expl_map::Fog;
 use noisy_bevy::simplex_noise_2d;
 use std::cmp::min;
 
 #[derive(Component, Reflect, Default, Deref)]
 #[reflect(Component)]
+#[require(Fog, Transform, Visibility)]
 pub struct TerrainId(pub Id<Terrain>);
 
 impl TerrainId {

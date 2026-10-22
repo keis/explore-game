@@ -3,7 +3,7 @@ use crate::{
     actor::{ActorCodex, ActorParams, CharacterBundle, GroupCommandsExt, PartyBundle},
     creature::CreatureCodex,
     map_generator::{MapPrototype, MapSeed},
-    role::RoleCommandsExt,
+    role::{AssumedRoles, RoleCommandsExt},
     structure::{PortalBundle, SafeHavenBundle, SpawnerBundle, StructureCodex, StructureParams},
     terrain::{CrystalDeposit, TerrainId, ZoneBundle, ZoneParams},
     turn::Turn,
@@ -30,7 +30,7 @@ pub fn fluff_loaded_map(
     mut commands: Commands,
     map_query: Query<(Entity, &MapLayout)>,
     zone_query: Query<(&MapPosition, Entity), With<TerrainId>>,
-    presence_query: Query<(Entity, &MapPresence), Without<Visibility>>,
+    presence_query: Query<(Entity, &MapPresence), Without<AssumedRoles>>,
 ) -> Result<(), ExplError> {
     let (entity, &MapLayout(layout)) = map_query.single()?;
     let zone_lookup: HashMap<HexCoord, _> = zone_query

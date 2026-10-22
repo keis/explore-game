@@ -1,5 +1,5 @@
 use super::component::*;
-use crate::{assets::MainAssets, floating_text::FloatingTextSource};
+use crate::assets::MainAssets;
 use bevy::prelude::*;
 use bevy_sprite3d::Sprite3d;
 use expl_hexgrid::HexCoord;
@@ -10,7 +10,6 @@ pub struct CombatBundle {
     combat: Combat,
     sprite: Sprite,
     sprite3d: Sprite3d,
-    floating_text_source: FloatingTextSource,
     transform: Transform,
 }
 
@@ -35,7 +34,6 @@ impl CombatBundle {
                 ..default()
             },
             transform: Transform::from_translation(Vec3::from(position) + Vec3::new(0.0, 1.0, 0.0)),
-            floating_text_source: FloatingTextSource::default(),
         }
     }
 }
