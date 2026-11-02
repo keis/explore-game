@@ -10,9 +10,11 @@ license = "ISC"
 bevy_reflect = { workspace = true, optional = true }
 disjoint-hash-set = "1.0.0"
 glam = { workspace = true }
-itertools = { workspace = true }
 serde_with = "3.12"
 thiserror = { workspace = true }
+
+[dev-dependencies]
+itertools = { workspace = true }
 
 [features]
 bevy-reflect = ["dep:bevy_reflect"]
