@@ -3300,7 +3300,7 @@ dependencies = [
  "bevy_reflect",
  "disjoint-hash-set",
  "glam",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "serde_with",
  "thiserror 2.0.21",
 ]
@@ -3365,7 +3365,7 @@ dependencies = [
  "expl_wfc",
  "futures-lite",
  "glam",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "leafwing-input-manager",
  "moonshine-save",
  "moonshine-util",
@@ -4280,6 +4280,15 @@ name = "itertools"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b4baf93f58d4425749ca49a51c50ebab072c5df6994d08fed93541c331481dc"
 dependencies = [
  "either",
 ]
