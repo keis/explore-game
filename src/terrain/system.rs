@@ -5,6 +5,60 @@ use expl_codex::Id;
 use expl_hexgrid::{Grid, Neighbours};
 use expl_map::{Fog, MapEvent, MapLayout, MapPosition, MapPresence, PresenceLayer, ZoneLayer};
 
+/// Gives an entity a [`Transform`] when it is placed on the map.
+///
+/// Only runs in [`SceneState::Active`](crate::scene::SceneState::Active), where
+/// the map exists and can answer height queries. Presence restored from a save
+/// exists before the map does and is placed by [`place_restored_presence`]
+/// instead.
+pub fn place_presence(
+    trigger: On<Add, MapPresence>,
+    mut commands: Commands,
+    presence_query: Query<&MapPresence>,
+    height_query: HeightQuery,
+) {
+    let Ok(presence) = presence_query.get(trigger.entity) else {
+        return;
+    };
+    commands
+        .entity(trigger.entity)
+        .insert(presence_transform(presence, &height_query));
+}
+
+/// Places presence that was restored from a save.
+///
+/// Restored presence exists before the map is assembled, so it is placed once
+/// the map can answer height queries instead of when the component is added.
+pub fn place_restored_presence(
+    mut commands: Commands,
+    presence_query: Query<(Entity, &MapPresence)>,
+    height_query: HeightQuery,
+) {
+    for (entity, presence) in &presence_query {
+        commands
+            .entity(entity)
+            .insert(presence_transform(presence, &height_query));
+    }
+}
+
+/// Places a zone when its map position is added.
+pub fn place_position(
+    trigger: On<Add, MapPosition>,
+    mut commands: Commands,
+    position_query: Query<&MapPosition>,
+) {
+    let Ok(position) = position_query.get(trigger.entity) else {
+        return;
+    };
+    commands
+        .entity(trigger.entity)
+        .insert(Transform::from_translation(position.0.into()));
+}
+
+fn presence_transform(presence: &MapPresence, height_query: &HeightQuery) -> Transform {
+    Transform::from_translation(height_query.adjust(presence.position.into()))
+}
+
 pub fn despawn_empty_crystal_deposit(
     mut commands: Commands,
     crystal_deposit_query: Query<(&CrystalDeposit, &Children), Changed<CrystalDeposit>>,
@@ -122,7 +176,6 @@ pub fn fluff_zone(
 
         commands.entity(entity).attach_role(ZoneRole::new(
             &mut zone_params,
-            position,
             terrain,
             fog,
             outer_visible,
