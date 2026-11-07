@@ -79,7 +79,6 @@ pub fn component_filter() -> WorldFilter {
         .allow::<terrain::CrystalDeposit>()
         .allow::<terrain::TerrainId>()
         .allow::<terrain::ZoneDecorations>()
-        .allow::<Transform>()
 }
 
 pub fn resource_filter() -> WorldFilter {
