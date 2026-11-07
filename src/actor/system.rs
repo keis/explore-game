@@ -11,16 +11,15 @@ use expl_map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, Zon
 pub fn fluff_actor(
     mut commands: Commands,
     actor_codex: ActorCodex,
-    creature_query: Query<(Entity, &ActorId, &MapPresence), Without<AssumedRoles>>,
-    mut creature_params: ActorParams,
+    creature_query: Query<(Entity, &ActorId), Without<AssumedRoles>>,
+    mut standard_materials: ResMut<Assets<StandardMaterial>>,
 ) -> Result<(), ExplError> {
     let actor_codex = actor_codex.get()?;
-    for (entity, creature_id, presence) in &creature_query {
+    for (entity, creature_id) in &creature_query {
         commands.entity(entity).attach_role(ActorRole::new(
-            &mut creature_params,
+            &mut standard_materials,
             actor_codex,
             **creature_id,
-            presence,
         ));
     }
     Ok(())

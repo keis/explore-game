@@ -1,8 +1,6 @@
 use super::{component::ActionPoints, event::*, plugin::ActionUpdate, queue::*};
 use crate::{
-    actor::{
-        ActorCodex, ActorParams, GroupCommandsExt, Members, Party, PartyBundle, Slide, SlideEvent,
-    },
+    actor::{ActorCodex, GroupCommandsExt, Members, Party, PartyBundle, Slide, SlideEvent},
     combat::CombatEvent,
     inventory::Inventory,
     path::PathGuided,
@@ -370,7 +368,7 @@ pub fn handle_enter_camp(
 pub fn handle_create_party_from_camp(
     In(action): In<GameAction>,
     mut commands: Commands,
-    mut party_params: ActorParams,
+    mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut camp_query: Query<(&mut Inventory, &MapPresence), With<Camp>>,
     map_query: Query<Entity, With<PresenceLayer>>,
     actor_codex: ActorCodex,
@@ -390,7 +388,7 @@ pub fn handle_create_party_from_camp(
         .with_presence(presence.position, |location| {
             let (party_bundle, party_role, actor_role) =
                 PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
-                    .with_fluff(&mut party_params, actor_codex);
+                    .with_fluff(&mut standard_materials, actor_codex);
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
                 .attach_role(party_role)
@@ -404,7 +402,7 @@ pub fn handle_create_party_from_camp(
 pub fn handle_split_party(
     In(action): In<GameAction>,
     mut commands: Commands,
-    mut party_params: ActorParams,
+    mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut party_query: Query<(&mut Inventory, &Members, &MapPresence), With<Party>>,
     map_query: Query<Entity, With<PresenceLayer>>,
     actor_codex: ActorCodex,
@@ -423,7 +421,7 @@ pub fn handle_split_party(
         .with_presence(presence.position, |location| {
             let (party_bundle, party_role, actor_role) =
                 PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
-                    .with_fluff(&mut party_params, actor_codex);
+                    .with_fluff(&mut standard_materials, actor_codex);
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
                 .attach_role(party_role)
