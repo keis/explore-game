@@ -20,6 +20,8 @@ impl Plugin for TerrainPlugin {
             .register_type::<[f32; 6]>()
             .register_type::<[bool; 6]>()
             .add_systems(Startup, insert_hex_assets)
+            .add_observer(place_presence.run_if(in_state(SceneState::Active)))
+            .add_observer(place_position)
             .add_systems(
                 Update,
                 (
@@ -34,6 +36,7 @@ impl Plugin for TerrainPlugin {
                 (
                     fluff_zone.map(error::warn).in_set(SceneSet::Terrain),
                     decorate_zone.map(error::warn).in_set(SceneSet::Populate),
+                    place_restored_presence.in_set(SceneSet::Populate),
                 ),
             );
     }

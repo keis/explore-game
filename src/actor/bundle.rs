@@ -5,19 +5,15 @@ use crate::{
     inventory::Inventory,
     path::PathGuided,
     role::Role,
-    terrain::HeightQuery,
 };
 use bevy::prelude::*;
 use bevy_mod_outline::OutlineVolume;
 use expl_codex::{Codex, Id};
 use expl_map::{HexCoord, MapPresence, ViewRadius};
 
-pub type ActorParams<'w, 's> = (ResMut<'w, Assets<StandardMaterial>>, HeightQuery<'w, 's>);
-
 #[derive(Default)]
 pub struct ActorRole {
     // Insert
-    transform: Transform,
     visibility: Visibility,
     // Child
     child_transform: Transform,
@@ -28,10 +24,9 @@ pub struct ActorRole {
 
 impl ActorRole {
     pub fn new(
-        (standard_materials, height_query): &mut ActorParams,
+        standard_materials: &mut Assets<StandardMaterial>,
         actor_codex: &Codex<Actor>,
         actor_id: Id<Actor>,
-        presence: &MapPresence,
     ) -> Self {
         let actor_data = &actor_codex[&actor_id];
         let offset = Vec3::new(0.0, actor_data.offset, 0.0);
@@ -41,7 +36,6 @@ impl ActorRole {
             colour: actor_data.outline_color,
         };
         Self {
-            transform: Transform::from_translation(height_query.adjust(presence.position.into())),
             visibility: Visibility::default(),
             mesh: Mesh3d(actor_data.mesh.clone()),
             material: MeshMaterial3d(standard_materials.add(actor_data.color)),
@@ -55,7 +49,6 @@ impl ActorRole {
 impl Role for ActorRole {
     fn attach(self, entity: &mut EntityWorldMut) {
         entity.insert((
-            self.transform,
             self.visibility,
             children![(
                 self.child_transform,
@@ -128,11 +121,11 @@ impl PartyBundle {
 
     pub fn with_fluff(
         self,
-        party_params: &mut ActorParams,
+        standard_materials: &mut Assets<StandardMaterial>,
         actor_codex: &Codex<Actor>,
     ) -> (Self, PartyRole, ActorRole) {
         let party_role = PartyRole::default();
-        let actor_role = ActorRole::new(party_params, actor_codex, *self.actor_id, &self.presence);
+        let actor_role = ActorRole::new(standard_materials, actor_codex, *self.actor_id);
         (self, party_role, actor_role)
     }
 }
@@ -157,10 +150,10 @@ impl EnemyBundle {
 
     pub fn with_fluff(
         self,
-        enemy_params: &mut ActorParams,
+        standard_materials: &mut Assets<StandardMaterial>,
         actor_codex: &Codex<Actor>,
     ) -> (Self, ActorRole) {
-        let actor_role = ActorRole::new(enemy_params, actor_codex, *self.actor_id, &self.presence);
+        let actor_role = ActorRole::new(standard_materials, actor_codex, *self.actor_id);
         (self, actor_role)
     }
 }

@@ -99,7 +99,6 @@ pub struct ZoneRole {
     not_shadow_caster: NotShadowCaster,
     mesh: Mesh3d,
     material: MeshMaterial3d<ZoneMaterial>,
-    transform: Transform,
     outer_visible: OuterVisible,
     outer_terrain: OuterTerrain,
 }
@@ -107,7 +106,6 @@ pub struct ZoneRole {
 impl ZoneRole {
     pub fn new(
         (hex_assets, codex_buffer, zone_materials): &mut ZoneParams,
-        position: &MapPosition,
         terrain: &TerrainId,
         fog: &Fog,
         outer_visible: OuterVisible,
@@ -122,7 +120,6 @@ impl ZoneRole {
                 &outer_terrain,
                 codex_buffer,
             ))),
-            transform: Transform::from_translation(position.0.into()),
             outer_visible,
             outer_terrain: OuterTerrain(outer_terrain),
             ..default()
@@ -136,7 +133,6 @@ impl Role for ZoneRole {
             self.not_shadow_caster,
             self.mesh,
             self.material,
-            self.transform,
             self.outer_visible,
             self.outer_terrain,
         ));
@@ -182,7 +178,6 @@ impl ZoneBundle {
         let outer_visible = OuterVisible::default();
         let zone_role = ZoneRole::new(
             zone_params,
-            &self.position,
             &self.terrain,
             &self.fog,
             outer_visible,

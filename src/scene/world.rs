@@ -1,6 +1,6 @@
 use super::save;
 use crate::{
-    actor::{ActorCodex, ActorParams, CharacterBundle, GroupCommandsExt, PartyBundle},
+    actor::{ActorCodex, CharacterBundle, GroupCommandsExt, PartyBundle},
     creature::CreatureCodex,
     map_generator::{MapPrototype, MapSeed},
     role::{AssumedRoles, RoleCommandsExt},
@@ -146,7 +146,7 @@ pub fn spawn_spawner(
 
 pub fn spawn_party(
     mut commands: Commands,
-    mut party_params: ActorParams,
+    mut standard_materials: ResMut<Assets<StandardMaterial>>,
     actor_codex: ActorCodex,
     creature_codex: CreatureCodex,
     map_prototype_query: Query<&MapPrototype>,
@@ -183,7 +183,7 @@ pub fn spawn_party(
         .with_presence(prototype.party_position, |location| {
             let (party_bundle, party_role, actor_role) =
                 PartyBundle::new(prototype.party_position, String::from("Alpha Group"), 1)
-                    .with_fluff(&mut party_params, actor_codex);
+                    .with_fluff(&mut standard_materials, actor_codex);
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
                 .attach_role(party_role)
