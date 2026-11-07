@@ -1,6 +1,6 @@
 use super::{bundle::*, component::*, system_param::*};
 use crate::{
-    actor::{ActorCodex, ActorParams, EnemyBundle, Members},
+    actor::{ActorCodex, EnemyBundle, Members},
     creature::{CreatureCodex, Health},
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     material::PortalMaterial,
@@ -16,15 +16,14 @@ pub fn fluff_structure(
     mut commands: Commands,
     mut structure_params: StructureParams,
     structure_codex: StructureCodex,
-    structure_query: Query<(Entity, &StructureId, &MapPresence, &Fog), Without<AssumedRoles>>,
+    structure_query: Query<(Entity, &StructureId, &Fog), Without<AssumedRoles>>,
 ) -> Result<(), ExplError> {
     let structure_codex = structure_codex.get()?;
-    for (entity, structure_id, presence, fog) in &structure_query {
+    for (entity, structure_id, fog) in &structure_query {
         commands.entity(entity).attach_role(StructureRole::new(
             &mut structure_params,
             structure_codex,
             **structure_id,
-            presence,
             fog,
         ));
     }
@@ -44,7 +43,7 @@ pub fn spawn_enemy(
     creature_codex: CreatureCodex,
     presence_query: Query<Entity, Without<Spawner>>,
     map_query: Query<(Entity, &PresenceLayer)>,
-    mut creature_params: ActorParams,
+    mut standard_materials: ResMut<Assets<StandardMaterial>>,
 ) -> Result<(), ExplError> {
     let actor_codex = actor_codex.get()?;
     let creature_codex = creature_codex.get()?;
@@ -64,7 +63,7 @@ pub fn spawn_enemy(
                 spawner.creature,
                 spawner.actor,
             )
-            .with_fluff(&mut creature_params, actor_codex);
+            .with_fluff(&mut standard_materials, actor_codex);
             commands
                 .entity(map_entity)
                 .with_presence(presence.position, |location| {

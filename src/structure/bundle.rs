@@ -7,23 +7,20 @@ use crate::{
     inventory::Inventory,
     material::{StructureBuffer, StructureMaterial},
     role::Role,
-    terrain::HeightQuery,
 };
 use bevy::prelude::*;
 use bevy_mod_outline::OutlineVolume;
 use expl_codex::{Codex, Id};
 use expl_map::{Fog, HexCoord, MapPresence};
 
-pub type StructureParams<'w, 's> = (
+pub type StructureParams<'w> = (
     Res<'w, StructureBuffer>,
-    HeightQuery<'w, 's>,
     ResMut<'w, Assets<StructureMaterial>>,
 );
 
 #[derive(Default)]
 pub struct StructureRole {
     // Insert
-    transform: Transform,
     visibility: Visibility,
     selection: Selection,
     floating_text_source: FloatingTextSource,
@@ -36,10 +33,9 @@ pub struct StructureRole {
 
 impl StructureRole {
     pub fn new(
-        (structure_buffer, height_query, structure_materials): &mut StructureParams,
+        (structure_buffer, structure_materials): &mut StructureParams,
         structure_codex: &Codex<Structure>,
         structure_id: Id<Structure>,
-        presence: &MapPresence,
         fog: &Fog,
     ) -> Self {
         let structure = &structure_codex[&structure_id];
@@ -50,7 +46,6 @@ impl StructureRole {
         };
         Self {
             floating_text_source: FloatingTextSource::with_offset(Vec3::new(0.0, 0.5, 0.0)),
-            transform: Transform::from_translation(height_query.adjust(presence.position.into())),
             visibility: if fog.explored {
                 Visibility::Inherited
             } else {
@@ -74,7 +69,6 @@ impl StructureRole {
 impl Role for StructureRole {
     fn attach(self, entity: &mut EntityWorldMut) {
         entity.insert((
-            self.transform,
             self.visibility,
             self.selection,
             self.floating_text_source,
@@ -119,7 +113,6 @@ impl SpawnerBundle {
             structure_params,
             structure_codex,
             *self.structure_id,
-            &self.presence,
             &self.fog,
         );
         (self, structure_role)
@@ -158,7 +151,6 @@ impl CampBundle {
             structure_params,
             structure_codex,
             *self.structure_id,
-            &self.presence,
             &self.fog,
         );
         (self, structure_role)
@@ -191,7 +183,6 @@ impl PortalBundle {
             structure_params,
             structure_codex,
             *self.structure_id,
-            &self.presence,
             &self.fog,
         );
         (self, structure_role)
