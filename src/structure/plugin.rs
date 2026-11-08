@@ -18,7 +18,7 @@ impl Plugin for StructurePlugin {
             .add_systems(Update, (update_camp_view_radius, update_portal_effect))
             .add_systems(
                 OnEnter(SceneState::Active),
-                fluff_structure.map(error::warn).in_set(SceneSet::Populate),
+                fluff_structure.in_set(SceneSet::Populate),
             )
             .add_systems(OnEnter(TurnState::Player), heal_characters)
             .add_systems(

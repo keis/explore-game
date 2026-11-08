@@ -1,7 +1,12 @@
 #![allow(dead_code)]
 use super::codex_buffer::{CodexBuffer, CodexBufferPlugin, CodexBufferValue};
-use crate::structure::Structure;
-use bevy::{prelude::*, render::render_resource::*, shader::ShaderRef};
+use crate::structure::{Structure, StructureId};
+use bevy::{
+    ecs::template::{Template, TemplateContext},
+    prelude::*,
+    render::render_resource::*,
+    shader::ShaderRef,
+};
 use expl_codex::Id;
 use expl_map::Fog;
 
@@ -49,15 +54,6 @@ bitflags::bitflags! {
     }
 }
 
-impl From<&Fog> for StructureFlags {
-    fn from(value: &Fog) -> Self {
-        let mut flags = StructureFlags::empty();
-        flags.set(StructureFlags::VISIBLE, value.visible);
-        flags.set(StructureFlags::EXPLORED, value.explored);
-        flags
-    }
-}
-
 #[derive(Clone, Default, ShaderType)]
 pub struct StructureMaterialUniform {
     structure_idx: u32,
@@ -73,17 +69,13 @@ pub struct StructureMaterial {
 }
 
 impl StructureMaterial {
-    pub fn from_structure(
-        structure_id: &Id<Structure>,
-        fog: &Fog,
-        structure_buffer: &Res<StructureBuffer>,
-    ) -> Self {
-        let structure_idx = structure_buffer.as_index(structure_id).unwrap() as u32;
+    pub fn from_structure(structure_id: Id<Structure>, structure_buffer: &StructureBuffer) -> Self {
+        let structure_idx = structure_buffer.as_index(&structure_id).unwrap() as u32;
         Self {
             structure_data: structure_buffer.buffer().unwrap().clone(),
             uniform: StructureMaterialUniform {
                 structure_idx,
-                flags: StructureFlags::from(fog).bits(),
+                flags: StructureFlags::empty().bits(),
             },
         }
     }
@@ -107,16 +99,47 @@ impl Material for StructureMaterial {
     }
 }
 
+/// Scene template building the [`StructureMaterial`] for a [`StructureId`].
+#[derive(Default)]
+pub struct StructureMaterialTemplate {
+    pub structure_id: Id<Structure>,
+}
+
+impl Template for StructureMaterialTemplate {
+    type Output = MeshMaterial3d<StructureMaterial>;
+
+    fn build_template(&self, context: &mut TemplateContext) -> Result<Self::Output> {
+        let material = StructureMaterial::from_structure(
+            self.structure_id,
+            context.resource::<StructureBuffer>(),
+        );
+        let handle = context
+            .resource_mut::<Assets<StructureMaterial>>()
+            .add(material);
+        Ok(MeshMaterial3d(handle))
+    }
+
+    fn clone_template(&self) -> Self {
+        Self {
+            structure_id: self.structure_id,
+        }
+    }
+}
+
 #[allow(clippy::type_complexity)]
 fn apply_to_material(
-    mut terrain_materials: ResMut<Assets<StructureMaterial>>,
-    terrain_query: Query<(&Fog, &MeshMaterial3d<StructureMaterial>), Changed<Fog>>,
+    mut structure_materials: ResMut<Assets<StructureMaterial>>,
+    structure_query: Query<(&Fog, &Children), (Changed<Fog>, With<StructureId>)>,
+    material_query: Query<&MeshMaterial3d<StructureMaterial>>,
 ) {
-    for (fog, handle) in &terrain_query {
-        let Some(mut material) = terrain_materials.get_mut(handle) else {
-            continue;
-        };
-        material.set_visible(fog.visible);
-        material.set_explored(fog.explored);
+    for (fog, children) in &structure_query {
+        let mut materials = material_query.iter_many(children);
+        while let Some(handle) = materials.fetch_next() {
+            let Some(mut material) = structure_materials.get_mut(handle) else {
+                continue;
+            };
+            material.set_visible(fog.visible);
+            material.set_explored(fog.explored);
+        }
     }
 }

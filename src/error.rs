@@ -49,6 +49,8 @@ pub enum ExplError {
     InvalidTarget,
     #[error("missing material")]
     MissingMaterial,
+    #[error(transparent)]
+    SceneApply(#[from] bevy::scene::SpawnSceneError),
 }
 
 impl<I, O> From<bevy::ecs::system::RegisteredSystemError<I, O>> for ExplError

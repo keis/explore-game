@@ -1,18 +1,17 @@
 use super::asset::*;
 use crate::{assets::CodexAssets, ExplError};
-use bevy::{ecs::system::SystemParam, prelude::*};
+use bevy::prelude::*;
 use expl_codex::Codex;
 
-#[derive(SystemParam)]
-pub struct StructureCodex<'w> {
-    codex_assets: Res<'w, CodexAssets>,
-    structure_codex_assets: Res<'w, Assets<Codex<Structure>>>,
-}
-
-impl StructureCodex<'_> {
-    pub fn get(&self) -> Result<&Codex<Structure>, ExplError> {
-        self.structure_codex_assets
-            .get(&self.codex_assets.structure_codex)
-            .ok_or(ExplError::MissingCodex)
-    }
+/// Looks up the structure codex from a [`World`].
+///
+/// For callers that are not systems, such as [`Role::attach`](crate::role::Role).
+pub fn structure_codex(world: &World) -> Result<&Codex<Structure>, ExplError> {
+    let codex_assets = world
+        .get_resource::<CodexAssets>()
+        .ok_or(ExplError::MissingCodex)?;
+    world
+        .get_resource::<Assets<Codex<Structure>>>()
+        .and_then(|codexes| codexes.get(&codex_assets.structure_codex))
+        .ok_or(ExplError::MissingCodex)
 }

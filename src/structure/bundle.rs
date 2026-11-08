@@ -1,81 +1,63 @@
-use super::{asset::*, component::*};
+use super::{asset::*, component::*, system_param::structure_codex};
 use crate::{
-    actor::Actor,
-    creature::Creature,
-    floating_text::FloatingTextSource,
-    input::Selection,
-    inventory::Inventory,
-    material::{StructureBuffer, StructureMaterial},
-    role::Role,
-    ExplError,
+    actor::Actor, creature::Creature, floating_text::FloatingTextSource, input::Selection,
+    inventory::Inventory, material::StructureMaterialTemplate, role::Role, ExplError,
 };
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    scene::{bsn, EntityWorldMutSceneExt},
+};
 use bevy_mod_outline::OutlineVolume;
-use expl_codex::{Codex, Id};
-use expl_map::{Fog, HexCoord, MapPresence};
+use expl_codex::Id;
+use expl_map::{Fog, FogVisibility, HexCoord, MapPresence};
 
-pub type StructureParams<'w> = (
-    Res<'w, StructureBuffer>,
-    ResMut<'w, Assets<StructureMaterial>>,
-);
-
-#[derive(Default)]
+/// Role presenting a structure.
+///
+/// Only the [`Id`] is stored; the codex entry is resolved when the role is
+/// attached, while placement comes from [`MapPresence`].
 pub struct StructureRole {
-    // Insert
-    visibility: Visibility,
-    selection: Selection,
-    floating_text_source: FloatingTextSource,
-    // Child
-    child_transform: Transform,
-    mesh: Mesh3d,
-    material: MeshMaterial3d<StructureMaterial>,
-    outline_volume: OutlineVolume,
+    structure_id: Id<Structure>,
 }
 
 impl StructureRole {
-    pub fn new(
-        (structure_buffer, structure_materials): &mut StructureParams,
-        structure_codex: &Codex<Structure>,
-        structure_id: Id<Structure>,
-        fog: &Fog,
-    ) -> Self {
-        let structure = &structure_codex[&structure_id];
-        let outline_volume = OutlineVolume {
-            visible: true,
-            width: 2.0,
-            colour: structure.color_a,
-        };
-        Self {
-            floating_text_source: FloatingTextSource::with_offset(Vec3::new(0.0, 0.5, 0.0)),
-            visibility: Visibility::from(*fog),
-            mesh: Mesh3d(structure.mesh.clone()),
-            material: MeshMaterial3d(structure_materials.add(StructureMaterial::from_structure(
-                &structure_id,
-                fog,
-                structure_buffer,
-            ))),
-            child_transform: Transform::from_translation(Vec3::ZERO)
-                .with_scale(Vec3::splat(structure.scale))
-                .with_rotation(Quat::from_rotation_y(structure.rotation)),
-            outline_volume,
-            ..default()
+    pub fn new(structure_id: Id<Structure>) -> Self {
+        Self { structure_id }
+    }
+
+    /// Builds the presentation scene owned by the role.
+    ///
+    /// Takes `self` because [`Scene`] is `'static`: the scene must own every
+    /// value it is built from.
+    fn scene(self, structure: &Structure) -> impl Scene {
+        let Self { structure_id } = self;
+        let mesh = structure.mesh.clone();
+
+        bsn! {
+            ~FogVisibility
+            Selection
+            FloatingTextSource { offset: Vec3::new(0.0, 0.5, 0.0) }
+            Children [
+                Transform {
+                    translation: Vec3::ZERO,
+                    scale: Vec3::splat(structure.scale),
+                    rotation: Quat::from_rotation_y(structure.rotation)
+                }
+                Mesh3d(mesh)
+                ~StructureMaterialTemplate { structure_id }
+                OutlineVolume {
+                    visible: true,
+                    width: 2.0,
+                    colour: { structure.color_a }
+                }
+            ]
         }
     }
 }
 
 impl Role for StructureRole {
     fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError> {
-        entity.insert((
-            self.visibility,
-            self.selection,
-            self.floating_text_source,
-            children![(
-                self.child_transform,
-                self.mesh,
-                self.material,
-                self.outline_volume,
-            )],
-        ));
+        let structure = structure_codex(entity.world())?[&self.structure_id].clone();
+        entity.apply_scene(self.scene(&structure))?;
         Ok(())
     }
 }
@@ -102,17 +84,8 @@ impl SpawnerBundle {
         }
     }
 
-    pub fn with_fluff(
-        self,
-        structure_params: &mut StructureParams,
-        structure_codex: &Codex<Structure>,
-    ) -> (Self, StructureRole) {
-        let structure_role = StructureRole::new(
-            structure_params,
-            structure_codex,
-            *self.structure_id,
-            &self.fog,
-        );
+    pub fn with_fluff(self) -> (Self, StructureRole) {
+        let structure_role = StructureRole::new(*self.structure_id);
         (self, structure_role)
     }
 }
@@ -140,17 +113,8 @@ impl CampBundle {
         }
     }
 
-    pub fn with_fluff(
-        self,
-        structure_params: &mut StructureParams,
-        structure_codex: &Codex<Structure>,
-    ) -> (Self, StructureRole) {
-        let structure_role = StructureRole::new(
-            structure_params,
-            structure_codex,
-            *self.structure_id,
-            &self.fog,
-        );
+    pub fn with_fluff(self) -> (Self, StructureRole) {
+        let structure_role = StructureRole::new(*self.structure_id);
         (self, structure_role)
     }
 }
@@ -172,17 +136,8 @@ impl PortalBundle {
         }
     }
 
-    pub fn with_fluff(
-        self,
-        structure_params: &mut StructureParams,
-        structure_codex: &Codex<Structure>,
-    ) -> (Self, StructureRole) {
-        let structure_role = StructureRole::new(
-            structure_params,
-            structure_codex,
-            *self.structure_id,
-            &self.fog,
-        );
+    pub fn with_fluff(self) -> (Self, StructureRole) {
+        let structure_role = StructureRole::new(*self.structure_id);
         (self, structure_role)
     }
 }

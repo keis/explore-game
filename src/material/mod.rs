@@ -9,7 +9,9 @@ mod zone_material;
 
 pub use decoration_material::{DecorationBuffer, DecorationMaterial, DecorationMaterialPlugin};
 pub use portal_material::{PortalMaterial, PortalMaterialPlugin};
-pub use structure_material::{StructureBuffer, StructureMaterial, StructureMaterialPlugin};
+pub use structure_material::{
+    StructureBuffer, StructureMaterial, StructureMaterialPlugin, StructureMaterialTemplate,
+};
 pub use water_material::{WaterMaterial, WaterMaterialPlugin};
 pub use zone_material::{TerrainBuffer, ZoneMaterial, ZoneMaterialPlugin};
 

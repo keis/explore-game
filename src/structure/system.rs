@@ -1,4 +1,4 @@
-use super::{bundle::*, component::*, system_param::*};
+use super::{bundle::*, component::*};
 use crate::{
     actor::{ActorCodex, EnemyBundle, Members},
     creature::{CreatureCodex, Health},
@@ -9,25 +9,17 @@ use crate::{
     ExplError,
 };
 use bevy::{color::palettes::css, light::NotShadowCaster, prelude::*};
-use expl_map::{Fog, MapCommandsExt, MapPresence, PresenceLayer, ViewRadius};
+use expl_map::{MapCommandsExt, MapPresence, PresenceLayer, ViewRadius};
 
-#[allow(clippy::type_complexity)]
 pub fn fluff_structure(
     mut commands: Commands,
-    mut structure_params: StructureParams,
-    structure_codex: StructureCodex,
-    structure_query: Query<(Entity, &StructureId, &Fog), Without<AssumedRoles>>,
-) -> Result<(), ExplError> {
-    let structure_codex = structure_codex.get()?;
-    for (entity, structure_id, fog) in &structure_query {
-        commands.entity(entity).attach_role(StructureRole::new(
-            &mut structure_params,
-            structure_codex,
-            **structure_id,
-            fog,
-        ));
+    structure_query: Query<(Entity, &StructureId), Without<AssumedRoles>>,
+) {
+    for (entity, structure_id) in &structure_query {
+        commands
+            .entity(entity)
+            .attach_role(StructureRole::new(**structure_id));
     }
-    Ok(())
 }
 
 pub fn charge_spawner(mut spawner_query: Query<&mut Spawner>) {

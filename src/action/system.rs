@@ -6,7 +6,7 @@ use crate::{
     path::PathGuided,
     role::RoleCommandsExt,
     scene::save,
-    structure::{Camp, CampBundle, Portal, SafeHaven, StructureCodex, StructureParams},
+    structure::{Camp, CampBundle, Portal, SafeHaven},
     terrain::{CrystalDeposit, HeightQuery, TerrainCodex, TerrainId},
     ExplError,
 };
@@ -272,20 +272,16 @@ pub fn handle_slide_stopped(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn handle_make_camp(
     In(action): In<GameAction>,
     mut commands: Commands,
-    mut structure_params: StructureParams,
     map_query: Query<(Entity, &ZoneLayer, &PresenceLayer)>,
     terrain_query: Query<&TerrainId>,
     mut party_query: Query<(&mut Inventory, &Members, &MapPresence), With<Party>>,
     camp_query: Query<&Camp>,
     terrain_codex: TerrainCodex,
-    structure_codex: StructureCodex,
 ) -> GameActionResult {
     let terrain_codex = terrain_codex.get()?;
-    let structure_codex = structure_codex.get()?;
 
     let (mut party_inventory, members, presence) = party_query.get_mut(action.source)?;
     let (map_entity, zone_layer, presence_layer) = map_query.single()?;
@@ -316,8 +312,7 @@ pub fn handle_make_camp(
         .entity(map_entity)
         .with_presence(position, |location| {
             let (camp_bundle, structure_role) =
-                CampBundle::new(position, String::from("New camp"), camp_inventory)
-                    .with_fluff(&mut structure_params, structure_codex);
+                CampBundle::new(position, String::from("New camp"), camp_inventory).with_fluff();
             location
                 .spawn((Name::new("Camp"), save::Save, camp_bundle))
                 .attach_role(structure_role)

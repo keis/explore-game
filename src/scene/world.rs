@@ -4,7 +4,7 @@ use crate::{
     creature::CreatureCodex,
     map_generator::{MapPrototype, MapSeed},
     role::{AssumedRoles, RoleCommandsExt},
-    structure::{PortalBundle, SafeHavenBundle, SpawnerBundle, StructureCodex, StructureParams},
+    structure::{PortalBundle, SafeHavenBundle, SpawnerBundle},
     terrain::{CrystalDeposit, TerrainId, ZoneBundle, ZoneParams},
     turn::Turn,
     ExplError,
@@ -94,20 +94,17 @@ pub fn spawn_generated_map(
 
 pub fn spawn_portal(
     mut commands: Commands,
-    mut structure_params: StructureParams,
-    structure_codex: StructureCodex,
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.single()?;
     let map_entity = map_query.single()?;
-    let structure_codex = structure_codex.get()?;
 
     commands
         .entity(map_entity)
         .with_presence(prototype.portal_position, |location| {
-            let (portal_bundle, structure_role) = PortalBundle::new(prototype.portal_position)
-                .with_fluff(&mut structure_params, structure_codex);
+            let (portal_bundle, structure_role) =
+                PortalBundle::new(prototype.portal_position).with_fluff();
             location
                 .spawn((Name::new("Portal"), save::Save, portal_bundle))
                 .attach_role(structure_role);
@@ -118,14 +115,11 @@ pub fn spawn_portal(
 
 pub fn spawn_spawner(
     mut commands: Commands,
-    mut structure_params: StructureParams,
-    structure_codex: StructureCodex,
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.single()?;
     let map_entity = map_query.single()?;
-    let structure_codex = structure_codex.get()?;
 
     commands
         .entity(map_entity)
@@ -135,7 +129,7 @@ pub fn spawn_spawner(
                 Id::from_tag("slime"),
                 Id::from_tag("slime"),
             )
-            .with_fluff(&mut structure_params, structure_codex);
+            .with_fluff();
             location
                 .spawn((Name::new("EnemySpawner"), save::Save, spawner_bundle))
                 .attach_role(structure_role);
