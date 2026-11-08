@@ -47,11 +47,7 @@ impl StructureRole {
         };
         Self {
             floating_text_source: FloatingTextSource::with_offset(Vec3::new(0.0, 0.5, 0.0)),
-            visibility: if fog.explored {
-                Visibility::Inherited
-            } else {
-                Visibility::Hidden
-            },
+            visibility: Visibility::from(*fog),
             mesh: Mesh3d(structure.mesh.clone()),
             material: MeshMaterial3d(structure_materials.add(StructureMaterial::from_structure(
                 &structure_id,

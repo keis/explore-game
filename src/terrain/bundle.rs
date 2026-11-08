@@ -48,11 +48,7 @@ impl<Tag: Component> ZoneDecorationBundle<Tag> {
                 fog,
                 decoration_buffer,
             ))),
-            visibility: if fog.explored {
-                Visibility::Inherited
-            } else {
-                Visibility::Hidden
-            },
+            visibility: Visibility::from(*fog),
             transform: Transform::from_translation(Vec3::new(
                 detail.relative.x,
                 height.height_at(detail.relative, Vec3::from(position).xz() + detail.relative),

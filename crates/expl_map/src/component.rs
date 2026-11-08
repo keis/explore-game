@@ -1,3 +1,4 @@
+use bevy_camera::visibility::Visibility;
 use bevy_derive::Deref;
 use bevy_ecs::prelude::*;
 use bevy_reflect::Reflect;
@@ -13,6 +14,16 @@ pub struct MapLayout(pub SquareGridLayout);
 pub struct Fog {
     pub visible: bool,
     pub explored: bool,
+}
+
+impl From<Fog> for Visibility {
+    fn from(fog: Fog) -> Self {
+        if fog.explored {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        }
+    }
 }
 
 #[derive(Component, Reflect, Copy, Clone, Default, Debug)]
@@ -107,5 +118,20 @@ impl ZoneLayer {
 
     pub fn get(&self, position: HexCoord) -> Option<&Entity> {
         self.tiles.get(position)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn visibility_follows_exploration() {
+        let fog = |visible, explored| Fog { visible, explored };
+
+        assert_eq!(Visibility::from(fog(true, true)), Visibility::Inherited,);
+        assert_eq!(Visibility::from(fog(false, true)), Visibility::Inherited,);
+        assert_eq!(Visibility::from(fog(true, false)), Visibility::Hidden,);
+        assert_eq!(Visibility::from(fog(false, false)), Visibility::Hidden,);
     }
 }
