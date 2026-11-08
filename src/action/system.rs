@@ -1,6 +1,6 @@
 use super::{component::ActionPoints, event::*, plugin::ActionUpdate, queue::*};
 use crate::{
-    actor::{ActorCodex, GroupCommandsExt, Members, Party, PartyBundle, Slide, SlideEvent},
+    actor::{GroupCommandsExt, Members, Party, PartyBundle, Slide, SlideEvent},
     combat::CombatEvent,
     inventory::Inventory,
     path::PathGuided,
@@ -363,12 +363,9 @@ pub fn handle_enter_camp(
 pub fn handle_create_party_from_camp(
     In(action): In<GameAction>,
     mut commands: Commands,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut camp_query: Query<(&mut Inventory, &MapPresence), With<Camp>>,
     map_query: Query<Entity, With<PresenceLayer>>,
-    actor_codex: ActorCodex,
 ) -> GameActionResult {
-    let actor_codex = actor_codex.get()?;
     info!(
         "Creating party at camp {:?} {:?}",
         action.source, action.targets
@@ -383,7 +380,7 @@ pub fn handle_create_party_from_camp(
         .with_presence(presence.position, |location| {
             let (party_bundle, party_role, actor_role) =
                 PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
-                    .with_fluff(&mut standard_materials, actor_codex);
+                    .with_fluff();
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
                 .attach_role(party_role)
@@ -397,12 +394,9 @@ pub fn handle_create_party_from_camp(
 pub fn handle_split_party(
     In(action): In<GameAction>,
     mut commands: Commands,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut party_query: Query<(&mut Inventory, &Members, &MapPresence), With<Party>>,
     map_query: Query<Entity, With<PresenceLayer>>,
-    actor_codex: ActorCodex,
 ) -> GameActionResult {
-    let actor_codex = actor_codex.get()?;
     let (mut party_inventory, members, presence) = party_query.get_mut(action.source)?;
     let map_entity = map_query.single()?;
     if members.len() == action.targets.len() {
@@ -416,7 +410,7 @@ pub fn handle_split_party(
         .with_presence(presence.position, |location| {
             let (party_bundle, party_role, actor_role) =
                 PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
-                    .with_fluff(&mut standard_materials, actor_codex);
+                    .with_fluff();
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
                 .attach_role(party_role)

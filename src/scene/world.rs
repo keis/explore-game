@@ -1,6 +1,6 @@
 use super::save;
 use crate::{
-    actor::{ActorCodex, CharacterBundle, GroupCommandsExt, PartyBundle},
+    actor::{CharacterBundle, GroupCommandsExt, PartyBundle},
     creature::CreatureCodex,
     map_generator::{MapPrototype, MapSeed},
     role::{AssumedRoles, RoleCommandsExt},
@@ -140,15 +140,12 @@ pub fn spawn_spawner(
 
 pub fn spawn_party(
     mut commands: Commands,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
-    actor_codex: ActorCodex,
     creature_codex: CreatureCodex,
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.single()?;
     let map_entity = map_query.single()?;
-    let actor_codex = actor_codex.get()?;
     let creature_codex = creature_codex.get()?;
 
     let character1 = commands
@@ -177,7 +174,7 @@ pub fn spawn_party(
         .with_presence(prototype.party_position, |location| {
             let (party_bundle, party_role, actor_role) =
                 PartyBundle::new(prototype.party_position, String::from("Alpha Group"), 1)
-                    .with_fluff(&mut standard_materials, actor_codex);
+                    .with_fluff();
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
                 .attach_role(party_role)
