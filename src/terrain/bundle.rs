@@ -3,6 +3,7 @@ use crate::{
     map_generator::ZonePrototype,
     material::{DecorationBuffer, DecorationMaterial, TerrainBuffer, WaterMaterial, ZoneMaterial},
     role::Role,
+    ExplError,
 };
 use bevy::{light::NotShadowCaster, prelude::*};
 use expl_codex::{Codex, Id};
@@ -128,7 +129,7 @@ impl ZoneRole {
 }
 
 impl Role for ZoneRole {
-    fn attach(self, entity: &mut EntityWorldMut) {
+    fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError> {
         entity.insert((
             self.not_shadow_caster,
             self.mesh,
@@ -136,6 +137,7 @@ impl Role for ZoneRole {
             self.outer_visible,
             self.outer_terrain,
         ));
+        Ok(())
     }
 }
 

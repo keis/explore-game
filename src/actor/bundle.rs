@@ -5,6 +5,7 @@ use crate::{
     inventory::Inventory,
     path::PathGuided,
     role::Role,
+    ExplError,
 };
 use bevy::prelude::*;
 use bevy_mod_outline::OutlineVolume;
@@ -47,7 +48,7 @@ impl ActorRole {
 }
 
 impl Role for ActorRole {
-    fn attach(self, entity: &mut EntityWorldMut) {
+    fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError> {
         entity.insert((
             self.visibility,
             children![(
@@ -57,6 +58,7 @@ impl Role for ActorRole {
                 self.outline_volume,
             )],
         ));
+        Ok(())
     }
 }
 
@@ -68,8 +70,9 @@ pub struct PartyRole {
 }
 
 impl Role for PartyRole {
-    fn attach(self, entity: &mut EntityWorldMut) {
+    fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError> {
         entity.insert((self.selection, self.path_guided));
+        Ok(())
     }
 }
 

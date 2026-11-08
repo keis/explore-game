@@ -7,6 +7,7 @@ use crate::{
     inventory::Inventory,
     material::{StructureBuffer, StructureMaterial},
     role::Role,
+    ExplError,
 };
 use bevy::prelude::*;
 use bevy_mod_outline::OutlineVolume;
@@ -67,7 +68,7 @@ impl StructureRole {
 }
 
 impl Role for StructureRole {
-    fn attach(self, entity: &mut EntityWorldMut) {
+    fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError> {
         entity.insert((
             self.visibility,
             self.selection,
@@ -79,6 +80,7 @@ impl Role for StructureRole {
                 self.outline_volume,
             )],
         ));
+        Ok(())
     }
 }
 
