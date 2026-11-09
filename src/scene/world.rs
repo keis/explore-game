@@ -5,7 +5,7 @@ use crate::{
     map_generator::{MapPrototype, MapSeed},
     role::{AssumedRoles, RoleCommandsExt},
     structure::{PortalBundle, SafeHavenBundle, SpawnerBundle},
-    terrain::{CrystalDeposit, TerrainId, ZoneBundle, ZoneParams},
+    terrain::{CrystalDeposit, OuterTerrain, OuterVisible, TerrainId, ZoneBundle},
     turn::Turn,
     ExplError,
 };
@@ -50,7 +50,6 @@ pub fn fluff_loaded_map(
 
 pub fn spawn_generated_map(
     mut commands: Commands,
-    mut zone_params: ZoneParams,
     map_prototype_query: Query<&MapPrototype>,
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.single()?;
@@ -65,12 +64,13 @@ pub fn spawn_generated_map(
                     .get(coord)
                     .map_or(void, |proto| proto.terrain)
             });
-            let (zone_bundle, zone_role) =
-                ZoneBundle::new(position, zoneproto).with_fluff(&mut zone_params, neighbours);
+            let (zone_bundle, zone_role) = ZoneBundle::new(position, zoneproto).with_fluff();
             let mut zone = commands.spawn((
                 Name::new(format!("Zone {}", position)),
                 save::Save,
                 zone_bundle,
+                OuterVisible::default(),
+                OuterTerrain(neighbours),
             ));
             zone.attach_role(zone_role);
 

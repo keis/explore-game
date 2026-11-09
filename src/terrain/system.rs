@@ -133,7 +133,6 @@ pub fn show_decorations_behind_camp(
 #[allow(clippy::type_complexity)]
 pub fn fluff_zone(
     mut commands: Commands,
-    mut zone_params: ZoneParams,
     map_query: Query<(&MapLayout, &ZoneLayer)>,
     mut zone_query: ParamSet<(
         Query<(&MapPosition, &TerrainId), Without<AssumedRoles>>,
@@ -174,13 +173,10 @@ pub fn fluff_zone(
             terrain_grid.get(coord).copied().unwrap_or(void)
         });
 
-        commands.entity(entity).attach_role(ZoneRole::new(
-            &mut zone_params,
-            terrain,
-            fog,
-            outer_visible,
-            neighbours,
-        ));
+        commands
+            .entity(entity)
+            .insert((outer_visible, OuterTerrain(neighbours)))
+            .attach_role(ZoneRole::new(terrain.0));
     }
     Ok(())
 }

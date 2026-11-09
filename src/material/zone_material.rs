@@ -1,7 +1,15 @@
 #![allow(dead_code)]
 use super::codex_buffer::{CodexBuffer, CodexBufferPlugin, CodexBufferValue};
-use crate::terrain::{OuterVisible, Terrain, TerrainId};
-use bevy::{prelude::*, render::render_resource::*, shader::ShaderRef};
+use crate::terrain::{OuterTerrain, OuterVisible, Terrain};
+use bevy::{
+    ecs::{
+        error::BevyError,
+        template::{Template, TemplateContext},
+    },
+    prelude::*,
+    render::render_resource::*,
+    shader::ShaderRef,
+};
 use expl_codex::Id;
 use expl_hexgrid::Neighbours;
 use expl_map::Fog;
@@ -106,13 +114,13 @@ pub struct ZoneMaterial {
 
 impl ZoneMaterial {
     pub fn new(
-        terrain: &TerrainId,
+        terrain_id: Id<Terrain>,
         fog: &Fog,
         outer_visible: &OuterVisible,
         outer_terrain: &Neighbours<Id<Terrain>>,
-        terrain_buffer: &Res<TerrainBuffer>,
+        terrain_buffer: &TerrainBuffer,
     ) -> Self {
-        let terrain_idx = terrain_buffer.as_index(terrain).unwrap() as u32;
+        let terrain_idx = terrain_buffer.as_index(&terrain_id).unwrap() as u32;
         let outer_terrain_idx =
             outer_terrain.map(|terrain| terrain_buffer.as_index(&terrain).unwrap() as u32);
         Self {
@@ -167,6 +175,48 @@ impl Material for ZoneMaterial {
 
     fn vertex_shader() -> ShaderRef {
         "materials/zone_vertex.wgsl".into()
+    }
+}
+
+/// Scene template building the [`ZoneMaterial`] for a terrain id.
+///
+/// Reads the zone's [`Fog`], [`OuterVisible`] and [`OuterTerrain`] from the
+/// entity the scene is applied to.
+#[derive(Default)]
+pub struct ZoneMaterialTemplate {
+    pub terrain_id: Id<Terrain>,
+}
+
+impl Template for ZoneMaterialTemplate {
+    type Output = MeshMaterial3d<ZoneMaterial>;
+
+    fn build_template(&self, context: &mut TemplateContext) -> Result<Self::Output> {
+        let fog = *context
+            .entity
+            .get::<Fog>()
+            .ok_or_else(|| BevyError::error("ZoneMaterialTemplate requires Fog on the entity"))?;
+        let outer_visible = *context.entity.get::<OuterVisible>().ok_or_else(|| {
+            BevyError::error("ZoneMaterialTemplate requires OuterVisible on the entity")
+        })?;
+        let outer_terrain = *context.entity.get::<OuterTerrain>().ok_or_else(|| {
+            BevyError::error("ZoneMaterialTemplate requires OuterTerrain on the entity")
+        })?;
+
+        let material = ZoneMaterial::new(
+            self.terrain_id,
+            &fog,
+            &outer_visible,
+            &outer_terrain,
+            context.resource::<TerrainBuffer>(),
+        );
+        let handle = context.resource_mut::<Assets<ZoneMaterial>>().add(material);
+        Ok(MeshMaterial3d(handle))
+    }
+
+    fn clone_template(&self) -> Self {
+        Self {
+            terrain_id: self.terrain_id,
+        }
     }
 }
 

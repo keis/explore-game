@@ -13,7 +13,7 @@ pub use structure_material::{
     StructureBuffer, StructureMaterial, StructureMaterialPlugin, StructureMaterialTemplate,
 };
 pub use water_material::{WaterMaterial, WaterMaterialPlugin};
-pub use zone_material::{TerrainBuffer, ZoneMaterial, ZoneMaterialPlugin};
+pub use zone_material::{TerrainBuffer, ZoneMaterial, ZoneMaterialPlugin, ZoneMaterialTemplate};
 
 pub struct MaterialPlugins;
 
