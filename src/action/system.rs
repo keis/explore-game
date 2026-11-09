@@ -378,12 +378,11 @@ pub fn handle_create_party_from_camp(
     commands
         .entity(map_entity)
         .with_presence(presence.position, |location| {
-            let (party_bundle, party_role, actor_role) =
+            let (party_bundle, actor_role) =
                 PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
                     .with_fluff();
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
-                .attach_role(party_role)
                 .attach_role(actor_role)
                 .add_members(&action.targets);
         });
@@ -408,12 +407,11 @@ pub fn handle_split_party(
     commands
         .entity(map_entity)
         .with_presence(presence.position, |location| {
-            let (party_bundle, party_role, actor_role) =
+            let (party_bundle, actor_role) =
                 PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
                     .with_fluff();
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
-                .attach_role(party_role)
                 .attach_role(actor_role)
                 .add_members(&action.targets);
         });

@@ -19,17 +19,6 @@ pub fn fluff_actor(
 }
 
 #[allow(clippy::type_complexity)]
-pub fn fluff_party(
-    mut commands: Commands,
-    party_query: Query<Entity, (With<Party>, Without<AssumedRoles>)>,
-) -> Result<(), ExplError> {
-    for entity in &party_query {
-        commands.entity(entity).attach_role(PartyRole::default());
-    }
-    Ok(())
-}
-
-#[allow(clippy::type_complexity)]
 pub fn update_enemy_visibility(
     map_query: Query<(&ZoneLayer, &PresenceLayer)>,
     mut enemy_params: ParamSet<(

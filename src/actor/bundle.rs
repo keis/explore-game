@@ -1,9 +1,7 @@
 use super::{asset::*, component::*, system_param::actor_codex};
 use crate::{
     creature::{Creature, CreatureBundle},
-    input::Selection,
     inventory::Inventory,
-    path::PathGuided,
     role::Role,
     ExplError,
 };
@@ -81,20 +79,6 @@ impl Template for ActorMaterialTemplate {
     }
 }
 
-#[derive(Default)]
-pub struct PartyRole {
-    // Insert
-    selection: Selection,
-    path_guided: PathGuided,
-}
-
-impl Role for PartyRole {
-    fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError> {
-        entity.insert((self.selection, self.path_guided));
-        Ok(())
-    }
-}
-
 #[derive(Bundle, Default)]
 pub struct CharacterBundle {
     pub creature: CreatureBundle,
@@ -141,10 +125,9 @@ impl PartyBundle {
         }
     }
 
-    pub fn with_fluff(self) -> (Self, PartyRole, ActorRole) {
-        let party_role = PartyRole::default();
+    pub fn with_fluff(self) -> (Self, ActorRole) {
         let actor_role = ActorRole::new(*self.actor_id);
-        (self, party_role, actor_role)
+        (self, actor_role)
     }
 }
 

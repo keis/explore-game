@@ -17,7 +17,7 @@ impl Plugin for ActorPlugin {
             .add_observer(despawn_empty_party.map(error::warn))
             .add_systems(
                 OnEnter(SceneState::Active),
-                (fluff_party.map(error::warn), fluff_actor).in_set(SceneSet::Populate),
+                fluff_actor.in_set(SceneSet::Populate),
             )
             .add_systems(
                 Update,

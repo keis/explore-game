@@ -172,12 +172,11 @@ pub fn spawn_party(
     commands
         .entity(map_entity)
         .with_presence(prototype.party_position, |location| {
-            let (party_bundle, party_role, actor_role) =
+            let (party_bundle, actor_role) =
                 PartyBundle::new(prototype.party_position, String::from("Alpha Group"), 1)
                     .with_fluff();
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
-                .attach_role(party_role)
                 .attach_role(actor_role)
                 .add_members(&[character1, character2, character3]);
         });
