@@ -5,7 +5,7 @@ use crate::{
 };
 use bevy::{
     prelude::*,
-    scene::{bsn, EntityWorldMutSceneExt},
+    scene::{bsn, Scene},
 };
 use bevy_mod_outline::OutlineVolume;
 use expl_codex::Id;
@@ -23,16 +23,15 @@ impl StructureRole {
     pub fn new(structure_id: Id<Structure>) -> Self {
         Self { structure_id }
     }
+}
 
-    /// Builds the presentation scene owned by the role.
-    ///
-    /// Takes `self` because [`Scene`] is `'static`: the scene must own every
-    /// value it is built from.
-    fn scene(self, structure: &Structure) -> impl Scene {
-        let Self { structure_id } = self;
+impl Role for StructureRole {
+    fn scene(self, world: &World) -> Result<impl Scene, ExplError> {
+        let structure_id = self.structure_id;
+        let structure = structure_codex(world)?[&structure_id].clone();
         let mesh = structure.mesh.clone();
 
-        bsn! {
+        Ok(bsn! {
             ~FogVisibility
             Selection
             FloatingTextSource { offset: Vec3::new(0.0, 0.5, 0.0) }
@@ -50,15 +49,7 @@ impl StructureRole {
                     colour: { structure.color_a }
                 }
             ]
-        }
-    }
-}
-
-impl Role for StructureRole {
-    fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError> {
-        let structure = structure_codex(entity.world())?[&self.structure_id].clone();
-        entity.apply_scene(self.scene(&structure))?;
-        Ok(())
+        })
     }
 }
 

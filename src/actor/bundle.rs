@@ -8,7 +8,7 @@ use crate::{
 use bevy::{
     ecs::template::{Template, TemplateContext},
     prelude::*,
-    scene::{bsn, EntityWorldMutSceneExt},
+    scene::{bsn, Scene},
 };
 use bevy_mod_outline::OutlineVolume;
 use expl_codex::{Codex, Id};
@@ -26,12 +26,14 @@ impl ActorRole {
     pub fn new(actor_id: Id<Actor>) -> Self {
         Self { actor_id }
     }
+}
 
-    /// Builds the presentation scene owned by the role.
-    fn scene(actor: &Actor) -> impl Scene {
+impl Role for ActorRole {
+    fn scene(self, world: &World) -> Result<impl Scene, ExplError> {
+        let actor = actor_codex(world)?[&self.actor_id].clone();
         let mesh = actor.mesh.clone();
 
-        bsn! {
+        Ok(bsn! {
             Children [
                 Transform {
                     translation: Vec3::new(0.0, actor.offset, 0.0),
@@ -46,15 +48,7 @@ impl ActorRole {
                     colour: { actor.outline_color }
                 }
             ]
-        }
-    }
-}
-
-impl Role for ActorRole {
-    fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError> {
-        let actor = actor_codex(entity.world())?[&self.actor_id].clone();
-        entity.apply_scene(Self::scene(&actor))?;
-        Ok(())
+        })
     }
 }
 

@@ -8,7 +8,7 @@ use crate::{
 use bevy::{
     light::NotShadowCaster,
     prelude::*,
-    scene::{bsn, EntityWorldMutSceneExt},
+    scene::{bsn, Scene},
 };
 use expl_codex::{Codex, Id};
 use expl_map::{Fog, HexCoord, MapPosition};
@@ -100,29 +100,22 @@ impl ZoneRole {
     pub fn new(terrain_id: Id<Terrain>) -> Self {
         Self { terrain_id }
     }
-
-    /// Builds the presentation scene owned by the role.
-    fn scene(self, mesh: Handle<Mesh>) -> impl Scene {
-        let Self { terrain_id } = self;
-
-        bsn! {
-            ~NotShadowCaster
-            Mesh3d(mesh)
-            ~ZoneMaterialTemplate { terrain_id }
-        }
-    }
 }
 
 impl Role for ZoneRole {
-    fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError> {
-        let mesh = entity
-            .world()
+    fn scene(self, world: &World) -> Result<impl Scene, ExplError> {
+        let terrain_id = self.terrain_id;
+        let mesh = world
             .get_resource::<HexAssets>()
             .ok_or(ExplError::ResourceMissing)?
             .mesh
             .clone();
-        entity.apply_scene(self.scene(mesh))?;
-        Ok(())
+
+        Ok(bsn! {
+            ~NotShadowCaster
+            Mesh3d(mesh)
+            ~ZoneMaterialTemplate { terrain_id }
+        })
     }
 }
 
