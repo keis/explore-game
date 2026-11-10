@@ -1,13 +1,14 @@
 use super::{component::ActionPoints, event::*, plugin::ActionUpdate, queue::*};
 use crate::{
     actor::{GroupCommandsExt, Members, Party, PartyBundle, Slide, SlideEvent},
+    codex::CodexParam,
     combat::CombatEvent,
     inventory::Inventory,
     path::PathGuided,
     role::RoleCommandsExt,
     scene::save,
     structure::{Camp, CampBundle, Portal, SafeHaven},
-    terrain::{CrystalDeposit, HeightQuery, TerrainCodex, TerrainId},
+    terrain::{CrystalDeposit, HeightQuery, Terrain, TerrainId},
     ExplError,
 };
 use bevy::prelude::*;
@@ -279,7 +280,7 @@ pub fn handle_make_camp(
     terrain_query: Query<&TerrainId>,
     mut party_query: Query<(&mut Inventory, &Members, &MapPresence), With<Party>>,
     camp_query: Query<&Camp>,
-    terrain_codex: TerrainCodex,
+    terrain_codex: CodexParam<Terrain>,
 ) -> GameActionResult {
     let terrain_codex = terrain_codex.get()?;
 

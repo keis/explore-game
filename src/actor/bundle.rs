@@ -1,5 +1,6 @@
-use super::{asset::*, component::*, system_param::actor_codex};
+use super::{asset::*, component::*};
 use crate::{
+    codex::codex,
     creature::{Creature, CreatureBundle},
     inventory::Inventory,
     role::Role,
@@ -30,7 +31,7 @@ impl ActorRole {
 
 impl Role for ActorRole {
     fn scene(self, world: &World) -> Result<impl Scene, ExplError> {
-        let actor = actor_codex(world)?[&self.actor_id].clone();
+        let actor = codex::<Actor>(world)?[&self.actor_id].clone();
         let mesh = actor.mesh.clone();
 
         Ok(bsn! {

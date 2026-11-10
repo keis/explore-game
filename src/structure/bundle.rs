@@ -1,7 +1,8 @@
-use super::{asset::*, component::*, system_param::structure_codex};
+use super::{asset::*, component::*};
 use crate::{
-    actor::Actor, creature::Creature, floating_text::FloatingTextSource, input::Selection,
-    inventory::Inventory, material::StructureMaterialTemplate, role::Role, ExplError,
+    actor::Actor, codex::codex, creature::Creature, floating_text::FloatingTextSource,
+    input::Selection, inventory::Inventory, material::StructureMaterialTemplate, role::Role,
+    ExplError,
 };
 use bevy::{
     prelude::*,
@@ -28,7 +29,7 @@ impl StructureRole {
 impl Role for StructureRole {
     fn scene(self, world: &World) -> Result<impl Scene, ExplError> {
         let structure_id = self.structure_id;
-        let structure = structure_codex(world)?[&structure_id].clone();
+        let structure = codex::<Structure>(world)?[&structure_id].clone();
         let mesh = structure.mesh.clone();
 
         Ok(bsn! {

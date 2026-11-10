@@ -1,5 +1,7 @@
 use super::{asset::*, bundle::*, component::*, system_param::*};
-use crate::{role::AssumedRoles, role::RoleCommandsExt, structure::Camp, ExplError};
+use crate::{
+    codex::CodexParam, role::AssumedRoles, role::RoleCommandsExt, structure::Camp, ExplError,
+};
 use bevy::prelude::*;
 use expl_codex::Id;
 use expl_hexgrid::{Grid, Neighbours};
@@ -193,8 +195,8 @@ pub fn decorate_zone(
     )>,
     mut zone_decoration_params: ZoneDecorationParams,
     mut water_params: WaterParams,
-    terrain_codex: TerrainCodex,
-    decoration_codex: DecorationCodex,
+    terrain_codex: CodexParam<Terrain>,
+    decoration_codex: CodexParam<Decoration>,
 ) -> Result<(), ExplError> {
     let terrain_codex = terrain_codex.get()?;
     let decoration_codex = decoration_codex.get()?;

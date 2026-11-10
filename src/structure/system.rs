@@ -1,7 +1,8 @@
 use super::{bundle::*, component::*};
 use crate::{
     actor::{EnemyBundle, Members},
-    creature::{CreatureCodex, Health},
+    codex::CodexParam,
+    creature::{Creature, Health},
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     material::PortalMaterial,
     role::{AssumedRoles, RoleCommandsExt},
@@ -31,7 +32,7 @@ pub fn charge_spawner(mut spawner_query: Query<&mut Spawner>) {
 pub fn spawn_enemy(
     mut commands: Commands,
     mut spawner_query: Query<(&MapPresence, &mut Spawner)>,
-    creature_codex: CreatureCodex,
+    creature_codex: CodexParam<Creature>,
     presence_query: Query<Entity, Without<Spawner>>,
     map_query: Query<(Entity, &PresenceLayer)>,
 ) -> Result<(), ExplError> {

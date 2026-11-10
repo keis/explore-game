@@ -1,5 +1,6 @@
 use crate::{
-    terrain::{Terrain, TerrainCodex, TerrainId},
+    codex::CodexParam,
+    terrain::{Terrain, TerrainId},
     ExplError,
 };
 use bevy::{ecs::system::SystemParam, prelude::*};
@@ -11,7 +12,7 @@ use pathfinding::prelude::astar;
 pub struct PathFinder<'w, 's> {
     map_query: Query<'w, 's, &'static ZoneLayer>,
     terrain_query: Query<'w, 's, &'static TerrainId>,
-    terrain_codex: TerrainCodex<'w>,
+    terrain_codex: CodexParam<'w, Terrain>,
 }
 
 impl PathFinder<'_, '_> {

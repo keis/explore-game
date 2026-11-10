@@ -1,7 +1,8 @@
 use super::save;
 use crate::{
     actor::{CharacterBundle, GroupCommandsExt, PartyBundle},
-    creature::CreatureCodex,
+    codex::CodexParam,
+    creature::Creature,
     map_generator::{MapPrototype, MapSeed},
     role::{AssumedRoles, RoleCommandsExt},
     structure::{PortalBundle, SafeHavenBundle, SpawnerBundle},
@@ -140,7 +141,7 @@ pub fn spawn_spawner(
 
 pub fn spawn_party(
     mut commands: Commands,
-    creature_codex: CreatureCodex,
+    creature_codex: CodexParam<Creature>,
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
