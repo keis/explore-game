@@ -1,4 +1,4 @@
-use super::{bundle::*, component::*, event::*, system_param::*};
+use super::{bundle::*, component::*, event::*};
 use crate::{
     role::{AssumedRoles, RoleCommandsExt},
     terrain::HeightQuery,
@@ -7,33 +7,15 @@ use crate::{
 use bevy::prelude::*;
 use expl_map::{Fog, MapCommandsExt, MapPosition, MapPresence, PresenceLayer, ZoneLayer};
 
-#[allow(clippy::type_complexity)]
 pub fn fluff_actor(
     mut commands: Commands,
-    actor_codex: ActorCodex,
-    creature_query: Query<(Entity, &ActorId), Without<AssumedRoles>>,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
-) -> Result<(), ExplError> {
-    let actor_codex = actor_codex.get()?;
-    for (entity, creature_id) in &creature_query {
-        commands.entity(entity).attach_role(ActorRole::new(
-            &mut standard_materials,
-            actor_codex,
-            **creature_id,
-        ));
+    actor_query: Query<(Entity, &ActorId), Without<AssumedRoles>>,
+) {
+    for (entity, actor_id) in &actor_query {
+        commands
+            .entity(entity)
+            .attach_role(ActorRole::new(**actor_id));
     }
-    Ok(())
-}
-
-#[allow(clippy::type_complexity)]
-pub fn fluff_party(
-    mut commands: Commands,
-    party_query: Query<Entity, (With<Party>, Without<AssumedRoles>)>,
-) -> Result<(), ExplError> {
-    for entity in &party_query {
-        commands.entity(entity).attach_role(PartyRole::default());
-    }
-    Ok(())
 }
 
 #[allow(clippy::type_complexity)]

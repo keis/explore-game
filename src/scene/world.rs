@@ -1,11 +1,12 @@
 use super::save;
 use crate::{
-    actor::{ActorCodex, CharacterBundle, GroupCommandsExt, PartyBundle},
-    creature::CreatureCodex,
+    actor::{CharacterBundle, GroupCommandsExt, PartyBundle},
+    codex::CodexParam,
+    creature::Creature,
     map_generator::{MapPrototype, MapSeed},
     role::{AssumedRoles, RoleCommandsExt},
-    structure::{PortalBundle, SafeHavenBundle, SpawnerBundle, StructureCodex, StructureParams},
-    terrain::{CrystalDeposit, TerrainId, ZoneBundle, ZoneParams},
+    structure::{PortalBundle, SafeHavenBundle, SpawnerBundle},
+    terrain::{CrystalDeposit, OuterTerrain, OuterVisible, TerrainId, ZoneBundle},
     turn::Turn,
     ExplError,
 };
@@ -50,7 +51,6 @@ pub fn fluff_loaded_map(
 
 pub fn spawn_generated_map(
     mut commands: Commands,
-    mut zone_params: ZoneParams,
     map_prototype_query: Query<&MapPrototype>,
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.single()?;
@@ -65,12 +65,13 @@ pub fn spawn_generated_map(
                     .get(coord)
                     .map_or(void, |proto| proto.terrain)
             });
-            let (zone_bundle, zone_role) =
-                ZoneBundle::new(position, zoneproto).with_fluff(&mut zone_params, neighbours);
+            let (zone_bundle, zone_role) = ZoneBundle::new(position, zoneproto).with_fluff();
             let mut zone = commands.spawn((
                 Name::new(format!("Zone {}", position)),
                 save::Save,
                 zone_bundle,
+                OuterVisible::default(),
+                OuterTerrain(neighbours),
             ));
             zone.attach_role(zone_role);
 
@@ -94,20 +95,17 @@ pub fn spawn_generated_map(
 
 pub fn spawn_portal(
     mut commands: Commands,
-    mut structure_params: StructureParams,
-    structure_codex: StructureCodex,
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.single()?;
     let map_entity = map_query.single()?;
-    let structure_codex = structure_codex.get()?;
 
     commands
         .entity(map_entity)
         .with_presence(prototype.portal_position, |location| {
-            let (portal_bundle, structure_role) = PortalBundle::new(prototype.portal_position)
-                .with_fluff(&mut structure_params, structure_codex);
+            let (portal_bundle, structure_role) =
+                PortalBundle::new(prototype.portal_position).with_fluff();
             location
                 .spawn((Name::new("Portal"), save::Save, portal_bundle))
                 .attach_role(structure_role);
@@ -118,14 +116,11 @@ pub fn spawn_portal(
 
 pub fn spawn_spawner(
     mut commands: Commands,
-    mut structure_params: StructureParams,
-    structure_codex: StructureCodex,
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.single()?;
     let map_entity = map_query.single()?;
-    let structure_codex = structure_codex.get()?;
 
     commands
         .entity(map_entity)
@@ -135,7 +130,7 @@ pub fn spawn_spawner(
                 Id::from_tag("slime"),
                 Id::from_tag("slime"),
             )
-            .with_fluff(&mut structure_params, structure_codex);
+            .with_fluff();
             location
                 .spawn((Name::new("EnemySpawner"), save::Save, spawner_bundle))
                 .attach_role(structure_role);
@@ -146,15 +141,12 @@ pub fn spawn_spawner(
 
 pub fn spawn_party(
     mut commands: Commands,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
-    actor_codex: ActorCodex,
-    creature_codex: CreatureCodex,
+    creature_codex: CodexParam<Creature>,
     map_prototype_query: Query<&MapPrototype>,
     map_query: Query<Entity, With<PresenceLayer>>,
 ) -> Result<(), ExplError> {
     let prototype = map_prototype_query.single()?;
     let map_entity = map_query.single()?;
-    let actor_codex = actor_codex.get()?;
     let creature_codex = creature_codex.get()?;
 
     let character1 = commands
@@ -181,12 +173,11 @@ pub fn spawn_party(
     commands
         .entity(map_entity)
         .with_presence(prototype.party_position, |location| {
-            let (party_bundle, party_role, actor_role) =
+            let (party_bundle, actor_role) =
                 PartyBundle::new(prototype.party_position, String::from("Alpha Group"), 1)
-                    .with_fluff(&mut standard_materials, actor_codex);
+                    .with_fluff();
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
-                .attach_role(party_role)
                 .attach_role(actor_role)
                 .add_members(&[character1, character2, character3]);
         });

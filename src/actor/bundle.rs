@@ -1,78 +1,69 @@
 use super::{asset::*, component::*};
 use crate::{
+    codex::codex,
     creature::{Creature, CreatureBundle},
-    input::Selection,
     inventory::Inventory,
-    path::PathGuided,
+    material::{MaterialFromTemplate, MaterialTemplate},
     role::Role,
     ExplError,
 };
-use bevy::prelude::*;
+use bevy::{
+    ecs::template::TemplateContext,
+    prelude::*,
+    scene::{bsn, Scene},
+};
 use bevy_mod_outline::OutlineVolume;
 use expl_codex::{Codex, Id};
 use expl_map::{HexCoord, MapPresence, ViewRadius};
 
-#[derive(Default)]
+/// Role presenting an actor.
+///
+/// Only the [`Id`] is stored; the codex entry is resolved when the role is
+/// attached.
 pub struct ActorRole {
-    // Insert
-    visibility: Visibility,
-    // Child
-    child_transform: Transform,
-    mesh: Mesh3d,
-    material: MeshMaterial3d<StandardMaterial>,
-    outline_volume: OutlineVolume,
+    actor_id: Id<Actor>,
 }
 
 impl ActorRole {
-    pub fn new(
-        standard_materials: &mut Assets<StandardMaterial>,
-        actor_codex: &Codex<Actor>,
-        actor_id: Id<Actor>,
-    ) -> Self {
-        let actor_data = &actor_codex[&actor_id];
-        let offset = Vec3::new(0.0, actor_data.offset, 0.0);
-        let outline_volume = OutlineVolume {
-            visible: true,
-            width: 2.0,
-            colour: actor_data.outline_color,
-        };
-        Self {
-            visibility: Visibility::default(),
-            mesh: Mesh3d(actor_data.mesh.clone()),
-            material: MeshMaterial3d(standard_materials.add(actor_data.color)),
-            child_transform: Transform::from_translation(offset)
-                .with_scale(Vec3::splat(actor_data.scale)),
-            outline_volume,
-        }
+    pub fn new(actor_id: Id<Actor>) -> Self {
+        Self { actor_id }
     }
 }
 
 impl Role for ActorRole {
-    fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError> {
-        entity.insert((
-            self.visibility,
-            children![(
-                self.child_transform,
-                self.mesh,
-                self.material,
-                self.outline_volume,
-            )],
-        ));
-        Ok(())
+    fn scene(self, world: &World) -> Result<impl Scene, ExplError> {
+        let actor_id = self.actor_id;
+        let actor = codex::<Actor>(world)?[&actor_id].clone();
+        let mesh = actor.mesh.clone();
+
+        Ok(bsn! {
+            Children [
+                Transform {
+                    translation: Vec3::new(0.0, actor.offset, 0.0),
+                    rotation: Quat::IDENTITY,
+                    scale: Vec3::splat(actor.scale)
+                }
+                Mesh3d(mesh)
+                ~ActorMaterialTemplate { input: actor_id }
+                OutlineVolume {
+                    visible: true,
+                    width: 2.0,
+                    colour: { actor.outline_color }
+                }
+            ]
+        })
     }
 }
 
-#[derive(Default)]
-pub struct PartyRole {
-    // Insert
-    selection: Selection,
-    path_guided: PathGuided,
-}
+/// Scene template building the [`StandardMaterial`] for an actor.
+pub type ActorMaterialTemplate = MaterialTemplate<StandardMaterial>;
 
-impl Role for PartyRole {
-    fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError> {
-        entity.insert((self.selection, self.path_guided));
-        Ok(())
+impl MaterialFromTemplate for StandardMaterial {
+    type Input = Id<Actor>;
+
+    fn from_template(actor_id: Self::Input, context: &mut TemplateContext) -> Result<Self> {
+        let actor = &codex::<Actor>(context.entity.world())?[&actor_id];
+        Ok(Self::from(actor.color))
     }
 }
 
@@ -122,14 +113,9 @@ impl PartyBundle {
         }
     }
 
-    pub fn with_fluff(
-        self,
-        standard_materials: &mut Assets<StandardMaterial>,
-        actor_codex: &Codex<Actor>,
-    ) -> (Self, PartyRole, ActorRole) {
-        let party_role = PartyRole::default();
-        let actor_role = ActorRole::new(standard_materials, actor_codex, *self.actor_id);
-        (self, party_role, actor_role)
+    pub fn with_fluff(self) -> (Self, ActorRole) {
+        let actor_role = ActorRole::new(*self.actor_id);
+        (self, actor_role)
     }
 }
 
@@ -151,12 +137,8 @@ impl EnemyBundle {
         }
     }
 
-    pub fn with_fluff(
-        self,
-        standard_materials: &mut Assets<StandardMaterial>,
-        actor_codex: &Codex<Actor>,
-    ) -> (Self, ActorRole) {
-        let actor_role = ActorRole::new(standard_materials, actor_codex, *self.actor_id);
+    pub fn with_fluff(self) -> (Self, ActorRole) {
+        let actor_role = ActorRole::new(*self.actor_id);
         (self, actor_role)
     }
 }

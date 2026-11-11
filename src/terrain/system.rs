@@ -1,5 +1,7 @@
 use super::{asset::*, bundle::*, component::*, system_param::*};
-use crate::{role::AssumedRoles, role::RoleCommandsExt, structure::Camp, ExplError};
+use crate::{
+    codex::CodexParam, role::AssumedRoles, role::RoleCommandsExt, structure::Camp, ExplError,
+};
 use bevy::prelude::*;
 use expl_codex::Id;
 use expl_hexgrid::{Grid, Neighbours};
@@ -133,11 +135,10 @@ pub fn show_decorations_behind_camp(
 #[allow(clippy::type_complexity)]
 pub fn fluff_zone(
     mut commands: Commands,
-    mut zone_params: ZoneParams,
     map_query: Query<(&MapLayout, &ZoneLayer)>,
     mut zone_query: ParamSet<(
         Query<(&MapPosition, &TerrainId), Without<AssumedRoles>>,
-        Query<(Entity, &TerrainId, &MapPosition, &Fog), Without<AssumedRoles>>,
+        Query<(Entity, &MapPosition, &Fog), Without<AssumedRoles>>,
     )>,
     neighbour_fog_query: Query<&Fog>,
 ) -> Result<(), ExplError> {
@@ -148,7 +149,7 @@ pub fn fluff_zone(
         terrain_grid[position.0] = **terrain;
     }
 
-    for (entity, terrain, position, fog) in &mut zone_query.p1() {
+    for (entity, position, fog) in &mut zone_query.p1() {
         let outer_visible = if fog.explored {
             OuterVisible::all_visible()
         } else {
@@ -174,13 +175,10 @@ pub fn fluff_zone(
             terrain_grid.get(coord).copied().unwrap_or(void)
         });
 
-        commands.entity(entity).attach_role(ZoneRole::new(
-            &mut zone_params,
-            terrain,
-            fog,
-            outer_visible,
-            neighbours,
-        ));
+        commands
+            .entity(entity)
+            .insert((outer_visible, OuterTerrain(neighbours)))
+            .attach_role(ZoneRole);
     }
     Ok(())
 }
@@ -197,8 +195,8 @@ pub fn decorate_zone(
     )>,
     mut zone_decoration_params: ZoneDecorationParams,
     mut water_params: WaterParams,
-    terrain_codex: TerrainCodex,
-    decoration_codex: DecorationCodex,
+    terrain_codex: CodexParam<Terrain>,
+    decoration_codex: CodexParam<Decoration>,
 ) -> Result<(), ExplError> {
     let terrain_codex = terrain_codex.get()?;
     let decoration_codex = decoration_codex.get()?;

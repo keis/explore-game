@@ -1,13 +1,16 @@
 use super::{asset::*, component::*};
 use crate::{
     map_generator::ZonePrototype,
-    material::{DecorationBuffer, DecorationMaterial, TerrainBuffer, WaterMaterial, ZoneMaterial},
+    material::{DecorationBuffer, DecorationMaterial, WaterMaterial, ZoneMaterialTemplate},
     role::Role,
     ExplError,
 };
-use bevy::{light::NotShadowCaster, prelude::*};
+use bevy::{
+    light::NotShadowCaster,
+    prelude::*,
+    scene::{bsn, Scene},
+};
 use expl_codex::{Codex, Id};
-use expl_hexgrid::Neighbours;
 use expl_map::{Fog, HexCoord, MapPosition};
 use glam::Vec3Swizzles;
 
@@ -84,56 +87,26 @@ impl WaterBundle {
     }
 }
 
-pub type ZoneParams<'w> = (
-    Res<'w, HexAssets>,
-    Res<'w, TerrainBuffer>,
-    ResMut<'w, Assets<ZoneMaterial>>,
-);
-
-#[derive(Default)]
-pub struct ZoneRole {
-    // Insert
-    not_shadow_caster: NotShadowCaster,
-    mesh: Mesh3d,
-    material: MeshMaterial3d<ZoneMaterial>,
-    outer_visible: OuterVisible,
-    outer_terrain: OuterTerrain,
-}
-
-impl ZoneRole {
-    pub fn new(
-        (hex_assets, codex_buffer, zone_materials): &mut ZoneParams,
-        terrain: &TerrainId,
-        fog: &Fog,
-        outer_visible: OuterVisible,
-        outer_terrain: Neighbours<Id<Terrain>>,
-    ) -> Self {
-        Self {
-            mesh: Mesh3d(hex_assets.mesh.clone()),
-            material: MeshMaterial3d(zone_materials.add(ZoneMaterial::new(
-                terrain,
-                fog,
-                &outer_visible,
-                &outer_terrain,
-                codex_buffer,
-            ))),
-            outer_visible,
-            outer_terrain: OuterTerrain(outer_terrain),
-            ..default()
-        }
-    }
-}
+/// Role presenting a zone.
+///
+/// Everything comes from the zone entity itself: the mesh from [`HexAssets`]
+/// and the material from its own [`TerrainId`], [`Fog`], [`OuterVisible`] and
+/// [`OuterTerrain`].
+pub struct ZoneRole;
 
 impl Role for ZoneRole {
-    fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError> {
-        entity.insert((
-            self.not_shadow_caster,
-            self.mesh,
-            self.material,
-            self.outer_visible,
-            self.outer_terrain,
-        ));
-        Ok(())
+    fn scene(self, world: &World) -> Result<impl Scene, ExplError> {
+        let mesh = world
+            .get_resource::<HexAssets>()
+            .ok_or(ExplError::ResourceMissing)?
+            .mesh
+            .clone();
+
+        Ok(bsn! {
+            ~NotShadowCaster
+            Mesh3d(mesh)
+            ~ZoneMaterialTemplate
+        })
     }
 }
 
@@ -168,19 +141,7 @@ impl ZoneBundle {
         }
     }
 
-    pub fn with_fluff(
-        self,
-        zone_params: &mut ZoneParams,
-        outer_terrain: Neighbours<Id<Terrain>>,
-    ) -> (Self, ZoneRole) {
-        let outer_visible = OuterVisible::default();
-        let zone_role = ZoneRole::new(
-            zone_params,
-            &self.terrain,
-            &self.fog,
-            outer_visible,
-            outer_terrain,
-        );
-        (self, zone_role)
+    pub fn with_fluff(self) -> (Self, ZoneRole) {
+        (self, ZoneRole)
     }
 }

@@ -6,21 +6,23 @@ pub struct FloatingText {
     pub(super) progress: f32,
 }
 
+#[derive(Clone, Copy, Debug)]
 pub enum FloatingTextAlignment {
     Center,
     Left,
     Right,
 }
 
+#[derive(Clone, Debug)]
 pub struct FloatingTextPrototype {
     pub value: String,
     pub alignment: FloatingTextAlignment,
     pub color: Color,
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Clone, Default, Debug)]
 pub struct FloatingTextSource {
-    pub(super) offset: Vec3,
+    pub(crate) offset: Vec3,
     pub(super) pending: VecDeque<FloatingTextPrototype>,
 }
 

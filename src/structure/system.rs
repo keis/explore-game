@@ -1,7 +1,8 @@
-use super::{bundle::*, component::*, system_param::*};
+use super::{bundle::*, component::*};
 use crate::{
-    actor::{ActorCodex, EnemyBundle, Members},
-    creature::{CreatureCodex, Health},
+    actor::{EnemyBundle, Members},
+    codex::CodexParam,
+    creature::{Creature, Health},
     floating_text::{FloatingTextAlignment, FloatingTextPrototype, FloatingTextSource},
     material::PortalMaterial,
     role::{AssumedRoles, RoleCommandsExt},
@@ -9,25 +10,17 @@ use crate::{
     ExplError,
 };
 use bevy::{color::palettes::css, light::NotShadowCaster, prelude::*};
-use expl_map::{Fog, MapCommandsExt, MapPresence, PresenceLayer, ViewRadius};
+use expl_map::{MapCommandsExt, MapPresence, PresenceLayer, ViewRadius};
 
-#[allow(clippy::type_complexity)]
 pub fn fluff_structure(
     mut commands: Commands,
-    mut structure_params: StructureParams,
-    structure_codex: StructureCodex,
-    structure_query: Query<(Entity, &StructureId, &Fog), Without<AssumedRoles>>,
-) -> Result<(), ExplError> {
-    let structure_codex = structure_codex.get()?;
-    for (entity, structure_id, fog) in &structure_query {
-        commands.entity(entity).attach_role(StructureRole::new(
-            &mut structure_params,
-            structure_codex,
-            **structure_id,
-            fog,
-        ));
+    structure_query: Query<(Entity, &StructureId), Without<AssumedRoles>>,
+) {
+    for (entity, structure_id) in &structure_query {
+        commands
+            .entity(entity)
+            .attach_role(StructureRole::new(**structure_id));
     }
-    Ok(())
 }
 
 pub fn charge_spawner(mut spawner_query: Query<&mut Spawner>) {
@@ -39,13 +32,10 @@ pub fn charge_spawner(mut spawner_query: Query<&mut Spawner>) {
 pub fn spawn_enemy(
     mut commands: Commands,
     mut spawner_query: Query<(&MapPresence, &mut Spawner)>,
-    actor_codex: ActorCodex,
-    creature_codex: CreatureCodex,
+    creature_codex: CodexParam<Creature>,
     presence_query: Query<Entity, Without<Spawner>>,
     map_query: Query<(Entity, &PresenceLayer)>,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
 ) -> Result<(), ExplError> {
-    let actor_codex = actor_codex.get()?;
     let creature_codex = creature_codex.get()?;
     let (map_entity, presence_layer) = map_query.single()?;
     for (presence, mut spawner) in &mut spawner_query {
@@ -63,7 +53,7 @@ pub fn spawn_enemy(
                 spawner.creature,
                 spawner.actor,
             )
-            .with_fluff(&mut standard_materials, actor_codex);
+            .with_fluff();
             commands
                 .entity(map_entity)
                 .with_presence(presence.position, |location| {

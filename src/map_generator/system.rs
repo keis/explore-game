@@ -1,5 +1,7 @@
 use super::{asset::MapTemplate, task::generate_map, GenerateMapTask, MapSeed};
-use crate::{assets::MainAssets, scene::SceneState, terrain::TerrainCodex, ExplError};
+use crate::{
+    assets::MainAssets, codex::CodexParam, scene::SceneState, terrain::Terrain, ExplError,
+};
 use bevy::{prelude::*, tasks::AsyncComputeTaskPool};
 use expl_wfc::Seed;
 use futures_lite::future;
@@ -9,7 +11,7 @@ pub fn start_map_generation(
     seed_query: Query<(Entity, &MapSeed), Without<GenerateMapTask>>,
     main_assets: Res<MainAssets>,
     map_template_assets: Res<Assets<MapTemplate>>,
-    terrain_codex: TerrainCodex,
+    terrain_codex: CodexParam<Terrain>,
 ) -> Result<(), ExplError> {
     for (entity, map_seed) in &seed_query {
         let terrain_codex = terrain_codex.get()?.clone();

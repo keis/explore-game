@@ -1,16 +1,15 @@
 use super::{
-    asset::{Decoration, Terrain},
+    asset::Terrain,
     component::{Height, OuterTerrain, TerrainId},
 };
-use crate::{assets::CodexAssets, ExplError};
+use crate::codex::CodexParam;
 use bevy::{ecs::system::SystemParam, prelude::*};
-use expl_codex::Codex;
 use expl_map::{HexCoord, ZoneLayer};
 use glam::Vec3Swizzles;
 
 #[derive(SystemParam)]
 pub struct HeightQuery<'w, 's> {
-    terrain_codex: TerrainCodex<'w>,
+    terrain_codex: CodexParam<'w, Terrain>,
     map_query: Query<'w, 's, &'static ZoneLayer>,
     terrain_query: Query<'w, 's, (&'static TerrainId, &'static OuterTerrain)>,
 }
@@ -32,33 +31,5 @@ impl HeightQuery<'_, '_> {
 
     pub fn adjust(&self, point: Vec3) -> Vec3 {
         Vec3::new(point.x, self.get(point), point.z)
-    }
-}
-
-#[derive(SystemParam)]
-pub struct TerrainCodex<'w> {
-    codex_assets: Res<'w, CodexAssets>,
-    terrain_codex_assets: Res<'w, Assets<Codex<Terrain>>>,
-}
-
-impl TerrainCodex<'_> {
-    pub fn get(&self) -> Result<&Codex<Terrain>, ExplError> {
-        self.terrain_codex_assets
-            .get(&self.codex_assets.terrain_codex)
-            .ok_or(ExplError::MissingCodex)
-    }
-}
-
-#[derive(SystemParam)]
-pub struct DecorationCodex<'w> {
-    codex_assets: Res<'w, CodexAssets>,
-    decoration_codex_assets: Res<'w, Assets<Codex<Decoration>>>,
-}
-
-impl DecorationCodex<'_> {
-    pub fn get(&self) -> Result<&Codex<Decoration>, ExplError> {
-        self.decoration_codex_assets
-            .get(&self.codex_assets.decoration_codex)
-            .ok_or(ExplError::MissingCodex)
     }
 }

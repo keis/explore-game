@@ -1,13 +1,14 @@
 use super::{component::ActionPoints, event::*, plugin::ActionUpdate, queue::*};
 use crate::{
-    actor::{ActorCodex, GroupCommandsExt, Members, Party, PartyBundle, Slide, SlideEvent},
+    actor::{GroupCommandsExt, Members, Party, PartyBundle, Slide, SlideEvent},
+    codex::CodexParam,
     combat::CombatEvent,
     inventory::Inventory,
     path::PathGuided,
     role::RoleCommandsExt,
     scene::save,
-    structure::{Camp, CampBundle, Portal, SafeHaven, StructureCodex, StructureParams},
-    terrain::{CrystalDeposit, HeightQuery, TerrainCodex, TerrainId},
+    structure::{Camp, CampBundle, Portal, SafeHaven},
+    terrain::{CrystalDeposit, HeightQuery, Terrain, TerrainId},
     ExplError,
 };
 use bevy::prelude::*;
@@ -272,20 +273,16 @@ pub fn handle_slide_stopped(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn handle_make_camp(
     In(action): In<GameAction>,
     mut commands: Commands,
-    mut structure_params: StructureParams,
     map_query: Query<(Entity, &ZoneLayer, &PresenceLayer)>,
     terrain_query: Query<&TerrainId>,
     mut party_query: Query<(&mut Inventory, &Members, &MapPresence), With<Party>>,
     camp_query: Query<&Camp>,
-    terrain_codex: TerrainCodex,
-    structure_codex: StructureCodex,
+    terrain_codex: CodexParam<Terrain>,
 ) -> GameActionResult {
     let terrain_codex = terrain_codex.get()?;
-    let structure_codex = structure_codex.get()?;
 
     let (mut party_inventory, members, presence) = party_query.get_mut(action.source)?;
     let (map_entity, zone_layer, presence_layer) = map_query.single()?;
@@ -316,8 +313,7 @@ pub fn handle_make_camp(
         .entity(map_entity)
         .with_presence(position, |location| {
             let (camp_bundle, structure_role) =
-                CampBundle::new(position, String::from("New camp"), camp_inventory)
-                    .with_fluff(&mut structure_params, structure_codex);
+                CampBundle::new(position, String::from("New camp"), camp_inventory).with_fluff();
             location
                 .spawn((Name::new("Camp"), save::Save, camp_bundle))
                 .attach_role(structure_role)
@@ -368,12 +364,9 @@ pub fn handle_enter_camp(
 pub fn handle_create_party_from_camp(
     In(action): In<GameAction>,
     mut commands: Commands,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut camp_query: Query<(&mut Inventory, &MapPresence), With<Camp>>,
     map_query: Query<Entity, With<PresenceLayer>>,
-    actor_codex: ActorCodex,
 ) -> GameActionResult {
-    let actor_codex = actor_codex.get()?;
     info!(
         "Creating party at camp {:?} {:?}",
         action.source, action.targets
@@ -386,12 +379,11 @@ pub fn handle_create_party_from_camp(
     commands
         .entity(map_entity)
         .with_presence(presence.position, |location| {
-            let (party_bundle, party_role, actor_role) =
+            let (party_bundle, actor_role) =
                 PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
-                    .with_fluff(&mut standard_materials, actor_codex);
+                    .with_fluff();
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
-                .attach_role(party_role)
                 .attach_role(actor_role)
                 .add_members(&action.targets);
         });
@@ -402,12 +394,9 @@ pub fn handle_create_party_from_camp(
 pub fn handle_split_party(
     In(action): In<GameAction>,
     mut commands: Commands,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut party_query: Query<(&mut Inventory, &Members, &MapPresence), With<Party>>,
     map_query: Query<Entity, With<PresenceLayer>>,
-    actor_codex: ActorCodex,
 ) -> GameActionResult {
-    let actor_codex = actor_codex.get()?;
     let (mut party_inventory, members, presence) = party_query.get_mut(action.source)?;
     let map_entity = map_query.single()?;
     if members.len() == action.targets.len() {
@@ -419,12 +408,11 @@ pub fn handle_split_party(
     commands
         .entity(map_entity)
         .with_presence(presence.position, |location| {
-            let (party_bundle, party_role, actor_role) =
+            let (party_bundle, actor_role) =
                 PartyBundle::new(presence.position, "New Party".to_string(), new_supplies)
-                    .with_fluff(&mut standard_materials, actor_codex);
+                    .with_fluff();
             location
                 .spawn((Name::new("Party"), save::Save, party_bundle))
-                .attach_role(party_role)
                 .attach_role(actor_role)
                 .add_members(&action.targets);
         });

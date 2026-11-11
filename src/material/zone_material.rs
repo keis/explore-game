@@ -1,7 +1,12 @@
 #![allow(dead_code)]
-use super::codex_buffer::{CodexBuffer, CodexBufferPlugin, CodexBufferValue};
-use crate::terrain::{OuterVisible, Terrain, TerrainId};
-use bevy::{prelude::*, render::render_resource::*, shader::ShaderRef};
+use super::{
+    codex_buffer::{CodexBuffer, CodexBufferPlugin, CodexBufferValue},
+    required_component, MaterialFromTemplate, MaterialTemplate,
+};
+use crate::terrain::{OuterTerrain, OuterVisible, Terrain, TerrainId};
+use bevy::{
+    ecs::template::TemplateContext, prelude::*, render::render_resource::*, shader::ShaderRef,
+};
 use expl_codex::Id;
 use expl_hexgrid::Neighbours;
 use expl_map::Fog;
@@ -106,13 +111,13 @@ pub struct ZoneMaterial {
 
 impl ZoneMaterial {
     pub fn new(
-        terrain: &TerrainId,
+        terrain_id: Id<Terrain>,
         fog: &Fog,
         outer_visible: &OuterVisible,
         outer_terrain: &Neighbours<Id<Terrain>>,
-        terrain_buffer: &Res<TerrainBuffer>,
+        terrain_buffer: &TerrainBuffer,
     ) -> Self {
-        let terrain_idx = terrain_buffer.as_index(terrain).unwrap() as u32;
+        let terrain_idx = terrain_buffer.as_index(&terrain_id).unwrap() as u32;
         let outer_terrain_idx =
             outer_terrain.map(|terrain| terrain_buffer.as_index(&terrain).unwrap() as u32);
         Self {
@@ -167,6 +172,31 @@ impl Material for ZoneMaterial {
 
     fn vertex_shader() -> ShaderRef {
         "materials/zone_vertex.wgsl".into()
+    }
+}
+
+/// Scene template building the [`ZoneMaterial`] from the zone entity.
+///
+/// Reads the zone's [`TerrainId`], [`Fog`], [`OuterVisible`] and
+/// [`OuterTerrain`] from the entity the scene is applied to.
+pub type ZoneMaterialTemplate = MaterialTemplate<ZoneMaterial>;
+
+impl MaterialFromTemplate for ZoneMaterial {
+    type Input = ();
+
+    fn from_template(_input: (), context: &mut TemplateContext) -> Result<Self> {
+        let terrain_id = required_component::<TerrainId>(context)?.0;
+        let fog = required_component::<Fog>(context)?;
+        let outer_visible = required_component::<OuterVisible>(context)?;
+        let outer_terrain = required_component::<OuterTerrain>(context)?;
+
+        Ok(Self::new(
+            terrain_id,
+            fog,
+            outer_visible,
+            outer_terrain,
+            context.resource::<TerrainBuffer>(),
+        ))
     }
 }
 
