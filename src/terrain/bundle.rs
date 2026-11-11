@@ -89,22 +89,13 @@ impl WaterBundle {
 
 /// Role presenting a zone.
 ///
-/// Only the [`Id`] is stored; the material is built from the terrain buffer
-/// and the zone's own [`Fog`], [`OuterVisible`] and [`OuterTerrain`] when the
-/// role is attached.
-pub struct ZoneRole {
-    terrain_id: Id<Terrain>,
-}
-
-impl ZoneRole {
-    pub fn new(terrain_id: Id<Terrain>) -> Self {
-        Self { terrain_id }
-    }
-}
+/// Everything comes from the zone entity itself: the mesh from [`HexAssets`]
+/// and the material from its own [`TerrainId`], [`Fog`], [`OuterVisible`] and
+/// [`OuterTerrain`].
+pub struct ZoneRole;
 
 impl Role for ZoneRole {
     fn scene(self, world: &World) -> Result<impl Scene, ExplError> {
-        let terrain_id = self.terrain_id;
         let mesh = world
             .get_resource::<HexAssets>()
             .ok_or(ExplError::ResourceMissing)?
@@ -114,7 +105,7 @@ impl Role for ZoneRole {
         Ok(bsn! {
             ~NotShadowCaster
             Mesh3d(mesh)
-            ~ZoneMaterialTemplate { input: terrain_id }
+            ~ZoneMaterialTemplate
         })
     }
 }
@@ -151,7 +142,6 @@ impl ZoneBundle {
     }
 
     pub fn with_fluff(self) -> (Self, ZoneRole) {
-        let zone_role = ZoneRole::new(self.terrain.0);
-        (self, zone_role)
+        (self, ZoneRole)
     }
 }

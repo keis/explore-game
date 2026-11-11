@@ -3,7 +3,7 @@ use super::{
     codex_buffer::{CodexBuffer, CodexBufferPlugin, CodexBufferValue},
     required_component, MaterialFromTemplate, MaterialTemplate,
 };
-use crate::terrain::{OuterTerrain, OuterVisible, Terrain};
+use crate::terrain::{OuterTerrain, OuterVisible, Terrain, TerrainId};
 use bevy::{
     ecs::template::TemplateContext, prelude::*, render::render_resource::*, shader::ShaderRef,
 };
@@ -175,16 +175,17 @@ impl Material for ZoneMaterial {
     }
 }
 
-/// Scene template building the [`ZoneMaterial`] for a terrain id.
+/// Scene template building the [`ZoneMaterial`] from the zone entity.
 ///
-/// Reads the zone's [`Fog`], [`OuterVisible`] and [`OuterTerrain`] from the
-/// entity the scene is applied to.
+/// Reads the zone's [`TerrainId`], [`Fog`], [`OuterVisible`] and
+/// [`OuterTerrain`] from the entity the scene is applied to.
 pub type ZoneMaterialTemplate = MaterialTemplate<ZoneMaterial>;
 
 impl MaterialFromTemplate for ZoneMaterial {
-    type Input = Id<Terrain>;
+    type Input = ();
 
-    fn from_template(terrain_id: Self::Input, context: &mut TemplateContext) -> Result<Self> {
+    fn from_template(_input: (), context: &mut TemplateContext) -> Result<Self> {
+        let terrain_id = required_component::<TerrainId>(context)?.0;
         let fog = required_component::<Fog>(context)?;
         let outer_visible = required_component::<OuterVisible>(context)?;
         let outer_terrain = required_component::<OuterTerrain>(context)?;

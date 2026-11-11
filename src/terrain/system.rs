@@ -138,7 +138,7 @@ pub fn fluff_zone(
     map_query: Query<(&MapLayout, &ZoneLayer)>,
     mut zone_query: ParamSet<(
         Query<(&MapPosition, &TerrainId), Without<AssumedRoles>>,
-        Query<(Entity, &TerrainId, &MapPosition, &Fog), Without<AssumedRoles>>,
+        Query<(Entity, &MapPosition, &Fog), Without<AssumedRoles>>,
     )>,
     neighbour_fog_query: Query<&Fog>,
 ) -> Result<(), ExplError> {
@@ -149,7 +149,7 @@ pub fn fluff_zone(
         terrain_grid[position.0] = **terrain;
     }
 
-    for (entity, terrain, position, fog) in &mut zone_query.p1() {
+    for (entity, position, fog) in &mut zone_query.p1() {
         let outer_visible = if fog.explored {
             OuterVisible::all_visible()
         } else {
@@ -178,7 +178,7 @@ pub fn fluff_zone(
         commands
             .entity(entity)
             .insert((outer_visible, OuterTerrain(neighbours)))
-            .attach_role(ZoneRole::new(terrain.0));
+            .attach_role(ZoneRole);
     }
     Ok(())
 }

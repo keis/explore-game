@@ -32,7 +32,8 @@ impl ActorRole {
 
 impl Role for ActorRole {
     fn scene(self, world: &World) -> Result<impl Scene, ExplError> {
-        let actor = codex::<Actor>(world)?[&self.actor_id].clone();
+        let actor_id = self.actor_id;
+        let actor = codex::<Actor>(world)?[&actor_id].clone();
         let mesh = actor.mesh.clone();
 
         Ok(bsn! {
@@ -43,7 +44,7 @@ impl Role for ActorRole {
                     scale: Vec3::splat(actor.scale)
                 }
                 Mesh3d(mesh)
-                ~ActorMaterialTemplate { input: { actor.color } }
+                ~ActorMaterialTemplate { input: actor_id }
                 OutlineVolume {
                     visible: true,
                     width: 2.0,
@@ -58,10 +59,11 @@ impl Role for ActorRole {
 pub type ActorMaterialTemplate = MaterialTemplate<StandardMaterial>;
 
 impl MaterialFromTemplate for StandardMaterial {
-    type Input = Color;
+    type Input = Id<Actor>;
 
-    fn from_template(color: Self::Input, _context: &mut TemplateContext) -> Result<Self> {
-        Ok(Self::from(color))
+    fn from_template(actor_id: Self::Input, context: &mut TemplateContext) -> Result<Self> {
+        let actor = &codex::<Actor>(context.entity.world())?[&actor_id];
+        Ok(Self::from(actor.color))
     }
 }
 
