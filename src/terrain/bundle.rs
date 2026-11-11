@@ -3,6 +3,7 @@ use crate::{
     map_generator::ZonePrototype,
     material::{DecorationBuffer, DecorationMaterial, TerrainBuffer, WaterMaterial, ZoneMaterial},
     role::Role,
+    ExplError,
 };
 use bevy::{light::NotShadowCaster, prelude::*};
 use expl_codex::{Codex, Id};
@@ -47,11 +48,7 @@ impl<Tag: Component> ZoneDecorationBundle<Tag> {
                 fog,
                 decoration_buffer,
             ))),
-            visibility: if fog.explored {
-                Visibility::Inherited
-            } else {
-                Visibility::Hidden
-            },
+            visibility: Visibility::from(*fog),
             transform: Transform::from_translation(Vec3::new(
                 detail.relative.x,
                 height.height_at(detail.relative, Vec3::from(position).xz() + detail.relative),
@@ -128,7 +125,7 @@ impl ZoneRole {
 }
 
 impl Role for ZoneRole {
-    fn attach(self, entity: &mut EntityWorldMut) {
+    fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError> {
         entity.insert((
             self.not_shadow_caster,
             self.mesh,
@@ -136,6 +133,7 @@ impl Role for ZoneRole {
             self.outer_visible,
             self.outer_terrain,
         ));
+        Ok(())
     }
 }
 

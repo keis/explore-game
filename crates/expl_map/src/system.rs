@@ -59,11 +59,7 @@ pub fn update_terrain_visibility(
             fog.visible = parent_fog.visible;
             fog.explored = parent_fog.explored;
 
-            *visibility = if fog.explored {
-                Visibility::Inherited
-            } else {
-                Visibility::Hidden
-            };
+            *visibility = Visibility::from(*fog);
         }
     }
 }

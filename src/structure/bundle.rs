@@ -7,6 +7,7 @@ use crate::{
     inventory::Inventory,
     material::{StructureBuffer, StructureMaterial},
     role::Role,
+    ExplError,
 };
 use bevy::prelude::*;
 use bevy_mod_outline::OutlineVolume;
@@ -46,11 +47,7 @@ impl StructureRole {
         };
         Self {
             floating_text_source: FloatingTextSource::with_offset(Vec3::new(0.0, 0.5, 0.0)),
-            visibility: if fog.explored {
-                Visibility::Inherited
-            } else {
-                Visibility::Hidden
-            },
+            visibility: Visibility::from(*fog),
             mesh: Mesh3d(structure.mesh.clone()),
             material: MeshMaterial3d(structure_materials.add(StructureMaterial::from_structure(
                 &structure_id,
@@ -67,7 +64,7 @@ impl StructureRole {
 }
 
 impl Role for StructureRole {
-    fn attach(self, entity: &mut EntityWorldMut) {
+    fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError> {
         entity.insert((
             self.visibility,
             self.selection,
@@ -79,6 +76,7 @@ impl Role for StructureRole {
                 self.outline_volume,
             )],
         ));
+        Ok(())
     }
 }
 

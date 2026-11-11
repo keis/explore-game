@@ -7,6 +7,8 @@ use bevy::{
     prelude::*,
 };
 
+use crate::ExplError;
+
 /// Marker inserted by every [`Role`] attach.
 ///
 /// Deliberately *not* in the save filter so restored entities can get the
@@ -25,7 +27,14 @@ impl<R: Role> Command for AttachRole<R> {
 
     fn apply(self, world: &mut World) {
         let mut entity = world.entity_mut(self.entity);
-        self.role.attach(&mut entity);
+        if let Err(err) = self.role.attach(&mut entity) {
+            ::tracing::warn!(
+                role = core::any::type_name::<R>(),
+                entity = ?self.entity,
+                error = ?err,
+                "failed to attach role"
+            );
+        }
         entity.insert(AssumedRoles);
     }
 }
@@ -43,5 +52,5 @@ impl RoleCommandsExt for EntityCommands<'_> {
 }
 
 pub trait Role: std::marker::Send + 'static {
-    fn attach(self, entity: &mut EntityWorldMut);
+    fn attach(self, entity: &mut EntityWorldMut) -> Result<(), ExplError>;
 }
