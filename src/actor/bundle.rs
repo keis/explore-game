@@ -3,11 +3,12 @@ use crate::{
     codex::codex,
     creature::{Creature, CreatureBundle},
     inventory::Inventory,
+    material::{MaterialFromTemplate, MaterialTemplate},
     role::Role,
     ExplError,
 };
 use bevy::{
-    ecs::template::{Template, TemplateContext},
+    ecs::template::TemplateContext,
     prelude::*,
     scene::{bsn, Scene},
 };
@@ -42,7 +43,7 @@ impl Role for ActorRole {
                     scale: Vec3::splat(actor.scale)
                 }
                 Mesh3d(mesh)
-                ~ActorMaterialTemplate { color: { actor.color } }
+                ~ActorMaterialTemplate { input: { actor.color } }
                 OutlineVolume {
                     visible: true,
                     width: 2.0,
@@ -54,23 +55,13 @@ impl Role for ActorRole {
 }
 
 /// Scene template building the [`StandardMaterial`] for an actor.
-#[derive(Default)]
-pub struct ActorMaterialTemplate {
-    pub color: Color,
-}
+pub type ActorMaterialTemplate = MaterialTemplate<StandardMaterial>;
 
-impl Template for ActorMaterialTemplate {
-    type Output = MeshMaterial3d<StandardMaterial>;
+impl MaterialFromTemplate for StandardMaterial {
+    type Input = Color;
 
-    fn build_template(&self, context: &mut TemplateContext) -> Result<Self::Output> {
-        let material = context
-            .resource_mut::<Assets<StandardMaterial>>()
-            .add(StandardMaterial::from(self.color));
-        Ok(MeshMaterial3d(material))
-    }
-
-    fn clone_template(&self) -> Self {
-        Self { color: self.color }
+    fn from_template(color: Self::Input, _context: &mut TemplateContext) -> Result<Self> {
+        Ok(Self::from(color))
     }
 }
 

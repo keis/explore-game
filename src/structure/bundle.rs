@@ -43,7 +43,7 @@ impl Role for StructureRole {
                     rotation: Quat::from_rotation_y(structure.rotation)
                 }
                 Mesh3d(mesh)
-                ~StructureMaterialTemplate { structure_id }
+                ~StructureMaterialTemplate { input: structure_id }
                 OutlineVolume {
                     visible: true,
                     width: 2.0,

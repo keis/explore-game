@@ -1,11 +1,11 @@
 #![allow(dead_code)]
-use super::codex_buffer::{CodexBuffer, CodexBufferPlugin, CodexBufferValue};
+use super::{
+    codex_buffer::{CodexBuffer, CodexBufferPlugin, CodexBufferValue},
+    MaterialFromTemplate, MaterialTemplate,
+};
 use crate::structure::{Structure, StructureId};
 use bevy::{
-    ecs::template::{Template, TemplateContext},
-    prelude::*,
-    render::render_resource::*,
-    shader::ShaderRef,
+    ecs::template::TemplateContext, prelude::*, render::render_resource::*, shader::ShaderRef,
 };
 use expl_codex::Id;
 use expl_map::Fog;
@@ -99,30 +99,17 @@ impl Material for StructureMaterial {
     }
 }
 
-/// Scene template building the [`StructureMaterial`] for a [`StructureId`].
-#[derive(Default)]
-pub struct StructureMaterialTemplate {
-    pub structure_id: Id<Structure>,
-}
+/// Scene template building the [`StructureMaterial`] for a structure id.
+pub type StructureMaterialTemplate = MaterialTemplate<StructureMaterial>;
 
-impl Template for StructureMaterialTemplate {
-    type Output = MeshMaterial3d<StructureMaterial>;
+impl MaterialFromTemplate for StructureMaterial {
+    type Input = Id<Structure>;
 
-    fn build_template(&self, context: &mut TemplateContext) -> Result<Self::Output> {
-        let material = StructureMaterial::from_structure(
-            self.structure_id,
+    fn from_template(structure_id: Self::Input, context: &mut TemplateContext) -> Result<Self> {
+        Ok(Self::from_structure(
+            structure_id,
             context.resource::<StructureBuffer>(),
-        );
-        let handle = context
-            .resource_mut::<Assets<StructureMaterial>>()
-            .add(material);
-        Ok(MeshMaterial3d(handle))
-    }
-
-    fn clone_template(&self) -> Self {
-        Self {
-            structure_id: self.structure_id,
-        }
+        ))
     }
 }
 

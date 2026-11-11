@@ -4,6 +4,7 @@ mod codex_buffer;
 mod decoration_material;
 mod portal_material;
 mod structure_material;
+mod template;
 mod water_material;
 mod zone_material;
 
@@ -12,6 +13,7 @@ pub use portal_material::{PortalMaterial, PortalMaterialPlugin};
 pub use structure_material::{
     StructureBuffer, StructureMaterial, StructureMaterialPlugin, StructureMaterialTemplate,
 };
+pub use template::{required_component, MaterialFromTemplate, MaterialTemplate};
 pub use water_material::{WaterMaterial, WaterMaterialPlugin};
 pub use zone_material::{TerrainBuffer, ZoneMaterial, ZoneMaterialPlugin, ZoneMaterialTemplate};
 

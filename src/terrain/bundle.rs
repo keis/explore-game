@@ -114,7 +114,7 @@ impl Role for ZoneRole {
         Ok(bsn! {
             ~NotShadowCaster
             Mesh3d(mesh)
-            ~ZoneMaterialTemplate { terrain_id }
+            ~ZoneMaterialTemplate { input: terrain_id }
         })
     }
 }
