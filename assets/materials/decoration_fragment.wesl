@@ -1,11 +1,11 @@
-#import bevy_pbr::{
-  mesh_view_bindings::{view, globals},
-  forward_io::VertexOutput,
-  pbr_functions as fns,
-  pbr_types::{STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT, PbrInput, pbr_input_new},
-}
-#import bevy_core_pipeline::tonemapping::tone_mapping
-#import "materials/common.wgsl"::pixel_noise;
+import bevy_pbr::render::forward_io::VertexOutput;
+import bevy_pbr::render::mesh_view_bindings::view;
+import bevy_pbr::render::pbr_functions as fns;
+import bevy_pbr::render::pbr_types::{
+    PbrInput, STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT, pbr_input_new,
+};
+import bevy_core_pipeline::tonemapping::tone_mapping;
+import super::common::pixel_noise;
 
 const DECORATION_FLAGS_VISIBLE_BIT: u32 = 1u;
 const DECORATION_FLAGS_EXPLORED_BIT: u32 = 2u;
@@ -21,10 +21,10 @@ struct UniformData {
     flags: u32,
 }
 
-@group(#{MATERIAL_BIND_GROUP}) @binding(0)
+@group(constants::MATERIAL_BIND_GROUP) @binding(0)
 var<storage> decoration_data: array<DecorationData>;
 
-@group(#{MATERIAL_BIND_GROUP}) @binding(1)
+@group(constants::MATERIAL_BIND_GROUP) @binding(1)
 var<uniform> uniform_data: UniformData;
 
 @fragment
@@ -32,9 +32,9 @@ fn fragment(@builtin(front_facing) is_front: bool, mesh: VertexOutput) -> @locat
     let decoration = decoration_data[uniform_data.decoration_idx];
 
     var output_color = vec4<f32>(1.0, 1.0, 1.0, 1.0);
-#ifdef VERTEX_COLORS
-    output_color = output_color * mesh.color
-#endif
+    @if(VERTEX_COLORS) {
+        output_color = output_color * mesh.color;
+    }
     let elevation = floor(mesh.world_position.y * 16.0) / 16.0;
     output_color = output_color * pixel_noise(mesh.world_position.xz + vec2<f32>(elevation, elevation), decoration.color_a, decoration.color_b, decoration.color_c);
 
@@ -60,8 +60,8 @@ fn fragment(@builtin(front_facing) is_front: bool, mesh: VertexOutput) -> @locat
 
     output_color = fns::apply_pbr_lighting(pbr_input);
 
-#ifdef TONEMAP_IN_SHADER
-    output_color = tone_mapping(output_color, view.color_grading);
-#endif
+    @if(TONEMAP_IN_SHADER) {
+        output_color = tone_mapping(output_color, view.color_grading);
+    }
     return output_color;
 }

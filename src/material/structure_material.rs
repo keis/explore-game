@@ -95,7 +95,7 @@ impl StructureMaterial {
 
 impl Material for StructureMaterial {
     fn fragment_shader() -> ShaderRef {
-        "materials/structure_fragment.wgsl".into()
+        "materials/structure_fragment.wesl".into()
     }
 }
 
@@ -120,7 +120,7 @@ fn apply_to_material(
     material_query: Query<&MeshMaterial3d<StructureMaterial>>,
 ) {
     for (fog, children) in &structure_query {
-        let mut materials = material_query.iter_many(children);
+        let mut materials = material_query.iter_many(children).matched();
         while let Some(handle) = materials.fetch_next() {
             let Some(mut material) = structure_materials.get_mut(handle) else {
                 continue;

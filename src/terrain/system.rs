@@ -14,7 +14,7 @@ use expl_map::{Fog, MapEvent, MapLayout, MapPosition, MapPresence, PresenceLayer
 /// exists before the map does and is placed by [`place_restored_presence`]
 /// instead.
 pub fn place_presence(
-    trigger: On<Add, MapPresence>,
+    trigger: On<Add<MapPresence>>,
     mut commands: Commands,
     presence_query: Query<&MapPresence>,
     height_query: HeightQuery,
@@ -45,7 +45,7 @@ pub fn place_restored_presence(
 
 /// Places a zone when its map position is added.
 pub fn place_position(
-    trigger: On<Add, MapPosition>,
+    trigger: On<Add<MapPosition>>,
     mut commands: Commands,
     position_query: Query<&MapPosition>,
 ) {
@@ -70,7 +70,7 @@ pub fn despawn_empty_crystal_deposit(
         .iter()
         .filter(|(deposit, _)| deposit.amount == 0)
     {
-        for decoration_entity in zone_decoration_query.iter_many(children.iter()) {
+        for decoration_entity in zone_decoration_query.iter_many(children.iter()).matched() {
             commands.entity(decoration_entity).despawn();
         }
     }
@@ -92,7 +92,7 @@ pub fn hide_decorations_behind_camp(
         else {
             continue;
         };
-        let mut decoration_iter = decoration_query.iter_many_mut(children);
+        let mut decoration_iter = decoration_query.iter_many_mut(children).matched();
         while let Some((mut visibility, transform)) = decoration_iter.fetch_next() {
             if transform.translation.distance(Vec3::ZERO) < 0.3 {
                 *visibility = Visibility::Hidden;
@@ -117,6 +117,7 @@ pub fn show_decorations_behind_camp(
         };
         if camp_query
             .iter_many(presence_layer.presence(*position))
+            .matched()
             .next()
             .is_some()
         {
@@ -125,7 +126,7 @@ pub fn show_decorations_behind_camp(
         let Some(children) = map.get(*position).and_then(|&e| zone_query.get(e).ok()) else {
             continue;
         };
-        let mut decoration_iter = decoration_query.iter_many_mut(children);
+        let mut decoration_iter = decoration_query.iter_many_mut(children).matched();
         while let Some(mut visibility) = decoration_iter.fetch_next() {
             *visibility = Visibility::Inherited;
         }

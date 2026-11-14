@@ -42,6 +42,7 @@ pub fn spawn_enemy(
         if spawner.charge >= 3
             && presence_query
                 .iter_many(presence_layer.presence(presence.position))
+                .matched()
                 .next()
                 .is_none()
         {
@@ -110,7 +111,7 @@ pub fn heal_characters(
     mut health_query: Query<&mut Health>,
 ) {
     for (members, mut floating_text_source) in &mut camp_query {
-        let mut iter = health_query.iter_many_mut(members.iter());
+        let mut iter = health_query.iter_many_mut(members.iter()).matched();
         while let Some(mut health) = iter.fetch_next() {
             let healed = health.heal(2);
             if healed > 0 {

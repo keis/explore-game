@@ -1,4 +1,5 @@
 use super::super::{color::NORMAL, prelude::*};
+use bevy::picking::hover::Hovered;
 
 #[derive(Copy, Clone, Default, PartialEq)]
 pub enum TooltipPosition {
@@ -53,12 +54,12 @@ impl ViewTemplate for Tooltip {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
-        let interaction = cx
-            .use_component::<Interaction>(self.parent.expect("Tooltip must have a parent"))
-            .cloned()
+        let hovered = cx
+            .use_component::<Hovered>(self.parent.expect("Tooltip must have a parent"))
+            .copied()
             .unwrap_or_default();
         Cond::new(
-            interaction == Interaction::Hovered,
+            hovered.0,
             Element::<Node>::new()
                 .named("Tooltip")
                 .style(style_tooltip)

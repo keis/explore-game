@@ -54,7 +54,7 @@ pub fn update_terrain_visibility(
     mut terrain_query: Query<(&mut Fog, &mut Visibility), Without<Children>>,
 ) {
     for (children, parent_fog) in &zone_query {
-        let mut terrain_iter = terrain_query.iter_many_mut(children);
+        let mut terrain_iter = terrain_query.iter_many_mut(children).matched();
         while let Some((mut fog, mut visibility)) = terrain_iter.fetch_next() {
             fog.visible = parent_fog.visible;
             fog.explored = parent_fog.explored;
@@ -74,7 +74,9 @@ pub fn update_presence_fog(
         return;
     };
     for (position, zone_fog) in &zone_query {
-        let mut presence_iter = presence_query.iter_many_mut(presence_layer.presence(position.0));
+        let mut presence_iter = presence_query
+            .iter_many_mut(presence_layer.presence(position.0))
+            .matched();
         while let Some((mut fog, mut visibility)) = presence_iter.fetch_next() {
             fog.visible = zone_fog.visible;
             fog.explored = zone_fog.explored;

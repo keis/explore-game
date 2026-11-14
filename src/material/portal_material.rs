@@ -38,7 +38,7 @@ impl From<&PortalMaterial> for PortalMaterialUniform {
 
 impl Material for PortalMaterial {
     fn fragment_shader() -> ShaderRef {
-        "materials/portal_fragment.wgsl".into()
+        "materials/portal_fragment.wesl".into()
     }
 
     fn alpha_mode(&self) -> AlphaMode {

@@ -168,11 +168,13 @@ fn _update_action_points(
 ) {
     action_points.current = member_action_points_query
         .iter_many(members.iter())
+        .matched()
         .map(|m| m.current)
         .min()
         .unwrap_or(0);
     action_points.reset = member_action_points_query
         .iter_many(members.iter())
+        .matched()
         .map(|m| m.reset)
         .min()
         .unwrap_or(0);
@@ -204,7 +206,7 @@ pub fn propagate_action_points_consumed(
     let Ok(members) = group_query.get(trigger.entity) else {
         return;
     };
-    let mut iter = action_points_query.iter_many_mut(members.iter());
+    let mut iter = action_points_query.iter_many_mut(members.iter()).matched();
     while let Some(mut action_points) = iter.fetch_next() {
         action_points.consume().unwrap();
     }
@@ -298,6 +300,7 @@ pub fn handle_make_camp(
     let position = presence.position;
     if camp_query
         .iter_many(presence_layer.presence(position))
+        .matched()
         .next()
         .is_some()
     {
@@ -333,6 +336,7 @@ pub fn handle_break_camp(
     let (map_entity, presence_layer) = map_query.single()?;
     let (camp_entity, members) = camp_query
         .iter_many(presence_layer.presence(presence.position))
+        .matched()
         .next()
         .ok_or(ExplError::InvalidLocation("no camp".to_string()))?;
     if !members.is_empty() {
@@ -427,7 +431,7 @@ pub fn handle_merge_party(
     let source_position = party_query.get(action.source)?.2.position;
     let mut characters = SmallVec::<[Entity; 8]>::new();
     let mut inventory = Inventory::default();
-    let mut iter = party_query.iter_many_mut(&action.targets);
+    let mut iter = party_query.iter_many_mut(&action.targets).matched();
     while let Some((mut party_inventory, members, presence)) = iter.fetch_next() {
         if presence.position != source_position {
             info!("Skipping party in other location");
@@ -471,7 +475,9 @@ pub fn handle_open_portal(
     let presence = party_query.get(action.source)?;
     let presence_layer = map_query.single()?;
 
-    let mut portal_iter = portal_query.iter_many_mut(presence_layer.presence(presence.position));
+    let mut portal_iter = portal_query
+        .iter_many_mut(presence_layer.presence(presence.position))
+        .matched();
     let mut portal = portal_iter
         .fetch_next()
         .ok_or(ExplError::InvalidLocation("no portal present".to_string()))?;
@@ -497,6 +503,7 @@ pub fn handle_enter_portal(
 
     let portal = portal_query
         .iter_many(presence_layer.presence(presence.position))
+        .matched()
         .next()
         .ok_or(ExplError::InvalidLocation("no portal present".to_string()))?;
 

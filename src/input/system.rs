@@ -16,7 +16,7 @@ use bevy::{
 use bevy_mod_outline::OutlineVolume;
 use expl_map::{MapPosition, MapPresence};
 
-pub fn map_position_added(trigger: On<Add, MapPosition>, mut commands: Commands) {
+pub fn map_position_added(trigger: On<Add<MapPosition>>, mut commands: Commands) {
     commands
         .entity(trigger.entity)
         .observe(handle_zone_click)
@@ -24,7 +24,7 @@ pub fn map_position_added(trigger: On<Add, MapPosition>, mut commands: Commands)
         .observe(handle_zone_out.map(error::warn));
 }
 
-pub fn selection_added(trigger: On<Add, Selection>, mut commands: Commands) {
+pub fn selection_added(trigger: On<Add<Selection>>, mut commands: Commands) {
     commands
         .entity(trigger.entity)
         .observe(handle_selection_click)
@@ -114,7 +114,7 @@ pub fn apply_deselect_event(
     }
 }
 
-fn handle_zone_click(trigger: On<Pointer<Click>>, mut commands: Commands) {
+fn handle_zone_click(trigger: On<PointerClick>, mut commands: Commands) {
     if trigger.button == PointerButton::Primary {
         commands.trigger(ZoneActivated {
             entity: trigger.entity,
@@ -123,7 +123,7 @@ fn handle_zone_click(trigger: On<Pointer<Click>>, mut commands: Commands) {
 }
 
 fn handle_zone_over(
-    trigger: On<Pointer<Over>>,
+    trigger: On<PointerOver>,
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     material_query: Query<&MeshMaterial3d<ZoneMaterial>>,
 ) -> Result<(), ExplError> {
@@ -136,7 +136,7 @@ fn handle_zone_over(
 }
 
 fn handle_zone_out(
-    trigger: On<Pointer<Out>>,
+    trigger: On<PointerOut>,
     mut zone_materials: ResMut<Assets<ZoneMaterial>>,
     material_query: Query<&MeshMaterial3d<ZoneMaterial>>,
 ) -> Result<(), ExplError> {
@@ -148,14 +148,14 @@ fn handle_zone_out(
     Ok(())
 }
 
-fn handle_selection_click(trigger: On<Pointer<Click>>, mut selection_update: SelectionUpdate<()>) {
+fn handle_selection_click(trigger: On<PointerClick>, mut selection_update: SelectionUpdate<()>) {
     if trigger.button == PointerButton::Primary {
         selection_update.toggle(trigger.entity);
     }
 }
 
 fn handle_selection_over(
-    trigger: On<Pointer<Over>>,
+    trigger: On<PointerOver>,
     selection_query: Query<&Children, With<Selection>>,
     mut outline_volume_query: Query<&mut OutlineVolume>,
 ) -> Result<(), ExplError> {
@@ -169,7 +169,7 @@ fn handle_selection_over(
 }
 
 fn handle_selection_out(
-    trigger: On<Pointer<Out>>,
+    trigger: On<PointerOut>,
     selection_query: Query<(&Selection, &Children)>,
     mut outline_volume_query: Query<(&mut OutlineVolume, &DefaultOutlineVolume)>,
 ) -> Result<(), ExplError> {

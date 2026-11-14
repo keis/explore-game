@@ -1,15 +1,12 @@
-#import bevy_pbr::{
-    mesh_view_bindings::{view, globals},
-    forward_io::VertexOutput
-}
-#import "materials/common.wgsl"::modulo;
+import bevy_pbr::render::forward_io::VertexOutput;
+import bevy_pbr::render::mesh_view_bindings::globals;
 
 struct UniformData {
     base_color: vec4<f32>,
     swirl_color: vec4<f32>,
 }
 
-@group(#{MATERIAL_BIND_GROUP}) @binding(0)
+@group(constants::MATERIAL_BIND_GROUP) @binding(0)
 var<uniform> uniform_data: UniformData;
 
 @fragment

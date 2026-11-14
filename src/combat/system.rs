@@ -60,10 +60,12 @@ pub fn initiate_combat(
         };
         let friends: Vec<_> = friend_query
             .iter_many(presence_layer.presence(*position))
-            .flat_map(|members| character_query.iter_many(members.iter()))
+            .matched()
+            .flat_map(|members| character_query.iter_many(members.iter()).matched())
             .collect();
         let foes: Vec<_> = foe_query
             .iter_many(presence_layer.presence(*position))
+            .matched()
             .collect();
         let initiative_order = friends.iter().chain(foes.iter()).cloned().collect();
         if !friends.is_empty() && !foes.is_empty() {
@@ -92,7 +94,9 @@ pub fn combat_round(
         let Ok((attack, maybe_attacker_enemy)) = attacker_query.get(attacker_entity) else {
             continue;
         };
-        let mut target_iter = target_query.iter_many_mut(&combat.initiative_order);
+        let mut target_iter = target_query
+            .iter_many_mut(&combat.initiative_order)
+            .matched();
         while let Some((mut health, maybe_target_enemy)) = target_iter.fetch_next() {
             if health.current == 0 || maybe_attacker_enemy.is_some() == maybe_target_enemy.is_some()
             {
@@ -144,10 +148,12 @@ pub fn finish_combat(
     for (entity, combat) in &combat_query {
         let no_friends = friend_query
             .iter_many(&combat.initiative_order)
+            .matched()
             .next()
             .is_none();
         let no_foes = foe_query
             .iter_many(&combat.initiative_order)
+            .matched()
             .next()
             .is_none();
         if no_friends && no_foes {

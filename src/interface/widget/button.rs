@@ -3,7 +3,7 @@ use super::super::{
     styles::style_button,
 };
 use super::Tooltip;
-use bevy::prelude::*;
+use bevy::{picking::hover::Hovered, prelude::*, ui::Pressed};
 use bevy_mod_stylebuilder::*;
 use bevy_quill_core::{
     effects::{AppendEffect, EffectTuple, EntityEffect},
@@ -12,11 +12,13 @@ use bevy_quill_core::{
     IntoViewChild, ViewChild,
 };
 
-pub fn style_button_interaction(interaction: Interaction, style: &mut StyleBuilder) {
-    style.background_color(match interaction {
-        Interaction::Pressed => PRESSED,
-        Interaction::Hovered => HOVERED,
-        Interaction::None => NORMAL,
+pub fn style_button_interaction((hovered, pressed): (Hovered, bool), style: &mut StyleBuilder) {
+    style.background_color(if pressed {
+        PRESSED
+    } else if hovered.0 {
+        HOVERED
+    } else {
+        NORMAL
     });
 }
 
@@ -113,10 +115,8 @@ impl<E: EffectTuple + 'static> ViewTemplate for Button<E> {
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         let id = self.entity.unwrap_or_else(|| cx.create_entity());
-        let interaction = cx
-            .use_component::<Interaction>(id)
-            .cloned()
-            .unwrap_or_default();
+        let hovered = cx.use_component::<Hovered>(id).copied().unwrap_or_default();
+        let pressed = cx.use_component::<Pressed>(id).is_some();
         let icon = self.icon.clone();
         let on_click = self.on_click;
         let tooltip: ViewChild = self.tooltip.clone().map_or_else(
@@ -125,7 +125,7 @@ impl<E: EffectTuple + 'static> ViewTemplate for Button<E> {
         );
 
         cx.create_observer(
-            move |_click: On<Pointer<Click>>, mut commands: Commands| {
+            move |_click: On<PointerClick>, mut commands: Commands| {
                 if let Some(on_click) = on_click {
                     commands.run_callback(on_click, ());
                 }
@@ -134,7 +134,7 @@ impl<E: EffectTuple + 'static> ViewTemplate for Button<E> {
             on_click,
         );
 
-        Element::<bevy::ui::widget::Button>::for_entity(id)
+        Element::<(bevy::ui_widgets::Button, Hovered)>::for_entity(id)
             .style((style_button, self.style.clone()))
             .style_dyn(
                 |icon, sb| {
@@ -144,7 +144,7 @@ impl<E: EffectTuple + 'static> ViewTemplate for Button<E> {
                 },
                 icon,
             )
-            .style_dyn(style_button_interaction, interaction)
+            .style_dyn(style_button_interaction, (hovered, pressed))
             .add_effect(self.effects.clone())
             .children((self.children.clone(), tooltip))
     }

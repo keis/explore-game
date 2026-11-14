@@ -103,7 +103,7 @@ impl DecorationMaterial {
 
 impl Material for DecorationMaterial {
     fn fragment_shader() -> ShaderRef {
-        "materials/decoration_fragment.wgsl".into()
+        "materials/decoration_fragment.wesl".into()
     }
 }
 

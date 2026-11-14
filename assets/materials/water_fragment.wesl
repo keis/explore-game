@@ -1,23 +1,20 @@
-#import bevy_pbr::{
-    mesh_view_bindings::globals,
-    forward_io::VertexOutput
-}
-#import noisy_bevy::fbm_simplex_2d
-#import "materials/common.wgsl"::modulo;
+import bevy_pbr::render::forward_io::VertexOutput;
+import bevy_pbr::render::mesh_view_bindings::globals;
+import noisy_bevy::fbm_simplex_2d;
 
 struct UniformData {
     color: vec4<f32>,
 }
 
-@group(#{MATERIAL_BIND_GROUP}) @binding(0)
+@group(constants::MATERIAL_BIND_GROUP) @binding(0)
 var<uniform> uniform_data: UniformData;
 
 @fragment
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     var output_color = uniform_data.color;
-#ifdef VERTEX_COLORS
-    output_color = output_color * mesh.color
-#endif
+    @if(VERTEX_COLORS) {
+        output_color = output_color * mesh.color;
+    }
     var world_uv = floor(mesh.world_position.xz * 16.0) / 16.0;
 
     var octaves = 2;
