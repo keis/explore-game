@@ -18,7 +18,7 @@ impl SelectedIndex {
         index.0.retain(|&e| e != trigger.entity);
     }
 
-    pub fn on_remove(trigger: On<Remove, Selection>, mut index: ResMut<Self>) {
+    pub fn on_remove(trigger: On<Remove<Selection>>, mut index: ResMut<Self>) {
         index.0.retain(|&e| e != trigger.entity);
     }
 }

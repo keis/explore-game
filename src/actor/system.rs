@@ -34,7 +34,9 @@ pub fn update_enemy_visibility(
     // Update enemies at locations that had their fog status changed
     for (position, fog) in &changed_zone_query {
         let mut enemy_query = enemy_params.p0();
-        let mut enemy_iter = enemy_query.iter_many_mut(presence_layer.presence(position.0));
+        let mut enemy_iter = enemy_query
+            .iter_many_mut(presence_layer.presence(position.0))
+            .matched();
         while let Some(mut visibility) = enemy_iter.fetch_next() {
             *visibility = if fog.visible {
                 Visibility::Inherited
@@ -61,7 +63,7 @@ pub fn update_enemy_visibility(
 
 #[allow(clippy::type_complexity)]
 pub fn despawn_empty_party(
-    trigger: On<Remove, Members>,
+    trigger: On<Remove<Members>>,
     party_query: Query<(&Party, &MapPresence)>,
     map_query: Query<Entity, With<PresenceLayer>>,
     mut commands: Commands,

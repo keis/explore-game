@@ -269,8 +269,7 @@ impl ViewTemplate for NextTurnButton {
             .and_then(|inputmap| get_keybind_for_action(inputmap, &action));
 
         cx.create_observer(
-            move |_click: On<Pointer<Click>>,
-                  mut action_state: Single<&mut ActionState<Action>>| {
+            move |_click: On<PointerClick>, mut action_state: Single<&mut ActionState<Action>>| {
                 action_state.press(&action);
             },
             id,
@@ -279,7 +278,7 @@ impl ViewTemplate for NextTurnButton {
 
         let turn = cx.use_resource::<Turn>();
 
-        Element::<bevy::prelude::Button>::for_entity(id)
+        Element::<(bevy::ui_widgets::Button, bevy::picking::hover::Hovered)>::for_entity(id)
             .named("Next Turn Button")
             .style(style_next_turn_button)
             .children((

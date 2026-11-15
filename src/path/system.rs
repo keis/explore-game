@@ -1,7 +1,7 @@
 use super::{bundle::*, component::*, mesh::update_path_mesh};
 use crate::scene::save::Save;
 use bevy::{
-    math::cubic_splines::{CubicBezier, CubicGenerator},
+    curve::cubic_splines::{CubicBezier, CubicGenerator},
     prelude::*,
 };
 use itertools::Itertools;
@@ -102,7 +102,7 @@ pub fn update_path_display(
 mod tests {
     use super::bezier_segment;
     use bevy::{
-        math::cubic_splines::{CubicBezier, CubicGenerator},
+        curve::cubic_splines::{CubicBezier, CubicGenerator},
         prelude::*,
     };
 

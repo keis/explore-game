@@ -1,24 +1,20 @@
-#import bevy_pbr::{
-    mesh_view_bindings::{view, globals},
-    forward_io::VertexOutput,
-    pbr_functions as fns,
-    pbr_types::{STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT, PbrInput, pbr_input_new},
-}
-#import bevy_core_pipeline::tonemapping::tone_mapping
-#import noisy_bevy::fbm_simplex_2d;
-#import "materials/common.wgsl"::{pixel_noise, modulo};
-#import "materials/zone_types.wgsl"::{
-    UniformData,
-    TerrainData,
-    ZONE_FLAGS_VISIBLE_BIT,
-    ZONE_FLAGS_EXPLORED_BIT,
-    ZONE_FLAGS_HOVER_BIT
-}
+import bevy_pbr::render::forward_io::VertexOutput;
+import bevy_pbr::render::mesh_view_bindings::{globals, view};
+import bevy_pbr::render::pbr_functions as fns;
+import bevy_pbr::render::pbr_types::{
+    PbrInput, STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT, pbr_input_new,
+};
+import bevy_core_pipeline::tonemapping::tone_mapping;
+import noisy_bevy::fbm_simplex_2d;
+import super::common::pixel_noise;
+import super::zone_types::{
+    UniformData, TerrainData, ZONE_FLAGS_VISIBLE_BIT, ZONE_FLAGS_EXPLORED_BIT, ZONE_FLAGS_HOVER_BIT,
+};
 
-@group(#{MATERIAL_BIND_GROUP}) @binding(0)
+@group(constants::MATERIAL_BIND_GROUP) @binding(0)
 var<storage> terrain_data: array<TerrainData>;
 
-@group(#{MATERIAL_BIND_GROUP}) @binding(1)
+@group(constants::MATERIAL_BIND_GROUP) @binding(1)
 var<uniform> uniform_data: UniformData;
 
 fn cloud_noise(world_uv: vec2<f32>) -> vec4<f32> {
@@ -38,9 +34,9 @@ fn fragment(@builtin(front_facing) is_front: bool, mesh: VertexOutput) -> @locat
     let terrain = terrain_data[uniform_data.terrain_idx];
 
     var output_color = vec4<f32>(1.0);
-#ifdef VERTEX_COLORS
-    output_color = output_color * mesh.color
-#endif
+    @if(VERTEX_COLORS) {
+        output_color = output_color * mesh.color;
+    }
     output_color = output_color * pixel_noise(mesh.world_position.xz, terrain.color_a, terrain.color_b, terrain.color_c);
 
     output_color = mix(output_color, vec4<f32>(1.0), clamp(mesh.world_position.y - 0.3, 0.0, 1.0) * 2.0);
@@ -83,8 +79,8 @@ fn fragment(@builtin(front_facing) is_front: bool, mesh: VertexOutput) -> @locat
 
     output_color = fns::apply_pbr_lighting(pbr_input);
 
-#ifdef TONEMAP_IN_SHADER
-    output_color = tone_mapping(output_color, view.color_grading);
-#endif
+    @if(TONEMAP_IN_SHADER) {
+        output_color = tone_mapping(output_color, view.color_grading);
+    }
     return output_color;
 }

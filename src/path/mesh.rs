@@ -84,7 +84,7 @@ impl From<Path> for Mesh {
 mod tests {
     use super::Path;
     use bevy::{
-        math::cubic_splines::{CubicBezier, CubicGenerator},
+        curve::cubic_splines::{CubicBezier, CubicGenerator},
         mesh::VertexAttributeValues,
         prelude::*,
     };

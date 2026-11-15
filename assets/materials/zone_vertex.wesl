@@ -1,25 +1,18 @@
-#import bevy_pbr::{
-  mesh_functions,
-  forward_io::{Vertex, VertexOutput},
-  view_transformations::position_world_to_clip,
-}
-#import noisy_bevy::simplex_noise_2d
-#import "materials/zone_types.wgsl"::{
-    UniformData,
-    TerrainData,
-    ZONE_FLAGS_EXPLORED_BIT,
-    ZONE_FLAGS_OUTER_VISIBLE_E_BIT,
-    ZONE_FLAGS_OUTER_VISIBLE_SE_BIT,
-    ZONE_FLAGS_OUTER_VISIBLE_SW_BIT,
-    ZONE_FLAGS_OUTER_VISIBLE_W_BIT,
-    ZONE_FLAGS_OUTER_VISIBLE_NW_BIT,
-    ZONE_FLAGS_OUTER_VISIBLE_NE_BIT
-}
+import bevy_pbr::render::forward_io::{Vertex, VertexOutput};
+import bevy_pbr::render::mesh_functions;
+import bevy_pbr::render::view_transformations::position_world_to_clip;
+import noisy_bevy::simplex_noise_2d;
+import super::zone_types::{
+    UniformData, TerrainData, ZONE_FLAGS_EXPLORED_BIT, ZONE_FLAGS_OUTER_VISIBLE_E_BIT,
+    ZONE_FLAGS_OUTER_VISIBLE_SE_BIT, ZONE_FLAGS_OUTER_VISIBLE_SW_BIT,
+    ZONE_FLAGS_OUTER_VISIBLE_W_BIT, ZONE_FLAGS_OUTER_VISIBLE_NW_BIT,
+    ZONE_FLAGS_OUTER_VISIBLE_NE_BIT,
+};
 
-@group(#{MATERIAL_BIND_GROUP}) @binding(0)
+@group(constants::MATERIAL_BIND_GROUP) @binding(0)
 var<storage> terrain_data: array<TerrainData>;
 
-@group(#{MATERIAL_BIND_GROUP}) @binding(1)
+@group(constants::MATERIAL_BIND_GROUP) @binding(1)
 var<uniform> uniform_data: UniformData;
 
 fn corner(self_value: f32, a_value: f32, b_value: f32) -> f32 {
@@ -176,39 +169,43 @@ fn height_at(position: vec2<f32>, world_position: vec2<f32>) -> f32 {
 fn vertex(vertex: Vertex) -> VertexOutput {
     var out: VertexOutput;
 
-#ifdef SKINNED
-    var model = bevy_pbr::skinning::skin_model(vertex.joint_indices, vertex.joint_weights);
-#else
-    var model = mesh_functions::get_world_from_local(vertex.instance_index);
-#endif
+    @if(SKINNED)
+        var model = bevy_pbr::render::skinning::skin_model(
+            vertex.joint_indices,
+            vertex.joint_weights,
+            vertex.instance_index,
+        );
+    @if(!SKINNED)
+        var model = mesh_functions::get_world_from_local(vertex.instance_index);
 
-#ifdef VERTEX_NORMALS
-#ifdef SKINNED
-    out.world_normal = bevy_pbr::skinning::skin_normals(model, vertex.normal);
-#else
-    out.world_normal = mesh_functions::mesh_normal_local_to_world(
-        vertex.normal,
-        vertex.instance_index
-    );
-#endif
-#endif
+    @if(VERTEX_NORMALS && SKINNED)
+        out.world_normal = bevy_pbr::render::skinning::skin_normals(model, vertex.normal);
+    @if(VERTEX_NORMALS && !SKINNED)
+        out.world_normal = mesh_functions::mesh_normal_local_to_world(
+            vertex.normal,
+            vertex.instance_index,
+        );
 
-#ifdef VERTEX_POSITIONS
-    out.world_position = mesh_functions::mesh_position_local_to_world(model, vec4<f32>(vertex.position, 1.0));
-    out.position = position_world_to_clip(out.world_position.xyz);
-#endif
+    @if(VERTEX_POSITIONS) {
+        out.world_position = mesh_functions::mesh_position_local_to_world(model, vec4<f32>(vertex.position, 1.0));
+        out.position = position_world_to_clip(out.world_position.xyz);
+    }
 
-#ifdef VERTEX_UVS
-    out.uv = vertex.uv;
-#endif
+    @if(VERTEX_UVS) {
+        out.uv = vertex.uv;
+    }
 
-#ifdef VERTEX_TANGENTS
-    out.world_tangent = mesh_functions::mesh_tangent_local_to_world(model, vertex.tangent);
-#endif
+    @if(VERTEX_TANGENTS) {
+        out.world_tangent = mesh_functions::mesh_tangent_local_to_world(
+            model,
+            vertex.tangent,
+            vertex.instance_index,
+        );
+    }
 
-#ifdef VERTEX_COLORS
-    out.color = vertex.color;
-#endif
+    @if(VERTEX_COLORS) {
+        out.color = vertex.color;
+    }
 
     let worldxz = out.world_position.xz;
     let offset = vec3<f32>(-0.001, 0.0, 0.001);

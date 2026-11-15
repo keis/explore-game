@@ -3,14 +3,14 @@ members = [".", "crates/*"]
 default-members = [".", "crates/*"]
 
 [workspace.dependencies]
-bevy_app = "0.19"
-bevy_asset = "0.19"
-bevy_camera = "0.19"
-bevy_derive = "0.19"
-bevy_ecs = "0.19"
-bevy_log = "0.19"
-bevy_mesh = "0.19"
-bevy_reflect = "0.19"
+bevy_app = "0.20.1"
+bevy_asset = "0.20.1"
+bevy_camera = "0.20.1"
+bevy_derive = "0.20.1"
+bevy_ecs = "0.20.1"
+bevy_log = "0.20.1"
+bevy_mesh = "0.20.1"
+bevy_reflect = "0.20.1"
 clap = "4.5"
 criterion = "0.8"
 expl_codex = { version = "0.1.0", path = "crates/expl_codex" }
@@ -19,7 +19,7 @@ expl_hexagon = { version = "0.1.0", path = "crates/expl_hexagon" }
 expl_hexgrid = { version = "0.1.0", path = "crates/expl_hexgrid", features = ["bevy-reflect"] }
 expl_map = { version = "0.1.0", path = "crates/expl_map" }
 expl_wfc = { version = "0.1.0", path = "crates/expl_wfc" }
-glam = "0.32"
+glam = "0.33"
 itertools = "0.14"
 rand = "0.10"
 rstest = { version = "0.28", default-features = false }
@@ -43,14 +43,14 @@ opt-level = 3
 opt-level = 3
 
 [dependencies]
-bevy_asset_loader = "0.27"
-bevy-inspector-egui = "0.37"
-bevy_mod_billboard = { version = "0.7.0", git = "https://github.com/kulkalkul/bevy_mod_billboard.git", rev = "cdd35d4570b4d9781734848322cd7730b2327320" }
-bevy_mod_outline = { version = "0.13" }
-bevy_obj = "0.19"
-bevy_sprite3d = "9.0"
-bevy = { version = "0.19", features = ["wayland", "dynamic_linking", "file_watcher", "track_location"] }
-bevy_brp_extras = { version = "0.22", optional = true }
+bevy_asset_loader = "0.28.1"
+bevy-inspector-egui = "0.38.0"
+bevy_mod_billboard = { version = "0.8.0", git = "https://github.com/keis/bevy_mod_billboard.git", branch = "bevy-0.20" }
+bevy_mod_outline = { version = "0.14.0" }
+bevy_obj = "0.20.0"
+bevy_sprite3d = "11.1.1"
+bevy = { version = "0.20.1", features = ["wayland", "dynamic_linking", "file_watcher", "track_location"] }
+bevy_brp_extras = { version = "0.23.0", optional = true }
 bitflags = "2"
 clap = { workspace = true, features = ["derive"] }
 enum-map = "2.7.3"
@@ -63,10 +63,9 @@ expl_map = { workspace = true }
 futures-lite = "2"
 glam.workspace = true
 itertools = { workspace = true }
-leafwing-input-manager = { version = "0.21", features = ["picking"] }
-moonshine-save = "=0.7.0"
-moonshine-util = "=0.5.1"
-noisy_bevy = "0.14"
+leafwing-input-manager = { version = "0.22.0", features = ["picking"] }
+moonshine-save = "=0.8.0"
+noisy_bevy = "0.15.0"
 pathfinding = "4"
 platform-dirs = "0.3"
 rand = { workspace = true }
@@ -74,10 +73,10 @@ serde = { workspace = true }
 serde_json = "1.0"
 smallvec = { workspace = true }
 thiserror = { workspace = true }
-bevy_tweening = "0.16.0"
+bevy_tweening = "0.17.0"
 schemars = { version = "1", optional = true }
-bevy_mod_stylebuilder = { version = "0.1.3", git = "https://github.com/keis/quill.git", branch = "effects" }
-bevy_quill_core = { version = "0.1.3", git = "https://github.com/keis/quill.git", branch = "effects" }
+bevy_mod_stylebuilder = { version = "0.1.3", git = "https://github.com/keis/quill.git", rev = "e0562f71e3856b0b0a2d55c3fc11d7ab82ec6dc3" }
+bevy_quill_core = { version = "0.1.3", git = "https://github.com/keis/quill.git", rev = "e0562f71e3856b0b0a2d55c3fc11d7ab82ec6dc3" }
 tracing = "0.1.41"
 
 [dev-dependencies]

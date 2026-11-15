@@ -29,6 +29,7 @@ pub fn move_enemy(
             };
             if enemy_query
                 .iter_many(presence_layer.presence(next))
+                .matched()
                 .next()
                 .is_some()
             {
@@ -44,6 +45,7 @@ pub fn move_enemy(
                 if pf.is_walkable(next_entity)
                     && enemy_query
                         .iter_many(presence_layer.presence(next))
+                        .matched()
                         .next()
                         .is_none()
                 {

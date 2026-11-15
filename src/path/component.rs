@@ -1,4 +1,4 @@
-use bevy::{math::cubic_splines::CubicCurve, prelude::*};
+use bevy::{curve::cubic_splines::CubicCurve, prelude::*};
 use std::collections::VecDeque;
 
 #[derive(Component)]

@@ -128,6 +128,7 @@ pub fn handle_camp(
         };
         if let Some(camp_entity) = camp_query
             .iter_many(presence_layer.presence(presence.position))
+            .matched()
             .next()
         {
             game_action_queue.add(GameAction::new_enter_camp(entity, camp_entity));
@@ -154,6 +155,7 @@ pub fn handle_create_party(
     for (entity, members, _) in camp_query.iter().filter(|(_, _, s)| s.is_selected) {
         let selected: Vec<_> = character_query
             .iter_many(members.iter())
+            .matched()
             .filter(|(_, s)| s.is_selected)
             .map(|(e, _)| e)
             .collect();
@@ -171,6 +173,7 @@ pub fn handle_split_party(
     for (entity, members, _) in party_query.iter().filter(|(_, _, s)| s.is_selected) {
         let selected: Vec<Entity> = character_query
             .iter_many(members.iter())
+            .matched()
             .filter(|(_, s)| s.is_selected)
             .map(|(e, _)| e)
             .collect();

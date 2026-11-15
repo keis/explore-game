@@ -1,5 +1,5 @@
 use bevy::{
-    math::cubic_splines::{CubicBezier, CubicGenerator},
+    curve::cubic_splines::{CubicBezier, CubicGenerator},
     pbr::wireframe::{Wireframe, WireframePlugin},
     prelude::*,
     window::PresentMode,
