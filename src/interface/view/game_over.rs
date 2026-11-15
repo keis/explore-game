@@ -104,6 +104,7 @@ impl ViewTemplate for GameOverDisplay {
                         }
                     )),
                 Button::new()
+                    .named("Game over/Play again")
                     .style((style_new_game_button, style_game_over_text))
                     .on_click(on_click)
                     .children("Play again"),

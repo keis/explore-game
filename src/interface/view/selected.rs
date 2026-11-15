@@ -99,6 +99,10 @@ impl ViewTemplate for SelectedTabHeaderIcon {
         Cond::new(
             selected_type != SelectedType::Other,
             Button::new()
+                .named(format!(
+                    "Selected/Tab/{selected_type:?}/{}",
+                    target.to_bits()
+                ))
                 .on_click(callback)
                 .icon(match selected_type {
                     SelectedType::Party => brutal_helm_icon.clone(),

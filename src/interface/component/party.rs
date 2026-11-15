@@ -74,6 +74,7 @@ impl ViewTemplate for PartyIcon {
             });
 
         Button::new()
+            .named(format!("Outliner/Party/{}", target.to_bits()))
             .icon(icon.clone())
             .on_click(callback)
             .style(style_icon)

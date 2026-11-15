@@ -30,6 +30,7 @@ pub struct Button<E: EffectTuple = ()> {
     pub style: StyleHandle,
     pub tooltip: Option<Tooltip>,
     pub icon: Option<Handle<Image>>,
+    pub name: Option<String>,
     pub effects: E,
 }
 
@@ -42,6 +43,7 @@ impl Button<()> {
             style: StyleHandle::default(),
             tooltip: None,
             icon: None,
+            name: None,
             effects: (),
         }
     }
@@ -94,6 +96,13 @@ impl<E: EffectTuple> Button<E> {
         self
     }
 
+    /// Sets the name of the interactive UI node, making it easy to target from
+    /// BRP or inspect in the entity hierarchy.
+    pub fn named(mut self, name: impl Into<String>) -> Self {
+        self.name = Some(name.into());
+        self
+    }
+
     pub fn add_effect<E1: EntityEffect>(self, effect: E1) -> Button<<E as AppendEffect<E1>>::Result>
     where
         E: AppendEffect<E1>,
@@ -105,6 +114,7 @@ impl<E: EffectTuple> Button<E> {
             style: self.style,
             tooltip: self.tooltip,
             icon: self.icon,
+            name: self.name,
             effects: self.effects.append_effect(effect),
         }
     }
@@ -134,7 +144,13 @@ impl<E: EffectTuple + 'static> ViewTemplate for Button<E> {
             on_click,
         );
 
-        Element::<(bevy::ui_widgets::Button, Hovered)>::for_entity(id)
+        let button = Element::<(bevy::ui_widgets::Button, Hovered)>::for_entity(id);
+        let button = if let Some(name) = &self.name {
+            button.named(name)
+        } else {
+            button
+        };
+        button
             .style((style_button, self.style.clone()))
             .style_dyn(
                 |icon, sb| {

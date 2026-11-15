@@ -84,6 +84,7 @@ impl ViewTemplate for CharacterDisplay {
                 selection.toggle(target);
             });
         Button::new()
+            .named(format!("Selected/Character/{}", target.to_bits()))
             .on_click(callback)
             .style(style_character_display)
             .style_dyn(
