@@ -49,6 +49,7 @@ impl ViewTemplate for MenuItem {
 
     fn create(&self, _cx: &mut Cx) -> Self::View {
         Button::new()
+            .named(format!("Menu/{}", self.label))
             .on_click(self.on_click)
             .style((style_menu_button, style_text))
             .children(self.label)

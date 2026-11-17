@@ -47,5 +47,9 @@ fn main() {
     app.add_plugins(BrpExtrasPlugin);
     #[cfg(feature = "brp")]
     app.add_plugins(DebugBrpPlugin);
+    // Keep updating while unfocused so BRP-driven tests see hover and picking
+    // changes without requiring a focused window.
+    #[cfg(feature = "brp")]
+    app.insert_resource(bevy::winit::WinitSettings::continuous());
     app.run();
 }

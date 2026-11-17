@@ -71,6 +71,7 @@ impl ViewTemplate for CampIcon {
                 selection.toggle(target);
             });
         Button::new()
+            .named(format!("Outliner/Camp/{}", target.to_bits()))
             .on_click(callback)
             .icon(icon.clone())
             .style(style_icon)

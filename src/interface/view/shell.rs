@@ -175,6 +175,7 @@ impl ViewTemplate for ToolbarItem {
             .use_component::<InputMap<Action>>(input_entity)
             .and_then(|inputmap| get_keybind_for_action(inputmap, &action));
         Button::new()
+            .named(format!("Toolbar/{:?}", self.action))
             .on_click(cx.create_callback(
                 move |mut action_state: Single<&mut ActionState<Action>>| {
                     action_state.release(&action);
@@ -199,35 +200,38 @@ impl ViewTemplate for Toolbar {
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         let assets = cx.use_resource::<InterfaceAssets>();
-        Element::<Node>::new().style(style_toolbar).children((
-            ToolbarItem::for_action(Action::ResumeMove)
-                .icon(assets.arrow_icon.clone())
-                .tooltip_text("Resume move"),
-            ToolbarItem::for_action(Action::Camp)
-                .icon(assets.campfire_icon.clone())
-                .tooltip_text("Make/Enter camp"),
-            ToolbarItem::for_action(Action::BreakCamp)
-                .icon(assets.cancel_icon.clone())
-                .tooltip_text("Break camp"),
-            ToolbarItem::for_action(Action::CreateParty)
-                .icon(assets.knapsack_icon.clone())
-                .tooltip_text("Create party"),
-            ToolbarItem::for_action(Action::SplitParty)
-                .icon(assets.back_forth_icon.clone())
-                .tooltip_text("Split selected from party"),
-            ToolbarItem::for_action(Action::MergeParty)
-                .icon(assets.contract_icon.clone())
-                .tooltip_text("Merge selected parties"),
-            ToolbarItem::for_action(Action::CollectCrystals)
-                .icon(assets.crystals_icon.clone())
-                .tooltip_text("Collect cyrstals"),
-            ToolbarItem::for_action(Action::OpenPortal)
-                .icon(assets.magic_swirl_icon.clone())
-                .tooltip_text("Open portal"),
-            ToolbarItem::for_action(Action::EnterPortal)
-                .icon(assets.portal_icon.clone())
-                .tooltip_text("Enter portal"),
-        ))
+        Element::<Node>::new()
+            .named("Toolbar")
+            .style(style_toolbar)
+            .children((
+                ToolbarItem::for_action(Action::ResumeMove)
+                    .icon(assets.arrow_icon.clone())
+                    .tooltip_text("Resume move"),
+                ToolbarItem::for_action(Action::Camp)
+                    .icon(assets.campfire_icon.clone())
+                    .tooltip_text("Make/Enter camp"),
+                ToolbarItem::for_action(Action::BreakCamp)
+                    .icon(assets.cancel_icon.clone())
+                    .tooltip_text("Break camp"),
+                ToolbarItem::for_action(Action::CreateParty)
+                    .icon(assets.knapsack_icon.clone())
+                    .tooltip_text("Create party"),
+                ToolbarItem::for_action(Action::SplitParty)
+                    .icon(assets.back_forth_icon.clone())
+                    .tooltip_text("Split selected from party"),
+                ToolbarItem::for_action(Action::MergeParty)
+                    .icon(assets.contract_icon.clone())
+                    .tooltip_text("Merge selected parties"),
+                ToolbarItem::for_action(Action::CollectCrystals)
+                    .icon(assets.crystals_icon.clone())
+                    .tooltip_text("Collect cyrstals"),
+                ToolbarItem::for_action(Action::OpenPortal)
+                    .icon(assets.magic_swirl_icon.clone())
+                    .tooltip_text("Open portal"),
+                ToolbarItem::for_action(Action::EnterPortal)
+                    .icon(assets.portal_icon.clone())
+                    .tooltip_text("Enter portal"),
+            ))
     }
 }
 

@@ -40,11 +40,15 @@ Useful flows:
   (e.g. count `Party` entities after a New game).
 * See it: `brp_extras_screenshot` to `/tmp/*.png`, then read the image.
   The window must be visible; occluded windows capture black.
+* Point it: `game/mouse_over_ui` / `game/mouse_over_mesh` move the
+  simulated cursor onto a UI node or mesh, by `name` or `entity`. Poll
+  `Hovered` on the next frame, then click with `brp_extras/click_mouse`.
 * Touch it: `world_mutate_components`, `world_trigger_event`,
-  `brp_extras_send_keys`, mouse tools. For menu and picking
-  flows, prefer the app-defined `game/new_game` and `game/select`
-  — implemented in `src/debug.rs` and published as agent tools
-  (see `brp_list_agent_tools`) — they replay the exact UI code paths.
+  `brp_extras_send_keys`. For menu and picking flows, prefer the
+  app-defined `game/new_game`, `game/select`, and the cursor methods
+  above — implemented in `src/debug.rs` and published as agent tools
+  (see `brp_list_agent_tools` for descriptions, schemas, and button names)
+  — they replay the exact UI code paths.
 * Drive states: `game/set_state` with `{"updates": {"InterfaceState": "Shell"}}`.
   Batched (all entries validate before anything queues, then apply together),
   generic over registered states, errors list valid options. Raw
