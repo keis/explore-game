@@ -19,7 +19,10 @@ Keep commits small and individual with imperative messages
 
 Prefix the message with one `<scope>:` naming the crate in `crates/` or the
 module in `src/` (e.g. `actor:`, `scene:`). Always pick exactly one scope:
-the one holding the majority of the change, or its conceptual home.
+the one holding the majority of the change, or its conceptual home. Pure
+OpenSpec changes (only files under `openspec/`) use `openspec:`; code
+changes keep their crate/module scope even when they also update OpenSpec
+tasks.
 
 Use one `use` per top-level crate, grouping submodule imports with `{}`
 (e.g. `use bevy::{prelude::*, reflect::Reflect}`) instead of repeating the

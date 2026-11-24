@@ -1,0 +1,24 @@
+schema: spec-driven
+
+context: |
+  Prototype stage: backward compatibility (map seeds, save files, public
+  crate APIs) is not required, but every compatibility break must be
+  intentional and called out in the proposal.
+  Workspace library crates in crates/ are not worked around or partially
+  reimplemented by other crates for performance or convenience; such
+  improvements become a separate proposal for the owning crate.
+
+rules:
+  design:
+    - Performance claims need a measurement plan (criterion benchmark or
+      corpus run); a change kept only to enable a later improvement must
+      name that improvement.
+  tasks:
+    - Each task is one small commit following AGENTS.md; commits touching
+      a crate or src/ module use that scope even when they also tick
+      tasks, pure OpenSpec commits use `openspec:`.
+    - Performance tasks verify with before/after numbers and are reverted
+      if they show no improvement, unless they enable a named later task.
+    - Tasks touching map generation are tagged [keep] (seed-preserving,
+      golden fixtures untouched) or [break] (fixtures regenerated in the
+      same commit).
