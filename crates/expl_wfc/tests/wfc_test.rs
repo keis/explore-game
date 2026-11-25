@@ -108,7 +108,33 @@ fn test_fixed_seed() {
     let output = generator.export().unwrap();
 
     assert_eq!(steps, 325);
+    let stats = generator.stats();
+    assert_eq!(stats.collapses, 298);
+    assert_eq!(stats.rewinds, 27);
+    assert_eq!(stats.steps, stats.collapses + stats.rewinds);
     assert_eq!(output.layout.radius, 10);
 
     write_json_lines("res/trace.jsonl", &new_trace).unwrap();
+}
+
+#[test]
+fn test_fixed_seed_statistics() {
+    let template = sample_template();
+    let seed: Seed = "AAFP26SGQFDAYVCFVE".parse().unwrap();
+    let mut generator: Generator<HexagonalGridLayout, char> =
+        Generator::new_with_seed(&template, seed).unwrap();
+    generator.record_events(false);
+    while generator.step().is_some() {}
+
+    let stats = *generator.stats();
+    assert_eq!(stats.steps, 325);
+    assert_eq!(stats.collapses, 298);
+    assert_eq!(stats.rewinds, 27);
+    assert_eq!(stats.max_backtrack_depth, 5);
+    assert_eq!(stats.stale_failures, 0);
+
+    let events = generator.events();
+    assert_eq!(events.len(), stats.collapses);
+    assert!(events.iter().all(|event| event.pending.is_none()));
+    assert_eq!(events.iter().filter(|event| !event.completed).count(), 15);
 }
