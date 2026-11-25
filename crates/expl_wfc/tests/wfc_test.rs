@@ -1,10 +1,13 @@
-use expl_hexgrid::{layout::HexagonalGridLayout, Grid, GridLayout, HexCoord, Transform};
+use expl_hexgrid::{
+    layout::{HexagonalGridLayout, SquareGridLayout},
+    Grid, GridLayout, HexCoord, Transform,
+};
 use expl_wfc::{
     cell::Cell,
     generator::DEFAULT_BUDGET_FACTOR,
     seed::Seed,
     tile::{extract_tiles, standard_tile_transforms},
-    util::{wrap_grid, LoadGrid},
+    util::{wrap_grid, DumpGrid, LoadGrid},
     Generator, Template, WFCError,
 };
 use more_asserts::assert_le;
@@ -51,7 +54,7 @@ fn verify_generator_invariants(generator: &Generator<HexagonalGridLayout, char>)
 }
 
 /// Every pair of neighbouring collapsed cells must be compatible per the template.
-fn verify_neighbour_compatibility(generator: &Generator<HexagonalGridLayout, char>) {
+fn verify_neighbour_compatibility<Layout: GridLayout>(generator: &Generator<Layout, char>) {
     for coord in generator.grid.layout.iter() {
         let Some(Cell::Collapsed(tile)) = generator.grid.get(coord) else {
             continue;
@@ -75,7 +78,7 @@ fn verify_neighbour_compatibility(generator: &Generator<HexagonalGridLayout, cha
 /// pending retry (`rejected` of the cell in `next`) as an uncommitted element.
 type LogMeasure = Vec<(usize, bool)>;
 
-fn log_measure(generator: &Generator<HexagonalGridLayout, char>) -> LogMeasure {
+fn log_measure<Layout: GridLayout>(generator: &Generator<Layout, char>) -> LogMeasure {
     let mut measure: LogMeasure = generator
         .collapsed
         .iter()
@@ -95,10 +98,25 @@ fn log_measure(generator: &Generator<HexagonalGridLayout, char>) -> LogMeasure {
 #[derive(Default)]
 struct ProgressCheck {
     previous: Option<LogMeasure>,
+    /// Only every `stride`-th call is measured (0 and 1 mean every call). The measure is
+    /// strictly increasing, so comparing sparse samples is a weaker but valid check.
+    stride: usize,
+    calls: usize,
 }
 
 impl ProgressCheck {
-    fn check(&mut self, generator: &Generator<HexagonalGridLayout, char>) {
+    fn with_stride(stride: usize) -> Self {
+        Self {
+            stride,
+            ..Self::default()
+        }
+    }
+
+    fn check<Layout: GridLayout>(&mut self, generator: &Generator<Layout, char>) {
+        self.calls += 1;
+        if self.stride > 1 && !self.calls.is_multiple_of(self.stride) {
+            return;
+        }
         self.record(log_measure(generator));
     }
 
@@ -361,4 +379,82 @@ fn test_progress_check_rejects_decreasing_measure() {
     progress.record(vec![(0, true), (1, true)]);
     // a rewind that only drops the top entry without growing anything
     progress.record(vec![(0, true)]);
+}
+
+/// FNV-1a, 64 bit: offset basis 0xcbf29ce484222325, prime 0x100000001b3, over the bytes in order.
+fn fnv1a(bytes: &[u8]) -> u64 {
+    bytes.iter().fold(0xcbf29ce484222325u64, |hash, byte| {
+        (hash ^ u64::from(*byte)).wrapping_mul(0x100000001b3)
+    })
+}
+
+/// What a heavy golden check pins down: the FNV-1a hash of the dumped output grid and the number
+/// of collapse events, or the error generation stopped with (a failed run is just as
+/// deterministic). The step count is deliberately not part of it.
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
+struct GoldenOutput {
+    seed: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    hash: Option<String>,
+    collapses: usize,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    error: Option<String>,
+}
+
+fn check_golden(seed: &str) {
+    let template = sample_template();
+    let mut generator: Generator<SquareGridLayout, char> =
+        Generator::new_with_seed(&template, seed.parse().unwrap()).unwrap();
+    let mut progress = ProgressCheck::with_stride(97);
+    let result = loop {
+        match generator.step() {
+            Ok(Some(())) => progress.check(&generator),
+            Ok(None) => break Ok(()),
+            Err(error) => break Err(error),
+        }
+    };
+    verify_neighbour_compatibility(&generator);
+
+    let (hash, error) = match result {
+        Ok(()) => {
+            let mut dump = Vec::new();
+            generator.export().unwrap().dump(&mut dump).unwrap();
+            (Some(format!("{:016x}", fnv1a(&dump))), None)
+        }
+        Err(error) => (None, Some(error.to_string())),
+    };
+    let actual = GoldenOutput {
+        seed: seed.to_string(),
+        hash,
+        collapses: generator.stats().collapses,
+        error,
+    };
+
+    let path = format!("res/golden-{seed}.json");
+    if bless_requested() {
+        std::fs::write(&path, serde_json::to_string_pretty(&actual).unwrap() + "\n").unwrap();
+        return;
+    }
+    let expected: GoldenOutput =
+        serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_fnv1a_known_values() {
+    assert_eq!(fnv1a(b""), 0xcbf29ce484222325);
+    assert_eq!(fnv1a(b"a"), 0xaf63dc4c8601ec8c);
+    assert_eq!(fnv1a(b"foobar"), 0x85944171f73967e8);
+}
+
+#[test]
+#[ignore = "heavy, run with --ignored"]
+fn test_golden_120x120_niwm() {
+    check_golden("AF4HR7NIWMZRATUV36FQ");
+}
+
+#[test]
+#[ignore = "heavy, run with --ignored"]
+fn test_golden_120x120_o3u6() {
+    check_golden("AF4HR7O3U6VZGHS5TOCQ");
 }
