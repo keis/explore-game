@@ -54,9 +54,28 @@ jobs:
       run: |
         sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang
     - uses: Leafwing-Studios/cargo-cache@v2
+    - name: Install reviewdog
+      run: |
+        curl -sfL "https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh" \
+          | sh -s -- -b /usr/local/bin/ v0.20.3
+    - name: Install clippy-reviewdog-filter
+      run: |
+        # datasource=github-releases
+        curl -sfLJO "https://github.com/keis/clippy-reviewdog-filter/releases/download/v0.1.7/clippy-reviewdog-filter-x86_64-unknown-linux-musl"
+        mv clippy-reviewdog-filter-x86_64-unknown-linux-musl /usr/local/bin/clippy-reviewdog-filter
+        chmod +x /usr/local/bin/clippy-reviewdog-filter
+        clippy-reviewdog-filter --version
     - name: Clippy
-      uses: sksat/action-clippy@v1.1.1
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        filter_mode: nofilter
-        reporter: github-pr-review
+      env:
+        REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        cargo clippy --message-format human --workspace --all-targets
+        cargo clippy --message-format json --workspace --all-targets 2>&1 \
+          | clippy-reviewdog-filter \
+          | reviewdog \
+              -f=checkstyle \
+              -name=clippy \
+              -level=warning \
+              -reporter=github-pr-review \
+              -filter-mode=nofilter \
+              -fail-on-error=false
