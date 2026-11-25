@@ -115,11 +115,39 @@ impl ProgressCheck {
     }
 }
 
+/// One collapse event. The pending snapshot is only present for collapses whose propagation
+/// completed without a contradiction.
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 struct GeneratorTraceStep {
     pub coord: HexCoord,
     pub tile: usize,
-    pub pending: BTreeMap<HexCoord, usize>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pending: Option<BTreeMap<HexCoord, usize>>,
+}
+
+/// Fixtures are only rewritten when explicitly requested with `WFC_BLESS=1`.
+fn bless_requested() -> bool {
+    std::env::var_os("WFC_BLESS").is_some_and(|value| value != "0")
+}
+
+/// Compare against the fixture at `path` exactly, including the number of entries, or rewrite
+/// it when blessing was requested.
+fn check_trace(path: &str, trace: &[GeneratorTraceStep]) {
+    if bless_requested() {
+        write_json_lines(path, trace).unwrap();
+        return;
+    }
+    let expected = json_lines(path)
+        .and_then(|data| data.collect::<Result<Vec<GeneratorTraceStep>, _>>())
+        .unwrap();
+    assert_traces_equal(trace, &expected);
+}
+
+fn assert_traces_equal(trace: &[GeneratorTraceStep], expected: &[GeneratorTraceStep]) {
+    for (index, (step, expected)) in trace.iter().zip(expected).enumerate() {
+        assert_eq!(step, expected, "trace differs at collapse {index}");
+    }
+    assert_eq!(trace.len(), expected.len(), "trace length differs");
 }
 
 #[test]
@@ -151,13 +179,8 @@ fn test_fixed_seed() {
     let seed: Seed = "AAFP26SGQFDAYVCFVE".parse().unwrap();
     let mut generator: Generator<HexagonalGridLayout, char> =
         Generator::new_with_seed(&template, seed).unwrap();
+    generator.record_events(true);
     println!("map size is {:?}", generator.grid.layout.size());
-
-    let expected_trace = json_lines("res/trace.jsonl")
-        .and_then(|data| data.collect::<Result<Vec<GeneratorTraceStep>, _>>())
-        .unwrap();
-    let mut new_trace = vec![];
-    let mut expected_trace_iter = expected_trace.iter();
 
     let mut steps = 0;
     let mut progress = ProgressCheck::default();
@@ -166,27 +189,48 @@ fn test_fixed_seed() {
         verify_neighbour_compatibility(&generator);
         progress.check(&generator);
         steps += 1;
-        let last = generator.collapsed.last().unwrap();
-        let step = GeneratorTraceStep {
-            coord: last.0,
-            tile: last.1,
-            pending: generator.pending.clone().drain().collect(),
-        };
-        if let Some(expected) = expected_trace_iter.next() {
-            assert_eq!(step, *expected);
-        }
-        new_trace.push(step);
     }
     let output = generator.export().unwrap();
 
-    assert_eq!(steps, 325);
     let stats = generator.stats();
+    assert_eq!(steps, 325);
     assert_eq!(stats.collapses, 298);
     assert_eq!(stats.rewinds, 27);
     assert_eq!(stats.steps, stats.collapses + stats.rewinds);
     assert_eq!(output.layout.radius, 10);
 
-    write_json_lines("res/trace.jsonl", &new_trace).unwrap();
+    let trace: Vec<_> = generator
+        .events()
+        .iter()
+        .map(|event| GeneratorTraceStep {
+            coord: event.coord,
+            tile: event.tile,
+            pending: event.pending.clone(),
+        })
+        .collect();
+    check_trace("res/trace.jsonl", &trace);
+}
+
+#[test]
+#[should_panic(expected = "trace length differs")]
+fn test_truncated_trace_fails() {
+    let step = |tile| GeneratorTraceStep {
+        coord: HexCoord::ZERO,
+        tile,
+        pending: None,
+    };
+    assert_traces_equal(&[step(1), step(2)], &[step(1)]);
+}
+
+#[test]
+#[should_panic(expected = "trace length differs")]
+fn test_extended_trace_fails() {
+    let step = |tile| GeneratorTraceStep {
+        coord: HexCoord::ZERO,
+        tile,
+        pending: None,
+    };
+    assert_traces_equal(&[step(1)], &[step(1), step(2)]);
 }
 
 #[test]
