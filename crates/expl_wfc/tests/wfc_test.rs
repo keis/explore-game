@@ -50,6 +50,27 @@ fn verify_generator_invariants(generator: &Generator<HexagonalGridLayout, char>)
     }
 }
 
+/// Every pair of neighbouring collapsed cells must be compatible per the template.
+fn verify_neighbour_compatibility(generator: &Generator<HexagonalGridLayout, char>) {
+    for coord in generator.grid.layout.iter() {
+        let Some(Cell::Collapsed(tile)) = generator.grid.get(coord) else {
+            continue;
+        };
+        for (offset, compatible) in generator.template.compatible_tiles(*tile) {
+            if let Some(Cell::Collapsed(other)) = generator.grid.get(coord + offset) {
+                assert!(
+                    compatible.contains(*other),
+                    "tile {} at {:?} is not compatible with tile {} at {:?}",
+                    tile,
+                    coord,
+                    other,
+                    coord + offset,
+                );
+            }
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 struct GeneratorTraceStep {
     pub coord: HexCoord,
@@ -67,6 +88,7 @@ fn test_collapse() {
     let mut steps = 0;
     while generator.step().unwrap().is_some() {
         verify_generator_invariants(&generator);
+        verify_neighbour_compatibility(&generator);
         steps += 1;
         assert_le!(steps, 1000);
     }
@@ -94,6 +116,7 @@ fn test_fixed_seed() {
     let mut steps = 0;
     while generator.step().unwrap().is_some() {
         verify_generator_invariants(&generator);
+        verify_neighbour_compatibility(&generator);
         steps += 1;
         let last = generator.collapsed.last().unwrap();
         let step = GeneratorTraceStep {
