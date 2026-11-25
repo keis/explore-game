@@ -71,6 +71,50 @@ fn verify_neighbour_compatibility(generator: &Generator<HexagonalGridLayout, cha
     }
 }
 
+/// The D13 log measure: one `(|rejected|, committed)` element per history depth, plus the
+/// pending retry (`rejected` of the cell in `next`) as an uncommitted element.
+type LogMeasure = Vec<(usize, bool)>;
+
+fn log_measure(generator: &Generator<HexagonalGridLayout, char>) -> LogMeasure {
+    let mut measure: LogMeasure = generator
+        .collapsed
+        .iter()
+        .map(|(_, _, rejected)| (rejected.len(), true))
+        .collect();
+    if let Some(rejected) = &generator.rejected {
+        if !rejected.is_empty() {
+            measure.push((rejected.len(), false));
+        }
+    }
+    measure
+}
+
+/// Asserts the log measure is strictly greater, lexicographically, than the previous one.
+/// `false` (uncommitted) orders before `true` (committed) at equal size and an extension is
+/// greater than its prefix, which is what `Vec`'s `Ord` gives.
+#[derive(Default)]
+struct ProgressCheck {
+    previous: Option<LogMeasure>,
+}
+
+impl ProgressCheck {
+    fn check(&mut self, generator: &Generator<HexagonalGridLayout, char>) {
+        self.record(log_measure(generator));
+    }
+
+    fn record(&mut self, measure: LogMeasure) {
+        if let Some(previous) = &self.previous {
+            assert!(
+                measure > *previous,
+                "log measure did not increase: {:?} -> {:?}",
+                previous,
+                measure,
+            );
+        }
+        self.previous = Some(measure);
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 struct GeneratorTraceStep {
     pub coord: HexCoord,
@@ -86,9 +130,11 @@ fn test_collapse() {
     let mut generator = Generator::new_with_layout(&template, HexagonalGridLayout { radius: 5 });
     println!("map size is {:?}", generator.grid.layout.size());
     let mut steps = 0;
+    let mut progress = ProgressCheck::default();
     while generator.step().unwrap().is_some() {
         verify_generator_invariants(&generator);
         verify_neighbour_compatibility(&generator);
+        progress.check(&generator);
         steps += 1;
         assert_le!(steps, 1000);
     }
@@ -114,9 +160,11 @@ fn test_fixed_seed() {
     let mut expected_trace_iter = expected_trace.iter();
 
     let mut steps = 0;
+    let mut progress = ProgressCheck::default();
     while generator.step().unwrap().is_some() {
         verify_generator_invariants(&generator);
         verify_neighbour_compatibility(&generator);
+        progress.check(&generator);
         steps += 1;
         let last = generator.collapsed.last().unwrap();
         let step = GeneratorTraceStep {
@@ -238,4 +286,35 @@ fn test_unsatisfiable_template_returns_history_error() {
         }
     };
     assert!(matches!(result, Err(WFCError::HistoryExhausted)));
+}
+
+#[test]
+fn test_progress_check_accepts_increasing_measures() {
+    let mut progress = ProgressCheck::default();
+    progress.record(vec![(0, true)]);
+    // extension
+    progress.record(vec![(0, true), (0, true)]);
+    // rewind: top element grows and is uncommitted
+    progress.record(vec![(0, true), (1, false)]);
+    // retry collapse commits it
+    progress.record(vec![(0, true), (1, true)]);
+    // further rewind pops down to a shallower element
+    progress.record(vec![(1, false)]);
+}
+
+#[test]
+#[should_panic(expected = "log measure did not increase")]
+fn test_progress_check_rejects_repeated_measure() {
+    let mut progress = ProgressCheck::default();
+    progress.record(vec![(0, true), (1, false)]);
+    progress.record(vec![(0, true), (1, false)]);
+}
+
+#[test]
+#[should_panic(expected = "log measure did not increase")]
+fn test_progress_check_rejects_decreasing_measure() {
+    let mut progress = ProgressCheck::default();
+    progress.record(vec![(0, true), (1, true)]);
+    // a rewind that only drops the top entry without growing anything
+    progress.record(vec![(0, true)]);
 }
