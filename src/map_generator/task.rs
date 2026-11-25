@@ -43,7 +43,7 @@ pub fn generate_map(
     info!("Generating map with seed {} ...", seed);
     let mut generator = Generator::new_with_seed(template, seed)?;
 
-    while generator.step().is_some() {}
+    while generator.step()?.is_some() {}
     info!("Generated map!");
     let terrain: Grid<SquareGridLayout, Id<Terrain>> = generator.export()?;
     let mut rng = generator.rand();

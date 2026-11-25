@@ -1,10 +1,11 @@
-use expl_hexgrid::{layout::HexagonalGridLayout, Grid, GridLayout, HexCoord};
+use expl_hexgrid::{layout::HexagonalGridLayout, Grid, GridLayout, HexCoord, Transform};
 use expl_wfc::{
     cell::Cell,
+    generator::DEFAULT_BUDGET_FACTOR,
     seed::Seed,
     tile::{extract_tiles, standard_tile_transforms},
     util::{wrap_grid, LoadGrid},
-    Generator, Template,
+    Generator, Template, WFCError,
 };
 use more_asserts::assert_le;
 use serde::{Deserialize, Serialize};
@@ -64,7 +65,7 @@ fn test_collapse() {
     let mut generator = Generator::new_with_layout(&template, HexagonalGridLayout { radius: 5 });
     println!("map size is {:?}", generator.grid.layout.size());
     let mut steps = 0;
-    while generator.step().is_some() {
+    while generator.step().unwrap().is_some() {
         verify_generator_invariants(&generator);
         steps += 1;
         assert_le!(steps, 1000);
@@ -91,7 +92,7 @@ fn test_fixed_seed() {
     let mut expected_trace_iter = expected_trace.iter();
 
     let mut steps = 0;
-    while generator.step().is_some() {
+    while generator.step().unwrap().is_some() {
         verify_generator_invariants(&generator);
         steps += 1;
         let last = generator.collapsed.last().unwrap();
@@ -124,7 +125,7 @@ fn test_fixed_seed_statistics() {
     let mut generator: Generator<HexagonalGridLayout, char> =
         Generator::new_with_seed(&template, seed).unwrap();
     generator.record_events(false);
-    while generator.step().is_some() {}
+    while generator.step().unwrap().is_some() {}
 
     let stats = *generator.stats();
     assert_eq!(stats.steps, 325);
@@ -137,4 +138,81 @@ fn test_fixed_seed_statistics() {
     assert_eq!(events.len(), stats.collapses);
     assert!(events.iter().all(|event| event.pending.is_none()));
     assert_eq!(events.iter().filter(|event| !event.completed).count(), 15);
+}
+
+#[test]
+fn test_default_budget_is_factor_of_cell_count() {
+    let template = sample_template();
+    let generator: Generator<HexagonalGridLayout, char> =
+        Generator::new_with_layout(&template, HexagonalGridLayout { radius: 5 });
+    assert_eq!(
+        generator.budget(),
+        DEFAULT_BUDGET_FACTOR * generator.grid.layout.size()
+    );
+}
+
+fn run_with_budget(budget: usize) -> (Result<(), WFCError>, usize) {
+    let template = sample_template();
+    let seed: Seed = "AAFP26SGQFDAYVCFVE".parse().unwrap();
+    let mut generator: Generator<HexagonalGridLayout, char> =
+        Generator::new_with_seed(&template, seed)
+            .unwrap()
+            .with_budget(budget);
+    let result = loop {
+        match generator.step() {
+            Ok(Some(())) => {}
+            Ok(None) => break Ok(()),
+            Err(error) => break Err(error),
+        }
+    };
+    (result, generator.stats().collapses)
+}
+
+#[test]
+fn test_tiny_budget_fails_at_same_collapse_count() {
+    let first = run_with_budget(50);
+    let second = run_with_budget(50);
+    assert!(matches!(first.0, Err(WFCError::BudgetExceeded(50))));
+    assert!(matches!(second.0, Err(WFCError::BudgetExceeded(50))));
+    assert_eq!(first.1, 50);
+    assert_eq!(second.1, 50);
+}
+
+#[test]
+fn test_explicit_budget_overrides_default() {
+    // The golden seed needs 298 collapses on 271 cells, below the default of
+    // DEFAULT_BUDGET_FACTOR x 271, but above this explicit budget.
+    assert!(matches!(
+        run_with_budget(100).0,
+        Err(WFCError::BudgetExceeded(100))
+    ));
+    // A budget above the default lets the same seed finish too.
+    let (result, collapses) = run_with_budget(1_000_000);
+    assert!(result.is_ok());
+    assert_eq!(collapses, 298);
+}
+
+#[test]
+fn test_unsatisfiable_template_returns_history_error() {
+    // Every cell of the sample is unique, so the only tiles are the ones in the
+    // sample itself and nothing can continue past the edge of it.
+    let layout = HexagonalGridLayout { radius: 3 };
+    let grid = Grid::<HexagonalGridLayout, char>::with_data(
+        layout,
+        ('a'..).take(layout.size()).collect::<Vec<_>>(),
+    );
+    let transforms = vec![Transform::Identity.into()];
+    let template = Template::from_tiles(extract_tiles(&grid, &transforms));
+    assert_eq!(template.available_tiles(), 7);
+
+    let mut generator: Generator<HexagonalGridLayout, char> =
+        Generator::new_with_layout(&template, HexagonalGridLayout { radius: 3 });
+    let result = loop {
+        match generator.step() {
+            Ok(Some(())) => {}
+            Ok(None) => break Ok(()),
+            Err(error) => break Err(error),
+        }
+    };
+    assert!(matches!(result, Err(WFCError::HistoryExhausted)));
 }

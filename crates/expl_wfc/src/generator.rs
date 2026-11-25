@@ -13,6 +13,9 @@ use std::{
     hash::Hash,
 };
 
+/// Multiplier for the default collapse budget: `DEFAULT_BUDGET_FACTOR` x cell count.
+pub const DEFAULT_BUDGET_FACTOR: usize = 15;
+
 /// Run statistics for a generator, readable by the caller.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Statistics {
@@ -56,6 +59,7 @@ pub struct Generator<'a, Layout: GridLayout, Item> {
     next: Option<HexCoord>,
     stats: Statistics,
     backtrack_run: usize,
+    budget: usize,
     last_restored: Option<HexCoord>,
     last_collapsed: Option<HexCoord>,
     recorder: Option<Recorder>,
@@ -97,11 +101,29 @@ where
             rejected: Some(Vec::new()),
             stats: Statistics::default(),
             backtrack_run: 0,
+            budget: DEFAULT_BUDGET_FACTOR * layout.size(),
             last_restored: None,
             last_collapsed: None,
             recorder: None,
             rand: seed.into(),
         }
+    }
+
+    /// Set the collapse budget; `step` fails once this many collapses were made.
+    pub fn with_budget(mut self, budget: usize) -> Self {
+        self.budget = budget;
+        self
+    }
+
+    /// Set the collapse budget to `factor` collapses per cell of the layout, the rule the default
+    /// budget uses with `DEFAULT_BUDGET_FACTOR`.
+    pub fn with_budget_factor(self, factor: usize) -> Self {
+        let budget = factor * self.grid.layout.size();
+        self.with_budget(budget)
+    }
+
+    pub fn budget(&self) -> usize {
+        self.budget
     }
 
     pub fn stats(&self) -> &Statistics {
@@ -152,8 +174,9 @@ where
         }
     }
 
-    pub fn rewind(&mut self) {
-        let (last_coord, last_tile, mut last_rejected) = self.collapsed.pop().unwrap();
+    pub fn rewind(&mut self) -> Result<(), WFCError> {
+        let (last_coord, last_tile, mut last_rejected) =
+            self.collapsed.pop().ok_or(WFCError::HistoryExhausted)?;
         self.stats.rewinds += 1;
         self.backtrack_run += 1;
         self.stats.max_backtrack_depth = self.stats.max_backtrack_depth.max(self.backtrack_run);
@@ -178,10 +201,16 @@ where
         // next cell that gets collapsed.
         self.rejected = Some(last_rejected);
         self.next = Some(last_coord);
+        Ok(())
     }
 
-    pub fn step(&mut self) -> Option<()> {
-        let coord = self.next?;
+    pub fn step(&mut self) -> Result<Option<()>, WFCError> {
+        let Some(coord) = self.next else {
+            return Ok(None);
+        };
+        if self.stats.collapses >= self.budget {
+            return Err(WFCError::BudgetExceeded(self.budget));
+        }
         if let Some(tile) = self.grid[coord].select(&mut self.rand) {
             self.stats.steps += 1;
             self.stats.collapses += 1;
@@ -203,17 +232,18 @@ where
                 .max_by_key(|(coord, score)| (Reverse(*score), coord.q, coord.r))
                 .map(|(coord, _)| *coord);
         } else {
-            self.stats.steps += 1;
             let expected = self.last_restored == Some(coord)
                 || self
                     .last_collapsed
                     .is_some_and(|last| last.neighbours().any(|n| n == coord));
+            // Only a step that rewound did work; a failed rewind leaves the statistics alone.
+            self.rewind()?;
+            self.stats.steps += 1;
             if !expected {
                 self.stats.stale_failures += 1;
             }
-            self.rewind();
         }
-        Some(())
+        Ok(Some(()))
     }
 
     fn record_collapse(&mut self, coord: HexCoord, tile: TileId) {

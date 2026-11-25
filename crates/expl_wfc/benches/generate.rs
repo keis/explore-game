@@ -26,7 +26,7 @@ fn generate_hexagonal_from_template(
     seed: Seed,
 ) -> Grid<HexagonalGridLayout, char> {
     let mut generator = Generator::new_with_seed(template, seed).unwrap();
-    while generator.step().is_some() {}
+    while generator.step().unwrap().is_some() {}
     generator.export().unwrap()
 }
 
@@ -35,7 +35,7 @@ fn generate_square_from_template(
     seed: Seed,
 ) -> Grid<SquareGridLayout, char> {
     let mut generator = Generator::new_with_seed(template, seed).unwrap();
-    while generator.step().is_some() {}
+    while generator.step().unwrap().is_some() {}
     generator.export().unwrap()
 }
 

@@ -56,12 +56,13 @@ fn generate_map<Layout>(
     template: &Template<char>,
     generator: &mut Generator<Layout, char>,
     verbose: bool,
-) where
+) -> Result<(), WFCError>
+where
     Layout: GridLayout,
     Grid<Layout, char>: DumpGrid,
     Grid<Layout, Cell>: DumpGridWith<Item = Cell>,
 {
-    while generator.step().is_some() {
+    while generator.step()?.is_some() {
         if verbose {
             generator
                 .grid
@@ -75,6 +76,7 @@ fn generate_map<Layout>(
     }
     let output = generator.export().unwrap();
     output.dump(&mut io::stdout()).unwrap();
+    Ok(())
 }
 
 fn main() -> Result<(), WFCError> {
@@ -91,8 +93,7 @@ fn main() -> Result<(), WFCError> {
             println!("Generating map with seed {}", seed);
             let mut generator: Generator<HexagonalGridLayout, char> =
                 Generator::new_with_seed(&template, seed)?;
-            generate_map(&template, &mut generator, args.verbose);
-            Ok(())
+            generate_map(&template, &mut generator, args.verbose)
         }
         Command::Square(params) => {
             let seed = args
@@ -101,8 +102,7 @@ fn main() -> Result<(), WFCError> {
             println!("Generating map with seed {}", seed);
             let mut generator: Generator<SquareGridLayout, char> =
                 Generator::new_with_seed(&template, seed)?;
-            generate_map(&template, &mut generator, args.verbose);
-            Ok(())
+            generate_map(&template, &mut generator, args.verbose)
         }
     }
 }
