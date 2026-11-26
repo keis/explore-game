@@ -62,7 +62,7 @@ where
     Grid<Layout, char>: DumpGrid,
     Grid<Layout, Cell>: DumpGridWith<Item = Cell>,
 {
-    while generator.step()?.is_some() {
+    generator.run_with(|generator| {
         if verbose {
             generator
                 .grid
@@ -73,7 +73,7 @@ where
                 })
                 .unwrap();
         }
-    }
+    })?;
     let output = generator.export().unwrap();
     output.dump(&mut io::stdout()).unwrap();
     Ok(())

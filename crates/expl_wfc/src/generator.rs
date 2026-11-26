@@ -204,6 +204,19 @@ where
         Ok(())
     }
 
+    /// Step until the map is complete or generation fails.
+    pub fn run(&mut self) -> Result<(), WFCError> {
+        self.run_with(|_| {})
+    }
+
+    /// Like `run`, calling `on_step` after every step that did work.
+    pub fn run_with(&mut self, mut on_step: impl FnMut(&Self)) -> Result<(), WFCError> {
+        while self.step()?.is_some() {
+            on_step(self);
+        }
+        Ok(())
+    }
+
     pub fn step(&mut self) -> Result<Option<()>, WFCError> {
         let Some(coord) = self.next else {
             return Ok(None);

@@ -105,13 +105,10 @@ fn run_one(template: &Template<char>, seed: Seed, budget_factor: Option<usize>) 
     if let Some(factor) = budget_factor {
         generator = generator.with_budget_factor(factor);
     }
-    let completed = loop {
-        match generator.step() {
-            Ok(Some(())) => {}
-            Ok(None) => break true,
-            Err(WFCError::BudgetExceeded(_)) | Err(WFCError::HistoryExhausted) => break false,
-            Err(error) => panic!("unexpected error: {error}"),
-        }
+    let completed = match generator.run() {
+        Ok(()) => true,
+        Err(WFCError::BudgetExceeded(_)) | Err(WFCError::HistoryExhausted) => false,
+        Err(error) => panic!("unexpected error: {error}"),
     };
     let time = start.elapsed();
     let stats = *generator.stats();

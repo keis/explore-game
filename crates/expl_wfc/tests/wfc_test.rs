@@ -177,13 +177,15 @@ fn test_collapse() {
     println!("map size is {:?}", generator.grid.layout.size());
     let mut steps = 0;
     let mut progress = ProgressCheck::default();
-    while generator.step().unwrap().is_some() {
-        verify_generator_invariants(&generator);
-        verify_neighbour_compatibility(&generator);
-        progress.check(&generator);
-        steps += 1;
-        assert_le!(steps, 1000);
-    }
+    generator
+        .run_with(|generator| {
+            verify_generator_invariants(generator);
+            verify_neighbour_compatibility(generator);
+            progress.check(generator);
+            steps += 1;
+            assert_le!(steps, 1000);
+        })
+        .unwrap();
     let output = generator.export().unwrap();
 
     assert_eq!(output.layout.radius, 5);
@@ -202,12 +204,14 @@ fn test_fixed_seed() {
 
     let mut steps = 0;
     let mut progress = ProgressCheck::default();
-    while generator.step().unwrap().is_some() {
-        verify_generator_invariants(&generator);
-        verify_neighbour_compatibility(&generator);
-        progress.check(&generator);
-        steps += 1;
-    }
+    generator
+        .run_with(|generator| {
+            verify_generator_invariants(generator);
+            verify_neighbour_compatibility(generator);
+            progress.check(generator);
+            steps += 1;
+        })
+        .unwrap();
     let output = generator.export().unwrap();
 
     let stats = generator.stats();
@@ -258,7 +262,7 @@ fn test_fixed_seed_statistics() {
     let mut generator: Generator<HexagonalGridLayout, char> =
         Generator::new_with_seed(&template, seed).unwrap();
     generator.record_events(false);
-    while generator.step().unwrap().is_some() {}
+    generator.run().unwrap();
 
     let stats = *generator.stats();
     assert_eq!(stats.steps, 325);
@@ -291,13 +295,7 @@ fn run_with_budget(budget: usize) -> (Result<(), WFCError>, usize) {
         Generator::new_with_seed(&template, seed)
             .unwrap()
             .with_budget(budget);
-    let result = loop {
-        match generator.step() {
-            Ok(Some(())) => {}
-            Ok(None) => break Ok(()),
-            Err(error) => break Err(error),
-        }
-    };
+    let result = generator.run();
     (result, generator.stats().collapses)
 }
 
@@ -340,14 +338,7 @@ fn test_unsatisfiable_template_returns_history_error() {
 
     let mut generator: Generator<HexagonalGridLayout, char> =
         Generator::new_with_layout(&template, HexagonalGridLayout { radius: 3 });
-    let result = loop {
-        match generator.step() {
-            Ok(Some(())) => {}
-            Ok(None) => break Ok(()),
-            Err(error) => break Err(error),
-        }
-    };
-    assert!(matches!(result, Err(WFCError::HistoryExhausted)));
+    assert!(matches!(generator.run(), Err(WFCError::HistoryExhausted)));
 }
 
 #[test]
@@ -406,13 +397,7 @@ fn check_golden(seed: &str) {
     let mut generator: Generator<SquareGridLayout, char> =
         Generator::new_with_seed(&template, seed.parse().unwrap()).unwrap();
     let mut progress = ProgressCheck::with_stride(97);
-    let result = loop {
-        match generator.step() {
-            Ok(Some(())) => progress.check(&generator),
-            Ok(None) => break Ok(()),
-            Err(error) => break Err(error),
-        }
-    };
+    let result = generator.run_with(|generator| progress.check(generator));
     verify_neighbour_compatibility(&generator);
 
     let (hash, error) = match result {
