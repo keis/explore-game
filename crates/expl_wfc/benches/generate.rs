@@ -26,7 +26,7 @@ fn generate_hexagonal_from_template(
     seed: Seed,
 ) -> Grid<HexagonalGridLayout, char> {
     let mut generator = Generator::new_with_seed(template, seed).unwrap();
-    while generator.step().is_some() {}
+    generator.run().unwrap();
     generator.export().unwrap()
 }
 
@@ -35,7 +35,7 @@ fn generate_square_from_template(
     seed: Seed,
 ) -> Grid<SquareGridLayout, char> {
     let mut generator = Generator::new_with_seed(template, seed).unwrap();
-    while generator.step().is_some() {}
+    generator.run().unwrap();
     generator.export().unwrap()
 }
 
@@ -74,6 +74,16 @@ pub fn benchmark_generate_only(c: &mut Criterion) {
     });
 }
 
+/// 128x128 seeds from the corpus runner list (`corpus 128 --list-runs`) that finish within the
+/// default budget, ranging from ~30 ms to ~5 s per map.
+const LARGE_SEEDS: [&str; 5] = [
+    "AGAIB7JO2KC26UBMEYTA",
+    "AGAIB7L3HF6R3I5IL6FA",
+    "AGAIB7J3XJTGDZLWSXNQ",
+    "AGAIB7IGCYW2CUHORDXA",
+    "AGAIB7J5SVDFIXM7OALA",
+];
+
 pub fn benchmark_generate_large(c: &mut Criterion) {
     let mut group = c.benchmark_group("slow");
     group.measurement_time(Duration::from_secs(60));
@@ -81,10 +91,17 @@ pub fn benchmark_generate_large(c: &mut Criterion) {
 
     let grid = sample_grid().unwrap();
     let wrapped_input = wrap_grid(grid);
-    let seed: Seed = "AF4HR7O3U6VZGHS5TOCQ".parse().unwrap();
+    let seeds: Vec<Seed> = LARGE_SEEDS
+        .iter()
+        .map(|seed| seed.parse().unwrap())
+        .collect();
     let template = template_from_grid(&wrapped_input);
     group.bench_function("generate_large", |b| {
-        b.iter(|| generate_square_from_template(black_box(&template), black_box(seed)))
+        b.iter(|| {
+            for seed in &seeds {
+                generate_square_from_template(black_box(&template), black_box(*seed));
+            }
+        })
     });
     group.finish();
 }

@@ -1,10 +1,14 @@
-use expl_hexgrid::{layout::HexagonalGridLayout, Grid, GridLayout, HexCoord};
+use expl_hexgrid::{
+    layout::{HexagonalGridLayout, SquareGridLayout},
+    Grid, GridLayout, HexCoord, Transform,
+};
 use expl_wfc::{
     cell::Cell,
+    generator::DEFAULT_BUDGET_FACTOR,
     seed::Seed,
     tile::{extract_tiles, standard_tile_transforms},
-    util::{wrap_grid, LoadGrid},
-    Generator, Template,
+    util::{wrap_grid, DumpGrid, LoadGrid},
+    Generator, Template, WFCError,
 };
 use more_asserts::assert_le;
 use serde::{Deserialize, Serialize};
@@ -49,11 +53,119 @@ fn verify_generator_invariants(generator: &Generator<HexagonalGridLayout, char>)
     }
 }
 
+/// Every pair of neighbouring collapsed cells must be compatible per the template.
+fn verify_neighbour_compatibility<Layout: GridLayout>(generator: &Generator<Layout, char>) {
+    for coord in generator.grid.layout.iter() {
+        let Some(Cell::Collapsed(tile)) = generator.grid.get(coord) else {
+            continue;
+        };
+        for (offset, compatible) in generator.template.compatible_tiles(*tile) {
+            if let Some(Cell::Collapsed(other)) = generator.grid.get(coord + offset) {
+                assert!(
+                    compatible.contains(*other),
+                    "tile {} at {:?} is not compatible with tile {} at {:?}",
+                    tile,
+                    coord,
+                    other,
+                    coord + offset,
+                );
+            }
+        }
+    }
+}
+
+/// The D13 log measure: one `(|rejected|, committed)` element per history depth, plus the
+/// pending retry (`rejected` of the cell in `next`) as an uncommitted element.
+type LogMeasure = Vec<(usize, bool)>;
+
+fn log_measure<Layout: GridLayout>(generator: &Generator<Layout, char>) -> LogMeasure {
+    let mut measure: LogMeasure = generator
+        .collapsed
+        .iter()
+        .map(|(_, _, rejected)| (rejected.len(), true))
+        .collect();
+    if let Some(rejected) = &generator.rejected {
+        if !rejected.is_empty() {
+            measure.push((rejected.len(), false));
+        }
+    }
+    measure
+}
+
+/// Asserts the log measure is strictly greater, lexicographically, than the previous one.
+/// `false` (uncommitted) orders before `true` (committed) at equal size and an extension is
+/// greater than its prefix, which is what `Vec`'s `Ord` gives.
+#[derive(Default)]
+struct ProgressCheck {
+    previous: Option<LogMeasure>,
+    /// Only every `stride`-th call is measured (0 and 1 mean every call). The measure is
+    /// strictly increasing, so comparing sparse samples is a weaker but valid check.
+    stride: usize,
+    calls: usize,
+}
+
+impl ProgressCheck {
+    fn with_stride(stride: usize) -> Self {
+        Self {
+            stride,
+            ..Self::default()
+        }
+    }
+
+    fn check<Layout: GridLayout>(&mut self, generator: &Generator<Layout, char>) {
+        self.calls += 1;
+        if self.stride > 1 && !self.calls.is_multiple_of(self.stride) {
+            return;
+        }
+        self.record(log_measure(generator));
+    }
+
+    fn record(&mut self, measure: LogMeasure) {
+        if let Some(previous) = &self.previous {
+            assert!(
+                measure > *previous,
+                "log measure did not increase: {:?} -> {:?}",
+                previous,
+                measure,
+            );
+        }
+        self.previous = Some(measure);
+    }
+}
+
+/// One collapse event. The pending snapshot is only present for collapses whose propagation
+/// completed without a contradiction.
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 struct GeneratorTraceStep {
     pub coord: HexCoord,
     pub tile: usize,
-    pub pending: BTreeMap<HexCoord, usize>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pending: Option<BTreeMap<HexCoord, usize>>,
+}
+
+/// Fixtures are only rewritten when explicitly requested with `WFC_BLESS=1`.
+fn bless_requested() -> bool {
+    std::env::var_os("WFC_BLESS").is_some_and(|value| value != "0")
+}
+
+/// Compare against the fixture at `path` exactly, including the number of entries, or rewrite
+/// it when blessing was requested.
+fn check_trace(path: &str, trace: &[GeneratorTraceStep]) {
+    if bless_requested() {
+        write_json_lines(path, trace).unwrap();
+        return;
+    }
+    let expected = json_lines(path)
+        .and_then(|data| data.collect::<Result<Vec<GeneratorTraceStep>, _>>())
+        .unwrap();
+    assert_traces_equal(trace, &expected);
+}
+
+fn assert_traces_equal(trace: &[GeneratorTraceStep], expected: &[GeneratorTraceStep]) {
+    for (index, (step, expected)) in trace.iter().zip(expected).enumerate() {
+        assert_eq!(step, expected, "trace differs at collapse {index}");
+    }
+    assert_eq!(trace.len(), expected.len(), "trace length differs");
 }
 
 #[test]
@@ -64,11 +176,16 @@ fn test_collapse() {
     let mut generator = Generator::new_with_layout(&template, HexagonalGridLayout { radius: 5 });
     println!("map size is {:?}", generator.grid.layout.size());
     let mut steps = 0;
-    while generator.step().is_some() {
-        verify_generator_invariants(&generator);
-        steps += 1;
-        assert_le!(steps, 1000);
-    }
+    let mut progress = ProgressCheck::default();
+    generator
+        .run_with(|generator| {
+            verify_generator_invariants(generator);
+            verify_neighbour_compatibility(generator);
+            progress.check(generator);
+            steps += 1;
+            assert_le!(steps, 1000);
+        })
+        .unwrap();
     let output = generator.export().unwrap();
 
     assert_eq!(output.layout.radius, 5);
@@ -82,33 +199,247 @@ fn test_fixed_seed() {
     let seed: Seed = "AAFP26SGQFDAYVCFVE".parse().unwrap();
     let mut generator: Generator<HexagonalGridLayout, char> =
         Generator::new_with_seed(&template, seed).unwrap();
+    generator.record_events(true);
     println!("map size is {:?}", generator.grid.layout.size());
 
-    let expected_trace = json_lines("res/trace.jsonl")
-        .and_then(|data| data.collect::<Result<Vec<GeneratorTraceStep>, _>>())
-        .unwrap();
-    let mut new_trace = vec![];
-    let mut expected_trace_iter = expected_trace.iter();
-
     let mut steps = 0;
-    while generator.step().is_some() {
-        verify_generator_invariants(&generator);
-        steps += 1;
-        let last = generator.collapsed.last().unwrap();
-        let step = GeneratorTraceStep {
-            coord: last.0,
-            tile: last.1,
-            pending: generator.pending.clone().drain().collect(),
-        };
-        if let Some(expected) = expected_trace_iter.next() {
-            assert_eq!(step, *expected);
-        }
-        new_trace.push(step);
-    }
+    let mut progress = ProgressCheck::default();
+    generator
+        .run_with(|generator| {
+            verify_generator_invariants(generator);
+            verify_neighbour_compatibility(generator);
+            progress.check(generator);
+            steps += 1;
+        })
+        .unwrap();
     let output = generator.export().unwrap();
 
+    let stats = generator.stats();
     assert_eq!(steps, 325);
+    assert_eq!(stats.collapses, 298);
+    assert_eq!(stats.rewinds, 27);
+    assert_eq!(stats.steps, stats.collapses + stats.rewinds);
     assert_eq!(output.layout.radius, 10);
 
-    write_json_lines("res/trace.jsonl", &new_trace).unwrap();
+    let trace: Vec<_> = generator
+        .events()
+        .iter()
+        .map(|event| GeneratorTraceStep {
+            coord: event.coord,
+            tile: event.tile,
+            pending: event.pending.clone(),
+        })
+        .collect();
+    check_trace("res/trace.jsonl", &trace);
+}
+
+#[test]
+#[should_panic(expected = "trace length differs")]
+fn test_truncated_trace_fails() {
+    let step = |tile| GeneratorTraceStep {
+        coord: HexCoord::ZERO,
+        tile,
+        pending: None,
+    };
+    assert_traces_equal(&[step(1), step(2)], &[step(1)]);
+}
+
+#[test]
+#[should_panic(expected = "trace length differs")]
+fn test_extended_trace_fails() {
+    let step = |tile| GeneratorTraceStep {
+        coord: HexCoord::ZERO,
+        tile,
+        pending: None,
+    };
+    assert_traces_equal(&[step(1)], &[step(1), step(2)]);
+}
+
+#[test]
+fn test_fixed_seed_statistics() {
+    let template = sample_template();
+    let seed: Seed = "AAFP26SGQFDAYVCFVE".parse().unwrap();
+    let mut generator: Generator<HexagonalGridLayout, char> =
+        Generator::new_with_seed(&template, seed).unwrap();
+    generator.record_events(false);
+    generator.run().unwrap();
+
+    let stats = *generator.stats();
+    assert_eq!(stats.steps, 325);
+    assert_eq!(stats.collapses, 298);
+    assert_eq!(stats.rewinds, 27);
+    assert_eq!(stats.max_backtrack_depth, 5);
+    assert_eq!(stats.stale_failures, 0);
+
+    let events = generator.events();
+    assert_eq!(events.len(), stats.collapses);
+    assert!(events.iter().all(|event| event.pending.is_none()));
+    assert_eq!(events.iter().filter(|event| !event.completed).count(), 15);
+}
+
+#[test]
+fn test_default_budget_is_factor_of_cell_count() {
+    let template = sample_template();
+    let generator: Generator<HexagonalGridLayout, char> =
+        Generator::new_with_layout(&template, HexagonalGridLayout { radius: 5 });
+    assert_eq!(
+        generator.budget(),
+        DEFAULT_BUDGET_FACTOR * generator.grid.layout.size()
+    );
+}
+
+fn run_with_budget(budget: usize) -> (Result<(), WFCError>, usize) {
+    let template = sample_template();
+    let seed: Seed = "AAFP26SGQFDAYVCFVE".parse().unwrap();
+    let mut generator: Generator<HexagonalGridLayout, char> =
+        Generator::new_with_seed(&template, seed)
+            .unwrap()
+            .with_budget(budget);
+    let result = generator.run();
+    (result, generator.stats().collapses)
+}
+
+#[test]
+fn test_tiny_budget_fails_at_same_collapse_count() {
+    let first = run_with_budget(50);
+    let second = run_with_budget(50);
+    assert!(matches!(first.0, Err(WFCError::BudgetExceeded(50))));
+    assert!(matches!(second.0, Err(WFCError::BudgetExceeded(50))));
+    assert_eq!(first.1, 50);
+    assert_eq!(second.1, 50);
+}
+
+#[test]
+fn test_explicit_budget_overrides_default() {
+    // The golden seed needs 298 collapses on 271 cells, below the default of
+    // DEFAULT_BUDGET_FACTOR x 271, but above this explicit budget.
+    assert!(matches!(
+        run_with_budget(100).0,
+        Err(WFCError::BudgetExceeded(100))
+    ));
+    // A budget above the default lets the same seed finish too.
+    let (result, collapses) = run_with_budget(1_000_000);
+    assert!(result.is_ok());
+    assert_eq!(collapses, 298);
+}
+
+#[test]
+fn test_unsatisfiable_template_returns_history_error() {
+    // Every cell of the sample is unique, so the only tiles are the ones in the
+    // sample itself and nothing can continue past the edge of it.
+    let layout = HexagonalGridLayout { radius: 3 };
+    let grid = Grid::<HexagonalGridLayout, char>::with_data(
+        layout,
+        ('a'..).take(layout.size()).collect::<Vec<_>>(),
+    );
+    let transforms = vec![Transform::Identity.into()];
+    let template = Template::from_tiles(extract_tiles(&grid, &transforms));
+    assert_eq!(template.available_tiles(), 7);
+
+    let mut generator: Generator<HexagonalGridLayout, char> =
+        Generator::new_with_layout(&template, HexagonalGridLayout { radius: 3 });
+    assert!(matches!(generator.run(), Err(WFCError::HistoryExhausted)));
+}
+
+#[test]
+fn test_progress_check_accepts_increasing_measures() {
+    let mut progress = ProgressCheck::default();
+    progress.record(vec![(0, true)]);
+    // extension
+    progress.record(vec![(0, true), (0, true)]);
+    // rewind: top element grows and is uncommitted
+    progress.record(vec![(0, true), (1, false)]);
+    // retry collapse commits it
+    progress.record(vec![(0, true), (1, true)]);
+    // further rewind pops down to a shallower element
+    progress.record(vec![(1, false)]);
+}
+
+#[test]
+#[should_panic(expected = "log measure did not increase")]
+fn test_progress_check_rejects_repeated_measure() {
+    let mut progress = ProgressCheck::default();
+    progress.record(vec![(0, true), (1, false)]);
+    progress.record(vec![(0, true), (1, false)]);
+}
+
+#[test]
+#[should_panic(expected = "log measure did not increase")]
+fn test_progress_check_rejects_decreasing_measure() {
+    let mut progress = ProgressCheck::default();
+    progress.record(vec![(0, true), (1, true)]);
+    // a rewind that only drops the top entry without growing anything
+    progress.record(vec![(0, true)]);
+}
+
+/// FNV-1a, 64 bit: offset basis 0xcbf29ce484222325, prime 0x100000001b3, over the bytes in order.
+fn fnv1a(bytes: &[u8]) -> u64 {
+    bytes.iter().fold(0xcbf29ce484222325u64, |hash, byte| {
+        (hash ^ u64::from(*byte)).wrapping_mul(0x100000001b3)
+    })
+}
+
+/// What a heavy golden check pins down: the FNV-1a hash of the dumped output grid and the number
+/// of collapse events, or the error generation stopped with (a failed run is just as
+/// deterministic). The step count is deliberately not part of it.
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
+struct GoldenOutput {
+    seed: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    hash: Option<String>,
+    collapses: usize,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    error: Option<String>,
+}
+
+fn check_golden(seed: &str) {
+    let template = sample_template();
+    let mut generator: Generator<SquareGridLayout, char> =
+        Generator::new_with_seed(&template, seed.parse().unwrap()).unwrap();
+    let mut progress = ProgressCheck::with_stride(97);
+    let result = generator.run_with(|generator| progress.check(generator));
+    verify_neighbour_compatibility(&generator);
+
+    let (hash, error) = match result {
+        Ok(()) => {
+            let mut dump = Vec::new();
+            generator.export().unwrap().dump(&mut dump).unwrap();
+            (Some(format!("{:016x}", fnv1a(&dump))), None)
+        }
+        Err(error) => (None, Some(error.to_string())),
+    };
+    let actual = GoldenOutput {
+        seed: seed.to_string(),
+        hash,
+        collapses: generator.stats().collapses,
+        error,
+    };
+
+    let path = format!("res/golden-{seed}.json");
+    if bless_requested() {
+        std::fs::write(&path, serde_json::to_string_pretty(&actual).unwrap() + "\n").unwrap();
+        return;
+    }
+    let expected: GoldenOutput =
+        serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn test_fnv1a_known_values() {
+    assert_eq!(fnv1a(b""), 0xcbf29ce484222325);
+    assert_eq!(fnv1a(b"a"), 0xaf63dc4c8601ec8c);
+    assert_eq!(fnv1a(b"foobar"), 0x85944171f73967e8);
+}
+
+#[test]
+#[ignore = "heavy, run with --ignored"]
+fn test_golden_120x120_niwm() {
+    check_golden("AF4HR7NIWMZRATUV36FQ");
+}
+
+#[test]
+#[ignore = "heavy, run with --ignored"]
+fn test_golden_120x120_o3u6() {
+    check_golden("AF4HR7O3U6VZGHS5TOCQ");
 }

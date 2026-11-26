@@ -12,6 +12,10 @@ pub enum WFCError {
     IOError(#[from] std::io::Error),
     #[error("cell could not be parsed")]
     CellParseError,
+    #[error("collapse budget of {0} exceeded")]
+    BudgetExceeded(usize),
+    #[error("no history left to rewind")]
+    HistoryExhausted,
     #[error("unknown error")]
     UnknownError,
 }

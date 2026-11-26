@@ -3491,6 +3491,7 @@ dependencies = [
  "rstest",
  "serde",
  "serde-jsonlines",
+ "serde_json",
  "thiserror 2.0.21",
  "wincode",
 ]

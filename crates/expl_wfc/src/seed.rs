@@ -70,6 +70,14 @@ impl Seed {
             rng_seed: rng.random(),
         }
     }
+
+    /// A seed with an explicit random number generator seed, for reproducible seed lists.
+    pub fn with_rng_seed(seed_type: SeedType, rng_seed: u64) -> Self {
+        Self {
+            seed_type,
+            rng_seed,
+        }
+    }
 }
 
 impl fmt::Display for Seed {

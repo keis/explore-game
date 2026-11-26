@@ -23,6 +23,7 @@ criterion.workspace = true
 more-asserts = "0.3"
 rstest = { workspace = true }
 serde-jsonlines = "0.7"
+serde_json = "1.0"
 
 [[bench]]
 name = "generate"
