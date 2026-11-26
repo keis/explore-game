@@ -217,7 +217,7 @@ where
             self.backtrack_run = 0;
             self.grid[coord].collapse(tile);
             let rejected = self.rejected.replace(Vec::new()).unwrap();
-            assert!(tile <= self.template.available_tiles());
+            assert!(tile < self.template.available_tiles());
             assert!(!rejected.contains(&tile));
             self.collapsed.push((coord, tile, rejected));
             self.propagate(coord, tile);
