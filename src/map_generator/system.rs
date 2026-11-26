@@ -43,7 +43,10 @@ pub fn watch_map_generation_task(
             scene_state.set(SceneState::Active);
         }
         Some(Err(e)) => {
-            error!("something went wrong: {}", e);
+            error!("map generation failed: {}", e);
+            // The task is finished and must not be polled again. Despawning the entity drops its
+            // `MapSeed` too, so `start_map_generation` does not retry the same seed.
+            commands.entity(entity).despawn();
         }
         None => (),
     };
